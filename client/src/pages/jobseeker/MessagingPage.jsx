@@ -60,8 +60,11 @@ const MessagingPage = () => {
 
     const fetchConversations = async () => {
         try {
+            console.log('Fetching conversations for userId:', userId);
             const response = await api.get(`/messages/conversations/${userId}`);
-            setConversations(response.data.data || []);
+            console.log('Conversations response:', response);
+            // Axios interceptor unwraps response.data, so response is already the data
+            setConversations(response.data || []);
         } catch (error) {
             console.error('Error fetching conversations:', error);
         }
@@ -70,7 +73,8 @@ const MessagingPage = () => {
     const fetchMessages = async (otherUserId) => {
         try {
             const response = await api.get(`/messages/conversation/${userId}/${otherUserId}`);
-            setMessages(response.data.data || []);
+            // Axios interceptor unwraps response.data
+            setMessages(response.data || []);
         } catch (error) {
             console.error('Error fetching messages:', error);
         }

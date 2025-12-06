@@ -37,8 +37,9 @@ const LoginPage = () => {
             console.log('Response.data:', response.data);
             console.log('Response.data.data:', response.data.data);
 
-            if (response.data.success) {
-                const { user, token } = response.data.data;
+            // Note: axios interceptor returns response.data, so response here is the backend's response.data
+            if (response.success) {
+                const { user, token } = response.data;
 
                 // Store auth data
                 localStorage.setItem('token', token);
