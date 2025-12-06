@@ -1,12 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './RoleSelection.css';
 
 const RoleSelection = () => {
     const navigate = useNavigate();
 
     const selectRole = (role) => {
-        navigate(`/onboarding/${role}`);
+        navigate(`/signup?role=${role}`);
     };
 
     return (
@@ -78,7 +78,9 @@ const RoleSelection = () => {
                 </div>
 
                 <div className="role-footer">
-                    <p className="text-muted">Testing mode enabled - No authentication required</p>
+                    <p className="text-muted">
+                        Already have an account? <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Sign In</Link>
+                    </p>
                 </div>
             </div>
         </div>

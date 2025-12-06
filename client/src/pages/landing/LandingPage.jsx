@@ -29,6 +29,7 @@ const LandingPage = () => {
                         <a onClick={() => scrollToSection('home')} className="nav-link">Home</a>
                         <a onClick={() => scrollToSection('about')} className="nav-link">About</a>
                         <a onClick={() => scrollToSection('services')} className="nav-link">Services</a>
+                        <Link to="/login" className="btn btn-outline btn-sm">Sign In</Link>
                         <Link to="/role-selection" className="btn btn-primary btn-sm">Get Started</Link>
                     </div>
                 </div>
