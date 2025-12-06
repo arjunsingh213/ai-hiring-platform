@@ -16,8 +16,23 @@ const io = initializeSocket(server);
 connectDB();
 
 // Middleware
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://aiinterview-ten.vercel.app',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
