@@ -247,94 +247,81 @@ const HomeFeed = () => {
                             <div className="card-content">
                                 <p>{post.content?.text}</p>
                                 {/* Render media if present */}
-                                {post.content?.media && post.content.media.length > 0 && (
-                                    <div className="post-media">
-                                        {post.content.media.map((media, index) => (
-                                            <div key={index} className="media-item">
-                                                {media.type === 'image' && (
-                                                    <img
-                                                        src={`http://localhost:5000/uploads/posts/${media.fileId}`}
-                                                        alt={media.fileName}
-                                                        style={{
-                                                            width: '100%',
-                                                            maxHeight: '500px',
-                                                            objectFit: 'cover',
-                                                            borderRadius: 'var(--radius-lg)',
-                                                            marginTop: 'var(--spacing-md)'
+                                marginTop: 'var(--spacing-md)'
                                                         }}
                                                     />
                                                 )}
-                                                {media.type === 'video' && (
-                                                    <video
-                                                        controls
-                                                        style={{
-                                                            width: '100%',
-                                                            maxHeight: '500px',
-                                                            borderRadius: 'var(--radius-lg)',
-                                                            marginTop: 'var(--spacing-md)'
-                                                        }}
-                                                    >
-                                                        <source src={`http://localhost:5000/uploads/posts/${media.fileId}`} />
-                                                        Your browser does not support the video tag.
-                                                    </video>
-                                                )}
-                                                {media.type === 'document' && (
-                                                    <a
-                                                        href={`http://localhost:5000/uploads/posts/${media.fileId}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="document-link"
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 'var(--spacing-sm)',
-                                                            padding: 'var(--spacing-md)',
-                                                            background: 'var(--glass-white)',
-                                                            borderRadius: 'var(--radius-md)',
-                                                            marginTop: 'var(--spacing-md)',
-                                                            textDecoration: 'none'
-                                                        }}
-                                                    >
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" />
-                                                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" />
-                                                        </svg>
-                                                        <span>{media.fileName}</span>
-                                                    </a>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
+                                {media.type === 'video' && (
+                                    <video
+                                        controls
+                                        style={{
+                                            width: '100%',
+                                            maxHeight: '500px',
+                                            borderRadius: 'var(--radius-lg)',
+                                            marginTop: 'var(--spacing-md)'
+                                        }}
+                                    >
+                                        <source src={media.url || `http://localhost:5000/uploads/posts/${media.fileId}`} />
+                                        Your browser does not support the video tag.
+                                    </video>
+                                )}
+                                {media.type === 'document' && (
+                                    <a
+                                        href={media.url || `http://localhost:5000/uploads/posts/${media.fileId}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="document-link"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--spacing-sm)',
+                                            padding: 'var(--spacing-md)',
+                                            background: 'var(--glass-white)',
+                                            borderRadius: 'var(--radius-md)',
+                                            marginTop: 'var(--spacing-md)',
+                                            textDecoration: 'none'
+                                        }}
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" />
+                                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" />
+                                        </svg>
+                                        <span>{media.fileName}</span>
+                                    </a>
                                 )}
                             </div>
-                            <div className="card-actions">
-                                <button className="action-btn" onClick={() => handleLike(post._id)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M14 9V5C14 4.46957 13.7893 3.96086 13.4142 3.58579C13.0391 3.21071 12.5304 3 12 3C11.4696 3 10.9609 3.21071 10.5858 3.58579C10.2107 3.96086 10 4.46957 10 5V9L7 12V21H18.28C18.7623 21.0055 19.2304 20.8364 19.5979 20.524C19.9654 20.2116 20.2077 19.7769 20.28 19.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.9499 8.99672 19.66 9H14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M7 12H4C3.46957 12 2.96086 12.2107 2.58579 12.5858C2.21071 12.9609 2 13.4696 2 14V19C2 19.5304 2.21071 20.0391 2.58579 20.4142C2.96086 20.7893 3.46957 21 4 21H7V12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    Like ({post.engagement?.likes?.length || 0})
-                                </button>
-                                <button className="action-btn" onClick={() => handleComment(post._id)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" />
-                                    </svg>
-                                    Comment ({post.engagement?.comments?.length || 0})
-                                </button>
-                                <button className="action-btn" onClick={() => handleShare(post._id)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M16 6L12 2L8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M12 2V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    Share
-                                </button>
-                            </div>
+                                        ))}
                         </div>
-                    ))
-                )}
+                    )}
+            </div>
+            <div className="card-actions">
+                <button className="action-btn" onClick={() => handleLike(post._id)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M14 9V5C14 4.46957 13.7893 3.96086 13.4142 3.58579C13.0391 3.21071 12.5304 3 12 3C11.4696 3 10.9609 3.21071 10.5858 3.58579C10.2107 3.96086 10 4.46957 10 5V9L7 12V21H18.28C18.7623 21.0055 19.2304 20.8364 19.5979 20.524C19.9654 20.2116 20.2077 19.7769 20.28 19.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.9499 8.99672 19.66 9H14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M7 12H4C3.46957 12 2.96086 12.2107 2.58579 12.5858C2.21071 12.9609 2 13.4696 2 14V19C2 19.5304 2.21071 20.0391 2.58579 20.4142C2.96086 20.7893 3.46957 21 4 21H7V12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Like ({post.engagement?.likes?.length || 0})
+                </button>
+                <button className="action-btn" onClick={() => handleComment(post._id)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                    Comment ({post.engagement?.comments?.length || 0})
+                </button>
+                <button className="action-btn" onClick={() => handleShare(post._id)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M16 6L12 2L8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 2V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Share
+                </button>
             </div>
         </div>
+    ))
+                )}
+            </div >
+        </div >
     );
 };
 

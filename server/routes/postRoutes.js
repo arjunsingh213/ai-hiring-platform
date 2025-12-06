@@ -1,38 +1,52 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const cloudinary = require('../config/cloudinary');
 const Post = require('../models/Post');
 const { getIO } = require('../config/socket');
 
-// Configure multer for media uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/posts/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'post-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configure multer for memory storage (Cloudinary uploads from buffer)
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 50 * 1024 * 1024 // 50MB limit
+        fileSize: 10 * 1024 * 1024 // 10MB limit (Cloudinary free tier)
     },
     fileFilter: function (req, file, cb) {
-        const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|pdf|doc|docx/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
+        const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|webp/;
+        const extname = allowedTypes.test(file.originalname.split('.').pop().toLowerCase());
+        const mimetype = file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/');
 
         if (mimetype && extname) {
             return cb(null, true);
         } else {
-            cb(new Error('Invalid file type. Only images, videos, and documents are allowed.'));
+            cb(new Error('Invalid file type. Only images and videos are allowed.'));
         }
     }
 });
+
+// Helper function to upload to Cloudinary
+const uploadToCloudinary = (buffer, resourceType = 'auto') => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'ai-hiring-platform/posts',
+                resource_type: resourceType,
+                transformation: resourceType === 'image' ? [
+                    { width: 1200, height: 1200, crop: 'limit' },
+                    { quality: 'auto' },
+                    { fetch_format: 'auto' }
+                ] : undefined
+            },
+            (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            }
+        );
+        uploadStream.end(buffer);
+    });
+};
 
 // Create post with media
 router.post('/with-media', upload.single('media'), async (req, res) => {
@@ -49,15 +63,19 @@ router.post('/with-media', upload.single('media'), async (req, res) => {
             visibility: visibility || 'public'
         };
 
-        // Add media file info if uploaded
+        // Upload to Cloudinary if file exists
         if (req.file) {
+            const resourceType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+            const result = await uploadToCloudinary(req.file.buffer, resourceType);
+
             const mediaType = req.file.mimetype.startsWith('image/') ? 'image' :
                 req.file.mimetype.startsWith('video/') ? 'video' : 'document';
 
             postData.content.media.push({
                 type: mediaType,
-                fileId: req.file.filename,
-                fileName: req.file.originalname
+                fileId: result.public_id,
+                fileName: req.file.originalname,
+                url: result.secure_url
             });
         }
 
@@ -67,6 +85,7 @@ router.post('/with-media', upload.single('media'), async (req, res) => {
 
         res.status(201).json({ success: true, data: post });
     } catch (error) {
+        console.error('Error creating post with media:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

@@ -14,8 +14,9 @@ const postSchema = new mongoose.Schema({
                 type: String,
                 enum: ['image', 'video', 'document']
             },
-            fileId: String, // GridFS file ID
+            fileId: String, // Cloudinary public_id
             fileName: String,
+            url: String, // Cloudinary secure_url
             thumbnail: String // For videos
         }]
     },
