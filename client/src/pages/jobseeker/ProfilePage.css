@@ -1,0 +1,271 @@
+/* Premium Glass Profile Page */
+.profile-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Glass Profile Header with Gradient Banner */
+.profile-header {
+    position: relative;
+    margin-bottom: var(--spacing-xl);
+    background: var(--bg-card);
+    backdrop-filter: var(--blur-lg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+}
+
+.profile-banner {
+    height: 200px;
+    background: var(--gradient-primary);
+    position: relative;
+}
+
+.profile-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+}
+
+.profile-info {
+    padding: 0 var(--spacing-xl) var(--spacing-xl);
+    position: relative;
+}
+
+.profile-avatar-container {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--spacing-md);
+    margin-top: -60px;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Glass Avatar with Glow */
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid var(--glass-border);
+    background: var(--glass-white);
+    backdrop-filter: var(--blur-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl), 0 0 24px rgba(76, 159, 255, 0.3);
+    position: relative;
+}
+
+.profile-avatar::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.5;
+    filter: blur(8px);
+}
+
+.profile-details h1 {
+    margin-bottom: var(--spacing-xs);
+    font-size: 1.75rem;
+}
+
+.profile-details .profession {
+    font-size: 1.0625rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+    font-weight: 600;
+}
+
+.profile-actions {
+    position: absolute;
+    top: var(--spacing-lg);
+    right: var(--spacing-xl);
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Glass Interview Badge */
+.interview-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--glass-white);
+    backdrop-filter: var(--blur-md);
+    border-radius: var(--radius-lg);
+    margin-top: var(--spacing-md);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-md);
+}
+
+.interview-badge svg {
+    color: var(--accent);
+    filter: drop-shadow(0 0 8px rgba(88, 255, 224, 0.4));
+}
+
+.interview-badge strong {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.interview-badge p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Glass Profile Sections */
+.profile-content {
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+.profile-section {
+    padding: var(--spacing-xl);
+    background: var(--bg-card);
+    backdrop-filter: var(--blur-lg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    transition: all var(--transition-normal);
+}
+
+.profile-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+}
+
+.profile-section:hover {
+    border-color: var(--border-glow);
+    box-shadow: var(--shadow-xl), var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.profile-section h3 {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--glass-separator);
+    font-size: 1.125rem;
+}
+
+.profile-section p {
+    margin-bottom: var(--spacing-md);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.profile-section a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    font-weight: 600;
+}
+
+.profile-section a:hover {
+    color: var(--primary-dark);
+    text-shadow: 0 0 8px rgba(76, 159, 255, 0.3);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-banner {
+        height: 120px;
+    }
+
+    .profile-info {
+        padding: 0 var(--spacing-lg) var(--spacing-lg);
+    }
+
+    .profile-avatar-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-top: -40px;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+    }
+
+    .profile-actions {
+        position: static;
+        justify-content: center;
+        margin-top: var(--spacing-md);
+        flex-wrap: wrap;
+    }
+
+    .profile-details {
+        width: 100%;
+    }
+
+    .profile-section {
+        padding: var(--spacing-lg);
+    }
+
+    .interview-badge {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-banner {
+        height: 100px;
+    }
+
+    .profile-avatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    .profile-info {
+        padding: 0 var(--spacing-md) var(--spacing-md);
+    }
+
+    .profile-section {
+        padding: var(--spacing-md);
+    }
+
+    .profile-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .profile-actions button {
+        width: 100%;
+    }
+}

@@ -1,0 +1,203 @@
+.interviews-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-2xl);
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.interview-tabs {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-2xl);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.interviews-content {
+    min-height: 400px;
+}
+
+.interviews-grid,
+.assessments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.interview-card {
+    padding: var(--spacing-2xl);
+}
+
+.interview-card .card-header {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    align-items: center;
+}
+
+.company-logo {
+    width: 60px;
+    height: 60px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.interview-card h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 1.125rem;
+}
+
+.interview-type {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.interview-details {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.interview-details p {
+    margin: var(--spacing-sm) 0;
+    color: var(--text-secondary);
+}
+
+.interview-card .btn {
+    width: 100%;
+}
+
+.assessment-card {
+    padding: var(--spacing-2xl);
+}
+
+.assessment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.assessment-header h3 {
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.assessment-score {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-label {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.assessment-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-item .label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.detail-item .value {
+    font-weight: 600;
+    color: var(--primary-light);
+}
+
+.strengths h4 {
+    margin-bottom: var(--spacing-md);
+    font-size: 1rem;
+}
+
+.strengths ul {
+    list-style: none;
+    padding: 0;
+}
+
+.strengths li {
+    padding: var(--spacing-sm) 0;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.strengths li::before {
+    content: '✓';
+    color: var(--accent);
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .interviews-grid,
+    .assessments-grid {
+        grid-template-columns: 1fr;
+    }
+}

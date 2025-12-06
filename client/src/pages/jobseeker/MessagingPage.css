@@ -1,0 +1,225 @@
+/* Premium Glass Messaging */
+.messaging-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.messaging-page h1 {
+    margin-bottom: var(--spacing-xl);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.messaging-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: var(--spacing-lg);
+    height: calc(100vh - 250px);
+}
+
+/* Glass Conversations List */
+.conversations-list {
+    background: var(--bg-card);
+    backdrop-filter: var(--blur-lg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+}
+
+.conversations-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--glass-separator);
+    background: var(--glass-white);
+}
+
+.conversations-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.conversation-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-bottom: 1px solid var(--glass-separator);
+}
+
+.conversation-item:hover {
+    background: var(--glass-white);
+}
+
+.conversation-item.active {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.conversation-avatar {
+    flex-shrink: 0;
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-info h4 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.conversation-info p {
+    margin: 0;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Glass Messages Panel */
+.messages-panel {
+    background: var(--bg-card);
+    backdrop-filter: var(--blur-lg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.messages-header {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: 1px solid var(--glass-separator);
+    background: var(--glass-white);
+}
+
+.messages-header h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 1.125rem;
+}
+
+.messages-header p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.messages-list {
+    flex: 1;
+    padding: var(--spacing-xl);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Glass Message Bubbles */
+.message {
+    display: flex;
+    margin-bottom: var(--spacing-md);
+}
+
+.message.sent {
+    justify-content: flex-end;
+}
+
+.message.received {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    backdrop-filter: var(--blur-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.message.sent .message-content {
+    background: var(--gradient-primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .message-content {
+    background: var(--glass-white);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+}
+
+.message-content p {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* Glass Message Input */
+.message-input {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-top: 1px solid var(--glass-separator);
+    display: flex;
+    gap: var(--spacing-md);
+    background: var(--glass-white);
+}
+
+.message-input .input {
+    flex: 1;
+    margin: 0;
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-2xl);
+    text-align: center;
+}
+
+.empty-state svg {
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-muted);
+}
+
+.empty-state h3 {
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .messaging-container {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 200px);
+    }
+
+    .conversations-list {
+        display: none;
+    }
+
+    .messages-panel {
+        display: flex;
+    }
+
+    .message-content {
+        max-width: 85%;
+    }
+}

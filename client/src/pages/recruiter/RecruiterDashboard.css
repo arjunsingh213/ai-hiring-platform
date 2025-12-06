@@ -1,0 +1,33 @@
+.recruiter-dashboard {
+    display: flex;
+    min-height: 100vh;
+}
+
+.recruiter-main {
+    flex: 1;
+    padding: var(--spacing-xl);
+    margin-left: 290px;
+    margin-top: 110px;
+}
+
+@media (max-width: 1024px) {
+    .recruiter-main {
+        margin-left: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .recruiter-main {
+        margin-left: 0;
+        margin-top: 80px;
+        margin-bottom: 80px;
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .recruiter-main {
+        margin-top: 74px;
+        padding: var(--spacing-sm);
+    }
+}

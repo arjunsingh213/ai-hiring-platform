@@ -1,0 +1,144 @@
+.analytics-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.stat-card {
+    padding: var(--spacing-xl);
+}
+
+.stat-card h3 {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+    font-weight: 500;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.stat-change {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.stat-change.positive {
+    color: var(--accent);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.chart-card {
+    padding: var(--spacing-2xl);
+}
+
+.chart-card h3 {
+    margin-bottom: var(--spacing-lg);
+}
+
+.chart-placeholder {
+    margin-top: var(--spacing-lg);
+}
+
+.skills-chart {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.skill-bar {
+    display: grid;
+    grid-template-columns: 100px 1fr 50px;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.skill-name {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.bar-container {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-normal);
+}
+
+.skill-count {
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.activity-section {
+    padding: var(--spacing-2xl);
+}
+
+.activity-section h3 {
+    margin-bottom: var(--spacing-xl);
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.activity-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.activity-content p {
+    margin: 0;
+}
+
+.activity-content p:first-child {
+    margin-bottom: var(--spacing-xs);
+}
+
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
