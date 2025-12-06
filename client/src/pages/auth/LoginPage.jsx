@@ -33,6 +33,10 @@ const LoginPage = () => {
                 password: formData.password
             });
 
+            console.log('Full login response:', response);
+            console.log('Response.data:', response.data);
+            console.log('Response.data.data:', response.data.data);
+
             if (response.data.success) {
                 const { user, token } = response.data.data;
 
