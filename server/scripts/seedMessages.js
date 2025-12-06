@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const seedMessages = async () => {
@@ -8,21 +9,39 @@ const seedMessages = async () => {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('📡 Connected to MongoDB');
 
-        // Get the current user (job seeker)
-        const currentUser = await User.findOne({ role: 'jobseeker' });
+        // Find or create a test job seeker user
+        let currentUser = await User.findOne({ email: 'test@jobseeker.com' });
+
         if (!currentUser) {
-            console.log('❌ No job seeker found. Please create a user first.');
-            process.exit(1);
+            console.log('Creating test job seeker user...');
+            const hashedPassword = await bcrypt.hash('password123', 10);
+            currentUser = await User.create({
+                email: 'test@jobseeker.com',
+                password: hashedPassword,
+                role: 'jobseeker',
+                profile: {
+                    name: 'John Doe',
+                    title: 'Full Stack Developer',
+                    location: 'San Francisco, CA',
+                    bio: 'Experienced developer looking for new opportunities'
+                }
+            });
+            console.log('✅ Created test user: test@jobseeker.com / password123');
+        } else {
+            console.log(`✅ Found existing user: ${currentUser.profile?.name || currentUser.email}`);
         }
 
-        console.log(`✅ Found user: ${currentUser.profile?.name || currentUser.email}`);
+        console.log(`\n🔑 USER ID: ${currentUser._id}`);
+        console.log('\n📋 IMPORTANT: Use these credentials to login:');
+        console.log('   Email: test@jobseeker.com');
+        console.log('   Password: password123\n');
 
         // Create or find test recruiters
         const recruiter1 = await User.findOneAndUpdate(
             { email: 'recruiter1@techcorp.com' },
             {
                 email: 'recruiter1@techcorp.com',
-                password: 'hashedpassword123',
+                password: await bcrypt.hash('password123', 10),
                 role: 'recruiter',
                 profile: {
                     name: 'Sarah Johnson',
@@ -38,7 +57,7 @@ const seedMessages = async () => {
             { email: 'recruiter2@startupxyz.com' },
             {
                 email: 'recruiter2@startupxyz.com',
-                password: 'hashedpassword123',
+                password: await bcrypt.hash('password123', 10),
                 role: 'recruiter',
                 profile: {
                     name: 'Michael Chen',
@@ -54,7 +73,7 @@ const seedMessages = async () => {
             { email: 'hr@innovatetech.com' },
             {
                 email: 'hr@innovatetech.com',
-                password: 'hashedpassword123',
+                password: await bcrypt.hash('password123', 10),
                 role: 'recruiter',
                 profile: {
                     name: 'Emily Rodriguez',
@@ -68,7 +87,7 @@ const seedMessages = async () => {
 
         console.log('✅ Created/found test recruiters');
 
-        // Clear existing messages for clean slate
+        // Clear existing messages for this user
         await Message.deleteMany({
             $or: [
                 { senderId: currentUser._id },
@@ -179,12 +198,17 @@ const seedMessages = async () => {
         // Insert all messages
         await Message.insertMany([...conv1Messages, ...conv2Messages, ...conv3Messages]);
 
-        console.log('✅ Created test conversations:');
+        console.log('\n✅ Created test conversations:');
         console.log(`   - ${recruiter1.profile.name} (TechCorp): 5 messages, 1 unread`);
         console.log(`   - ${recruiter2.profile.name} (StartupXYZ): 3 messages, 1 unread`);
         console.log(`   - ${recruiter3.profile.name} (InnovateTech): 3 messages, all read`);
 
         console.log('\n🎉 Seed completed successfully!');
+        console.log('\n📝 TO SEE CONVERSATIONS:');
+        console.log('   1. Login with: test@jobseeker.com / password123');
+        console.log('   2. Navigate to Messages page');
+        console.log('   3. You should see 3 conversations!\n');
+
         process.exit(0);
     } catch (error) {
         console.error('❌ Error seeding messages:', error);
