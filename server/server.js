@@ -16,23 +16,8 @@ const io = initializeSocket(server);
 connectDB();
 
 // Middleware
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://aiinterview-ten.vercel.app',
-    process.env.CLIENT_URL
-].filter(Boolean);
-
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
 }));
 app.use(express.json());
@@ -57,7 +42,24 @@ app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/posts', require('./routes/postRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
-// Health check
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'AI Hiring Platform API is running',
+        version: '1.0.0',
+        endpoints: {
+            auth: '/api/auth',
+            users: '/api/users',
+            posts: '/api/posts',
+            jobs: '/api/jobs',
+            interviews: '/api/interviews',
+            messages: '/api/messages',
+            notifications: '/api/notifications'
+        }
+    });
+});
+
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
@@ -66,28 +68,29 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Error handling middleware
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ success: false, error: 'Route not found' });
+});
+
+// Error handler
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    res.status(err.status || 500).json({
-        error: {
-            message: err.message || 'Internal server error',
-            ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-        }
+    res.status(500).json({
+        success: false,
+        error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
     });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: { message: 'Route not found' } });
-});
+// Start server (only for local development)
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📡 Socket.io initialized`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+}
 
-// Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📡 Socket.io initialized`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-module.exports = { app, server, io };
+// Export for Vercel
+module.exports = app;
