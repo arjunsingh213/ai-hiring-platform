@@ -88,4 +88,26 @@ router.put('/:id/read', async (req, res) => {
     }
 });
 
+// Search users for new conversation
+router.get('/search-users/:query', async (req, res) => {
+    try {
+        const { query } = req.params;
+        const User = require('../models/User');
+
+        const users = await User.find({
+            $or: [
+                { 'profile.name': { $regex: query, $options: 'i' } },
+                { 'profile.company': { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } }
+            ]
+        })
+            .select('profile email role')
+            .limit(10);
+
+        res.json({ success: true, data: users });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;
