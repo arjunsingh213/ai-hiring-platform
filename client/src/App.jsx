@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/landing/LandingPage';
+import LoginPage from './pages/auth/LoginPage';
+import SignupPage from './pages/auth/SignupPage';
 import RoleSelection from './pages/onboarding/RoleSelection';
 import JobSeekerOnboarding from './pages/onboarding/JobSeekerOnboarding';
 import RecruiterOnboarding from './pages/onboarding/RecruiterOnboarding';
@@ -15,6 +17,10 @@ function App() {
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
+
+        {/* Authentication */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
         {/* Onboarding */}
         <Route path="/role-selection" element={<RoleSelection />} />
