@@ -1,81 +1,137 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-const { getIO } = require('../config/socket');
 
-// Create notification
-router.post('/', async (req, res) => {
+// Get user's notifications (paginated)
+router.get('/', async (req, res) => {
     try {
-        const notification = new Notification(req.body);
-        await notification.save();
+        const { userId, page = 1, limit = 20, unreadOnly = false } = req.query;
 
-        // Emit real-time notification
-        const io = getIO();
-        io.to(notification.userId.toString()).emit('receive_notification', notification);
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID required' });
+        }
 
-        res.status(201).json({ success: true, data: notification });
+        const query = { userId };
+        if (unreadOnly === 'true') {
+            query.read = false;
+        }
+
+        const notifications = await Notification.find(query)
+            .populate('sender', 'profile.name profile.photo profile.headline')
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const totalCount = await Notification.countDocuments(query);
+
+        res.json({
+            notifications,
+            totalPages: Math.ceil(totalCount / limit),
+            currentPage: parseInt(page),
+            totalCount
+        });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
     }
 });
 
-// Get user's notifications
-router.get('/user/:userId', async (req, res) => {
+// Get unread count
+router.get('/unread-count', async (req, res) => {
     try {
-        const { userId } = req.params;
-        const { read, type } = req.query;
+        const { userId } = req.query;
 
-        const query = { userId };
-        if (read !== undefined) query.read = read === 'true';
-        if (type) query.type = type;
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID required' });
+        }
 
-        const notifications = await Notification.find(query)
-            .sort({ createdAt: -1 })
-            .limit(50);
+        const count = await Notification.countDocuments({
+            userId,
+            read: false
+        });
 
-        res.json({ success: true, data: notifications, count: notifications.length });
+        res.json({ count });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Error fetching unread count:', error);
+        res.status(500).json({ error: 'Failed to fetch unread count' });
     }
 });
 
 // Mark notification as read
 router.put('/:id/read', async (req, res) => {
     try {
+        const { id } = req.params;
+
         const notification = await Notification.findByIdAndUpdate(
-            req.params.id,
-            { read: true, readAt: new Date() },
+            id,
+            {
+                read: true,
+                readAt: new Date()
+            },
             { new: true }
         );
-        res.json({ success: true, data: notification });
+
+        if (!notification) {
+            return res.status(404).json({ error: 'Notification not found' });
+        }
+
+        res.json({ notification });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ error: 'Failed to mark notification as read' });
     }
 });
 
-// Mark all as read
-router.put('/user/:userId/read-all', async (req, res) => {
+// Mark all notifications as read
+router.put('/mark-all-read', async (req, res) => {
     try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID required' });
+        }
+
         await Notification.updateMany(
-            { userId: req.params.userId, read: false },
-            { read: true, readAt: new Date() }
+            { userId, read: false },
+            {
+                read: true,
+                readAt: new Date()
+            }
         );
-        res.json({ success: true, message: 'All notifications marked as read' });
+
+        res.json({ message: 'All notifications marked as read' });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Error marking all as read:', error);
+        res.status(500).json({ error: 'Failed to mark all as read' });
     }
 });
 
-// Get unread count
-router.get('/user/:userId/unread-count', async (req, res) => {
+// Delete notification
+router.delete('/:id', async (req, res) => {
     try {
-        const count = await Notification.countDocuments({
-            userId: req.params.userId,
-            read: false
-        });
-        res.json({ success: true, count });
+        const { id } = req.params;
+
+        const notification = await Notification.findByIdAndDelete(id);
+
+        if (!notification) {
+            return res.status(404).json({ error: 'Notification not found' });
+        }
+
+        res.json({ message: 'Notification deleted' });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Error deleting notification:', error);
+        res.status(500).json({ error: 'Failed to delete notification' });
+    }
+});
+
+// Create notification (helper endpoint for testing)
+router.post('/create', async (req, res) => {
+    try {
+        const notification = await Notification.create(req.body);
+        res.status(201).json({ notification });
+    } catch (error) {
+        console.error('Error creating notification:', error);
+        res.status(500).json({ error: 'Failed to create notification' });
     }
 });
 

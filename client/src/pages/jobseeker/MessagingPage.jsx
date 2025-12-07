@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import io from 'socket.io-client';
 import api from '../../services/api';
 import './MessagingPage.css';
 
 const MessagingPage = () => {
+    const location = useLocation();
     const [conversations, setConversations] = useState([]);
     const [filteredConversations, setFilteredConversations] = useState([]);
     const [selectedConversation, setSelectedConversation] = useState(null);
@@ -57,6 +59,35 @@ const MessagingPage = () => {
 
         setFilteredConversations(filtered);
     }, [conversations, searchQuery, activeTab]);
+
+    // Handle selectedUser from navigation (e.g., from profile page)
+    useEffect(() => {
+        if (location.state?.selectedUser && conversations.length > 0) {
+            const targetUserId = location.state.selectedUser._id;
+
+            // Find existing conversation with this user
+            const existingConv = conversations.find(conv =>
+                conv.user._id === targetUserId
+            );
+
+            if (existingConv) {
+                // Select the existing conversation
+                selectConversation(existingConv);
+            } else {
+                // Create a new conversation object for this user
+                const newConv = {
+                    user: location.state.selectedUser,
+                    lastMessage: null,
+                    unreadCount: 0
+                };
+                setSelectedConversation(newConv);
+                setMessages([]);
+            }
+
+            // Clear the location state to prevent re-triggering
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state, conversations]);
 
     const fetchConversations = async () => {
         try {

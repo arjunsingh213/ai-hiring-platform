@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import UserProfileLink from '../../components/UserProfileLink';
 import './HomeFeed.css';
 
 const HomeFeed = () => {
@@ -261,7 +262,11 @@ const HomeFeed = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <h4>{post.userId?.profile?.name || 'Anonymous'}</h4>
+                                        <UserProfileLink 
+                                            userId={post.userId?._id}
+                                            name={post.userId?.profile?.name || 'Anonymous'}
+                                            showAvatar={false}
+                                        />
                                         <p className="text-muted">{new Date(post.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 </div>

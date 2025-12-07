@@ -7,6 +7,12 @@ const notificationSchema = new mongoose.Schema({
         required: true
     },
 
+    // Sender of the notification (for social interactions)
+    sender: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+
     type: {
         type: String,
         enum: [
@@ -18,7 +24,12 @@ const notificationSchema = new mongoose.Schema({
             'job_recommendation',
             'post_engagement',
             'motivational',
-            'system'
+            'system',
+            // New social interaction types
+            'follow',
+            'like',
+            'comment',
+            'mention'
         ],
         required: true
     },
@@ -37,7 +48,7 @@ const notificationSchema = new mongoose.Schema({
     relatedEntity: {
         entityType: {
             type: String,
-            enum: ['job', 'interview', 'message', 'post', 'user']
+            enum: ['job', 'interview', 'message', 'post', 'user', 'profile']
         },
         entityId: mongoose.Schema.Types.ObjectId
     },

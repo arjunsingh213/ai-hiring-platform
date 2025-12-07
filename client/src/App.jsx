@@ -9,6 +9,7 @@ import RecruiterOnboarding from './pages/onboarding/RecruiterOnboarding';
 import JobSeekerDashboard from './pages/jobseeker/JobSeekerDashboard';
 import RecruiterDashboard from './pages/recruiter/RecruiterDashboard';
 import AIInterview from './pages/interview/AIInterview';
+import PublicProfilePage from './pages/shared/PublicProfilePage';
 import './index.css';
 
 function App() {
@@ -29,6 +30,9 @@ function App() {
 
         {/* AI Interview */}
         <Route path="/interview/:interviewId" element={<AIInterview />} />
+
+        {/* Public Profile (accessible by both roles) */}
+        <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
         {/* Dashboards */}
         <Route path="/jobseeker/*" element={<JobSeekerDashboard />} />
