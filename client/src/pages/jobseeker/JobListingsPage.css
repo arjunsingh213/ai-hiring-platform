@@ -151,8 +151,12 @@
 }
 
 .tab-btn.active {
-    color: var(--primary-light);
+    background: var(--gradient-primary);
+    color: white !important;
     border-bottom-color: var(--primary);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    box-shadow: var(--shadow-md);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .job-content {
@@ -187,7 +191,7 @@
 
 .job-content li::before {
     content: '✓';
-    color: var(--accent);
+    color: var(--text-success);
     font-weight: 700;
 }
 
@@ -224,4 +228,195 @@
     .job-actions {
         flex-direction: row;
     }
+}
+
+/* Apply Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.apply-modal {
+    text-align: center;
+    padding: var(--spacing-3xl);
+    max-width: 400px;
+    animation: slideUp 0.4s ease-out;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-xl);
+    font-size: 2.5rem;
+    color: white;
+    animation: scaleIn 0.5s ease-out;
+}
+
+.apply-modal h2 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.apply-modal p {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.loading-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.loading-progress {
+    height: 100%;
+    width: 0;
+    background: var(--gradient-primary);
+    animation: loadingProgress 2.5s ease-out forwards;
+}
+
+.modal-note {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Applied Badge */
+.applied-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    margin-top: var(--spacing-sm);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    margin-right: var(--spacing-sm);
+}
+
+/* Interview Notice */
+.interview-notice {
+    margin-top: var(--spacing-xl);
+    padding: var(--spacing-xl);
+    border-left: 4px solid var(--primary);
+}
+
+.interview-notice h3 {
+    color: var(--primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.interview-notice ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--spacing-md) 0;
+}
+
+.interview-notice li {
+    padding: var(--spacing-sm) 0;
+    color: var(--text-secondary);
+}
+
+.interview-notice li::before {
+    content: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+    }
+
+    70% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes loadingProgress {
+    0% {
+        width: 0;
+    }
+
+    100% {
+        width: 100%;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Company Logo Image */
+.company-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+}
+
+/* Success Button */
+.btn-success {
+    background: var(--accent);
+    color: white;
+    cursor: default;
+}
+
+.btn-success:hover {
+    background: var(--accent);
 }

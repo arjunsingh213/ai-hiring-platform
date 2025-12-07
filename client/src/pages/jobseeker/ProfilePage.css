@@ -114,8 +114,8 @@
 }
 
 .interview-badge svg {
-    color: var(--accent);
-    filter: drop-shadow(0 0 8px rgba(88, 255, 224, 0.4));
+    color: var(--text-accent);
+    filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.4));
 }
 
 .interview-badge strong {

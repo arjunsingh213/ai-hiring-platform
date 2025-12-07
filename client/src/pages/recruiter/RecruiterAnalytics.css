@@ -24,7 +24,7 @@
 .stat-number {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--primary-light);
+    color: var(--text-primary);
     margin: 0 0 var(--spacing-sm) 0;
 }
 
@@ -35,7 +35,7 @@
 }
 
 .stat-change.positive {
-    color: var(--accent);
+    color: var(--text-success);
 }
 
 .charts-grid {

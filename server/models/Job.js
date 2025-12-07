@@ -97,11 +97,24 @@ const jobSchema = new mongoose.Schema({
             enum: ['applied', 'reviewing', 'shortlisted', 'interviewed', 'rejected', 'hired'],
             default: 'applied'
         },
+        // Interview results
+        interviewId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Interview'
+        },
+        interviewScore: Number,
+        interviewCompleted: {
+            type: Boolean,
+            default: false
+        },
+        // Application answers and notes
         answers: [{
             questionIndex: Number,
             answer: String
         }],
-        notes: String // Recruiter notes
+        notes: String, // Recruiter notes
+        rejectionReason: String,
+        hiredAt: Date
     }],
 
     // Status

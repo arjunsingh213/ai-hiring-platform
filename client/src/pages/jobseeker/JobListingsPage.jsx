@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import './JobListingsPage.css';
 
 const JobListingsPage = () => {
+    const navigate = useNavigate();
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [filters, setFilters] = useState({
         type: '',
         experienceLevel: ''
     });
+    const [applying, setApplying] = useState(false);
+    const [showApplyModal, setShowApplyModal] = useState(false);
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
@@ -31,19 +35,89 @@ const JobListingsPage = () => {
         }
     };
 
-    const applyToJob = async (jobId) => {
+    const checkExistingApplication = async (jobId) => {
         try {
-            await api.post(`/jobs/${jobId}/apply`, { userId });
-            alert('Application submitted successfully!');
-            fetchJobs();
+            const response = await api.get(`/jobs/${jobId}/interview-status/${userId}`);
+            return response;
+        } catch (error) {
+            return { hasInterview: false };
+        }
+    };
+
+    const applyToJob = async (jobId) => {
+        if (!userId) {
+            alert('Please login to apply for jobs');
+            navigate('/login');
+            return;
+        }
+
+        setApplying(true);
+
+        try {
+            // Check if already applied
+            const existingStatus = await checkExistingApplication(jobId);
+
+            if (existingStatus.hasInterview && existingStatus.interview?.status === 'completed') {
+                alert('You have already completed the interview for this job');
+                setApplying(false);
+                return;
+            }
+
+            if (existingStatus.hasInterview && existingStatus.interview?.id) {
+                // Resume existing interview
+                navigate(`/interview/${existingStatus.interview.id}`);
+                return;
+            }
+
+            // Apply to job
+            const response = await api.post(`/jobs/${jobId}/apply`, { userId });
+
+            if (response.interviewRequired && response.interviewId) {
+                // Show success message with match score if available
+                const matchMessage = response.matchScore
+                    ? `Your profile matches ${response.matchScore.overall}% with this job!`
+                    : '';
+
+                setShowApplyModal(true);
+
+                // Auto redirect after showing modal
+                setTimeout(() => {
+                    setShowApplyModal(false);
+                    navigate(`/interview/${response.interviewId}`);
+                }, 2500);
+            } else {
+                alert('Application submitted successfully!');
+                fetchJobs();
+            }
         } catch (error) {
             console.error('Error applying to job:', error);
-            alert(error.response?.data?.error || 'Failed to apply');
+            alert(error.error || 'Failed to apply. Please try again.');
+        } finally {
+            setApplying(false);
         }
+    };
+
+    const hasApplied = (job) => {
+        return job.applicants?.some(app => app.userId === userId || app.userId?._id === userId);
     };
 
     return (
         <div className="job-listings">
+            {/* Apply Success Modal */}
+            {showApplyModal && (
+                <div className="modal-overlay">
+                    <div className="apply-modal card-glass">
+                        <div className="success-icon">✓</div>
+                        <h2>Application Submitted!</h2>
+                        <p>Preparing your AI Interview...</p>
+                        <div className="loading-bar">
+                            <div className="loading-progress"></div>
+                        </div>
+                        <p className="modal-note">You'll be evaluated by our AI interviewer</p>
+                    </div>
+                </div>
+            )}
+
             <div className="jobs-sidebar">
                 <div className="filters-section">
                     <h3>Filters</h3>
@@ -93,6 +167,9 @@ const JobListingsPage = () => {
                             <p className="job-meta">
                                 {job.company?.location} • {job.jobDetails?.type}
                             </p>
+                            {hasApplied(job) && (
+                                <span className="applied-badge">Applied</span>
+                            )}
                         </div>
                     ))}
                     {jobs.length === 0 && (
@@ -108,10 +185,14 @@ const JobListingsPage = () => {
                     <>
                         <div className="job-header">
                             <div className="company-logo">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                                    <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-                                    <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="currentColor" strokeWidth="2" />
-                                </svg>
+                                {selectedJob.company?.logo ? (
+                                    <img src={selectedJob.company.logo} alt={selectedJob.company.name} />
+                                ) : (
+                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
+                                        <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+                                        <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="currentColor" strokeWidth="2" />
+                                    </svg>
+                                )}
                             </div>
                             <div className="job-title-section">
                                 <h1>{selectedJob.title}</h1>
@@ -125,9 +206,26 @@ const JobListingsPage = () => {
                                 </div>
                             </div>
                             <div className="job-actions">
-                                <button className="btn btn-primary" onClick={() => applyToJob(selectedJob._id)}>
-                                    Apply Now
-                                </button>
+                                {hasApplied(selectedJob) ? (
+                                    <button className="btn btn-success" disabled>
+                                        ✓ Applied
+                                    </button>
+                                ) : (
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => applyToJob(selectedJob._id)}
+                                        disabled={applying}
+                                    >
+                                        {applying ? (
+                                            <>
+                                                <span className="loading-spinner"></span>
+                                                Applying...
+                                            </>
+                                        ) : (
+                                            <>Apply Now</>
+                                        )}
+                                    </button>
+                                )}
                                 <button className="btn btn-secondary">
                                     Save
                                 </button>
@@ -170,6 +268,21 @@ const JobListingsPage = () => {
                                     </p>
                                 </section>
                             )}
+
+                            {/* AI Interview Notice */}
+                            <section className="interview-notice card-glass">
+                                <h3>🤖 AI Interview Required</h3>
+                                <p>
+                                    After applying, you'll complete a brief AI-powered interview. Our AI will:
+                                </p>
+                                <ul>
+                                    <li>✓ Match your resume with the job requirements</li>
+                                    <li>✓ Ask personalized questions based on your experience</li>
+                                    <li>✓ Evaluate your responses in real-time</li>
+                                    <li>✓ Generate a comprehensive report for the recruiter</li>
+                                </ul>
+                                <p className="text-muted">Typically takes 15-20 minutes</p>
+                            </section>
                         </div>
                     </>
                 ) : (
