@@ -9,11 +9,25 @@ const HomeFeed = () => {
     const [mediaPreview, setMediaPreview] = useState(null);
     const [mediaType, setMediaType] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState(null);
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
         fetchPosts();
+        fetchUser();
     }, []);
+
+    const fetchUser = async () => {
+        try {
+            if (userId) {
+                const response = await api.get(`/users/${userId}`);
+                const userData = response.data.data || response.data;
+                setUser(userData);
+            }
+        } catch (error) {
+            console.error('Error fetching user:', error);
+        }
+    };
 
     const fetchPosts = async () => {
         try {
@@ -144,11 +158,15 @@ const HomeFeed = () => {
             <div className="post-creator card">
                 <div className="creator-header">
                     <div className="user-avatar">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" fill="var(--primary)" />
-                            <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
-                            <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
-                        </svg>
+                        {user?.profile?.photo ? (
+                            <img src={user.profile.photo} alt="Profile" />
+                        ) : (
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" fill="var(--primary)" />
+                                <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
+                                <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
+                            </svg>
+                        )}
                     </div>
                     <textarea
                         className="post-input"
@@ -232,11 +250,15 @@ const HomeFeed = () => {
                             <div className="card-header">
                                 <div className="user-info">
                                     <div className="user-avatar">
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                                            <circle cx="12" cy="12" r="10" fill="var(--primary)" />
-                                            <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
-                                            <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
-                                        </svg>
+                                        {post.userId?.profile?.photo ? (
+                                            <img src={post.userId.profile.photo} alt="Profile" />
+                                        ) : (
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                                                <circle cx="12" cy="12" r="10" fill="var(--primary)" />
+                                                <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
+                                                <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
+                                            </svg>
+                                        )}
                                     </div>
                                     <div>
                                         <h4>{post.userId?.profile?.name || 'Anonymous'}</h4>

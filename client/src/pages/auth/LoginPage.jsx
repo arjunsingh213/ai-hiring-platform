@@ -34,12 +34,16 @@ const LoginPage = () => {
             });
 
             console.log('Full login response:', response);
+            console.log('Response.success:', response.success);
             console.log('Response.data:', response.data);
-            console.log('Response.data.data:', response.data.data);
 
-            // Note: axios interceptor returns response.data, so response here is the backend's response.data
-            if (response.success) {
+            // Axios interceptor unwraps response.data, so response IS the backend's response.data
+            // Backend returns: { success: true, data: { user, token }, message }
+            if (response.success && response.data) {
                 const { user, token } = response.data;
+
+                console.log('Extracted user:', user);
+                console.log('Extracted token:', token);
 
                 // Store auth data
                 localStorage.setItem('token', token);
@@ -47,15 +51,21 @@ const LoginPage = () => {
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('userEmail', user.email);
 
+                console.log('Stored userId:', localStorage.getItem('userId'));
+
                 // Redirect based on role
                 if (user.role === 'jobseeker') {
                     navigate('/jobseeker/home');
                 } else {
                     navigate('/recruiter/home');
                 }
+            } else {
+                console.error('Login response missing success or data:', response);
+                setError('Login failed. Invalid response from server.');
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Login failed. Please try again.');
+            console.error('Login error:', err);
+            setError(err.error || 'Login failed. Please try again.');
         } finally {
             setLoading(false);
         }

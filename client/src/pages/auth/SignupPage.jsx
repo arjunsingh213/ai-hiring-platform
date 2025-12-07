@@ -84,12 +84,15 @@ const SignupPage = () => {
             });
 
             console.log('Full response:', response);
-            console.log('Response data:', response.data);
-            console.log('Response data.data:', response.data.data);
+            console.log('Response.success:', response.success);
+            console.log('Response.data:', response.data);
 
-            // Note: axios interceptor returns response.data
-            if (response.success) {
+            // Axios interceptor unwraps response.data
+            if (response.success && response.data) {
                 const { user, token } = response.data;
+
+                console.log('Signup user:', user);
+                console.log('Signup token:', token);
 
                 // Store auth data
                 localStorage.setItem('token', token);
@@ -97,11 +100,17 @@ const SignupPage = () => {
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('userEmail', user.email);
 
+                console.log('Stored userId after signup:', localStorage.getItem('userId'));
+
                 // Redirect to onboarding to complete profile
                 navigate(`/onboarding/${user.role}`);
+            } else {
+                console.error('Signup response missing success or data:', response);
+                setError('Registration failed. Invalid response from server.');
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Registration failed. Please try again.');
+            console.error('Signup error:', err);
+            setError(err.error || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }

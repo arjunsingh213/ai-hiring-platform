@@ -36,6 +36,7 @@ router.get('/:id', async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
+        // Return consistent structure
         res.json({ success: true, data: user });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -64,6 +65,63 @@ router.put('/:id', async (req, res) => {
 
         res.json({ success: true, data: user });
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Upload profile photo
+router.post('/upload-photo', upload.single('photo'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        // Upload to cloudinary
+        const uploadPromise = new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'profile_photos',
+                    public_id: `user_${userId}_${Date.now()}`,
+                    transformation: [
+                        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+                        { quality: 'auto' }
+                    ]
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
+        });
+
+        const result = await uploadPromise;
+
+        // Update user profile with photo URL
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $set: { 'profile.photo': result.secure_url } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                photoUrl: result.secure_url,
+                user: user
+            }
+        });
+    } catch (error) {
+        console.error('Photo upload error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

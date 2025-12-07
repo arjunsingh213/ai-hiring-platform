@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import ImageCropModal from '../../components/ImageCropModal';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -17,6 +18,8 @@ const ProfilePage = () => {
         portfolio: ''
     });
     const [loading, setLoading] = useState(false);
+    const [showCropModal, setShowCropModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
@@ -87,26 +90,50 @@ const ProfilePage = () => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.onchange = async (e) => {
+        input.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                const formData = new FormData();
-                formData.append('photo', file);
-                formData.append('userId', userId);
-
-                try {
-                    await api.post('/users/upload-photo', formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
-                    fetchUser();
-                    alert('Photo uploaded successfully!');
-                } catch (error) {
-                    console.error('Error uploading photo:', error);
-                    alert('Failed to upload photo');
-                }
+                // Convert file to data URL for cropper
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setSelectedImage(reader.result);
+                    setShowCropModal(true);
+                };
+                reader.readAsDataURL(file);
             }
         };
         input.click();
+    };
+
+    const handleCropComplete = async (croppedBlob) => {
+        try {
+            const formData = new FormData();
+            formData.append('photo', croppedBlob, 'profile-photo.jpg');
+            formData.append('userId', userId);
+
+            console.log('Uploading cropped photo...');
+            console.log('Blob size:', croppedBlob.size, 'bytes');
+
+            const response = await api.post('/users/upload-photo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            console.log('Upload response:', response);
+
+            // Close modal and refresh user data
+            setShowCropModal(false);
+            setSelectedImage(null);
+            await fetchUser();
+            alert('Photo uploaded successfully!');
+        } catch (error) {
+            console.error('Error uploading photo:', error);
+            alert('Failed to upload photo: ' + (error.error || error.message || 'Unknown error'));
+        }
+    };
+
+    const handleCropCancel = () => {
+        setShowCropModal(false);
+        setSelectedImage(null);
     };
 
     if (!user) {
@@ -120,11 +147,24 @@ const ProfilePage = () => {
                 <div className="profile-info">
                     <div className="profile-avatar-container">
                         <div className="profile-avatar">
-                            <svg width="100" height="100" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" fill="var(--primary)" />
-                                <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
-                                <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
-                            </svg>
+                            {user.profile?.photo ? (
+                                <img
+                                    src={user.profile.photo}
+                                    alt="Profile"
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        borderRadius: '50%'
+                                    }}
+                                />
+                            ) : (
+                                <svg width="100" height="100" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" fill="var(--primary)" />
+                                    <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
+                                    <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
+                                </svg>
+                            )}
                         </div>
                         <button className="btn btn-sm btn-secondary" onClick={handlePhotoUpload}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -324,6 +364,14 @@ const ProfilePage = () => {
                     )}
                 </div>
             </div>
+
+            {showCropModal && selectedImage && (
+                <ImageCropModal
+                    image={selectedImage}
+                    onComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                />
+            )}
         </div>
     );
 };
