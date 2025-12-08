@@ -618,6 +618,220 @@ router.get('/:id/report', async (req, res) => {
     }
 });
 
+// Get DETAILED interview results with question-by-question breakdown
+router.get('/:id/detailed-results', async (req, res) => {
+    try {
+        const interview = await Interview.findById(req.params.id)
+            .populate('userId', 'profile.name profile.photo profile.email')
+            .populate('resumeId')
+            .populate('jobId', 'title company description requirements');
+
+        if (!interview) {
+            return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        if (interview.status !== 'completed') {
+            return res.status(400).json({
+                success: false,
+                error: 'Interview not completed yet'
+            });
+        }
+
+        // Build question-by-question breakdown
+        const breakdown = [];
+        const questions = interview.questions || [];
+        const responses = interview.responses || [];
+
+        questions.forEach((q, index) => {
+            const response = responses.find(r => r.questionIndex === index) || responses[index];
+            const answer = response?.answer || 'No answer provided';
+
+            // Evaluate answer quality for display
+            const wordCount = answer.trim().split(/\s+/).filter(w => w.length > 0).length;
+            let qualityScore = 'poor';
+            let qualityLabel = 'Needs Improvement';
+
+            if (wordCount >= 50) {
+                qualityScore = 'excellent';
+                qualityLabel = 'Excellent Response';
+            } else if (wordCount >= 30) {
+                qualityScore = 'good';
+                qualityLabel = 'Good Response';
+            } else if (wordCount >= 15) {
+                qualityScore = 'fair';
+                qualityLabel = 'Fair Response';
+            }
+
+            breakdown.push({
+                questionNumber: index + 1,
+                question: q.question,
+                category: q.category || 'general',
+                difficulty: q.difficulty || 'medium',
+                assessingSkill: q.assessingSkill || 'General Knowledge',
+                expectedTopics: q.expectedTopics || [],
+                answer: answer,
+                timeSpent: response?.timeSpent || 0,
+                qualityScore,
+                qualityLabel,
+                wordCount,
+                feedback: response?.evaluation?.feedback || generateFeedbackForAnswer(answer, q, wordCount)
+            });
+        });
+
+        // Calculate round-wise scores
+        const technicalQuestions = breakdown.filter(b =>
+            ['technical', 'problem_solving', 'role_fit'].includes(b.category)
+        );
+        const hrQuestions = breakdown.filter(b =>
+            !['technical', 'problem_solving', 'role_fit'].includes(b.category)
+        );
+
+        // Generate improvement recommendations
+        const recommendations = generateImprovementRecommendations(
+            interview.scoring,
+            breakdown
+        );
+
+        res.json({
+            success: true,
+            data: {
+                interview: {
+                    id: interview._id,
+                    interviewType: interview.interviewType,
+                    status: interview.status,
+                    duration: interview.duration,
+                    completedAt: interview.completedAt,
+                    passed: interview.passed
+                },
+                candidate: interview.userId ? {
+                    name: interview.userId.profile?.name,
+                    photo: interview.userId.profile?.photo,
+                    email: interview.userId.profile?.email
+                } : null,
+                job: interview.jobId ? {
+                    title: interview.jobId.title,
+                    company: interview.jobId.company?.name || interview.jobId.company,
+                    description: interview.jobId.description
+                } : null,
+                scoring: {
+                    overall: interview.scoring?.overallScore || 0,
+                    technical: interview.scoring?.technicalAccuracy || 0,
+                    communication: interview.scoring?.communication || 0,
+                    confidence: interview.scoring?.confidence || 0,
+                    relevance: interview.scoring?.relevance || 0
+                },
+                strengths: interview.scoring?.strengths || [],
+                weaknesses: interview.scoring?.weaknesses || [],
+                detailedFeedback: interview.scoring?.detailedFeedback || '',
+                breakdown: breakdown,
+                rounds: {
+                    technical: {
+                        questionsCount: technicalQuestions.length,
+                        questions: technicalQuestions
+                    },
+                    hr: {
+                        questionsCount: hrQuestions.length,
+                        questions: hrQuestions
+                    }
+                },
+                recommendations: recommendations,
+                matchScore: interview.matchScore
+            }
+        });
+    } catch (error) {
+        console.error('Detailed results error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Generate feedback for a specific answer
+ */
+function generateFeedbackForAnswer(answer, question, wordCount) {
+    if (wordCount < 5) {
+        return 'This response is too brief. Consider providing more context and details.';
+    }
+    if (wordCount < 20) {
+        return 'Your response could benefit from more detail. Try to explain your reasoning and provide specific examples.';
+    }
+    if (wordCount < 50) {
+        return 'Good effort! Adding specific examples or metrics would strengthen your response.';
+    }
+    return 'Well-structured response with good detail.';
+}
+
+/**
+ * Generate improvement recommendations based on performance
+ */
+function generateImprovementRecommendations(scoring, breakdown) {
+    const recommendations = [];
+
+    // Score-based recommendations
+    if ((scoring?.technicalAccuracy || 0) < 60) {
+        recommendations.push({
+            area: 'Technical Skills',
+            priority: 'high',
+            suggestion: 'Focus on deepening your technical knowledge. Consider practicing coding exercises, reviewing system design concepts, and staying updated with industry best practices.',
+            resources: ['LeetCode', 'System Design Primer', 'Technical blogs']
+        });
+    }
+
+    if ((scoring?.communication || 0) < 60) {
+        recommendations.push({
+            area: 'Communication',
+            priority: 'high',
+            suggestion: 'Work on structuring your responses using the STAR method (Situation, Task, Action, Result). Practice articulating your thoughts clearly and concisely.',
+            resources: ['STAR Method Guide', 'Toastmasters', 'Mock interviews']
+        });
+    }
+
+    if ((scoring?.confidence || 0) < 60) {
+        recommendations.push({
+            area: 'Confidence',
+            priority: 'medium',
+            suggestion: 'Build confidence by practicing with peers, recording yourself, and reflecting on your achievements. Preparation is key to confidence.',
+            resources: ['Mock interview platforms', 'Self-recording practice']
+        });
+    }
+
+    // Breakdown-based recommendations
+    const shortResponses = breakdown.filter(b => b.wordCount < 20).length;
+    if (shortResponses > breakdown.length / 2) {
+        recommendations.push({
+            area: 'Response Depth',
+            priority: 'high',
+            suggestion: 'Your responses tend to be brief. Practice elaborating on your answers with specific examples, quantifiable achievements, and detailed explanations.',
+            resources: ['Interview preparation guides', 'STAR method examples']
+        });
+    }
+
+    // Category-specific recommendations
+    const poorTechnical = breakdown.filter(b =>
+        ['technical', 'problem_solving'].includes(b.category) &&
+        b.qualityScore === 'poor'
+    );
+    if (poorTechnical.length > 0) {
+        recommendations.push({
+            area: 'Problem Solving',
+            priority: 'medium',
+            suggestion: `Review and practice ${poorTechnical.map(b => b.assessingSkill).join(', ')} skills. Break down complex problems into smaller steps and explain your thought process.`,
+            resources: ['Coding practice platforms', 'Algorithm courses']
+        });
+    }
+
+    // Add positive note if doing well
+    if ((scoring?.overallScore || 0) >= 70) {
+        recommendations.push({
+            area: 'Keep It Up',
+            priority: 'low',
+            suggestion: 'You performed well in this interview! Continue refining your skills and stay prepared for future opportunities.',
+            resources: []
+        });
+    }
+
+    return recommendations;
+}
+
 // Get user's interviews
 router.get('/user/:userId', async (req, res) => {
     try {

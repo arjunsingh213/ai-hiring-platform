@@ -21,7 +21,7 @@ const MessageButton = () => {
     const fetchUnreadCount = async () => {
         try {
             const response = await api.get(`/messages/unread-count?userId=${userId}`);
-            setUnreadCount(response.data.count || 0);
+            setUnreadCount(response.count || 0);
         } catch (error) {
             console.error('Error fetching unread count:', error);
         }

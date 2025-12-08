@@ -3,6 +3,26 @@
     margin: 0 auto;
 }
 
+.analytics-page .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.analytics-page .header-content {
+    flex: 1;
+    min-width: 250px;
+}
+
+.analytics-page .header-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -12,6 +32,17 @@
 
 .stat-card {
     padding: var(--spacing-xl);
+    transition: all var(--transition-normal);
+}
+
+.stat-card.clickable {
+    cursor: pointer;
+}
+
+.stat-card.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
 }
 
 .stat-card h3 {
@@ -115,6 +146,42 @@
     padding: var(--spacing-lg);
     background: var(--bg-tertiary);
     border-radius: var(--radius-lg);
+    transition: all var(--transition-normal);
+}
+
+.activity-item.clickable {
+    cursor: pointer;
+}
+
+.activity-item.clickable:hover {
+    background: var(--bg-secondary);
+    transform: translateX(4px);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.section-header h3 {
+    margin: 0;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    font-weight: 500;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+}
+
+.btn-text:hover {
+    background: var(--bg-tertiary);
 }
 
 .activity-icon {
@@ -137,8 +204,108 @@
     margin-bottom: var(--spacing-xs);
 }
 
+.activity-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.activity-score {
+    color: var(--success);
+    font-weight: 500;
+}
+
+/* Mini Stats Row */
+.mini-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.mini-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+}
+
+.mini-stat-icon {
+    font-size: 1.25rem;
+}
+
+.mini-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.mini-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mini-stat.success .mini-stat-value {
+    color: var(--success);
+}
+
+.mini-stat.danger .mini-stat-value {
+    color: var(--danger);
+}
+
+.mini-stat.info .mini-stat-value {
+    color: var(--info);
+}
+
+.mini-stat.primary .mini-stat-value {
+    color: var(--primary);
+}
+
+/* No Data State */
+.no-data,
+.no-activity {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-muted);
+}
+
+.no-data p:first-child,
+.no-activity p:first-child {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Error State */
+.error-container {
+    text-align: center;
+    padding: var(--spacing-3xl);
+}
+
+.error-container p {
+    margin-bottom: var(--spacing-lg);
+    color: var(--danger);
+}
+
+/* Negative stat change */
+.stat-change.negative {
+    color: var(--danger);
+}
+
 @media (max-width: 768px) {
     .charts-grid {
         grid-template-columns: 1fr;
+    }
+
+    .mini-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .skill-bar {
+        grid-template-columns: 80px 1fr 40px;
     }
 }

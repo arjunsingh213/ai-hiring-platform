@@ -41,7 +41,7 @@ const NotificationCenter = () => {
     const fetchUnreadCount = async () => {
         try {
             const response = await api.get(`/notifications/unread-count?userId=${userId}`);
-            setUnreadCount(response.data.count || 0);
+            setUnreadCount(response.count || 0);
         } catch (error) {
             console.error('Error fetching unread count:', error);
         }
@@ -51,7 +51,7 @@ const NotificationCenter = () => {
         setLoading(true);
         try {
             const response = await api.get(`/notifications?userId=${userId}&limit=10`);
-            setNotifications(response.data.notifications || []);
+            setNotifications(response.notifications || []);
         } catch (error) {
             console.error('Error fetching notifications:', error);
         } finally {

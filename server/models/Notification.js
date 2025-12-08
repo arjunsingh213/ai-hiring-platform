@@ -25,11 +25,15 @@ const notificationSchema = new mongoose.Schema({
             'post_engagement',
             'motivational',
             'system',
-            // New social interaction types
+            // Social interaction types
             'follow',
             'like',
             'comment',
-            'mention'
+            'mention',
+            // Hiring workflow types
+            'hired',
+            'rejected',
+            'interview_completed'
         ],
         required: true
     },

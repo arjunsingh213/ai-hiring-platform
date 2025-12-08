@@ -3,8 +3,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import RecruiterSidebar from '../../components/recruiter/RecruiterSidebar';
 import TopNav from '../../components/TopNav';
 import RecruiterHome from './RecruiterHome';
-import CandidatesPage from './CandidatesPage';
+// CandidatesPage removed - merged into RecruiterApplicationsPage (Talent Pipeline)
+import RecruiterApplicationsPage from './RecruiterApplicationsPage';
 import JobPostingPage from './JobPostingPage';
+import MyJobsPage from './MyJobsPage';
 import RecruiterAnalytics from './RecruiterAnalytics';
 import RecruiterMessages from './RecruiterMessages';
 import RecruiterSettings from './RecruiterSettings';
@@ -19,7 +21,10 @@ const RecruiterDashboard = () => {
                 <Routes>
                     <Route path="/" element={<Navigate to="home" replace />} />
                     <Route path="home" element={<RecruiterHome />} />
-                    <Route path="candidates" element={<CandidatesPage />} />
+                    {/* Redirect old candidates route to applications (Talent Pipeline) */}
+                    <Route path="candidates" element={<Navigate to="/recruiter/applications" replace />} />
+                    <Route path="applications" element={<RecruiterApplicationsPage />} />
+                    <Route path="my-jobs" element={<MyJobsPage />} />
                     <Route path="post-job" element={<JobPostingPage />} />
                     <Route path="analytics" element={<RecruiterAnalytics />} />
                     <Route path="messages" element={<RecruiterMessages />} />

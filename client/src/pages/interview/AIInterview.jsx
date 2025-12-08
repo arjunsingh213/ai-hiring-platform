@@ -20,11 +20,15 @@ const AIInterview = () => {
     const [currentRound, setCurrentRound] = useState('technical');
     const [allAnswers, setAllAnswers] = useState([]);
 
-    // Speech states
+    // Speech-to-Text states
     const [isListening, setIsListening] = useState(false);
     const [speechSupported, setSpeechSupported] = useState(false);
     const [transcript, setTranscript] = useState('');
     const recognitionRef = useRef(null);
+
+    // Text-to-Speech states
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [ttsSupported, setTtsSupported] = useState(false);
 
     // Init Speech Recognition
     useEffect(() => {
@@ -80,10 +84,73 @@ const AIInterview = () => {
         };
     }, []);
 
+    // Init Text-to-Speech
+    useEffect(() => {
+        if ('speechSynthesis' in window) {
+            setTtsSupported(true);
+        }
+    }, []);
+
+    // Auto-speak question when it changes
+    useEffect(() => {
+        if (interview && interview.questions && interview.questions[currentQuestionIndex] && ttsSupported && !completed) {
+            // Small delay to let the UI update first
+            const timer = setTimeout(() => {
+                speakQuestion();
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [currentQuestionIndex, interview, ttsSupported, completed]);
+
+    // Text-to-Speech function
+    const speakQuestion = () => {
+        if (!ttsSupported) {
+            alert('Text-to-Speech is not supported in your browser');
+            return;
+        }
+
+        // Stop any current speech
+        window.speechSynthesis.cancel();
+
+        const question = interview?.questions?.[currentQuestionIndex]?.question;
+        if (!question) return;
+
+        const utterance = new SpeechSynthesisUtterance(question);
+        utterance.rate = 0.9; // Slightly slower for clarity
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        utterance.lang = 'en-US';
+
+        // Get available voices and prefer a natural-sounding one
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v =>
+            v.name.includes('Google') || v.name.includes('Microsoft') || v.name.includes('Natural')
+        ) || voices.find(v => v.lang.startsWith('en'));
+
+        if (preferredVoice) {
+            utterance.voice = preferredVoice;
+        }
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+    const stopSpeaking = () => {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+    };
+
     const toggleListening = () => {
         if (!speechSupported) {
             alert('Use Chrome for speech recognition');
             return;
+        }
+        // Stop TTS if speaking
+        if (isSpeaking) {
+            stopSpeaking();
         }
         if (isListening) {
             recognitionRef.current.stop();
@@ -366,6 +433,15 @@ const AIInterview = () => {
                         {currentQuestion.assessingSkill && (
                             <p className="assessing-skill">Skill: {currentQuestion.assessingSkill}</p>
                         )}
+                        {/* Text-to-Speech Button */}
+                        <button
+                            className={`tts-btn ${isSpeaking ? 'speaking' : ''}`}
+                            onClick={isSpeaking ? stopSpeaking : speakQuestion}
+                            disabled={!ttsSupported}
+                            title={isSpeaking ? 'Stop reading' : 'Read question aloud'}
+                        >
+                            {isSpeaking ? '🔊 Stop Reading' : '🔈 Read Question'}
+                        </button>
                     </div>
 
                     <div className="answer-section">

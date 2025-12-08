@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import './JobPostingPage.css';
 
 const JobPostingPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const toast = useToast();
+
+    // Check if we're in edit mode
+    const editMode = location.state?.editMode || false;
+    const existingJob = location.state?.jobData || null;
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -20,7 +28,30 @@ const JobPostingPage = () => {
         currency: 'USD'
     });
     const [loading, setLoading] = useState(false);
-    const userId = localStorage.getItem('userId');
+
+    // Get user from localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user._id || localStorage.getItem('userId');
+
+    // Pre-fill form when editing
+    useEffect(() => {
+        if (editMode && existingJob) {
+            setFormData({
+                title: existingJob.title || '',
+                description: existingJob.description || '',
+                skills: existingJob.requirements?.skills?.join(', ') || '',
+                minExperience: existingJob.requirements?.minExperience?.toString() || '',
+                maxExperience: existingJob.requirements?.maxExperience?.toString() || '',
+                education: existingJob.requirements?.education?.[0] || '',
+                type: existingJob.jobDetails?.type || 'full-time',
+                location: existingJob.jobDetails?.location || '',
+                remote: existingJob.jobDetails?.remote || false,
+                salaryMin: existingJob.jobDetails?.salary?.min?.toString() || '',
+                salaryMax: existingJob.jobDetails?.salary?.max?.toString() || '',
+                currency: existingJob.jobDetails?.salary?.currency || 'USD'
+            });
+        }
+    }, [editMode, existingJob]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -40,10 +71,10 @@ const JobPostingPage = () => {
                 title: formData.title,
                 description: formData.description,
                 requirements: {
-                    skills: formData.skills.split(',').map(s => s.trim()),
+                    skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
                     minExperience: parseInt(formData.minExperience) || 0,
                     maxExperience: parseInt(formData.maxExperience) || 10,
-                    education: [formData.education]
+                    education: [formData.education].filter(e => e)
                 },
                 jobDetails: {
                     type: formData.type,
@@ -59,12 +90,23 @@ const JobPostingPage = () => {
                 status: 'active'
             };
 
-            await api.post('/jobs', jobData);
-            alert('Job posted successfully!');
-            navigate('/recruiter/home');
+            if (editMode && existingJob) {
+                // UPDATE existing job
+                await api.put(`/jobs/${existingJob._id}`, jobData);
+                toast.success('Job updated successfully! ✅');
+            } else {
+                // CREATE new job
+                await api.post('/jobs', jobData);
+                toast.success('Job posted successfully! 🎉');
+            }
+
+            // Navigate after a short delay so user can see the toast
+            setTimeout(() => {
+                navigate('/recruiter/my-jobs');
+            }, 1500);
         } catch (error) {
-            console.error('Error posting job:', error);
-            alert('Failed to post job');
+            console.error('Error saving job:', error);
+            toast.error('Failed to post job. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -73,8 +115,10 @@ const JobPostingPage = () => {
     return (
         <div className="job-posting-page">
             <div className="page-header">
-                <h1>Post a New Job</h1>
-                <p className="text-muted">Fill in the details to create a job posting</p>
+                <h1>{editMode ? '✏️ Edit Job' : 'Post a New Job'}</h1>
+                <p className="text-muted">
+                    {editMode ? 'Update the job details below' : 'Fill in the details to create a job posting'}
+                </p>
             </div>
 
             <form onSubmit={handleSubmit} className="job-form card">
@@ -257,11 +301,14 @@ const JobPostingPage = () => {
                 </section>
 
                 <div className="form-actions">
-                    <button type="button" className="btn btn-secondary" onClick={() => navigate('/recruiter/home')}>
+                    <button type="button" className="btn btn-secondary" onClick={() => navigate('/recruiter/my-jobs')}>
                         Cancel
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading ? 'Posting...' : 'Post Job'}
+                        {loading 
+                            ? (editMode ? 'Updating...' : 'Posting...') 
+                            : (editMode ? '✅ Update Job' : '🚀 Post Job')
+                        }
                     </button>
                 </div>
             </form>

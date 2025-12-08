@@ -45,14 +45,14 @@ const MessagingPage = () => {
         // Apply search filter
         if (searchQuery) {
             filtered = filtered.filter(conv =>
-                conv.user.profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                conv.otherUser?.profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 conv.lastMessage?.content?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
 
         // Apply tab filter
         if (activeTab === 'recruiters') {
-            filtered = filtered.filter(conv => conv.user.role === 'recruiter');
+            filtered = filtered.filter(conv => conv.otherUser?.role === 'recruiter');
         } else if (activeTab === 'unread') {
             filtered = filtered.filter(conv => conv.unreadCount > 0);
         }
@@ -67,7 +67,7 @@ const MessagingPage = () => {
 
             // Find existing conversation with this user
             const existingConv = conversations.find(conv =>
-                conv.user._id === targetUserId
+                conv.otherUser?._id === targetUserId
             );
 
             if (existingConv) {
@@ -76,7 +76,7 @@ const MessagingPage = () => {
             } else {
                 // Create a new conversation object for this user
                 const newConv = {
-                    user: location.state.selectedUser,
+                    otherUser: location.state.selectedUser,
                     lastMessage: null,
                     unreadCount: 0
                 };
@@ -116,22 +116,40 @@ const MessagingPage = () => {
 
         const messageData = {
             senderId: userId,
-            recipientId: selectedConversation.user._id,
+            receiverId: selectedConversation.otherUser._id,
             content: newMessage
         };
 
         try {
             await api.post('/messages', messageData);
             setNewMessage('');
-            fetchMessages(selectedConversation.user._id);
+            fetchMessages(selectedConversation.otherUser._id);
         } catch (error) {
             console.error('Error sending message:', error);
         }
     };
 
-    const selectConversation = (conversation) => {
+    const selectConversation = async (conversation) => {
         setSelectedConversation(conversation);
-        fetchMessages(conversation.user._id);
+        fetchMessages(conversation.otherUser._id);
+
+        // Mark messages as read if there are unread messages
+        if (conversation.unreadCount > 0) {
+            try {
+                // Mark all messages from the other user to current user as read
+                await api.put(`/messages/conversation/${conversation.otherUser._id}/${userId}/read`);
+
+                // Update local state to clear unread badge
+                setConversations(prev => prev.map(conv =>
+                    conv.otherUser?._id === conversation.otherUser._id
+                        ? { ...conv, unreadCount: 0 }
+                        : conv
+                ));
+            } catch (error) {
+                console.error('Error marking messages as read:', error);
+            }
+        }
+
         if (window.innerWidth < 768) {
             setSidebarOpen(false); // Close sidebar on mobile
         }
@@ -152,7 +170,7 @@ const MessagingPage = () => {
     };
 
     const startConversation = (user) => {
-        setSelectedConversation({ user, lastMessage: null, unreadCount: 0 });
+        setSelectedConversation({ otherUser: user, lastMessage: null, unreadCount: 0 });
         setShowNewMessageDialog(false);
         setUserSearchQuery('');
         setSearchResults([]);
@@ -172,7 +190,7 @@ const MessagingPage = () => {
                             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     </button>
-                    <h3>{selectedConversation?.user.profile?.name || 'Messages'}</h3>
+                    <h3>{selectedConversation?.otherUser?.profile?.name || 'Messages'}</h3>
                 </div>
             )}
 
@@ -224,10 +242,10 @@ const MessagingPage = () => {
                             <p>No conversations found</p>
                         </div>
                     ) : (
-                        filteredConversations.map((conv) => (
+                        filteredConversations.map((conv, index) => (
                             <div
-                                key={conv.user._id}
-                                className={`conversation-item ${selectedConversation?.user._id === conv.user._id ? 'active' : ''}`}
+                                key={conv.otherUser?._id || index}
+                                className={`conversation-item ${selectedConversation?.otherUser?._id === conv.otherUser?._id ? 'active' : ''}`}
                                 onClick={() => selectConversation(conv)}
                             >
                                 <div className="user-avatar">
@@ -238,7 +256,7 @@ const MessagingPage = () => {
                                     </svg>
                                 </div>
                                 <div className="conversation-info">
-                                    <h4>{conv.user.profile?.name || 'User'}</h4>
+                                    <h4>{conv.otherUser?.profile?.name || 'User'}</h4>
                                     <p className="last-message">{conv.lastMessage?.content?.substring(0, 40)}...</p>
                                 </div>
                                 {conv.unreadCount > 0 && (
@@ -263,8 +281,8 @@ const MessagingPage = () => {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3>{selectedConversation.user.profile?.name || 'User'}</h3>
-                                    <p className="text-muted">{selectedConversation.user.profile?.company || 'Online'}</p>
+                                    <h3>{selectedConversation.otherUser?.profile?.name || 'User'}</h3>
+                                    <p className="text-muted">{selectedConversation.otherUser?.profile?.company || 'Online'}</p>
                                 </div>
                             </div>
                         </div>
