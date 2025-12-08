@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import './JobListingsPage.css';
 
 const JobListingsPage = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [filters, setFilters] = useState({
@@ -46,7 +48,7 @@ const JobListingsPage = () => {
 
     const applyToJob = async (jobId) => {
         if (!userId) {
-            alert('Please login to apply for jobs');
+            toast.warning('Please login to apply for jobs');
             navigate('/login');
             return;
         }
@@ -58,7 +60,7 @@ const JobListingsPage = () => {
             const existingStatus = await checkExistingApplication(jobId);
 
             if (existingStatus.hasInterview && existingStatus.interview?.status === 'completed') {
-                alert('You have already completed the interview for this job');
+                toast.info('You have already completed the interview for this job');
                 setApplying(false);
                 return;
             }
@@ -86,12 +88,12 @@ const JobListingsPage = () => {
                     navigate(`/interview/${response.interviewId}`);
                 }, 2500);
             } else {
-                alert('Application submitted successfully!');
+                toast.success('Application submitted successfully!');
                 fetchJobs();
             }
         } catch (error) {
             console.error('Error applying to job:', error);
-            alert(error.error || 'Failed to apply. Please try again.');
+            toast.error(error.error || 'Failed to apply. Please try again.');
         } finally {
             setApplying(false);
         }

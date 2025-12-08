@@ -10,6 +10,8 @@ import MyJobsPage from './MyJobsPage';
 import RecruiterAnalytics from './RecruiterAnalytics';
 import RecruiterMessages from './RecruiterMessages';
 import RecruiterSettings from './RecruiterSettings';
+import HiringPipelinePage from './HiringPipelinePage';
+import OnboardingPortal from '../jobseeker/OnboardingPortal';
 import './RecruiterDashboard.css';
 
 const RecruiterDashboard = () => {
@@ -24,6 +26,8 @@ const RecruiterDashboard = () => {
                     {/* Redirect old candidates route to applications (Talent Pipeline) */}
                     <Route path="candidates" element={<Navigate to="/recruiter/applications" replace />} />
                     <Route path="applications" element={<RecruiterApplicationsPage />} />
+                    <Route path="hiring-pipeline" element={<HiringPipelinePage />} />
+                    <Route path="onboarding/:hiringId" element={<OnboardingPortal />} />
                     <Route path="my-jobs" element={<MyJobsPage />} />
                     <Route path="post-job" element={<JobPostingPage />} />
                     <Route path="analytics" element={<RecruiterAnalytics />} />

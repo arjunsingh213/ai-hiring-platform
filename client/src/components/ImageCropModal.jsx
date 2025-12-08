@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
+import { useToast } from './Toast';
 import './ImageCropModal.css';
 
 const ImageCropModal = ({ image, onComplete, onCancel }) => {
+    const toast = useToast();
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -70,7 +72,7 @@ const ImageCropModal = ({ image, onComplete, onCancel }) => {
             onComplete(croppedBlob);
         } catch (error) {
             console.error('Error cropping image:', error);
-            alert('Failed to crop image. Please try again.');
+            toast.error('Failed to crop image. Please try again.');
         }
     };
 

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const userId = localStorage.getItem('userId');
     const [activeTab, setActiveTab] = useState('account');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showFinalConfirm, setShowFinalConfirm] = useState(false);
     const [settings, setSettings] = useState({
         notifications: {
             email: true,
@@ -47,10 +52,10 @@ const SettingsPage = () => {
         try {
             // Save settings to backend
             await api.put(`/users/${userId}/settings`, settings);
-            alert('Settings saved successfully!');
+            toast.success('Settings saved successfully!');
         } catch (error) {
             console.error('Error saving settings:', error);
-            alert('Failed to save settings');
+            toast.error('Failed to save settings');
         } finally {
             setLoading(false);
         }
@@ -63,12 +68,18 @@ const SettingsPage = () => {
     };
 
     const handleDeleteAccount = () => {
-        if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-            if (window.confirm('This will permanently delete all your data. Are you absolutely sure?')) {
-                // Delete account logic
-                alert('Account deletion feature will be implemented');
-            }
-        }
+        setShowDeleteConfirm(true);
+    };
+
+    const handleFirstConfirm = () => {
+        setShowDeleteConfirm(false);
+        setShowFinalConfirm(true);
+    };
+
+    const handleFinalConfirm = () => {
+        setShowFinalConfirm(false);
+        // Delete account logic
+        toast.info('Account deletion feature will be implemented');
     };
 
     return (
@@ -312,6 +323,28 @@ const SettingsPage = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Delete Account?"
+                message="Are you sure you want to delete your account? This action cannot be undone."
+                confirmText="Yes, Continue"
+                cancelText="Cancel"
+                variant="warning"
+                onConfirm={handleFirstConfirm}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
+
+            <ConfirmDialog
+                isOpen={showFinalConfirm}
+                title="Final Confirmation"
+                message="This will permanently delete all your data including your profile, applications, and messages. Are you absolutely sure?"
+                confirmText="Delete Forever"
+                cancelText="Cancel"
+                variant="danger"
+                onConfirm={handleFinalConfirm}
+                onCancel={() => setShowFinalConfirm(false)}
+            />
         </div>
     );
 };

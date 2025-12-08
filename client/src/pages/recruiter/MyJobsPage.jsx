@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import '../jobseeker/JobListingsPage.css';
 
 const MyJobsPage = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -123,7 +125,7 @@ const MyJobsPage = () => {
                 console.error('Error deleting job:', error);
                 // Restore job if delete failed
                 setJobs(prev => [...prev, jobToDelete]);
-                alert('Failed to delete job: ' + (error.response?.data?.error || error.message));
+                toast.error('Failed to delete job: ' + (error.response?.data?.error || error.message));
             }
         }, UNDO_SECONDS * 1000);
     };

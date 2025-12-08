@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import './AIInterview.css';
 
 const AIInterview = () => {
     const { interviewId } = useParams();
     const navigate = useNavigate();
+    const toast = useToast();
     const videoRef = useRef(null);
 
     const [interview, setInterview] = useState(null);
@@ -67,7 +69,7 @@ const AIInterview = () => {
             recognition.onerror = (event) => {
                 console.error('Speech error:', event.error);
                 if (event.error === 'not-allowed') {
-                    alert('Microphone access denied');
+                    toast.error('Microphone access denied');
                 }
             };
 
@@ -105,7 +107,7 @@ const AIInterview = () => {
     // Text-to-Speech function
     const speakQuestion = () => {
         if (!ttsSupported) {
-            alert('Text-to-Speech is not supported in your browser');
+            toast.warning('Text-to-Speech is not supported in your browser');
             return;
         }
 
@@ -145,7 +147,7 @@ const AIInterview = () => {
 
     const toggleListening = () => {
         if (!speechSupported) {
-            alert('Use Chrome for speech recognition');
+            toast.warning('Use Chrome for speech recognition');
             return;
         }
         // Stop TTS if speaking
@@ -232,7 +234,7 @@ const AIInterview = () => {
 
     const submitAnswer = async () => {
         if (!answer.trim()) {
-            alert('Please provide an answer');
+            toast.warning('Please provide an answer');
             return;
         }
         if (isListening) {
@@ -275,7 +277,7 @@ const AIInterview = () => {
             }
         } catch (e) {
             console.error('Submit error:', e);
-            alert('Failed to submit');
+            toast.error('Failed to submit');
         } finally {
             setSubmitting(false);
         }

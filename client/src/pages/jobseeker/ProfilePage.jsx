@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import ImageCropModal from '../../components/ImageCropModal';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
+    const toast = useToast();
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -47,7 +49,7 @@ const ProfilePage = () => {
             }
         } catch (error) {
             console.error('Error fetching user:', error);
-            alert('Failed to load profile. Please try again.');
+            toast.error('Failed to load profile. Please try again.');
         }
     };
 
@@ -77,10 +79,10 @@ const ProfilePage = () => {
             });
             setIsEditing(false);
             fetchUser();
-            alert('Profile updated successfully!');
+            toast.success('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Failed to update profile');
+            toast.error('Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -124,10 +126,10 @@ const ProfilePage = () => {
             setShowCropModal(false);
             setSelectedImage(null);
             await fetchUser();
-            alert('Photo uploaded successfully!');
+            toast.success('Photo uploaded successfully!');
         } catch (error) {
             console.error('Error uploading photo:', error);
-            alert('Failed to upload photo: ' + (error.error || error.message || 'Unknown error'));
+            toast.error('Failed to upload photo: ' + (error.error || error.message || 'Unknown error'));
         }
     };
 

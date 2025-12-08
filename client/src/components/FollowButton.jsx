@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import { useToast } from './Toast';
 import './FollowButton.css';
 
 const FollowButton = ({ userId, initialIsFollowing = false, onFollowChange }) => {
+    const toast = useToast();
     const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
     const [loading, setLoading] = useState(false);
     const currentUserId = localStorage.getItem('userId');
 
     const handleFollow = async () => {
         if (!currentUserId) {
-            alert('Please login to follow users');
+            toast.warning('Please login to follow users');
             return;
         }
 
@@ -34,7 +36,7 @@ const FollowButton = ({ userId, initialIsFollowing = false, onFollowChange }) =>
             }
         } catch (error) {
             console.error('Error toggling follow:', error);
-            alert('Failed to update follow status');
+            toast.error('Failed to update follow status');
         } finally {
             setLoading(false);
         }

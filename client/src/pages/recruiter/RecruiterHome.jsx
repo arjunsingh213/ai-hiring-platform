@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
+import CommentInput from '../../components/CommentInput';
 import '../jobseeker/HomeFeed.css';
 
 const RecruiterHome = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [posts, setPosts] = useState([]);
     const [postContent, setPostContent] = useState('');
     const [mediaFile, setMediaFile] = useState(null);
@@ -13,6 +16,7 @@ const RecruiterHome = () => {
     const [mediaType, setMediaType] = useState(null);
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState(null);
+    const [commentingPostId, setCommentingPostId] = useState(null);
     const [stats, setStats] = useState({
         activeJobs: 0,
         totalApplicants: 0,
@@ -152,7 +156,7 @@ const RecruiterHome = () => {
             fetchPosts();
         } catch (error) {
             console.error('Error creating post:', error);
-            alert('Failed to create post. Please try again.');
+            toast.error('Failed to create post. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -167,25 +171,33 @@ const RecruiterHome = () => {
         }
     };
 
-    const handleComment = async (postId) => {
-        const comment = prompt('Enter your comment:');
-        if (comment && comment.trim()) {
-            try {
-                await api.post(`/posts/${postId}/comment`, {
-                    userId,
-                    text: comment.trim()
-                });
-                fetchPosts();
-            } catch (error) {
-                console.error('Error commenting:', error);
-            }
+    const handleCommentClick = (postId) => {
+        setCommentingPostId(commentingPostId === postId ? null : postId);
+    };
+
+    const handleCommentSubmit = async (postId, comment) => {
+        try {
+            await api.post(`/posts/${postId}/comment`, {
+                userId,
+                text: comment
+            });
+            setCommentingPostId(null);
+            fetchPosts();
+            toast.success('Comment posted!');
+        } catch (error) {
+            console.error('Error commenting:', error);
+            toast.error('Failed to post comment');
         }
+    };
+
+    const handleCommentCancel = () => {
+        setCommentingPostId(null);
     };
 
     const handleShare = async (postId) => {
         try {
             await api.post(`/posts/${postId}/share`, { userId });
-            alert('Post shared successfully!');
+            toast.success('Post shared successfully!');
             fetchPosts();
         } catch (error) {
             console.error('Error sharing post:', error);
@@ -424,7 +436,7 @@ const RecruiterHome = () => {
                                     </svg>
                                     Like ({post.engagement?.likes?.length || 0})
                                 </button>
-                                <button className="action-btn" onClick={() => handleComment(post._id)}>
+                                <button className="action-btn" onClick={() => handleCommentClick(post._id)}>
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                         <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" />
                                     </svg>
@@ -439,6 +451,12 @@ const RecruiterHome = () => {
                                     Share
                                 </button>
                             </div>
+                            <CommentInput
+                                postId={post._id}
+                                isOpen={commentingPostId === post._id}
+                                onSubmit={(comment) => handleCommentSubmit(post._id, comment)}
+                                onCancel={handleCommentCancel}
+                            />
                         </div>
                     ))
                 )}

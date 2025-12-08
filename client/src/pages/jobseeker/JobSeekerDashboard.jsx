@@ -8,6 +8,8 @@ import MessagingPage from './MessagingPage';
 import InterviewsPage from './InterviewsPage';
 import JobListingsPage from './JobListingsPage';
 import SettingsPage from './SettingsPage';
+import OfferAcceptancePage from './OfferAcceptancePage';
+import OnboardingPortal from './OnboardingPortal';
 import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
@@ -23,6 +25,8 @@ const JobSeekerDashboard = () => {
                     <Route path="messages" element={<MessagingPage />} />
                     <Route path="interviews" element={<InterviewsPage />} />
                     <Route path="jobs" element={<JobListingsPage />} />
+                    <Route path="offer/:hiringId" element={<OfferAcceptancePage />} />
+                    <Route path="onboarding/:hiringId" element={<OnboardingPortal />} />
                     <Route path="settings" element={<SettingsPage />} />
                 </Routes>
             </div>

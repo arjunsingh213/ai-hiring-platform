@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
+import OfferLetterModal from '../../components/OfferLetterModal';
 import './RecruiterApplicationsPage.css';
 
 const RecruiterApplicationsPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const toast = useToast();
     const [applicants, setApplicants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedApplicant, setSelectedApplicant] = useState(null);
@@ -25,6 +28,7 @@ const RecruiterApplicationsPage = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [uniqueJobs, setUniqueJobs] = useState([]);  // List of unique jobs for filter
     const [filterJobTitle, setFilterJobTitle] = useState(initialJobTitle);  // Display title for filtered job
+    const [showOfferModal, setShowOfferModal] = useState(false);
 
     useEffect(() => {
         fetchApplicants();
@@ -85,29 +89,16 @@ const RecruiterApplicationsPage = () => {
         }
     };
 
-    const handleHire = async () => {
+    const handleHire = () => {
         if (!selectedApplicant) return;
+        setShowOfferModal(true);
+    };
 
-        try {
-            setActionLoading(true);
-            // Extract userId - could be a string or object with _id
-            const applicantUserId = selectedApplicant.applicant?.userId?._id ||
-                selectedApplicant.applicant?.userId ||
-                selectedApplicant.applicant?._id;
-
-            if (!applicantUserId) {
-                alert('Error: Could not find applicant ID');
-                return;
-            }
-
-            await api.put(`/jobs/${selectedApplicant.jobId}/applicants/${applicantUserId}/hire`);
-            alert('Candidate hired successfully! They have been notified.');
-            fetchApplicants();
-        } catch (error) {
-            alert('Error hiring candidate: ' + (error.response?.data?.error || error.message));
-        } finally {
-            setActionLoading(false);
-        }
+    const handleOfferSent = (hiringProcess) => {
+        // Refresh applicants list to show updated status
+        fetchApplicants();
+        // Optionally navigate to hiring pipeline
+        // navigate('/recruiter/hiring-pipeline');
     };
 
     const handleReject = async () => {
@@ -121,19 +112,19 @@ const RecruiterApplicationsPage = () => {
                 selectedApplicant.applicant?._id;
 
             if (!applicantUserId) {
-                alert('Error: Could not find applicant ID');
+                toast.error('Error: Could not find applicant ID');
                 return;
             }
 
             await api.put(`/jobs/${selectedApplicant.jobId}/applicants/${applicantUserId}/reject`, {
                 rejectionReason
             });
-            alert('Candidate has been notified of the decision.');
+            toast.success('Candidate has been notified of the decision.');
             setShowRejectModal(false);
             setRejectionReason('');
             fetchApplicants();
         } catch (error) {
-            alert('Error rejecting candidate: ' + (error.response?.data?.error || error.message));
+            toast.error('Error rejecting candidate: ' + (error.response?.data?.error || error.message));
         } finally {
             setActionLoading(false);
         }
@@ -150,15 +141,15 @@ const RecruiterApplicationsPage = () => {
                 selectedApplicant.applicant?._id;
 
             if (!applicantUserId) {
-                alert('Error: Could not find applicant ID');
+                toast.error('Error: Could not find applicant ID');
                 return;
             }
 
             await api.put(`/jobs/${selectedApplicant.jobId}/applicants/${applicantUserId}/undo-reject`);
-            alert('Rejection undone! The candidate has been notified and their application is back under consideration.');
+            toast.success('Rejection undone! The candidate has been notified and their application is back under consideration.');
             fetchApplicants();
         } catch (error) {
-            alert('Error undoing rejection: ' + (error.response?.data?.error || error.message));
+            toast.error('Error undoing rejection: ' + (error.response?.data?.error || error.message));
         } finally {
             setActionLoading(false);
         }
@@ -646,6 +637,17 @@ const RecruiterApplicationsPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Offer Letter Modal */}
+            {selectedApplicant && (
+                <OfferLetterModal
+                    isOpen={showOfferModal}
+                    onClose={() => setShowOfferModal(false)}
+                    applicant={selectedApplicant.applicant}
+                    job={selectedApplicant.job}
+                    onOfferSent={handleOfferSent}
+                />
             )}
         </div>
     );

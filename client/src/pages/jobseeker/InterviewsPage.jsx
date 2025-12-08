@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import './InterviewsPage.css';
 
 const InterviewsPage = () => {
+    const toast = useToast();
     const [interviews, setInterviews] = useState([]);
     const [activeTab, setActiveTab] = useState('slots');
     const navigate = useNavigate();
@@ -31,7 +33,7 @@ const InterviewsPage = () => {
             navigate(`/interview/${response.data._id}`);
         } catch (error) {
             console.error('Error starting interview:', error);
-            alert(error.response?.data?.error || 'Failed to start interview');
+            toast.error(error.response?.data?.error || 'Failed to start interview');
         }
     };
 

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import '../onboarding/Onboarding.css';
 
 const RecruiterOnboarding = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
@@ -34,7 +36,7 @@ const RecruiterOnboarding = () => {
     const handleSubmit = async () => {
         // Validate required fields
         if (!formData.name || !formData.mobile || !formData.position || !formData.companyName || !formData.companySize || !formData.industry) {
-            alert('Please fill in all required fields');
+            toast.error('Please fill in all required fields');
             return;
         }
 
@@ -67,7 +69,7 @@ const RecruiterOnboarding = () => {
         } catch (error) {
             console.error('Onboarding error:', error);
             const errorMessage = error.response?.data?.error || error.message || 'Failed to complete onboarding';
-            alert(`Error: ${errorMessage}\n\nPlease try again.`);
+            toast.error(`Error: ${errorMessage}. Please try again.`);
         } finally {
             setLoading(false);
         }

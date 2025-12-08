@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import './Onboarding.css';
 
 const JobSeekerOnboarding = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [step, setStep] = useState(1);
+    const [showInterviewPrompt, setShowInterviewPrompt] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         age: '',
@@ -49,7 +53,7 @@ const JobSeekerOnboarding = () => {
     const handleSubmit = async () => {
         // Validate required fields
         if (!formData.name || !formData.age || !formData.mobile || !formData.profession || !formData.college || !formData.domain || !formData.desiredRole) {
-            alert('Please fill in all required fields');
+            toast.error('Please fill in all required fields');
             return;
         }
 
@@ -107,19 +111,11 @@ const JobSeekerOnboarding = () => {
             localStorage.setItem('userRole', 'jobseeker');
 
             // Show AI interview prompt
-            const takeInterview = window.confirm(
-                'Crack the interview to stand out among top-tier recruiters!\n\nWould you like to take the AI interview now? (Recommended)'
-            );
-
-            if (takeInterview) {
-                navigate(`/jobseeker/interviews`);
-            } else {
-                navigate('/jobseeker/home');
-            }
+            setShowInterviewPrompt(true);
         } catch (error) {
             console.error('Onboarding error:', error);
             const errorMessage = error.response?.data?.error || error.message || 'Failed to complete onboarding';
-            alert(`Error: ${errorMessage}\n\nPlease try again.`);
+            toast.error(`Error: ${errorMessage}\n\nPlease try again.`);
         } finally {
             setLoading(false);
         }
@@ -413,6 +409,23 @@ const JobSeekerOnboarding = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showInterviewPrompt}
+                title="Take AI Interview?"
+                message="Crack the interview to stand out among top-tier recruiters! Would you like to take the AI interview now? (Recommended)"
+                confirmText="Yes, Let's Go!"
+                cancelText="Skip for Now"
+                variant="info"
+                onConfirm={() => {
+                    setShowInterviewPrompt(false);
+                    navigate('/jobseeker/interviews');
+                }}
+                onCancel={() => {
+                    setShowInterviewPrompt(false);
+                    navigate('/jobseeker/home');
+                }}
+            />
         </div>
     );
 };
