@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import api from '../../services/api';
 import './LoginPage.css';
 
@@ -25,6 +26,40 @@ const SignupPage = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(0);
+    const [verificationSent, setVerificationSent] = useState(false);
+    const [registeredUserId, setRegisteredUserId] = useState(null);
+
+    // Socket connection for real-time verification status
+    useEffect(() => {
+        let socket;
+
+        if (verificationSent && registeredUserId) {
+            // Connect to socket server
+            const SOCKET_URL = import.meta.env.VITE_API_URL
+                ? import.meta.env.VITE_API_URL.replace('/api', '')
+                : 'http://localhost:5000';
+
+            socket = io(SOCKET_URL);
+
+            socket.on('connect', () => {
+                console.log('Connected to socket for verification check');
+                socket.emit('join', registeredUserId);
+            });
+
+            socket.on('email_verified', (data) => {
+                if (data.success) {
+                    // Navigate to login or auto-login
+                    // For now, simple redirect to login with a success toast/message in query param could be nice
+                    // But we'll just redirect as requested
+                    navigate('/login');
+                }
+            });
+        }
+
+        return () => {
+            if (socket) socket.disconnect();
+        };
+    }, [verificationSent, registeredUserId, navigate]);
 
     const calculatePasswordStrength = (password) => {
         let strength = 0;
@@ -83,30 +118,12 @@ const SignupPage = () => {
                 }
             });
 
-            console.log('Full response:', response);
-            console.log('Response.success:', response.success);
-            console.log('Response.data:', response.data);
-
-            // Axios interceptor unwraps response.data
-            if (response.success && response.data) {
-                const { user, token } = response.data;
-
-                console.log('Signup user:', user);
-                console.log('Signup token:', token);
-
-                // Store auth data
-                localStorage.setItem('token', token);
-                localStorage.setItem('userId', user._id);
-                localStorage.setItem('userRole', user.role);
-                localStorage.setItem('userEmail', user.email);
-
-                console.log('Stored userId after signup:', localStorage.getItem('userId'));
-
-                // Redirect to onboarding to complete profile
-                navigate(`/onboarding/${user.role}`);
+            if (response.success) {
+                // Show verification message and start listening for socket events
+                setRegisteredUserId(response.data.userId); // Capture userId
+                setVerificationSent(true);
             } else {
-                console.error('Signup response missing success or data:', response);
-                setError('Registration failed. Invalid response from server.');
+                setError(response.error || 'Registration failed. Please try again.');
             }
         } catch (err) {
             console.error('Signup error:', err);
@@ -115,6 +132,37 @@ const SignupPage = () => {
             setLoading(false);
         }
     };
+
+    if (verificationSent) {
+        return (
+            <div className="auth-page">
+                <div className="auth-container">
+                    <div className="auth-card signup-card verify-sent-card">
+                        <div className="verify-icon">✉️</div>
+                        <h1>Check Your Email</h1>
+                        <p className="verify-text">
+                            We've sent a verification link to <strong>{formData.email}</strong>.
+                        </p>
+                        <p className="verify-subtext">
+                            Please check your inbox and click the link to verify your account before logging in.
+                        </p>
+                        <p className="verify-subtext" style={{ fontSize: '0.9rem', color: '#6366f1', marginTop: '10px' }}>
+                            <span className="spinner" style={{ display: 'inline-block', marginRight: '8px' }}></span>
+                            Waiting for verification...
+                        </p>
+                        <div className="form-options">
+                            <p>
+                                Did not receive the email? <button className="btn-link" onClick={() => window.location.reload()}>Try again</button>
+                            </p>
+                        </div>
+                        <Link to="/login" className="btn btn-primary btn-full">
+                            Go to Login
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const getStrengthLabel = () => {
         const labels = ['Weak', 'Fair', 'Good', 'Strong'];

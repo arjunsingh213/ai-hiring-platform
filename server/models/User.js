@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: String,
     password: {
         type: String,
         select: false // Don't return password by default

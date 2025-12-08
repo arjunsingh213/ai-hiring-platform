@@ -66,8 +66,8 @@ const OfferLetterModal = ({ isOpen, onClose, applicant, job, onOfferSent }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    jobId: job._id,
-                    applicantId: applicant.userId?._id || applicant.userId,
+                    jobId: job?._id || job, // Handle if job is object or ID string
+                    applicantId: applicant.userId?._id || applicant.userId || applicant._id,
                     recruiterId: localStorage.getItem('userId'),
                     position: formData.position,
                     salary: {
