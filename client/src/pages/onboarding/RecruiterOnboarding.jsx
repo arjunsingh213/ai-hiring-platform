@@ -43,7 +43,6 @@ const RecruiterOnboarding = () => {
         setLoading(true);
         try {
             const userData = {
-                role: 'recruiter',
                 profile: {
                     name: formData.name.trim(),
                     mobile: formData.mobile.trim()
@@ -54,15 +53,40 @@ const RecruiterOnboarding = () => {
                     companyDomain: formData.industry.trim(),
                     companyWebsite: formData.website || '',
                     verified: false
-                }
+                },
+                isOnboardingComplete: true // Mark onboarding as effective
             };
 
-            console.log('Submitting recruiter data:', userData);
+            console.log('Updating recruiter data:', userData);
 
-            const response = await api.post('/users', userData);
-            const userId = response.data.data?._id || response.data._id;
+            let userId = localStorage.getItem('userId');
 
-            localStorage.setItem('userId', userId);
+            // Fallback: Try to get from 'user' object
+            if (!userId) {
+                try {
+                    const userObj = JSON.parse(localStorage.getItem('user'));
+                    if (userObj && userObj._id) {
+                        userId = userObj._id;
+                        // Fix the missing key for future
+                        localStorage.setItem('userId', userId);
+                    }
+                } catch (e) {
+                    console.log('Failed to parse user object from localStorage');
+                }
+            }
+
+            console.log('RecruiterOnboarding submit - userId:', userId);
+
+            if (!userId) {
+                // Last resort: check URL or other state?
+                // For now, throw specific error
+                console.error('LocalStorage keys:', Object.keys(localStorage));
+                throw new Error('User ID not found. Please try logging in again.');
+            }
+
+            await api.put(`/users/${userId}`, userData);
+
+            // Should already be set, but ensure role is correct
             localStorage.setItem('userRole', 'recruiter');
 
             navigate('/recruiter/home');

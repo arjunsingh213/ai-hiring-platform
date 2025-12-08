@@ -30,7 +30,7 @@ const LandingPage = () => {
                         <a onClick={() => scrollToSection('about')} className="nav-link">About</a>
                         <a onClick={() => scrollToSection('services')} className="nav-link">Services</a>
                         <Link to="/login" className="btn btn-outline btn-sm">Sign In</Link>
-                        <Link to="/role-selection" className="btn btn-primary btn-sm">Get Started</Link>
+                        <Link to="/onboarding/role-selection" className="btn btn-primary btn-sm">Get Started</Link>
                     </div>
                 </div>
             </nav>
@@ -54,7 +54,7 @@ const LandingPage = () => {
                             Practice with intelligent AI, get verified, and land your dream job.
                         </p>
                         <div className="hero-cta">
-                            <Link to="/role-selection" className="btn btn-primary btn-lg">
+                            <Link to="/onboarding/role-selection" className="btn btn-primary btn-lg">
                                 Get Started
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                     <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -240,7 +240,7 @@ const LandingPage = () => {
                 <div className="container cta-content">
                     <h2>Ready to Transform Your Career?</h2>
                     <p>Join thousands of job seekers and recruiters using AI to make better hiring decisions.</p>
-                    <Link to="/role-selection" className="btn btn-primary btn-lg">
+                    <Link to="/onboarding/role-selection" className="btn btn-primary btn-lg">
                         Get Started Now
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

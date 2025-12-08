@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema({
         default: false
     },
     verificationToken: String,
+    isOnboardingComplete: {
+        type: Boolean,
+        default: false
+    },
     password: {
         type: String,
         select: false // Don't return password by default

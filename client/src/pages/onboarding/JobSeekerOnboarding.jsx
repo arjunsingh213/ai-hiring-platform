@@ -59,9 +59,8 @@ const JobSeekerOnboarding = () => {
 
         setLoading(true);
         try {
-            // Create user
+            // Update existing user
             const userData = {
-                role: 'jobseeker',
                 profile: {
                     name: formData.name.trim(),
                     age: parseInt(formData.age),
@@ -80,15 +79,19 @@ const JobSeekerOnboarding = () => {
                         github: formData.github,
                         portfolio: formData.portfolio
                     }
-                }
+                },
+                isOnboardingComplete: true // Mark onboarding as complete
             };
 
-            console.log('Submitting user data:', userData);
+            console.log('Updating user data:', userData);
 
-            const userResponse = await api.post('/users', userData);
-            const userId = userResponse.data._id;
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                throw new Error('User ID not found');
+            }
 
-            console.log('User created successfully:', userId);
+            const userResponse = await api.put(`/users/${userId}`, userData);
+            console.log('User updated successfully:', userId);
 
             // Upload resume if provided (optional)
             if (resumeFile) {

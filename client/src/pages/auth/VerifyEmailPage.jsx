@@ -24,16 +24,35 @@ const VerifyEmailPage = () => {
                     setStatus('success');
                     setMessage('Your email has been successfully verified!');
 
-                    // Store token if needed, or just let them login
+                    // Store token if needed
                     if (response.data && response.data.token) {
                         localStorage.setItem('token', response.data.token);
                         localStorage.setItem('user', JSON.stringify(response.data.user));
                         localStorage.setItem('userId', response.data.user._id);
                     }
 
-                    // Redirect after 3 seconds
+                    // Redirect logic
+                    // Redirect logic
                     setTimeout(() => {
-                        navigate('/login'); // Or dashboard if auto-logged in
+                        // Ensure data is persisted for onboarding
+                        if (response.data.user._id) localStorage.setItem('userId', response.data.user._id);
+                        if (response.data.user.role) localStorage.setItem('userRole', response.data.user.role);
+                        if (response.data.token) localStorage.setItem('token', response.data.token);
+
+                        // Fallback storage
+                        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                        if (!response.data.user.isOnboardingComplete) {
+                            if (response.data.user.role === 'jobseeker') {
+                                navigate('/onboarding/jobseeker');
+                            } else if (response.data.user.role === 'recruiter') {
+                                navigate('/onboarding/recruiter');
+                            } else {
+                                navigate('/onboarding/role-selection');
+                            }
+                        } else {
+                            navigate('/login');
+                        }
                     }, 3000);
                 } else {
                     setStatus('error');

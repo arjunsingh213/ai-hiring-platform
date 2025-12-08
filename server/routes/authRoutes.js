@@ -127,18 +127,26 @@ router.post('/verify-email', async (req, res) => {
         // Emit socket event to notify other tabs (e.g., SignupPage)
         try {
             const io = getIO();
+            const roomName = user._id.toString();
+            console.log(`[Socket Debug] Attempting to emit 'email_verified' to room: ${roomName}`);
+
+            // Check if room has members (optional, for debug)
+            const roomSize = io.sockets.adapter.rooms.get(roomName)?.size || 0;
+            console.log(`[Socket Debug] Audience size for room ${roomName} is: ${roomSize}`);
+
             // Emit to a room named by userID (client should join this room)
-            io.to(user._id.toString()).emit('email_verified', {
+            io.to(roomName).emit('email_verified', {
                 success: true,
                 user: {
                     _id: user._id,
                     email: user.email,
                     role: user.role,
-                    profile: user.profile
+                    profile: user.profile,
+                    isOnboardingComplete: user.isOnboardingComplete
                 },
                 token: jwtToken
             });
-            console.log(`Emitted email_verified event for user ${user._id}`);
+            console.log(`[Socket Debug] Emitted 'email_verified' event for user ${user._id}`);
         } catch (socketError) {
             console.error('Socket emission error:', socketError);
             // Don't fail the request if socket fails
@@ -151,7 +159,8 @@ router.post('/verify-email', async (req, res) => {
                     _id: user._id,
                     email: user.email,
                     role: user.role,
-                    profile: user.profile
+                    profile: user.profile,
+                    isOnboardingComplete: user.isOnboardingComplete
                 },
                 token: jwtToken
             },
@@ -224,7 +233,8 @@ router.post('/login', async (req, res) => {
                     _id: user._id,
                     email: user.email,
                     role: user.role,
-                    profile: user.profile
+                    profile: user.profile,
+                    isOnboardingComplete: user.isOnboardingComplete
                 },
                 token
             },

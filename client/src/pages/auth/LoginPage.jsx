@@ -53,8 +53,16 @@ const LoginPage = () => {
 
                 console.log('Stored userId:', localStorage.getItem('userId'));
 
-                // Redirect based on role
-                if (user.role === 'jobseeker') {
+                // Redirect based on role and onboarding status
+                if (!user.isOnboardingComplete) {
+                    if (user.role === 'jobseeker') {
+                        navigate('/onboarding/jobseeker');
+                    } else if (user.role === 'recruiter') {
+                        navigate('/onboarding/recruiter');
+                    } else {
+                        navigate('/onboarding/role-selection');
+                    }
+                } else if (user.role === 'jobseeker') {
                     navigate('/jobseeker/home');
                 } else {
                     navigate('/recruiter/home');

@@ -29,7 +29,7 @@ function App() {
           <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
           {/* Onboarding */}
-          <Route path="/role-selection" element={<RoleSelection />} />
+          <Route path="/onboarding/role-selection" element={<RoleSelection />} />
           <Route path="/onboarding/jobseeker" element={<JobSeekerOnboarding />} />
           <Route path="/onboarding/recruiter" element={<RecruiterOnboarding />} />
 

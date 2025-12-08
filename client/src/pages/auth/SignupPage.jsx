@@ -47,19 +47,55 @@ const SignupPage = () => {
             });
 
             socket.on('email_verified', (data) => {
-                if (data.success) {
-                    // Navigate to login or auto-login
-                    // For now, simple redirect to login with a success toast/message in query param could be nice
-                    // But we'll just redirect as requested
-                    navigate('/login');
-                }
+                handleVerificationSuccess(data.user);
             });
+        }
+
+        // Add Polling Mechanism as Fallback
+        let pollingInterval;
+        if (verificationSent && registeredUserId) {
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await api.get(`/users/${registeredUserId}`);
+                    if (response.data && response.data.isVerified) {
+                        handleVerificationSuccess(response.data);
+                    }
+                } catch (err) {
+                    console.log('Polling check failed:', err);
+                }
+            }, 3000); // Check every 3 seconds
         }
 
         return () => {
             if (socket) socket.disconnect();
+            if (pollingInterval) clearInterval(pollingInterval);
         };
     }, [verificationSent, registeredUserId, navigate]);
+
+    const handleVerificationSuccess = (user) => {
+        // Persist user data for onboarding/auth context
+        const finalUserId = user._id || registeredUserId;
+        if (finalUserId) localStorage.setItem('userId', finalUserId);
+
+        if (user.role) localStorage.setItem('userRole', user.role);
+
+        // Also store full user object for fallbacks (RecruiterOnboarding checks this)
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+
+        console.log('SignupPage - handleVerificationSuccess:', { finalUserId, role: user.role });
+
+        if (!user.isOnboardingComplete) {
+            if (user.role === 'jobseeker') {
+                navigate('/onboarding/jobseeker');
+            } else if (user.role === 'recruiter') {
+                navigate('/onboarding/recruiter');
+            } else {
+                navigate('/onboarding/role-selection');
+            }
+        } else {
+            navigate('/login');
+        }
+    };
 
     const calculatePasswordStrength = (password) => {
         let strength = 0;

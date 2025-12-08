@@ -5,7 +5,11 @@ let io;
 const initializeSocket = (server) => {
     io = socketIO(server, {
         cors: {
-            origin: process.env.CLIENT_URL || 'http://localhost:5173',
+            origin: [
+                'http://localhost:5173',
+                process.env.CLIENT_URL,
+                'https://ai-hiring-platform-cm5t.vercel.app'
+            ].filter(Boolean),
             methods: ['GET', 'POST'],
             credentials: true
         }
@@ -16,8 +20,17 @@ const initializeSocket = (server) => {
 
         // Join user-specific room
         socket.on('join', (userId) => {
+            console.log(`[Socket Debug] socket.on('join') received for userId: ${userId}`);
+            if (!userId) {
+                console.log('[Socket Debug] join failed: userId is null/undefined');
+                return;
+            }
             socket.join(userId);
-            console.log(`User ${userId} joined their room`);
+            console.log(`[Socket Debug] Socket ${socket.id} successfully joined room: ${userId}`);
+
+            // Inspect rooms
+            const rooms = Array.from(socket.rooms);
+            console.log(`[Socket Debug] Socket ${socket.id} is now in rooms:`, rooms);
         });
 
         // Handle messaging
