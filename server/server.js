@@ -63,6 +63,8 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
 app.use('/api/hiring', require('./routes/hiring'));
 app.use('/api/hiring', require('./routes/documents'));
+app.use('/api/resume', require('./routes/resumeParser'));
+app.use('/api/onboarding-interview', require('./routes/onboardingInterview'));
 
 // Health check endpoint
 app.get('/', (req, res) => {

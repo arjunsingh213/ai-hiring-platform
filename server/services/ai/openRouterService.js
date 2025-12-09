@@ -17,21 +17,28 @@ class OpenRouterService {
 
         // Model configurations
         this.models = {
-            resumeParsing: 'meta-llama/llama-3.1-8b-instruct',
-            jdMatching: 'google/gemma-2-9b-it',
+            resumeParsing: 'meta-llama/llama-3.1-8b-instruct:free',
+            jdMatching: 'google/gemma-2-9b-it:free',
             questionGeneration: 'qwen/qwen3-235b-a22b:free',
             answerEvaluation: 'qwen/qwen3-235b-a22b:free',
-            fastScoring: 'mistralai/mistral-7b-instruct',
-            recruiterReport: 'google/gemma-2-9b-it'
+            fastScoring: 'mistralai/mistral-7b-instruct:free',
+            recruiterReport: 'google/gemma-2-9b-it:free'
         };
 
         // API Keys from environment
         this.apiKeys = {
-            llama: process.env.OPENROUTER_LLAMA_KEY,
-            qwen: process.env.OPENROUTER_QWEN_KEY,
-            mistral: process.env.OPENROUTER_MISTRAL_KEY,
-            gemma: process.env.OPENROUTER_GEMMA_KEY
+            llama: process.env.OPENROUTER_LLAMA_KEY || process.env.OPENROUTER_API_KEY,
+            qwen: process.env.OPENROUTER_QWEN_KEY || process.env.OPENROUTER_API_KEY,
+            mistral: process.env.OPENROUTER_MISTRAL_KEY || process.env.OPENROUTER_API_KEY,
+            gemma: process.env.OPENROUTER_GEMMA_KEY || process.env.OPENROUTER_API_KEY
         };
+
+        // Debug: Log which keys are present
+        console.log('OpenRouter API Keys Status:');
+        console.log('  - LLAMA:', this.apiKeys.llama ? '✓ Present' : '✗ Missing');
+        console.log('  - QWEN:', this.apiKeys.qwen ? '✓ Present' : '✗ Missing');
+        console.log('  - MISTRAL:', this.apiKeys.mistral ? '✓ Present' : '✗ Missing');
+        console.log('  - GEMMA:', this.apiKeys.gemma ? '✓ Present' : '✗ Missing');
     }
 
     /**

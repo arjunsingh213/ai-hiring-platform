@@ -43,15 +43,48 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Update user profile
+// Update user profile - MERGE nested fields instead of replacing
 router.put('/:id', async (req, res) => {
     try {
-        const { profile, jobSeekerProfile, recruiterProfile } = req.body;
+        const { profile, jobSeekerProfile, recruiterProfile, isOnboardingComplete } = req.body;
 
+        // Build update object with dot notation to merge nested fields
         const updateData = {};
-        if (profile) updateData.profile = profile;
-        if (jobSeekerProfile) updateData.jobSeekerProfile = jobSeekerProfile;
-        if (recruiterProfile) updateData.recruiterProfile = recruiterProfile;
+
+        // Handle profile fields individually to merge, not replace
+        if (profile) {
+            Object.keys(profile).forEach(key => {
+                updateData[`profile.${key}`] = profile[key];
+            });
+        }
+
+        // Handle jobSeekerProfile fields individually to merge, not replace
+        if (jobSeekerProfile) {
+            Object.keys(jobSeekerProfile).forEach(key => {
+                // Handle nested portfolioLinks
+                if (key === 'portfolioLinks' && typeof jobSeekerProfile[key] === 'object') {
+                    Object.keys(jobSeekerProfile[key]).forEach(linkKey => {
+                        updateData[`jobSeekerProfile.portfolioLinks.${linkKey}`] = jobSeekerProfile[key][linkKey];
+                    });
+                } else {
+                    updateData[`jobSeekerProfile.${key}`] = jobSeekerProfile[key];
+                }
+            });
+        }
+
+        // Handle recruiterProfile fields individually
+        if (recruiterProfile) {
+            Object.keys(recruiterProfile).forEach(key => {
+                updateData[`recruiterProfile.${key}`] = recruiterProfile[key];
+            });
+        }
+
+        // Handle top-level boolean
+        if (isOnboardingComplete !== undefined) {
+            updateData.isOnboardingComplete = isOnboardingComplete;
+        }
+
+        console.log('Update data with dot notation:', Object.keys(updateData));
 
         const user = await User.findByIdAndUpdate(
             req.params.id,
@@ -65,9 +98,11 @@ router.put('/:id', async (req, res) => {
 
         res.json({ success: true, data: user });
     } catch (error) {
+        console.error('User update error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 
 // Upload profile photo
 router.post('/upload-photo', upload.single('photo'), async (req, res) => {
@@ -122,6 +157,63 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
         });
     } catch (error) {
         console.error('Photo upload error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Upload banner image
+router.post('/upload-banner', upload.single('banner'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        // Upload to cloudinary with banner-specific settings
+        const uploadPromise = new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'banner_images',
+                    public_id: `banner_${userId}_${Date.now()}`,
+                    transformation: [
+                        { width: 1200, height: 400, crop: 'fill' },
+                        { quality: 'auto' }
+                    ]
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
+        });
+
+        const result = await uploadPromise;
+
+        // Update user profile with banner URL
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $set: { 'jobSeekerProfile.bannerImage': result.secure_url } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                bannerUrl: result.secure_url,
+                user: user
+            }
+        });
+    } catch (error) {
+        console.error('Banner upload error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

@@ -119,16 +119,54 @@ const userSchema = new mongoose.Schema({
             enum: ['fresher', 'experienced']
         },
         desiredRole: String,
+        about: String, // About me section (longer bio)
+        bannerImage: String, // Banner image URL
         portfolioLinks: {
             linkedin: String,
             github: String,
-            portfolio: String
+            portfolio: String,
+            twitter: String,
+            website: String
         },
+        skills: [{
+            name: String,
+            level: {
+                type: String,
+                enum: ['beginner', 'intermediate', 'advanced', 'expert'],
+                default: 'intermediate'
+            }
+        }],
+        experience: [{
+            title: String,
+            company: String,
+            location: String,
+            startDate: Date,
+            endDate: Date,
+            current: { type: Boolean, default: false },
+            description: String
+        }],
         education: [{
             degree: String,
             institution: String,
             year: Number,
-            field: String
+            field: String,
+            startYear: Number,
+            endYear: Number,
+            grade: String
+        }],
+        certifications: [{
+            name: String,
+            issuer: String,
+            date: Date,
+            url: String
+        }],
+        languages: [{
+            language: String,
+            proficiency: {
+                type: String,
+                enum: ['basic', 'conversational', 'fluent', 'native'],
+                default: 'conversational'
+            }
         }]
     },
 

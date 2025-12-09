@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ImageCropModal from '../../components/ImageCropModal';
+import OnboardingInterview from './OnboardingInterview';
 import './Onboarding.css';
 
 const JobSeekerOnboarding = () => {
@@ -28,6 +30,17 @@ const JobSeekerOnboarding = () => {
     const [resumeFile, setResumeFile] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    // Image crop state
+    const [showCropModal, setShowCropModal] = useState(false);
+    const [cropImageSrc, setCropImageSrc] = useState(null);
+    const [croppedPhotoBlob, setCroppedPhotoBlob] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
+
+    // Interview state
+    const [showInterview, setShowInterview] = useState(false);
+    const [parsedResume, setParsedResume] = useState(null);
+    const [parsingResume, setParsingResume] = useState(false);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -38,8 +51,31 @@ const JobSeekerOnboarding = () => {
         if (name === 'resume') {
             setResumeFile(files[0]);
         } else if (name === 'photo') {
-            setFormData(prev => ({ ...prev, photo: files[0] }));
+            // Open crop modal instead of directly setting photo
+            const file = files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    setCropImageSrc(reader.result);
+                    setShowCropModal(true);
+                };
+                reader.readAsDataURL(file);
+            }
         }
+    };
+
+    const handleCropComplete = (croppedBlob) => {
+        setCroppedPhotoBlob(croppedBlob);
+        setPhotoPreview(URL.createObjectURL(croppedBlob));
+        setFormData(prev => ({ ...prev, photo: croppedBlob }));
+        setShowCropModal(false);
+        setCropImageSrc(null);
+        toast.success('Photo cropped successfully!');
+    };
+
+    const handleCropCancel = () => {
+        setShowCropModal(false);
+        setCropImageSrc(null);
     };
 
     const nextStep = () => {
@@ -59,6 +95,30 @@ const JobSeekerOnboarding = () => {
 
         setLoading(true);
         try {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                throw new Error('User ID not found');
+            }
+
+            // Upload photo if cropped photo blob exists
+            let photoUrl = '';
+            if (croppedPhotoBlob) {
+                try {
+                    const photoFormData = new FormData();
+                    photoFormData.append('photo', croppedPhotoBlob, 'profile-photo.jpg');
+                    photoFormData.append('userId', userId);
+
+                    const photoResponse = await api.post('/users/upload-photo', photoFormData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    photoUrl = photoResponse.photoUrl || photoResponse.data?.photoUrl || '';
+                    console.log('Photo uploaded successfully:', photoUrl);
+                } catch (photoError) {
+                    console.error('Photo upload failed:', photoError);
+                    // Continue without photo
+                }
+            }
+
             // Update existing user
             const userData = {
                 profile: {
@@ -66,7 +126,7 @@ const JobSeekerOnboarding = () => {
                     age: parseInt(formData.age),
                     dob: formData.dob,
                     mobile: formData.mobile.trim(),
-                    photo: formData.photo?.name || ''
+                    photo: photoUrl || ''
                 },
                 jobSeekerProfile: {
                     profession: formData.profession.trim(),
@@ -84,11 +144,6 @@ const JobSeekerOnboarding = () => {
             };
 
             console.log('Updating user data:', userData);
-
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                throw new Error('User ID not found');
-            }
 
             const userResponse = await api.put(`/users/${userId}`, userData);
             console.log('User updated successfully:', userId);
@@ -186,13 +241,33 @@ const JobSeekerOnboarding = () => {
 
                         <div className="form-group">
                             <label className="form-label">Profile Photo</label>
-                            <input
-                                type="file"
-                                name="photo"
-                                onChange={handleFileChange}
-                                className="input"
-                                accept="image/*"
-                            />
+                            <div className="photo-upload-container">
+                                {photoPreview ? (
+                                    <div className="photo-preview">
+                                        <img src={photoPreview} alt="Profile preview" />
+                                        <button
+                                            type="button"
+                                            className="change-photo-btn"
+                                            onClick={() => document.getElementById('photo-input').click()}
+                                        >
+                                            Change Photo
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="photo-placeholder" onClick={() => document.getElementById('photo-input').click()}>
+                                        <span className="photo-icon">📷</span>
+                                        <span>Click to upload</span>
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    id="photo-input"
+                                    name="photo"
+                                    onChange={handleFileChange}
+                                    className="hidden-input"
+                                    accept="image/*"
+                                />
+                            </div>
                         </div>
                     </div>
                 );
@@ -379,39 +454,42 @@ const JobSeekerOnboarding = () => {
                 <div className="gradient-orb orb-2"></div>
             </div>
 
-            <div className="onboarding-container">
-                <div className="onboarding-header">
-                    <h1>Job Seeker Onboarding</h1>
-                    <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
+            {/* Hide onboarding form when interview is active */}
+            {!showInterview && (
+                <div className="onboarding-container">
+                    <div className="onboarding-header">
+                        <h1>Job Seeker Onboarding</h1>
+                        <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
+                        </div>
+                        <p className="step-indicator">Step {step} of 4</p>
                     </div>
-                    <p className="step-indicator">Step {step} of 4</p>
-                </div>
 
-                <div className="onboarding-content card-glass">
-                    {renderStep()}
+                    <div className="onboarding-content card-glass">
+                        {renderStep()}
 
-                    <div className="form-actions">
-                        {step > 1 && (
-                            <button onClick={prevStep} className="btn btn-secondary">
-                                Previous
-                            </button>
-                        )}
-                        {step < 4 ? (
-                            <button onClick={nextStep} className="btn btn-primary">
-                                Next
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </button>
-                        ) : (
-                            <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
-                                {loading ? <span className="loading"></span> : 'Complete Onboarding'}
-                            </button>
-                        )}
+                        <div className="form-actions">
+                            {step > 1 && (
+                                <button onClick={prevStep} className="btn btn-secondary">
+                                    Previous
+                                </button>
+                            )}
+                            {step < 4 ? (
+                                <button onClick={nextStep} className="btn btn-primary">
+                                    Next
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </button>
+                            ) : (
+                                <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
+                                    {loading ? <span className="loading"></span> : 'Complete Onboarding'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             <ConfirmDialog
                 isOpen={showInterviewPrompt}
@@ -420,15 +498,59 @@ const JobSeekerOnboarding = () => {
                 confirmText="Yes, Let's Go!"
                 cancelText="Skip for Now"
                 variant="info"
-                onConfirm={() => {
+                onConfirm={async () => {
                     setShowInterviewPrompt(false);
-                    navigate('/jobseeker/interviews');
+                    // Parse resume if available
+                    if (resumeFile) {
+                        setParsingResume(true);
+                        try {
+                            const formData = new FormData();
+                            formData.append('resume', resumeFile);
+                            const response = await api.post('/resume/parse', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            if (response.success && response.data.parsedResume) {
+                                setParsedResume(response.data.parsedResume);
+                            }
+                        } catch (error) {
+                            console.error('Resume parsing failed:', error);
+                            // Continue with empty resume data
+                        }
+                        setParsingResume(false);
+                    }
+                    setShowInterview(true);
                 }}
                 onCancel={() => {
                     setShowInterviewPrompt(false);
                     navigate('/jobseeker/home');
                 }}
             />
+
+            {/* Image Crop Modal */}
+            {showCropModal && cropImageSrc && (
+                <ImageCropModal
+                    image={cropImageSrc}
+                    onComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                />
+            )}
+
+            {/* Inline Interview */}
+            {showInterview && (
+                <OnboardingInterview
+                    parsedResume={parsedResume}
+                    userId={localStorage.getItem('userId')}
+                    desiredRole={formData.desiredRole}
+                    onComplete={(results) => {
+                        toast.success(`Interview completed! Score: ${results?.score || 'N/A'}`);
+                        navigate('/jobseeker/home');
+                    }}
+                    onSkip={() => {
+                        toast.info('Interview skipped. You can take it later.');
+                        navigate('/jobseeker/home');
+                    }}
+                />
+            )}
         </div>
     );
 };
