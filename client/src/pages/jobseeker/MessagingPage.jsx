@@ -21,38 +21,21 @@ const MessagingPage = () => {
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
-        // Check if we're on Vercel serverless (no WebSocket support)
-        const VITE_API_URL = import.meta.env.VITE_API_URL;
-        const isServerless = !VITE_API_URL || VITE_API_URL === '/api';
+        // Initialize Socket.io with environment variable
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+        const newSocket = io(socketUrl);
+        setSocket(newSocket);
 
-        let newSocket = null;
-        let pollingInterval = null;
+        newSocket.emit('join', userId);
 
-        if (!isServerless) {
-            // Initialize Socket.io only if we have a dedicated backend
-            const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-            newSocket = io(socketUrl);
-            setSocket(newSocket);
-
-            newSocket.emit('join', userId);
-
-            newSocket.on('receive_message', (message) => {
-                setMessages(prev => [...prev, message]);
-                fetchConversations(); // Refresh conversations
-            });
-        } else {
-            // Use polling for serverless (Vercel)
-            pollingInterval = setInterval(() => {
-                fetchConversations();
-            }, 5000); // Poll every 5 seconds
-        }
+        newSocket.on('receive_message', (message) => {
+            setMessages(prev => [...prev, message]);
+            fetchConversations(); // Refresh conversations
+        });
 
         fetchConversations();
 
-        return () => {
-            if (newSocket) newSocket.close();
-            if (pollingInterval) clearInterval(pollingInterval);
-        };
+        return () => newSocket.close();
     }, [userId]);
 
     // Filter conversations based on search and tab

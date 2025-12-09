@@ -30,18 +30,13 @@ const SignupPage = () => {
     const [registeredUserId, setRegisteredUserId] = useState(null);
 
     // Socket connection for real-time verification status
-    // NOTE: Socket.io doesn't work on Vercel serverless, so we skip it there
     useEffect(() => {
         let socket;
 
-        // Check if we're on Vercel (no external backend URL means serverless)
-        const VITE_API_URL = import.meta.env.VITE_API_URL;
-        const isServerless = !VITE_API_URL || VITE_API_URL === '/api';
-
-        if (verificationSent && registeredUserId && !isServerless) {
-            // Connect to socket server only if we have a dedicated backend
-            const SOCKET_URL = VITE_API_URL
-                ? VITE_API_URL.replace('/api', '')
+        if (verificationSent && registeredUserId) {
+            // Connect to socket server
+            const SOCKET_URL = import.meta.env.VITE_API_URL
+                ? import.meta.env.VITE_API_URL.replace('/api', '')
                 : 'http://localhost:5000';
 
             socket = io(SOCKET_URL);
