@@ -7,12 +7,18 @@ const axios = require('axios');
 
 class GeminiService {
     constructor() {
-        this.apiKey = process.env.GEMINI_API_KEY || 'AIzaSyAzDYksRAnTtDPsNt8PX3wPsNBCqb93avw';
+        // SECURITY: Only use environment variable - never hardcode API keys
+        this.apiKey = process.env.GEMINI_API_KEY;
+
+        if (!this.apiKey) {
+            console.warn('WARNING: GEMINI_API_KEY not set in environment variables');
+        }
+
         // Use v1 API with gemini-2.0-flash model
         this.baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent';
 
         console.log('GeminiService initialized');
-        console.log('  API Key (first 15 chars):', this.apiKey?.substring(0, 15) + '...');
+        console.log('  API Key configured:', this.apiKey ? 'Yes' : 'No');
         console.log('  Endpoint:', this.baseUrl);
     }
 
