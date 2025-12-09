@@ -106,15 +106,14 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server (only for local development)
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📡 Socket.io initialized`);
-        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-}
+// Start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 Socket.io initialized`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
 
-// Export for Vercel
+// Export for potential serverless use
 module.exports = app;
+
