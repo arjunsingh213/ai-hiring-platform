@@ -341,8 +341,10 @@ export class LivenessDetector {
         const noseOffset = (noseCenter.x - eyeMidpoint.x) / eyeDistance;
 
         // Convert to approximate yaw angle (rough estimation)
-        // Positive = looking right, Negative = looking left
-        const yaw = noseOffset * 45; // Rough scale to degrees
+        // INVERTED because video is mirrored (selfie mode)
+        // Positive = user turning left (appears right on screen)
+        // Negative = user turning right (appears left on screen)
+        const yaw = -noseOffset * 45; // Negative to match mirrored display
 
         return yaw;
     }
