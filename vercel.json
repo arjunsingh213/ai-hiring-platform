@@ -1,24 +1,28 @@
 {
     "version": 2,
-    "framework": null,
-    "buildCommand": "cd client && npm install && npm run build",
-    "outputDirectory": "client/dist",
-    "installCommand": "npm install && cd client && npm install && cd ../server && npm install",
-    "functions": {
-        "api/index.js": {
-            "memory": 1024,
-            "maxDuration": 60,
-            "includeFiles": "server/**"
-        }
-    },
-    "rewrites": [
+    "builds": [
         {
-            "source": "/api/:path*",
-            "destination": "/api"
+            "src": "client/dist/**",
+            "use": "@vercel/static"
         },
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "api/index.js",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "server/**"
+                ]
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/index.js"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/client/dist/$1"
         }
     ]
 }

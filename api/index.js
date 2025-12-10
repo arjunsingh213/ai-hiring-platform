@@ -1,120 +1,65 @@
-// Vercel Serverless API Entry Point
-// This handles all /api/* routes
-
+// Vercel Serverless Function - Native Format
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
+const cors = require('cors');
 
-// Create Express app for serverless
 const app = express();
 
-// MongoDB connection (singleton for serverless)
-let isConnected = false;
-const connectDB = async () => {
-    if (isConnected) return;
+// MongoDB singleton connection
+let cachedDb = null;
+async function connectToDatabase() {
+    if (cachedDb) return cachedDb;
 
-    try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        isConnected = true;
-        console.log('MongoDB Connected for Vercel');
-    } catch (error) {
-        console.error('MongoDB connection error:', error.message);
-        throw error;
-    }
-};
+    const client = await mongoose.connect(process.env.MONGODB_URI);
+    cachedDb = client;
+    console.log('MongoDB connected');
+    return cachedDb;
+}
 
-// CORS configuration
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://ai-hiring-platform-cm5t.vercel.app',
-    process.env.CLIENT_URL
-].filter(Boolean);
-
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.some(allowed => origin && allowed && origin.includes(allowed))) {
-            callback(null, true);
-        } else {
-            console.log('CORS blocked origin:', origin);
-            callback(null, true); // Allow all in serverless for now
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+// Middleware
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// Request logging
-app.use((req, res, next) => {
-    console.log(`[Vercel] ${req.method} ${req.path}`);
-    next();
-});
-
-// Connect to DB before handling routes
+// Connect to DB middleware
 app.use(async (req, res, next) => {
     try {
-        await connectDB();
+        await connectToDatabase();
         next();
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Database connection failed' });
+        console.error('DB Error:', error);
+        return res.status(500).json({ error: 'Database connection failed' });
     }
 });
 
-// Import routes from server folder
-const authRoutes = require('../server/routes/authRoutes');
-const userRoutes = require('../server/routes/userRoutes');
-const jobRoutes = require('../server/routes/jobRoutes');
-const postRoutes = require('../server/routes/postRoutes');
-const messageRoutes = require('../server/routes/messageRoutes');
-const notificationRoutes = require('../server/routes/notificationRoutes');
-const interviewRoutes = require('../server/routes/interviewRoutes');
-const profileRoutes = require('../server/routes/profileRoutes');
-const resumeRoutes = require('../server/routes/resumeRoutes');
-const hiringRoutes = require('../server/routes/hiring');
-const documentsRoutes = require('../server/routes/documents');
-const resumeParserRoutes = require('../server/routes/resumeParser');
-const onboardingInterviewRoutes = require('../server/routes/onboardingInterview');
+// Routes
+app.use('/api/auth', require('../server/routes/authRoutes'));
+app.use('/api/users', require('../server/routes/userRoutes'));
+app.use('/api/jobs', require('../server/routes/jobRoutes'));
+app.use('/api/posts', require('../server/routes/postRoutes'));
+app.use('/api/messages', require('../server/routes/messageRoutes'));
+app.use('/api/notifications', require('../server/routes/notificationRoutes'));
+app.use('/api/interviews', require('../server/routes/interviewRoutes'));
+app.use('/api/profiles', require('../server/routes/profileRoutes'));
+app.use('/api/resumes', require('../server/routes/resumeRoutes'));
+app.use('/api/hiring', require('../server/routes/hiring'));
+app.use('/api/hiring', require('../server/routes/documents'));
+app.use('/api/resume', require('../server/routes/resumeParser'));
+app.use('/api/onboarding-interview', require('../server/routes/onboardingInterview'));
 
-// Mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/jobs', jobRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/interviews', interviewRoutes);
-app.use('/api/profiles', profileRoutes);
-app.use('/api/resumes', resumeRoutes);
-app.use('/api/hiring', hiringRoutes);
-app.use('/api/hiring', documentsRoutes);
-app.use('/api/resume', resumeParserRoutes);
-app.use('/api/onboarding-interview', onboardingInterviewRoutes);
-
-// Health check
+// Health endpoints
 app.get('/api', (req, res) => {
-    res.json({
-        success: true,
-        message: 'AI Hiring Platform API is running on Vercel',
-        timestamp: new Date().toISOString()
-    });
+    res.json({ success: true, message: 'API Running', time: new Date().toISOString() });
 });
 
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', environment: 'vercel' });
+    res.json({ status: 'OK' });
 });
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-    res.status(404).json({ success: false, error: `API route not found: ${req.path}` });
+// 404 for API
+app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-// Export for Vercel
+// Export as Vercel handler
 module.exports = app;
