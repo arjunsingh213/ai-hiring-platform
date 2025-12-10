@@ -36,7 +36,22 @@ const userSchema = new mongoose.Schema({
         photo: String, // GridFS file ID or URL
         headline: String, // Professional headline (e.g., "Full Stack Developer")
         bio: String, // Short bio (max 500 chars)
-        location: String // City/Country
+        location: String, // City/Country
+        // Face Authentication Fields
+        faceDescriptor: {
+            type: [Number], // 128-dimension face encoding
+            select: false // Don't return by default for security
+        },
+        faceVerified: {
+            type: Boolean,
+            default: false
+        },
+        faceVerifiedAt: Date,
+        faceQualityScore: Number,
+        livenessVerified: {
+            type: Boolean,
+            default: false
+        }
     },
 
     // Social connections

@@ -5,6 +5,8 @@ import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ImageCropModal from '../../components/ImageCropModal';
 import OnboardingInterview from './OnboardingInterview';
+import LiveCameraVerification from '../../components/LiveCameraVerification';
+import { validateProfilePhoto } from '../../services/faceValidationService';
 import './Onboarding.css';
 
 const JobSeekerOnboarding = () => {
@@ -36,6 +38,13 @@ const JobSeekerOnboarding = () => {
     const [croppedPhotoBlob, setCroppedPhotoBlob] = useState(null);
     const [photoPreview, setPhotoPreview] = useState(null);
 
+    // Face verification state
+    const [showFaceVerification, setShowFaceVerification] = useState(false);
+    const [faceDescriptor, setFaceDescriptor] = useState(null);
+    const [faceVerified, setFaceVerified] = useState(false);
+    const [faceValidationResult, setFaceValidationResult] = useState(null);
+    const [validatingFace, setValidatingFace] = useState(false);
+
     // Interview state
     const [showInterview, setShowInterview] = useState(false);
     const [parsedResume, setParsedResume] = useState(null);
@@ -64,13 +73,76 @@ const JobSeekerOnboarding = () => {
         }
     };
 
-    const handleCropComplete = (croppedBlob) => {
+    const handleCropComplete = async (croppedBlob) => {
         setCroppedPhotoBlob(croppedBlob);
-        setPhotoPreview(URL.createObjectURL(croppedBlob));
+        const previewUrl = URL.createObjectURL(croppedBlob);
+        setPhotoPreview(previewUrl);
         setFormData(prev => ({ ...prev, photo: croppedBlob }));
         setShowCropModal(false);
         setCropImageSrc(null);
-        toast.success('Photo cropped successfully!');
+
+        // Validate face in the uploaded photo
+        setValidatingFace(true);
+        toast.info('Validating face in photo...');
+
+        try {
+            // Create an image element from the blob
+            const img = new Image();
+            img.src = previewUrl;
+
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+
+            const validationResult = await validateProfilePhoto(img);
+            setFaceValidationResult(validationResult);
+
+            if (validationResult.valid) {
+                setFaceDescriptor(validationResult.descriptor);
+                toast.success('Face detected! Please complete live verification.');
+                // Trigger live camera verification
+                setShowFaceVerification(true);
+            } else {
+                toast.error(validationResult.message || 'Face validation failed. Please upload a clearer photo.');
+                setPhotoPreview(null);
+                setCroppedPhotoBlob(null);
+                setFormData(prev => ({ ...prev, photo: null }));
+            }
+        } catch (error) {
+            console.error('Face validation error:', error);
+            toast.error('Failed to validate face. Please try again.');
+        } finally {
+            setValidatingFace(false);
+        }
+    };
+
+    const handleFaceVerificationComplete = (result) => {
+        setShowFaceVerification(false);
+
+        if (result.success) {
+            setFaceVerified(true);
+            // Update face descriptor with live descriptor for better accuracy
+            if (result.descriptor) {
+                setFaceDescriptor(result.descriptor);
+            }
+            toast.success('🎉 Face verification successful! Your identity is confirmed.');
+        } else {
+            // Face didn't match - clear photo and ask to try again
+            setFaceVerified(false);
+            setPhotoPreview(null);
+            setCroppedPhotoBlob(null);
+            setFormData(prev => ({ ...prev, photo: null }));
+            setFaceDescriptor(null);
+            toast.error('Face verification failed. Please upload a matching photo.');
+        }
+    };
+
+    const handleFaceVerificationCancel = () => {
+        setShowFaceVerification(false);
+        // Keep the photo but mark as unverified
+        setFaceVerified(false);
+        toast.warning('Face verification skipped. You can verify later.');
     };
 
     const handleCropCancel = () => {
@@ -126,7 +198,13 @@ const JobSeekerOnboarding = () => {
                     age: parseInt(formData.age),
                     dob: formData.dob,
                     mobile: formData.mobile.trim(),
-                    photo: photoUrl || ''
+                    photo: photoUrl || '',
+                    // Face authentication data
+                    faceDescriptor: faceDescriptor || [],
+                    faceVerified: faceVerified,
+                    faceVerifiedAt: faceVerified ? new Date().toISOString() : null,
+                    faceQualityScore: faceValidationResult?.score || 0,
+                    livenessVerified: faceVerified
                 },
                 jobSeekerProfile: {
                     profession: formData.profession.trim(),
@@ -533,6 +611,25 @@ const JobSeekerOnboarding = () => {
                     onComplete={handleCropComplete}
                     onCancel={handleCropCancel}
                 />
+            )}
+
+            {/* Live Camera Face Verification Modal */}
+            {showFaceVerification && (
+                <LiveCameraVerification
+                    referenceDescriptor={faceDescriptor}
+                    onVerificationComplete={handleFaceVerificationComplete}
+                    onCancel={handleFaceVerificationCancel}
+                />
+            )}
+
+            {/* Face Validation Loading Overlay */}
+            {validatingFace && (
+                <div className="face-validation-overlay">
+                    <div className="face-validation-spinner">
+                        <div className="spinner"></div>
+                        <p>Validating face in photo...</p>
+                    </div>
+                </div>
             )}
 
             {/* Inline Interview */}
