@@ -25,7 +25,7 @@ const LiveCameraVerification = ({
     const [status, setStatus] = useState('loading'); // loading, ready, verifying, success, failed
     const [message, setMessage] = useState('Initializing camera...');
     const [currentChallenge, setCurrentChallenge] = useState(null);
-    const [progress, setProgress] = useState({ completed: [false], blinkCount: 0 });
+    const [progress, setProgress] = useState({ completed: [false, false], leftTurnDetected: false, rightTurnDetected: false });
     const [faceMatch, setFaceMatch] = useState(null);
     const [detectionBox, setDetectionBox] = useState(null);
     const [qualityMetrics, setQualityMetrics] = useState(null);
@@ -239,7 +239,7 @@ const LiveCameraVerification = ({
         setStatus('ready');
         setMessage('Position your face in the frame');
         setFaceMatch(null);
-        setProgress({ completed: [false], blinkCount: 0 });
+        setProgress({ completed: [false, false], leftTurnDetected: false, rightTurnDetected: false });
         setCurrentChallenge(livenessDetectorRef.current.getCurrentChallenge());
     };
 
@@ -280,21 +280,34 @@ const LiveCameraVerification = ({
             {/* Challenge progress */}
             <div className="challenge-section">
                 <div className="challenge-progress">
-                    <div className={`challenge-step ${progress.completed[0] ? 'completed' : currentChallenge === 'BLINK' ? 'active' : ''}`}>
-                        <span className="step-icon">{progress.completed[0] ? '✓' : '👁️'}</span>
-                        <span className="step-label">Blink Verification</span>
+                    <div className={`challenge-step ${progress.completed[0] ? 'completed' : currentChallenge === 'TURN_LEFT' ? 'active' : ''}`}>
+                        <span className="step-icon">{progress.completed[0] ? '✓' : '←'}</span>
+                        <span className="step-label">Turn Left</span>
+                    </div>
+                    <div className="challenge-connector"></div>
+                    <div className={`challenge-step ${progress.completed[1] ? 'completed' : currentChallenge === 'TURN_RIGHT' ? 'active' : ''}`}>
+                        <span className="step-icon">{progress.completed[1] ? '✓' : '→'}</span>
+                        <span className="step-label">Turn Right</span>
                     </div>
                 </div>
+
+                {/* Direction Arrow Indicator */}
+                {(currentChallenge === 'TURN_LEFT' || currentChallenge === 'TURN_RIGHT') && status === 'verifying' && (
+                    <div className={`direction-indicator ${currentChallenge === 'TURN_LEFT' ? 'left' : 'right'}`}>
+                        <div className="arrow-container">
+                            <span className="direction-arrow">
+                                {currentChallenge === 'TURN_LEFT' ? '⟵' : '⟶'}
+                            </span>
+                            <span className="direction-text">
+                                {currentChallenge === 'TURN_LEFT' ? 'Turn LEFT' : 'Turn RIGHT'}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 <div className={`message-box ${status}`}>
                     <p>{message}</p>
                 </div>
-
-                {currentChallenge === 'BLINK' && (
-                    <div className="blink-counter">
-                        Blinks detected: {progress.blinkCount} / {progress.requiredBlinks || 2}
-                    </div>
-                )}
             </div>
 
             {/* Face match result */}

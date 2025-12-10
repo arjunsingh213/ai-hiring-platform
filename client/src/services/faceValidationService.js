@@ -243,33 +243,28 @@ export const analyzeExpressions = (detection) => {
 
 /**
  * Liveness Detection State Machine
- * Tracks blink detection only (smile removed per user request)
+ * Tracks head turn detection (left then right) for liveness verification
  */
 export class LivenessDetector {
     constructor() {
-        this.challenges = ['BLINK']; // Only blink challenge
+        this.challenges = ['TURN_LEFT', 'TURN_RIGHT'];
         this.currentChallenge = 0;
-        this.challengeCompleted = [false];
-        this.eyeOpenHistory = [];
-        this.earHistory = [];
-        this.lastBlinkTime = 0;
-        this.blinkCount = 0;
-        this.requiredBlinks = 2;
-        this.blinkInProgress = false;
-        this.consecutiveClosedFrames = 0;
-        this.consecutiveOpenFrames = 0;
+        this.challengeCompleted = [false, false];
+        this.yawHistory = [];
+        this.baselineYaw = null;
+        this.leftTurnDetected = false;
+        this.rightTurnDetected = false;
+        this.turnThreshold = 20; // Degrees to turn
+        this.neutralThreshold = 10; // Degrees considered neutral/center
     }
 
     reset() {
         this.currentChallenge = 0;
-        this.challengeCompleted = [false];
-        this.eyeOpenHistory = [];
-        this.earHistory = [];
-        this.lastBlinkTime = 0;
-        this.blinkCount = 0;
-        this.blinkInProgress = false;
-        this.consecutiveClosedFrames = 0;
-        this.consecutiveOpenFrames = 0;
+        this.challengeCompleted = [false, false];
+        this.yawHistory = [];
+        this.baselineYaw = null;
+        this.leftTurnDetected = false;
+        this.rightTurnDetected = false;
     }
 
     getCurrentChallenge() {
@@ -286,96 +281,129 @@ export class LivenessDetector {
 
         const landmarks = detection.landmarks;
 
-        // Only blink challenge now
+        // Calculate head yaw (left-right rotation) from landmarks
+        const yaw = this.calculateHeadYaw(landmarks);
+
+        // Store yaw history
+        this.yawHistory.push(yaw);
+        if (this.yawHistory.length > 10) {
+            this.yawHistory.shift();
+        }
+
+        // Establish baseline when first detecting face
+        if (this.baselineYaw === null && this.yawHistory.length >= 5) {
+            this.baselineYaw = this.yawHistory.reduce((a, b) => a + b, 0) / this.yawHistory.length;
+        }
+
         const challenge = this.getCurrentChallenge();
 
-        if (challenge === 'BLINK') {
-            return this.checkBlink(landmarks);
+        if (challenge === 'TURN_LEFT') {
+            return this.checkTurnLeft(yaw);
+        } else if (challenge === 'TURN_RIGHT') {
+            return this.checkTurnRight(yaw);
         }
 
         return { status: 'COMPLETE', message: 'Verification complete!' };
     }
 
-    checkBlink(landmarks) {
-        // Calculate Eye Aspect Ratio (EAR)
+    calculateHeadYaw(landmarks) {
+        // Use nose and eye positions to estimate head yaw
+        const nose = landmarks.getNose();
         const leftEye = landmarks.getLeftEye();
         const rightEye = landmarks.getRightEye();
 
-        const leftEAR = this.calculateEAR(leftEye);
-        const rightEAR = this.calculateEAR(rightEye);
-        const avgEAR = (leftEAR + rightEAR) / 2;
+        // Get center points
+        const noseCenter = {
+            x: nose[3].x, // Nose tip
+            y: nose[3].y
+        };
 
-        // Store EAR history for adaptive threshold
-        this.earHistory.push(avgEAR);
-        if (this.earHistory.length > 30) {
-            this.earHistory.shift();
+        const leftEyeCenter = {
+            x: leftEye.reduce((sum, p) => sum + p.x, 0) / leftEye.length,
+            y: leftEye.reduce((sum, p) => sum + p.y, 0) / leftEye.length
+        };
+
+        const rightEyeCenter = {
+            x: rightEye.reduce((sum, p) => sum + p.x, 0) / rightEye.length,
+            y: rightEye.reduce((sum, p) => sum + p.y, 0) / rightEye.length
+        };
+
+        // Calculate eye midpoint
+        const eyeMidpoint = {
+            x: (leftEyeCenter.x + rightEyeCenter.x) / 2,
+            y: (leftEyeCenter.y + rightEyeCenter.y) / 2
+        };
+
+        // Distance between eyes (for normalization)
+        const eyeDistance = Math.abs(rightEyeCenter.x - leftEyeCenter.x);
+
+        // Nose offset from eye midpoint (normalized)
+        const noseOffset = (noseCenter.x - eyeMidpoint.x) / eyeDistance;
+
+        // Convert to approximate yaw angle (rough estimation)
+        // Positive = looking right, Negative = looking left
+        const yaw = noseOffset * 45; // Rough scale to degrees
+
+        return yaw;
+    }
+
+    checkTurnLeft(yaw) {
+        const relativeYaw = yaw - (this.baselineYaw || 0);
+
+        // Check if turned left enough (negative yaw = looking left)
+        if (relativeYaw < -this.turnThreshold) {
+            this.leftTurnDetected = true;
+            this.challengeCompleted[0] = true;
+            this.currentChallenge = 1;
+            console.log('Left turn detected!', relativeYaw);
+            return {
+                status: 'CHALLENGE_COMPLETE',
+                message: '✓ Left turn detected! Now turn RIGHT →',
+                yaw: relativeYaw.toFixed(1),
+                direction: 'left'
+            };
         }
 
-        // Calculate adaptive threshold based on user's eye size
-        // Use 75% of average EAR as closed threshold
-        const avgOpenEAR = this.earHistory.length > 5
-            ? this.earHistory.slice(0, 5).reduce((a, b) => a + b, 0) / 5
-            : 0.25;
-        const closedThreshold = Math.min(0.22, avgOpenEAR * 0.65);
-
-        // Detect eye state with more lenient threshold
-        const isEyeClosed = avgEAR < closedThreshold;
-
-        // Track consecutive frames for more reliable detection
-        if (isEyeClosed) {
-            this.consecutiveClosedFrames++;
-            this.consecutiveOpenFrames = 0;
-        } else {
-            this.consecutiveOpenFrames++;
-            this.consecutiveClosedFrames = 0;
-        }
-
-        // Detect blink: eyes were open, then closed for 1+ frames, then open again
-        if (!this.blinkInProgress && this.consecutiveClosedFrames >= 1) {
-            this.blinkInProgress = true;
-        }
-
-        if (this.blinkInProgress && this.consecutiveOpenFrames >= 2) {
-            // Blink completed!
-            const now = Date.now();
-            if (now - this.lastBlinkTime > 300) { // 300ms debounce
-                this.blinkCount++;
-                this.lastBlinkTime = now;
-                this.blinkInProgress = false;
-
-                console.log(`Blink detected! Count: ${this.blinkCount}`);
-
-                if (this.blinkCount >= this.requiredBlinks) {
-                    this.challengeCompleted[0] = true;
-                    return { status: 'CHALLENGE_COMPLETE', message: 'Blinks verified! Verification complete!' };
-                }
-                return {
-                    status: 'PROGRESS',
-                    message: `Blink ${this.blinkCount}/${this.requiredBlinks} detected! Keep blinking!`
-                };
-            }
-        }
+        // Show progress
+        const progress = Math.min(100, Math.abs(relativeYaw / this.turnThreshold) * 100);
 
         return {
             status: 'WAITING',
-            message: `Please blink naturally (${this.blinkCount}/${this.requiredBlinks})`,
-            earValue: avgEAR.toFixed(3),
-            threshold: closedThreshold.toFixed(3)
+            message: '← Turn your head LEFT',
+            yaw: relativeYaw.toFixed(1),
+            progress: progress.toFixed(0),
+            direction: 'left',
+            targetDirection: 'left'
         };
     }
 
-    calculateEAR(eye) {
-        // Eye Aspect Ratio calculation using 6 landmarks
-        // Points: 0=outer corner, 1=upper outer, 2=upper inner, 3=inner corner, 4=lower inner, 5=lower outer
-        const v1 = this.distance(eye[1], eye[5]); // Upper outer to lower outer
-        const v2 = this.distance(eye[2], eye[4]); // Upper inner to lower inner
-        const h = this.distance(eye[0], eye[3]);  // Outer corner to inner corner
+    checkTurnRight(yaw) {
+        const relativeYaw = yaw - (this.baselineYaw || 0);
 
-        return (v1 + v2) / (2 * h);
-    }
+        // Check if turned right enough (positive yaw = looking right)
+        if (relativeYaw > this.turnThreshold) {
+            this.rightTurnDetected = true;
+            this.challengeCompleted[1] = true;
+            console.log('Right turn detected!', relativeYaw);
+            return {
+                status: 'CHALLENGE_COMPLETE',
+                message: '✓ Right turn detected! Verifying face match...',
+                yaw: relativeYaw.toFixed(1),
+                direction: 'right'
+            };
+        }
 
-    distance(p1, p2) {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        // Show progress
+        const progress = Math.min(100, Math.abs(relativeYaw / this.turnThreshold) * 100);
+
+        return {
+            status: 'WAITING',
+            message: 'Turn your head RIGHT →',
+            yaw: relativeYaw.toFixed(1),
+            progress: progress.toFixed(0),
+            direction: 'right',
+            targetDirection: 'right'
+        };
     }
 
     getProgress() {
@@ -383,8 +411,8 @@ export class LivenessDetector {
             challenges: this.challenges,
             completed: this.challengeCompleted,
             current: this.currentChallenge,
-            blinkCount: this.blinkCount,
-            requiredBlinks: this.requiredBlinks
+            leftTurnDetected: this.leftTurnDetected,
+            rightTurnDetected: this.rightTurnDetected
         };
     }
 }
