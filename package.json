@@ -11,6 +11,7 @@
     "vercel-build": "cd client && npm install && npm run build"
   },
   "dependencies": {
+    "axios": "^1.13.2",
     "react-image-crop": "^11.0.10"
   },
   "devDependencies": {

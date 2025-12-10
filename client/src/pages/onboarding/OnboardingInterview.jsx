@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../components/Toast';
 import api from '../../services/api';
+import CodeIDE from '../../components/CodeIDE';
 import './OnboardingInterview.css';
 
 const OnboardingInterview = ({
@@ -33,6 +34,13 @@ const OnboardingInterview = ({
     // Text-to-speech
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [ttsSupported, setTtsSupported] = useState(false);
+
+    // Coding test state
+    const [showCodingTest, setShowCodingTest] = useState(false);
+    const [codingProblem, setCodingProblem] = useState(null);
+    const [detectedLanguages, setDetectedLanguages] = useState([]);
+    const [codingResults, setCodingResults] = useState(null);
+    const [loadingProblem, setLoadingProblem] = useState(false);
 
     // Initialize speech recognition
     useEffect(() => {
@@ -80,6 +88,27 @@ const OnboardingInterview = ({
     useEffect(() => {
         generateQuestions();
     }, []);
+
+    // Detect programming languages from resume
+    useEffect(() => {
+        const detectLanguages = async () => {
+            if (parsedResume?.skills && parsedResume.skills.length > 0) {
+                try {
+                    const response = await api.post('/code/detect-languages', {
+                        skills: parsedResume.skills
+                    });
+                    if (response.success && response.languages?.length > 0) {
+                        setDetectedLanguages(response.languages);
+                        console.log('Detected programming languages:', response.languages);
+                    }
+                } catch (error) {
+                    console.log('Language detection skipped:', error.message);
+                }
+            }
+        };
+        detectLanguages();
+    }, [parsedResume]);
+
 
     // Timer effect
     useEffect(() => {
@@ -250,7 +279,15 @@ const OnboardingInterview = ({
 
             if (response.success) {
                 setResults(response.data);
-                setCompleted(true);
+
+                // Check if user has programming skills → show coding test
+                if (detectedLanguages.length > 0) {
+                    toast.success('Interview complete! Preparing coding challenge...');
+                    loadCodingProblem();
+                } else {
+                    // Non-technical user → skip to results
+                    setCompleted(true);
+                }
             } else {
                 throw new Error(response.error || 'Submission failed');
             }
@@ -258,14 +295,77 @@ const OnboardingInterview = ({
             console.error('Interview submission error:', error);
             toast.error('Failed to submit interview. Proceeding anyway.');
             setResults({ score: 70, passed: true, feedback: 'Interview recorded.' });
-            setCompleted(true);
+
+            // Still check for coding test
+            if (detectedLanguages.length > 0) {
+                loadCodingProblem();
+            } else {
+                setCompleted(true);
+            }
         } finally {
             setSubmitting(false);
         }
     };
 
+    // Load coding problem for the candidate
+    const loadCodingProblem = async () => {
+        setLoadingProblem(true);
+        try {
+            const primaryLanguage = detectedLanguages[0];
+            const response = await api.post('/code/generate-problem', {
+                skills: parsedResume?.skills || [],
+                language: primaryLanguage.name,
+                difficulty: 'easy' // Start with easy
+            });
+
+            if (response.success && response.problem) {
+                setCodingProblem({
+                    ...response.problem,
+                    languageId: primaryLanguage.judge0Id
+                });
+                setShowCodingTest(true);
+            } else {
+                throw new Error('Failed to generate problem');
+            }
+        } catch (error) {
+            console.error('Failed to load coding problem:', error);
+            toast.error('Could not load coding test. Skipping to results.');
+            setCompleted(true);
+        } finally {
+            setLoadingProblem(false);
+        }
+    };
+
+    // Handle coding test completion
+    const handleCodingComplete = (codingResult) => {
+        setCodingResults(codingResult);
+        setShowCodingTest(false);
+
+        // Update results with coding score
+        setResults(prev => ({
+            ...prev,
+            codingScore: codingResult.score,
+            codingPassed: codingResult.testsPassed,
+            codingLanguage: codingResult.language
+        }));
+
+        toast.success(`Coding test completed! Score: ${codingResult.score}/100`);
+        setCompleted(true);
+    };
+
+    // Skip coding test
+    const handleSkipCoding = () => {
+        setShowCodingTest(false);
+        setCodingResults({ skipped: true });
+        toast.info('Coding test skipped.');
+        setCompleted(true);
+    };
+
     const handleFinish = () => {
-        onComplete(results);
+        onComplete({
+            ...results,
+            codingResults
+        });
     };
 
     const formatTime = (seconds) => {
@@ -285,6 +385,31 @@ const OnboardingInterview = ({
                 <h2>Generating Your Personalized Interview...</h2>
                 <p>Based on your resume, we're creating tailored questions just for you.</p>
             </div>
+        );
+    }
+
+    // Show loading state when generating coding problem
+    if (loadingProblem) {
+        return (
+            <div className="onboarding-interview loading-state">
+                <div className="loading-spinner"></div>
+                <h2>🧑‍💻 Preparing Coding Challenge...</h2>
+                <p>Generating a personalized coding problem based on your {detectedLanguages[0]?.name || 'programming'} skills.</p>
+            </div>
+        );
+    }
+
+    // Show coding IDE if coding test is active
+    if (showCodingTest && codingProblem) {
+        return (
+            <CodeIDE
+                language={codingProblem.language || detectedLanguages[0]?.name || 'JavaScript'}
+                languageId={codingProblem.languageId || detectedLanguages[0]?.judge0Id || 63}
+                problem={codingProblem}
+                onComplete={handleCodingComplete}
+                onSkip={handleSkipCoding}
+                timeLimit={codingProblem.timeLimit || 15}
+            />
         );
     }
 
@@ -313,6 +438,13 @@ const OnboardingInterview = ({
                             <span className="score-num">{results.hrScore || '-'}</span>
                             <span className="score-title">HR/Behavioral</span>
                         </div>
+                        {results.codingScore !== undefined && (
+                            <div className="score-item coding">
+                                <span className="score-icon">🧑‍💻</span>
+                                <span className="score-num">{results.codingScore}</span>
+                                <span className="score-title">Coding ({results.codingLanguage || 'Code'})</span>
+                            </div>
+                        )}
                         <div className="score-item">
                             <span className="score-icon">💬</span>
                             <span className="score-num">{results.communication || '-'}</span>

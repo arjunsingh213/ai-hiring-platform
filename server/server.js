@@ -65,6 +65,7 @@ app.use('/api/hiring', require('./routes/hiring'));
 app.use('/api/hiring', require('./routes/documents'));
 app.use('/api/resume', require('./routes/resumeParser'));
 app.use('/api/onboarding-interview', require('./routes/onboardingInterview'));
+app.use('/api/code', require('./routes/codeExecutionRoutes'));
 
 // Health check endpoint
 app.get('/', (req, res) => {
