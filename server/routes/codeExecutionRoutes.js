@@ -1,6 +1,7 @@
 /**
  * Code Execution Routes
- * Handles code execution via Judge0 API (self-hosted or cloud)
+ * Uses Piston API (free, open-source code execution engine)
+ * Public instance: https://emkc.org/api/v2/piston
  */
 
 const express = require('express');
@@ -8,49 +9,69 @@ const router = express.Router();
 const axios = require('axios');
 const deepseekService = require('../services/ai/deepseekService');
 
-// Judge0 API configuration - supports both self-hosted and RapidAPI
-const JUDGE0_API_URL = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
-const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY; // Only needed for RapidAPI
+// Piston API - FREE public instance
+const PISTON_API_URL = process.env.PISTON_API_URL || 'https://emkc.org/api/v2/piston';
+
+// Language mapping for Piston
+const PISTON_LANGUAGES = {
+    'Python': { language: 'python', version: '3.10.0' },
+    'JavaScript': { language: 'javascript', version: '18.15.0' },
+    'TypeScript': { language: 'typescript', version: '5.0.3' },
+    'Java': { language: 'java', version: '15.0.2' },
+    'C#': { language: 'csharp', version: '6.12.0' },
+    'C++': { language: 'cpp', version: '10.2.0' },
+    'C': { language: 'c', version: '10.2.0' },
+    'Go': { language: 'go', version: '1.16.2' },
+    'Ruby': { language: 'ruby', version: '3.0.1' },
+    'PHP': { language: 'php', version: '8.2.3' },
+    'Rust': { language: 'rust', version: '1.68.2' },
+    'Kotlin': { language: 'kotlin', version: '1.8.20' }
+};
 
 /**
- * Execute code via Judge0
+ * Execute code via Piston API (FREE)
  */
-async function executeCode(code, languageId, stdin = '') {
-    const headers = {
-        'Content-Type': 'application/json'
-    };
+async function executeCode(code, language, stdin = '') {
+    const langConfig = PISTON_LANGUAGES[language];
 
-    // Add RapidAPI headers if using cloud service
-    if (JUDGE0_API_KEY) {
-        headers['X-RapidAPI-Key'] = JUDGE0_API_KEY;
-        headers['X-RapidAPI-Host'] = 'judge0-ce.p.rapidapi.com';
+    if (!langConfig) {
+        return {
+            success: false,
+            error: `Language "${language}" not supported`,
+            output: ''
+        };
     }
 
     try {
-        // Submit code for execution
-        const submitResponse = await axios.post(
-            `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=true`,
+        const response = await axios.post(
+            `${PISTON_API_URL}/execute`,
             {
-                source_code: code,
-                language_id: languageId,
+                language: langConfig.language,
+                version: langConfig.version,
+                files: [
+                    {
+                        name: `main.${getExtension(language)}`,
+                        content: code
+                    }
+                ],
                 stdin: stdin,
-                cpu_time_limit: 5,
-                memory_limit: 128000
+                run_timeout: 10000 // 10 second timeout
             },
-            { headers, timeout: 30000 }
+            { timeout: 30000 }
         );
 
+        const result = response.data;
+
         return {
-            success: true,
-            output: submitResponse.data.stdout || '',
-            stderr: submitResponse.data.stderr || '',
-            compile_output: submitResponse.data.compile_output || '',
-            status: submitResponse.data.status,
-            time: submitResponse.data.time,
-            memory: submitResponse.data.memory
+            success: !result.run?.stderr,
+            output: result.run?.stdout || '',
+            stderr: result.run?.stderr || '',
+            compile_output: result.compile?.output || '',
+            time: result.run?.time || 0,
+            language: language
         };
     } catch (error) {
-        console.error('Judge0 execution error:', error.response?.data || error.message);
+        console.error('Piston execution error:', error.response?.data || error.message);
         return {
             success: false,
             error: error.response?.data?.message || error.message,
@@ -60,32 +81,48 @@ async function executeCode(code, languageId, stdin = '') {
     }
 }
 
+function getExtension(language) {
+    const extensions = {
+        'Python': 'py',
+        'JavaScript': 'js',
+        'TypeScript': 'ts',
+        'Java': 'java',
+        'C#': 'cs',
+        'C++': 'cpp',
+        'C': 'c',
+        'Go': 'go',
+        'Ruby': 'rb',
+        'PHP': 'php',
+        'Rust': 'rs',
+        'Kotlin': 'kt'
+    };
+    return extensions[language] || 'txt';
+}
+
 /**
  * POST /api/code/execute
  * Execute code and return output
  */
 router.post('/execute', async (req, res) => {
     try {
-        const { code, language, languageId } = req.body;
+        const { code, language } = req.body;
 
-        if (!code || !languageId) {
+        if (!code || !language) {
             return res.status(400).json({
                 success: false,
                 error: 'Code and language are required'
             });
         }
 
-        console.log(`Executing ${language} code (ID: ${languageId})`);
-        const result = await executeCode(code, languageId);
+        console.log(`Executing ${language} code via Piston API`);
+        const result = await executeCode(code, language);
 
         res.json({
             success: result.success,
             output: result.output,
             stderr: result.stderr,
             compileOutput: result.compile_output,
-            status: result.status,
             time: result.time,
-            memory: result.memory,
             error: result.error
         });
     } catch (error) {
@@ -126,15 +163,11 @@ router.post('/generate-problem', async (req, res) => {
             skills || []
         );
 
-        // Get language info for Judge0
-        const langInfo = Object.values(deepseekService.PROGRAMMING_LANGUAGES)
-            .find(l => l.name === targetLanguage);
-
         res.json({
             success: true,
             problem: {
                 ...problem,
-                languageId: langInfo?.judge0Id || 63 // Default to JavaScript
+                language: targetLanguage
             }
         });
     } catch (error) {
@@ -156,13 +189,9 @@ router.post('/generate-problem', async (req, res) => {
  */
 router.post('/evaluate', async (req, res) => {
     try {
-        const { code, problem, language, testResults } = req.body;
+        const { code, problem, language } = req.body;
 
-        // Run test cases
-        const langInfo = Object.values(deepseekService.PROGRAMMING_LANGUAGES)
-            .find(l => l.name === language);
-
-        if (!langInfo) {
+        if (!PISTON_LANGUAGES[language]) {
             return res.status(400).json({
                 success: false,
                 error: 'Unsupported language'
@@ -170,7 +199,7 @@ router.post('/evaluate', async (req, res) => {
         }
 
         // Execute code
-        const executionResult = await executeCode(code, langInfo.judge0Id);
+        const executionResult = await executeCode(code, language);
 
         // Evaluate with DeepSeek
         const evaluation = await deepseekService.evaluateCodeSolution(
@@ -199,21 +228,32 @@ router.post('/evaluate', async (req, res) => {
  * GET /api/code/languages
  * Get supported programming languages
  */
-router.get('/languages', (req, res) => {
-    const languages = Object.entries(deepseekService.PROGRAMMING_LANGUAGES).map(([key, value]) => ({
-        key,
-        ...value
-    }));
+router.get('/languages', async (req, res) => {
+    try {
+        // Get available runtimes from Piston
+        const response = await axios.get(`${PISTON_API_URL}/runtimes`);
 
-    // Remove duplicates
-    const unique = languages.filter((lang, index, self) =>
-        index === self.findIndex(l => l.name === lang.name)
-    );
+        const supported = Object.keys(PISTON_LANGUAGES).map(name => ({
+            name,
+            ...PISTON_LANGUAGES[name]
+        }));
 
-    res.json({
-        success: true,
-        languages: unique
-    });
+        res.json({
+            success: true,
+            languages: supported
+        });
+    } catch (error) {
+        // Return our hardcoded list as fallback
+        const supported = Object.keys(PISTON_LANGUAGES).map(name => ({
+            name,
+            ...PISTON_LANGUAGES[name]
+        }));
+
+        res.json({
+            success: true,
+            languages: supported
+        });
+    }
 });
 
 /**
