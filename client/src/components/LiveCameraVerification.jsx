@@ -25,7 +25,7 @@ const LiveCameraVerification = ({
     const [status, setStatus] = useState('loading'); // loading, ready, verifying, success, failed
     const [message, setMessage] = useState('Initializing camera...');
     const [currentChallenge, setCurrentChallenge] = useState(null);
-    const [progress, setProgress] = useState({ completed: [false, false], blinkCount: 0 });
+    const [progress, setProgress] = useState({ completed: [false], blinkCount: 0 });
     const [faceMatch, setFaceMatch] = useState(null);
     const [detectionBox, setDetectionBox] = useState(null);
     const [qualityMetrics, setQualityMetrics] = useState(null);
@@ -239,7 +239,7 @@ const LiveCameraVerification = ({
         setStatus('ready');
         setMessage('Position your face in the frame');
         setFaceMatch(null);
-        setProgress({ completed: [false, false], blinkCount: 0 });
+        setProgress({ completed: [false], blinkCount: 0 });
         setCurrentChallenge(livenessDetectorRef.current.getCurrentChallenge());
     };
 
@@ -282,12 +282,7 @@ const LiveCameraVerification = ({
                 <div className="challenge-progress">
                     <div className={`challenge-step ${progress.completed[0] ? 'completed' : currentChallenge === 'BLINK' ? 'active' : ''}`}>
                         <span className="step-icon">{progress.completed[0] ? '✓' : '👁️'}</span>
-                        <span className="step-label">Blink</span>
-                    </div>
-                    <div className="challenge-connector"></div>
-                    <div className={`challenge-step ${progress.completed[1] ? 'completed' : currentChallenge === 'SMILE' ? 'active' : ''}`}>
-                        <span className="step-icon">{progress.completed[1] ? '✓' : '😊'}</span>
-                        <span className="step-label">Smile</span>
+                        <span className="step-label">Blink Verification</span>
                     </div>
                 </div>
 
@@ -297,7 +292,7 @@ const LiveCameraVerification = ({
 
                 {currentChallenge === 'BLINK' && (
                     <div className="blink-counter">
-                        Blinks: {progress.blinkCount} / {progress.requiredBlinks || 2}
+                        Blinks detected: {progress.blinkCount} / {progress.requiredBlinks || 2}
                     </div>
                 )}
             </div>

@@ -243,27 +243,33 @@ export const analyzeExpressions = (detection) => {
 
 /**
  * Liveness Detection State Machine
- * Tracks blink detection and expression changes
+ * Tracks blink detection only (smile removed per user request)
  */
 export class LivenessDetector {
     constructor() {
-        this.challenges = ['BLINK', 'SMILE'];
+        this.challenges = ['BLINK']; // Only blink challenge
         this.currentChallenge = 0;
-        this.challengeCompleted = [false, false];
+        this.challengeCompleted = [false];
         this.eyeOpenHistory = [];
+        this.earHistory = [];
         this.lastBlinkTime = 0;
-        this.smileDetected = false;
         this.blinkCount = 0;
         this.requiredBlinks = 2;
+        this.blinkInProgress = false;
+        this.consecutiveClosedFrames = 0;
+        this.consecutiveOpenFrames = 0;
     }
 
     reset() {
         this.currentChallenge = 0;
-        this.challengeCompleted = [false, false];
+        this.challengeCompleted = [false];
         this.eyeOpenHistory = [];
+        this.earHistory = [];
         this.lastBlinkTime = 0;
-        this.smileDetected = false;
         this.blinkCount = 0;
+        this.blinkInProgress = false;
+        this.consecutiveClosedFrames = 0;
+        this.consecutiveOpenFrames = 0;
     }
 
     getCurrentChallenge() {
@@ -279,18 +285,15 @@ export class LivenessDetector {
         if (!detection) return { status: 'NO_FACE', message: 'No face detected' };
 
         const landmarks = detection.landmarks;
-        const expressions = detection.expressions;
 
-        // Check current challenge
+        // Only blink challenge now
         const challenge = this.getCurrentChallenge();
 
         if (challenge === 'BLINK') {
             return this.checkBlink(landmarks);
-        } else if (challenge === 'SMILE') {
-            return this.checkSmile(expressions);
         }
 
-        return { status: 'COMPLETE', message: 'All challenges completed!' };
+        return { status: 'COMPLETE', message: 'Verification complete!' };
     }
 
     checkBlink(landmarks) {
@@ -302,66 +305,71 @@ export class LivenessDetector {
         const rightEAR = this.calculateEAR(rightEye);
         const avgEAR = (leftEAR + rightEAR) / 2;
 
-        // Track eye state
-        const isEyeClosed = avgEAR < 0.2;
-        this.eyeOpenHistory.push(!isEyeClosed);
-
-        // Keep last 10 frames
-        if (this.eyeOpenHistory.length > 10) {
-            this.eyeOpenHistory.shift();
+        // Store EAR history for adaptive threshold
+        this.earHistory.push(avgEAR);
+        if (this.earHistory.length > 30) {
+            this.earHistory.shift();
         }
 
-        // Detect blink pattern: open -> closed -> open
-        if (this.eyeOpenHistory.length >= 5) {
-            const recent = this.eyeOpenHistory.slice(-5);
-            // Pattern: true, true, false, true, true (blink detected)
-            if (recent[0] && recent[1] && !recent[2] && recent[3] && recent[4]) {
-                const now = Date.now();
-                if (now - this.lastBlinkTime > 500) { // Debounce
-                    this.blinkCount++;
-                    this.lastBlinkTime = now;
+        // Calculate adaptive threshold based on user's eye size
+        // Use 75% of average EAR as closed threshold
+        const avgOpenEAR = this.earHistory.length > 5
+            ? this.earHistory.slice(0, 5).reduce((a, b) => a + b, 0) / 5
+            : 0.25;
+        const closedThreshold = Math.min(0.22, avgOpenEAR * 0.65);
 
-                    if (this.blinkCount >= this.requiredBlinks) {
-                        this.challengeCompleted[0] = true;
-                        this.currentChallenge = 1;
-                        return { status: 'CHALLENGE_COMPLETE', message: 'Blink detected! Now smile.' };
-                    }
-                    return {
-                        status: 'PROGRESS',
-                        message: `Blink ${this.blinkCount}/${this.requiredBlinks} detected. Keep blinking!`
-                    };
+        // Detect eye state with more lenient threshold
+        const isEyeClosed = avgEAR < closedThreshold;
+
+        // Track consecutive frames for more reliable detection
+        if (isEyeClosed) {
+            this.consecutiveClosedFrames++;
+            this.consecutiveOpenFrames = 0;
+        } else {
+            this.consecutiveOpenFrames++;
+            this.consecutiveClosedFrames = 0;
+        }
+
+        // Detect blink: eyes were open, then closed for 1+ frames, then open again
+        if (!this.blinkInProgress && this.consecutiveClosedFrames >= 1) {
+            this.blinkInProgress = true;
+        }
+
+        if (this.blinkInProgress && this.consecutiveOpenFrames >= 2) {
+            // Blink completed!
+            const now = Date.now();
+            if (now - this.lastBlinkTime > 300) { // 300ms debounce
+                this.blinkCount++;
+                this.lastBlinkTime = now;
+                this.blinkInProgress = false;
+
+                console.log(`Blink detected! Count: ${this.blinkCount}`);
+
+                if (this.blinkCount >= this.requiredBlinks) {
+                    this.challengeCompleted[0] = true;
+                    return { status: 'CHALLENGE_COMPLETE', message: 'Blinks verified! Verification complete!' };
                 }
+                return {
+                    status: 'PROGRESS',
+                    message: `Blink ${this.blinkCount}/${this.requiredBlinks} detected! Keep blinking!`
+                };
             }
         }
 
         return {
             status: 'WAITING',
             message: `Please blink naturally (${this.blinkCount}/${this.requiredBlinks})`,
-            earValue: avgEAR.toFixed(3)
+            earValue: avgEAR.toFixed(3),
+            threshold: closedThreshold.toFixed(3)
         };
     }
 
-    checkSmile(expressions) {
-        if (expressions.happy > 0.7) {
-            this.smileDetected = true;
-            this.challengeCompleted[1] = true;
-            return { status: 'CHALLENGE_COMPLETE', message: 'Smile detected! Verification complete!' };
-        }
-
-        if (expressions.happy > 0.3) {
-            return { status: 'PROGRESS', message: 'Almost there! Smile bigger!' };
-        }
-
-        return { status: 'WAITING', message: 'Please smile at the camera' };
-    }
-
     calculateEAR(eye) {
-        // Eye Aspect Ratio calculation
-        // Vertical distances
-        const v1 = this.distance(eye[1], eye[5]);
-        const v2 = this.distance(eye[2], eye[4]);
-        // Horizontal distance
-        const h = this.distance(eye[0], eye[3]);
+        // Eye Aspect Ratio calculation using 6 landmarks
+        // Points: 0=outer corner, 1=upper outer, 2=upper inner, 3=inner corner, 4=lower inner, 5=lower outer
+        const v1 = this.distance(eye[1], eye[5]); // Upper outer to lower outer
+        const v2 = this.distance(eye[2], eye[4]); // Upper inner to lower inner
+        const h = this.distance(eye[0], eye[3]);  // Outer corner to inner corner
 
         return (v1 + v2) / (2 * h);
     }
