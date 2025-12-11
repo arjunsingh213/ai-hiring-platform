@@ -20,6 +20,7 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://ai-hiring-platform-cm5t.vercel.app',
+    'https://ai-hiring-platform-sootv.vercel.app',
     process.env.CLIENT_URL
 ].filter(Boolean);
 
