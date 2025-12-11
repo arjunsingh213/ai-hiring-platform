@@ -10,6 +10,7 @@ const router = express.Router();
 const deepseekService = require('../services/ai/deepseekService');
 const geminiService = require('../services/ai/geminiService'); // Keep as fallback
 const User = require('../models/User');
+const Interview = require('../models/Interview');
 
 /**
  * POST /api/onboarding-interview/validate-answer
@@ -340,6 +341,31 @@ router.post('/submit', async (req, res) => {
                 $inc: { 'platformInterview.attempts': 1 }
             });
             console.log(`Interview results saved. Platform interview ${passed ? 'PASSED' : 'FAILED'}`);
+
+            // Create Interview document for Completed Interviews tab (both passed & failed)
+            try {
+                await Interview.create({
+                    userId,
+                    interviewType: 'combined',
+                    status: 'completed',
+                    passed,
+                    scoring: {
+                        overallScore: evaluation.overallScore || 10,
+                        technicalAccuracy: evaluation.technicalScore || 10,
+                        communication: evaluation.communication || 10,
+                        confidence: evaluation.confidence || 10,
+                        relevance: evaluation.relevance || 10,
+                        strengths: evaluation.strengths || [],
+                        weaknesses: evaluation.weaknesses || [],
+                        detailedFeedback: evaluation.feedback || 'Platform interview completed'
+                    },
+                    completedAt: new Date(),
+                    startedAt: new Date(Date.now() - 20 * 60 * 1000) // Assume 20 min duration
+                });
+                console.log('Interview document created for scorecard display');
+            } catch (interviewError) {
+                console.error('Failed to create Interview document:', interviewError);
+            }
         } catch (dbError) {
             console.error('Failed to save to DB (continuing anyway):', dbError);
         }

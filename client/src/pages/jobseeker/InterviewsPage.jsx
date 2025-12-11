@@ -47,7 +47,7 @@ const InterviewsPage = () => {
     // Separate interviews by type
     const platformInterviews = interviews.filter(i => !i.jobId);
     const jobInterviews = interviews.filter(i => i.jobId);
-    const completedInterviews = interviews.filter(i => i.status === 'completed');
+    const completedInterviews = interviews.filter(i => i.status === 'completed' && i.scoring);
     const upcomingInterviews = interviews.filter(i => i.status === 'in_progress' || i.status === 'scheduled');
 
     const canApplyForJobs = platformInterviewStatus?.canApplyForJobs;
