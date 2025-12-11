@@ -83,7 +83,12 @@ const InterviewsPage = () => {
             {/* Platform Interview Status Banner */}
             {!canApplyForJobs && (
                 <div className="platform-interview-banner card-highlight">
-                    <div className="banner-icon">🎯</div>
+                    <div className="banner-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 11l3 3L22 4" />
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                        </svg>
+                    </div>
                     <div className="banner-content">
                         <h2>Platform Interview Required</h2>
                         <p>
@@ -92,12 +97,12 @@ const InterviewsPage = () => {
                         </p>
                         {interviewStatus === 'failed' && platformInterviewStatus?.canRetry && (
                             <p className="retry-message">
-                                ✅ You can now retry the interview!
+                                You can now retry the interview!
                             </p>
                         )}
                         {interviewStatus === 'failed' && !platformInterviewStatus?.canRetry && (
                             <p className="retry-message retry-locked">
-                                🔒 You can retry after {new Date(platformInterviewStatus?.retryAfter).toLocaleDateString()}
+                                Retry available after {new Date(platformInterviewStatus?.retryAfter).toLocaleDateString()}
                             </p>
                         )}
                     </div>
@@ -300,7 +305,7 @@ const InterviewsPage = () => {
                                         className="btn btn-primary btn-block"
                                         onClick={() => navigate(`/interview/${interview._id}/results`)}
                                     >
-                                        📊 View Detailed Scorecard
+                                        View Detailed Scorecard
                                     </button>
                                 </div>
                             ))
