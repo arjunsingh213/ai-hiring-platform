@@ -240,29 +240,19 @@ console.log(solution());`
             });
 
             if (response.success) {
-                setEvaluation(response.evaluation);
-                setTestResults({
-                    passed: response.execution?.success && !response.execution?.stderr,
-                    output: response.execution?.output,
-                    error: response.execution?.stderr
-                });
-
                 const score = response.evaluation?.score || 0;
-
                 toast.success(`Solution submitted! Score: ${score}/100`);
 
-                // Complete after showing results
-                setTimeout(() => {
-                    onComplete?.({
-                        code,
-                        language: selectedLanguage.name,
-                        score,
-                        evaluation: response.evaluation,
-                        testsPassed: response.execution?.success,
-                        hintsUsed,
-                        timeSpent: (timeLimit * 60) - timeRemaining
-                    });
-                }, 3000);
+                // Call onComplete immediately (no intermediate scorecard)
+                onComplete?.({
+                    code,
+                    language: selectedLanguage.name,
+                    score,
+                    evaluation: response.evaluation,
+                    testsPassed: response.execution?.success,
+                    hintsUsed,
+                    timeSpent: (timeLimit * 60) - timeRemaining
+                });
             } else {
                 toast.error('Failed to evaluate solution');
             }
@@ -406,47 +396,7 @@ console.log(solution());`
                 </div>
             </div>
 
-            {/* Evaluation Results Modal */}
-            {evaluation && (
-                <div className="evaluation-modal">
-                    <div className="evaluation-content">
-                        <h2>🎉 Solution Evaluated!</h2>
 
-                        <div className="score-circle">
-                            <span className="score">{evaluation.score || 0}</span>
-                            <span className="max-score">/100</span>
-                        </div>
-
-                        <div className="evaluation-details">
-                            <div className="eval-item">
-                                <strong>Correctness:</strong>
-                                <p>{evaluation.correctness}</p>
-                            </div>
-                            <div className="eval-item">
-                                <strong>Code Quality:</strong>
-                                <p>{evaluation.codeQuality}</p>
-                            </div>
-                            <div className="eval-item">
-                                <strong>Efficiency:</strong>
-                                <p>{evaluation.efficiency}</p>
-                            </div>
-                        </div>
-
-                        {evaluation.suggestions && evaluation.suggestions.length > 0 && (
-                            <div className="suggestions">
-                                <h4>💡 Suggestions for Improvement:</h4>
-                                <ul>
-                                    {evaluation.suggestions.map((s, i) => (
-                                        <li key={i}>{s}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                        <p className="feedback">{evaluation.overallFeedback}</p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

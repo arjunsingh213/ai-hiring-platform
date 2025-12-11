@@ -62,21 +62,28 @@ async function executeCode(code, language, stdin = '') {
 
         const result = response.data;
 
+        // Check for compilation errors first
+        const compileError = result.compile?.stderr || result.compile?.output;
+        const runtimeError = result.run?.stderr;
+        const hasError = compileError || runtimeError;
+
         return {
-            success: !result.run?.stderr,
+            success: !hasError,
             output: result.run?.stdout || '',
-            stderr: result.run?.stderr || '',
-            compile_output: result.compile?.output || '',
+            stderr: runtimeError || '',
+            compile_output: compileError || '',
             time: result.run?.time || 0,
+            error: hasError ? (compileError || runtimeError) : null,
             language: language
         };
     } catch (error) {
         console.error('Piston execution error:', error.response?.data || error.message);
+        const errorMessage = error.response?.data?.message || error.message;
         return {
             success: false,
-            error: error.response?.data?.message || error.message,
+            error: `Execution Error: ${errorMessage}`,
             output: '',
-            stderr: 'Code execution failed. Please try again.'
+            stderr: errorMessage
         };
     }
 }
