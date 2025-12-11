@@ -8,18 +8,9 @@ const resumeParser = require('../services/resume/resumeParser');
 const aiService = require('../services/ai/aiService');
 
 const cloudinary = require('../config/cloudinary');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// Configure multer for Cloudinary upload (serverless-compatible)
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'resumes',
-        allowed_formats: ['pdf', 'doc', 'docx'],
-        resource_type: 'raw', // Important for non-image files
-        public_id: (req, file) => `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, "")}`
-    }
-});
+// Configure multer for memory storage (Cloudinary-compatible, no extra package needed)
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage,
@@ -36,6 +27,24 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Helper function to upload buffer to Cloudinary
+async function uploadToCloudinary(buffer, filename) {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'resumes',
+                resource_type: 'raw',
+                public_id: `${Date.now()}-${filename.replace(/\.[^/.]+$/, "")}`
+            },
+            (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            }
+        );
+        uploadStream.end(buffer);
+    });
+}
+
 // Upload and parse resume
 router.post('/upload', upload.single('resume'), async (req, res) => {
     try {
@@ -44,6 +53,9 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
+
+        // Upload buffer to Cloudinary
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
 
         let parsedData = {
             rawText: '',
@@ -55,9 +67,8 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
 
         // Try to parse resume, but don't fail if parsing fails
         try {
-            // For Cloudinary, req.file.path contains the Cloudinary URL
-            // Download the file from Cloudinary and parse it
-            const fileUrl = req.file.path; // Cloudinary URL
+            // Download from Cloudinary URL and parse
+            const fileUrl = cloudinaryResult.secure_url;
             parsedData = await resumeParser.parseResumeFromUrl(fileUrl, req.file.mimetype);
         } catch (parseError) {
             console.error('Resume parsing error (non-fatal):', parseError.message);
@@ -67,10 +78,10 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
         // Create resume record with Cloudinary URL
         const resume = new Resume({
             userId,
-            fileId: req.file.filename, // Cloudinary public_id
+            fileId: cloudinaryResult.public_id,
             fileName: req.file.originalname,
             fileType: req.file.mimetype,
-            fileUrl: req.file.path, // Cloudinary URL
+            fileUrl: cloudinaryResult.secure_url,
             parsedData,
             aiAnalysis: {
                 keyStrengths: ['Communication', 'Problem Solving'],
