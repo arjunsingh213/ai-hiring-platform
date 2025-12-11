@@ -7,13 +7,17 @@ const User = require('../models/User');
 const resumeParser = require('../services/resume/resumeParser');
 const aiService = require('../services/ai/aiService');
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/resumes/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
+const cloudinary = require('../config/cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Configure multer for Cloudinary upload (serverless-compatible)
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'resumes',
+        allowed_formats: ['pdf', 'doc', 'docx'],
+        resource_type: 'raw', // Important for non-image files
+        public_id: (req, file) => `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, "")}`
     }
 });
 
@@ -51,18 +55,22 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
 
         // Try to parse resume, but don't fail if parsing fails
         try {
-            parsedData = await resumeParser.parseResume(req.file.path, req.file.mimetype);
+            // For Cloudinary, req.file.path contains the Cloudinary URL
+            // Download the file from Cloudinary and parse it
+            const fileUrl = req.file.path; // Cloudinary URL
+            parsedData = await resumeParser.parseResumeFromUrl(fileUrl, req.file.mimetype);
         } catch (parseError) {
             console.error('Resume parsing error (non-fatal):', parseError.message);
             // Continue with empty parsed data
         }
 
-        // Create resume record
+        // Create resume record with Cloudinary URL
         const resume = new Resume({
             userId,
-            fileId: req.file.filename,
+            fileId: req.file.filename, // Cloudinary public_id
             fileName: req.file.originalname,
             fileType: req.file.mimetype,
+            fileUrl: req.file.path, // Cloudinary URL
             parsedData,
             aiAnalysis: {
                 keyStrengths: ['Communication', 'Problem Solving'],
