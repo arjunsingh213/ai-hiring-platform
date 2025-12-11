@@ -303,7 +303,7 @@ console.log(solution());`
                 </div>
                 <div className="header-controls">
                     <div className={`timer ${timerClass}`}>
-                        ⏱️ {formatTime(timeRemaining)}
+                        Time: {formatTime(timeRemaining)}
                     </div>
                     <button className="btn btn-secondary skip-btn" onClick={onSkip}>
                         Skip Coding Test
@@ -315,7 +315,7 @@ console.log(solution());`
                 {/* Problem Panel */}
                 <div className="problem-panel">
                     <div className="problem-description">
-                        <h3>📋 Problem Description</h3>
+                        <h3>Problem Description</h3>
                         <pre>{problem?.description || 'No problem description available.'}</pre>
                     </div>
 
@@ -324,7 +324,7 @@ console.log(solution());`
                     {/* Test Cases */}
                     {problem?.testCases && (
                         <div className="test-cases">
-                            <h3>🧪 Test Cases</h3>
+                            <h3>Test Cases</h3>
                             {problem.testCases.map((tc, i) => (
                                 <div key={i} className="test-case">
                                     <div><strong>Input:</strong> {tc.input}</div>
@@ -355,7 +355,7 @@ console.log(solution());`
                                 onClick={resetCode}
                                 title="Reset code"
                             >
-                                🔄 Reset
+                                Reset
                             </button>
                         </div>
                     </div>
@@ -383,21 +383,21 @@ console.log(solution());`
                     {/* Output Panel */}
                     <div className="output-panel">
                         <div className="output-header">
-                            <h4>📤 Output</h4>
+                            <h4>Output</h4>
                             <div className="output-actions">
                                 <button
                                     className="btn btn-primary run-btn"
                                     onClick={runCode}
                                     disabled={isRunning}
                                 >
-                                    {isRunning ? '⏳ Running...' : '▶️ Run Code'}
+                                    {isRunning ? 'Running...' : 'Run Code'}
                                 </button>
                                 <button
                                     className="btn btn-success submit-btn"
                                     onClick={handleSubmit}
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? '⏳ Submitting...' : '✅ Submit'}
+                                    {isSubmitting ? 'Submitting...' : 'Submit'}
                                 </button>
                             </div>
                         </div>
