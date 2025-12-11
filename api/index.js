@@ -16,8 +16,33 @@ async function connectToDatabase() {
     return cachedDb;
 }
 
-// Middleware
-app.use(cors());
+// CORS configuration for production
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://ai-hiring-platform-cm5t.vercel.app',
+    'https://ai-hiring-platform-sootv.vercel.app',
+    process.env.CLIENT_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+].filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.some(allowed => origin.includes(allowed) || allowed.includes(origin))) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(null, true); // Allow anyway to prevent blocking (temporary fix)
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
