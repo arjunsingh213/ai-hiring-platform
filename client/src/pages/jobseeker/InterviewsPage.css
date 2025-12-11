@@ -236,14 +236,15 @@
     gap: var(--spacing-xl);
     padding: var(--spacing-2xl);
     margin-bottom: var(--spacing-2xl);
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
     border-radius: var(--radius-xl);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .platform-interview-banner.banner-success {
-    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
 
 .banner-icon {
@@ -253,7 +254,7 @@
     justify-content: center;
     width: 60px;
     height: 60px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: var(--radius-lg);
     backdrop-filter: blur(10px);
 }
