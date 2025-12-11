@@ -18,11 +18,11 @@ class OpenRouterService {
         // Model configurations
         this.models = {
             resumeParsing: 'meta-llama/llama-3.1-8b-instruct:free',
-            jdMatching: 'google/gemma-2-9b-it:free',
+            jdMatching: 'meta-llama/llama-3.1-8b-instruct:free',
             questionGeneration: 'qwen/qwen3-235b-a22b:free',
             answerEvaluation: 'qwen/qwen3-235b-a22b:free',
             fastScoring: 'mistralai/mistral-7b-instruct:free',
-            recruiterReport: 'google/gemma-2-9b-it:free'
+            recruiterReport: 'meta-llama/llama-3.1-8b-instruct:free'
         };
 
         // API Keys from environment
@@ -176,7 +176,7 @@ Score 0-100. Return ONLY valid JSON.`;
             const response = await this.callModel(
                 this.models.jdMatching,
                 [{ role: 'user', content: prompt }],
-                this.apiKeys.gemma,
+                this.apiKeys.llama,
                 { temperature: 0.4 }
             );
 
@@ -537,7 +537,7 @@ Be objective and professional. Return ONLY valid JSON.`;
             const response = await this.callModel(
                 this.models.recruiterReport,
                 [{ role: 'user', content: prompt }],
-                this.apiKeys.gemma,
+                this.apiKeys.llama,
                 { temperature: 0.6, maxTokens: 2048 }
             );
 
