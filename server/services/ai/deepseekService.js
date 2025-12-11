@@ -10,7 +10,7 @@ const axios = require('axios');
 // AI Model Configurations - Using exact model names
 const MODELS = {
     CHIMERA: {
-        name: 'tngtech/deepseek-r1t-chimera:free',
+        name: 'deepseek/deepseek-r1',
         key: process.env.OPENROUTER_CHIMERA_KEY || process.env.DEEPSEEK_API_KEY
     },
     LLAMA: {
@@ -77,8 +77,8 @@ async function callWithFallback(messages, models, options = {}) {
         try {
             return await callOpenRouter(messages, model, options);
         } catch (error) {
-            const isRetryable = error.status === 429 || error.status === 503 || error.status === 404 ||
-                error.message.includes('Rate limit') || error.message.includes('No endpoints');
+            const isRetryable = error.status === 429 || error.status === 503 || error.status === 404 || error.status === 401 ||
+                error.message.includes('Rate limit') || error.message.includes('No endpoints') || error.message.includes('auth');
 
             if (isRetryable && i < modelList.length - 1) {
                 console.warn(`⚠️ Model ${model.name} failed (${error.status}). Trying next: ${modelList[i + 1].name}`);
