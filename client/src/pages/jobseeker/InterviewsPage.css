@@ -228,3 +228,210 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Platform Interview Banner */
+.platform-interview-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-2xl);
+    margin-bottom: var(--spacing-2xl);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: var(--radius-xl);
+    color: white;
+}
+
+.platform-interview-banner.banner-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.banner-icon {
+    font-size: 3rem;
+    flex-shrink: 0;
+}
+
+.banner-content {
+    flex: 1;
+}
+
+.banner-content h2 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 1.5rem;
+}
+
+.banner-content p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.retry-message {
+    margin-top: var(--spacing-md) !important;
+    font-weight: 600;
+}
+
+.retry-message.retry-locked {
+    opacity: 0.8;
+}
+
+.platform-interview-banner .btn-large {
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+/* Professional Success Status */
+.platform-status-success {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl) var(--spacing-2xl);
+    margin-bottom: var(--spacing-2xl);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.08) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-left: 4px solid rgba(16, 185, 129, 0.6);
+    border-radius: var(--radius-lg);
+}
+
+.platform-status-success .status-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.15);
+    border-radius: var(--radius-md);
+    color: #059669;
+    flex-shrink: 0;
+}
+
+.platform-status-success .status-content {
+    flex: 1;
+}
+
+.platform-status-success .status-content h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.platform-status-success .status-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.card-highlight {
+    box-shadow: 0 10px 40px rgba(79, 70, 229, 0.3);
+}
+
+/* Platform Interview Card */
+.card-platform {
+    border: 2px solid var(--primary);
+    position: relative;
+}
+
+.card-platform::before {
+    content: 'Required';
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--gradient-primary);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 0 var(--radius-lg) 0 var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.platform-logo {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    font-size: 1.5rem;
+}
+
+.interview-info {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: rgba(79, 70, 229, 0.1);
+    border-radius: var(--radius-md);
+}
+
+.interview-info h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 0.875rem;
+    color: var(--primary);
+}
+
+.interview-info ul {
+    margin: 0;
+    padding-left: var(--spacing-lg);
+}
+
+.interview-info li {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    padding: var(--spacing-xs) 0;
+}
+
+/* Job Interview Card */
+.card-job {
+    border-left: 4px solid var(--success);
+}
+
+/* Status badges */
+.badge-pending {
+    background: #fbbf24;
+    color: #78350f;
+}
+
+.badge-failed {
+    background: #ef4444;
+    color: white;
+}
+
+.badge-in_progress {
+    background: #3b82f6;
+    color: white;
+}
+
+.badge-passed,
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-skipped {
+    background: #6b7280;
+    color: white;
+}
+
+.badge-danger {
+    background: #ef4444;
+    color: white;
+}
+
+/* Loading state */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: var(--spacing-lg);
+    color: var(--text-muted);
+}
+
+.loading-spinner-large {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

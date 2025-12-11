@@ -139,13 +139,18 @@ router.post('/execute', async (req, res) => {
  * Generate a coding problem based on user's skills
  */
 router.post('/generate-problem', async (req, res) => {
+    console.log('🔵 [BACKEND] /code/generate-problem called');
+    console.log('🔵 [BACKEND] Request body:', req.body);
+
     try {
         const { skills, language, difficulty } = req.body;
 
         // Detect languages from skills if not specified
         let targetLanguage = language;
         if (!targetLanguage && skills) {
+            console.log('🔵 [BACKEND] No language specified, detecting from skills...');
             const detected = deepseekService.detectProgrammingLanguages(skills);
+            console.log('🔵 [BACKEND] Detected languages:', detected);
             if (detected.length > 0) {
                 targetLanguage = detected[0].name;
             }
@@ -153,15 +158,18 @@ router.post('/generate-problem', async (req, res) => {
 
         if (!targetLanguage) {
             targetLanguage = 'JavaScript'; // Default
+            console.log('🔵 [BACKEND] Using default language: JavaScript');
         }
 
-        console.log(`Generating ${difficulty || 'easy'} problem for ${targetLanguage}`);
+        console.log(`🔵 [BACKEND] Generating ${difficulty || 'easy'} problem for ${targetLanguage}`);
 
         const problem = await deepseekService.generateCodingProblem(
             targetLanguage,
             difficulty || 'easy',
             skills || []
         );
+
+        console.log('✅ [BACKEND] Problem generated successfully:', problem?.title);
 
         res.json({
             success: true,
@@ -171,10 +179,14 @@ router.post('/generate-problem', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Problem generation error:', error);
+        console.error('❌ [BACKEND] Problem generation error:', error.message);
+        console.error('❌ [BACKEND] Full error:', error);
 
         // Return fallback problem
+        console.log('🔶 [BACKEND] Using fallback problem...');
         const fallback = deepseekService.getFallbackProblem(req.body.language || 'JavaScript');
+        console.log('🔶 [BACKEND] Fallback problem:', fallback?.title);
+
         res.json({
             success: true,
             problem: fallback,
@@ -198,16 +210,46 @@ router.post('/evaluate', async (req, res) => {
             });
         }
 
-        // Execute code
+        // Execute code first
+        console.log('[EVALUATE] Executing code...');
         const executionResult = await executeCode(code, language);
+        console.log('[EVALUATE] Execution result:', {
+            success: executionResult.success,
+            hasOutput: !!executionResult.output,
+            hasError: !!executionResult.stderr
+        });
 
-        // Evaluate with DeepSeek
+        // If code execution FAILED, score is 0 - no AI evaluation needed
+        const executionPassed = executionResult.success && !executionResult.stderr;
+
+        if (!executionPassed) {
+            console.log('[EVALUATE] Code execution FAILED - returning score 0');
+            return res.json({
+                success: true,
+                execution: executionResult,
+                evaluation: {
+                    score: 0,
+                    codeQuality: 'Code did not execute successfully',
+                    efficiency: 'N/A - code failed to run',
+                    correctness: 'Incorrect - code has errors and does not run',
+                    suggestions: [
+                        'Fix syntax errors in your code',
+                        'Make sure your code compiles/runs without errors',
+                        'Check variable names and function calls'
+                    ],
+                    overallFeedback: `Your code failed to execute. Error: ${executionResult.stderr || 'Unknown error'}. You must submit code that runs successfully to receive any score.`
+                }
+            });
+        }
+
+        // Only if execution passed, evaluate with AI
+        console.log('[EVALUATE] Code execution PASSED - evaluating with AI...');
         const evaluation = await deepseekService.evaluateCodeSolution(
             code,
             problem,
             language,
             executionResult.output,
-            executionResult.success && !executionResult.stderr
+            true // execution passed
         );
 
         res.json({

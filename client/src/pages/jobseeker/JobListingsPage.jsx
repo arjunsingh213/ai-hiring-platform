@@ -15,11 +15,27 @@ const JobListingsPage = () => {
     });
     const [applying, setApplying] = useState(false);
     const [showApplyModal, setShowApplyModal] = useState(false);
+    const [platformInterviewStatus, setPlatformInterviewStatus] = useState(null);
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
         fetchJobs();
+        if (userId) {
+            checkPlatformInterviewStatus();
+        }
     }, [filters]);
+
+    // Check if user has passed platform interview
+    const checkPlatformInterviewStatus = async () => {
+        try {
+            const response = await api.get(`/onboarding-interview/status/${userId}`);
+            if (response.success) {
+                setPlatformInterviewStatus(response.data);
+            }
+        } catch (error) {
+            console.error('Error checking platform interview status:', error);
+        }
+    };
 
     const fetchJobs = async () => {
         try {
@@ -53,6 +69,20 @@ const JobListingsPage = () => {
             return;
         }
 
+        // Check platform interview status before applying
+        if (platformInterviewStatus && !platformInterviewStatus.canApplyForJobs) {
+            if (platformInterviewStatus.status === 'failed' && platformInterviewStatus.canRetry) {
+                toast.warning('You can now retry your platform interview!');
+                navigate('/onboarding/jobseeker?step=interview');
+            } else if (platformInterviewStatus.status === 'failed') {
+                toast.error(`Please wait until ${new Date(platformInterviewStatus.retryAfter).toLocaleDateString()} to retry the interview`);
+            } else {
+                toast.warning('You must complete the platform interview to apply for jobs');
+                navigate('/onboarding/jobseeker?step=interview');
+            }
+            return;
+        }
+
         setApplying(true);
 
         try {
@@ -74,26 +104,44 @@ const JobListingsPage = () => {
             // Apply to job
             const response = await api.post(`/jobs/${jobId}/apply`, { userId });
 
-            if (response.interviewRequired && response.interviewId) {
-                // Show success message with match score if available
-                const matchMessage = response.matchScore
-                    ? `Your profile matches ${response.matchScore.overall}% with this job!`
-                    : '';
-
+            if (response.interviewRequired) {
+                // New flow: Start job-specific interview via /job-interview/start
                 setShowApplyModal(true);
 
-                // Auto redirect after showing modal
-                setTimeout(() => {
+                try {
+                    // Create job-specific interview using deepseekService
+                    const interviewResponse = await api.post('/job-interview/start', {
+                        userId,
+                        jobId: response.jobId || jobId
+                    });
+
+                    // Auto redirect to interview after showing modal
+                    setTimeout(() => {
+                        setShowApplyModal(false);
+                        navigate(`/interview/${interviewResponse.interview.id}`);
+                    }, 2500);
+                } catch (interviewError) {
+                    console.error('Error starting job interview:', interviewError);
                     setShowApplyModal(false);
-                    navigate(`/interview/${response.interviewId}`);
-                }, 2500);
+                    toast.error('Failed to start interview. Please try again from the Interviews page.');
+                }
             } else {
                 toast.success('Application submitted successfully!');
                 fetchJobs();
             }
         } catch (error) {
             console.error('Error applying to job:', error);
-            toast.error(error.error || 'Failed to apply. Please try again.');
+
+            // Handle 403 - platform interview required
+            if (error.code === 'INTERVIEW_REQUIRED' || error.code === 'INTERVIEW_FAILED') {
+                toast.warning(error.message || 'Complete the platform interview to apply');
+                navigate('/onboarding/jobseeker?step=interview');
+            } else if (error.code === 'INTERVIEW_RETRY_AVAILABLE') {
+                toast.info('You can retry your platform interview now!');
+                navigate('/onboarding/jobseeker?step=interview');
+            } else {
+                toast.error(error.error || 'Failed to apply. Please try again.');
+            }
         } finally {
             setApplying(false);
         }
@@ -212,6 +260,22 @@ const JobListingsPage = () => {
                                     <button className="btn btn-success" disabled>
                                         ✓ Applied
                                     </button>
+                                ) : platformInterviewStatus && !platformInterviewStatus.canApplyForJobs ? (
+                                    <div className="apply-blocked">
+                                        <button
+                                            className="btn btn-primary btn-disabled"
+                                            onClick={() => {
+                                                toast.warning('Complete the Platform Interview first!');
+                                                navigate('/jobseeker/interviews');
+                                            }}
+                                            title="Complete Platform Interview to apply"
+                                        >
+                                            🔒 Apply Now
+                                        </button>
+                                        <p className="apply-blocked-message">
+                                            ⚠️ Complete the <a href="/jobseeker/interviews">Platform Interview</a> to unlock job applications
+                                        </p>
+                                    </div>
                                 ) : (
                                     <button
                                         className="btn btn-primary"

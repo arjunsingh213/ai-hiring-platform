@@ -5,6 +5,7 @@ const Resume = require('../models/Resume');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const aiService = require('../services/ai/aiService');
+const deepseekService = require('../services/ai/deepseekService');
 
 // Start a new interview (for job applications)
 router.post('/start', async (req, res) => {
@@ -124,18 +125,43 @@ router.post('/start', async (req, res) => {
     }
 });
 
-// Submit interview response - Stores answer without immediate evaluation
+// Submit interview response - SMART ROUTING: Dynamically generate next question for job interviews
 router.post('/:interviewId/response', async (req, res) => {
     try {
         const { interviewId } = req.params;
         const { questionIndex, answer, timeSpent, round, skipEvaluation } = req.body;
 
-        const interview = await Interview.findById(interviewId);
+        const interview = await Interview.findById(interviewId).populate('jobId');
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
         }
 
         const question = interview.questions[questionIndex];
+
+        // VALIDATE ANSWER: Reject gibberish/nonsense answers
+        // For job interviews, use strict validation
+        if (interview.jobId && !skipEvaluation) {
+            try {
+                console.log(`[VALIDATION] Checking answer for Q${questionIndex + 1}: "${answer.substring(0, 50)}..."`);
+                const validation = await deepseekService.validateAnswer(
+                    question.question,
+                    answer
+                );
+
+                if (!validation.valid) {
+                    console.log(`[VALIDATION] Answer rejected: ${validation.message}`);
+                    return res.status(400).json({
+                        success: false,
+                        error: validation.message || 'Please provide a more detailed and relevant answer.',
+                        code: 'INVALID_ANSWER'
+                    });
+                }
+                console.log('[VALIDATION] Answer accepted');
+            } catch (validationError) {
+                console.error('[VALIDATION] Error during validation, allowing answer:', validationError.message);
+                // If validation fails, allow the answer through (fail-open for reliability)
+            }
+        }
 
         // Store response without evaluation (evaluation happens at the end)
         interview.responses.push({
@@ -150,12 +176,69 @@ router.post('/:interviewId/response', async (req, res) => {
 
         await interview.save();
 
+        // SMART LOGIC: If this is a job interview (has jobId), generate NEXT question dynamically
+        if (interview.jobId) {
+            const job = interview.jobId;
+            const currentCount = interview.responses.length;
+
+            // Check if we need to generate next question (up to 10 total)
+            if (currentCount < 10) {
+                try {
+                    // Build job description summary for context
+                    const jobDescriptionSummary = `
+Job Title: ${job.title}
+Required Skills: ${job.requirements?.skills?.join(', ') || 'Not specified'}
+Experience Level: ${job.requirements?.experienceLevel || 'Not specified'}
+Description: ${job.description?.substring(0, 500) || 'Not provided'}
+                    `.trim();
+
+                    // Build history for context
+                    const history = interview.questions.slice(0, currentCount).map((q, i) => ({
+                        question: q.question,
+                        answer: interview.responses[i]?.answer || '',
+                        type: q.category
+                    }));
+
+                    // Determine round: 1-5 technical, 6-10 HR
+                    const roundType = currentCount < 5 ? 'technical' : 'hr';
+
+                    console.log(`[SMART INTERVIEW] Generating Q${currentCount + 1}/10 (${roundType}) for job: ${job.title}`);
+
+                    // Generate next question using deepseekService with JD context
+                    const nextQuestion = await deepseekService.generateNextQuestion(
+                        jobDescriptionSummary,
+                        job.title,
+                        job.requirements?.experienceLevel || 'mid',
+                        history,
+                        roundType
+                    );
+
+                    // Add to interview questions
+                    interview.questions.push({
+                        question: nextQuestion.question,
+                        generatedBy: 'ai',
+                        category: nextQuestion.type || roundType,
+                        difficulty: 'medium',
+                        expectedTopics: job.requirements?.skills?.slice(0, 3) || []
+                    });
+
+                    await interview.save();
+
+                    console.log(`[SMART INTERVIEW] Generated question ${currentCount + 1}: "${nextQuestion.question.substring(0, 50)}..."`);
+                } catch (nextQError) {
+                    console.error('Failed to generate next question:', nextQError);
+                    // Don't fail the response submission if question generation fails
+                }
+            }
+        }
+
         res.json({
             success: true,
             message: 'Answer recorded',
             progress: {
                 answered: interview.responses.length,
-                total: interview.questions.length
+                // For job interviews, always show total as 10 (dynamic generation)
+                total: interview.jobId ? 10 : interview.questions.length
             }
         });
     } catch (error) {
@@ -263,14 +346,28 @@ router.post('/:interviewId/complete', async (req, res) => {
         // STRICT OVERALL EVALUATION using AI
         let overallEvaluation;
         try {
-            overallEvaluation = await aiService.evaluateAllAnswers(
-                questionsAndAnswers,
-                {
-                    jobTitle: job?.title || 'Position',
-                    jobDescription: job?.description || '',
-                    requiredSkills: job?.requirements?.skills || []
-                }
-            );
+            // SMART ROUTING: Use deepseekService for job interviews, aiService for platform interviews
+            if (interview.jobId) {
+                console.log('[SMART INTERVIEW] Using deepseekService for job interview evaluation');
+                overallEvaluation = await deepseekService.evaluateAllAnswers(
+                    questionsAndAnswers,
+                    {
+                        jobTitle: job?.title || 'Position',
+                        jobDescription: job?.description || '',
+                        requiredSkills: job?.requirements?.skills || []
+                    }
+                );
+            } else {
+                console.log('[INTERVIEW] Using aiService for platform interview evaluation');
+                overallEvaluation = await aiService.evaluateAllAnswers(
+                    questionsAndAnswers,
+                    {
+                        jobTitle: job?.title || 'Position',
+                        jobDescription: job?.description || '',
+                        requiredSkills: job?.requirements?.skills || []
+                    }
+                );
+            }
         } catch (evalError) {
             console.error('AI evaluation failed, using rule-based:', evalError.message);
             // RULE-BASED STRICT EVALUATION as fallback

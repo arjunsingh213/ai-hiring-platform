@@ -10,8 +10,8 @@ import { useToast } from '../Toast';
 import './CodeIDE.css';
 
 const CodeIDE = ({
-    language = 'javascript',
-    languageId = 63,
+    language: initialLanguage = 'Python',
+    languageId: initialLanguageId = 71,
     problem,
     onComplete,
     onSkip,
@@ -20,7 +20,104 @@ const CodeIDE = ({
     const toast = useToast();
     const editorRef = useRef(null);
 
-    const [code, setCode] = useState(problem?.starterCode || '// Write your code here\n');
+    // Supported languages with Judge0 IDs
+    const SUPPORTED_LANGUAGES = [
+        { name: 'Python', id: 71, extension: 'py', monacoId: 'python' },
+        { name: 'JavaScript', id: 63, extension: 'js', monacoId: 'javascript' },
+        { name: 'Java', id: 62, extension: 'java', monacoId: 'java' },
+        { name: 'C++', id: 54, extension: 'cpp', monacoId: 'cpp' },
+        { name: 'C', id: 50, extension: 'c', monacoId: 'c' },
+        { name: 'C#', id: 51, extension: 'cs', monacoId: 'csharp' },
+        { name: 'Go', id: 60, extension: 'go', monacoId: 'go' },
+        { name: 'Ruby', id: 72, extension: 'rb', monacoId: 'ruby' },
+        { name: 'TypeScript', id: 74, extension: 'ts', monacoId: 'typescript' }
+    ];
+
+    // Language-specific starter code templates
+    const getStarterCode = (lang, problemDescription = '') => {
+        const templates = {
+            'Python': `# Your solution here
+def solution():
+    # Write your code here
+    pass
+
+# Test your solution
+print(solution())`,
+            'JavaScript': `// Your solution here
+function solution() {
+    // Write your code here
+    
+}
+
+// Test your solution
+console.log(solution());`,
+            'Java': `// Your solution here
+public class Solution {
+    public static void main(String[] args) {
+        // Write your code here
+        
+    }
+}`,
+            'C++': `// Your solution here
+#include <iostream>
+using namespace std;
+
+int main() {
+    // Write your code here
+    
+    return 0;
+}`,
+            'C': `// Your solution here
+#include <stdio.h>
+
+int main() {
+    // Write your code here
+    
+    return 0;
+}`,
+            'C#': `// Your solution here
+using System;
+
+class Solution {
+    static void Main() {
+        // Write your code here
+        
+    }
+}`,
+            'Go': `// Your solution here
+package main
+
+import "fmt"
+
+func main() {
+    // Write your code here
+    fmt.Println("Hello")
+}`,
+            'Ruby': `# Your solution here
+def solution
+    # Write your code here
+    
+end
+
+# Test your solution
+puts solution`,
+            'TypeScript': `// Your solution here
+function solution(): void {
+    // Write your code here
+    
+}
+
+// Test your solution
+console.log(solution());`
+        };
+        return templates[lang] || templates['Python'];
+    };
+
+    // Selected language state
+    const [selectedLanguage, setSelectedLanguage] = useState(
+        SUPPORTED_LANGUAGES.find(l => l.name === initialLanguage) || SUPPORTED_LANGUAGES[0]
+    );
+    const [code, setCode] = useState(problem?.starterCode || getStarterCode(selectedLanguage.name));
     const [output, setOutput] = useState('');
     const [isRunning, setIsRunning] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +127,19 @@ const CodeIDE = ({
     const [hintsUsed, setHintsUsed] = useState(0);
     const [evaluation, setEvaluation] = useState(null);
 
-    // Language to Monaco language mapping
-    const monacoLanguage = {
+    // Handle language change
+    const handleLanguageChange = (e) => {
+        const lang = SUPPORTED_LANGUAGES.find(l => l.name === e.target.value);
+        if (lang) {
+            setSelectedLanguage(lang);
+            setCode(getStarterCode(lang.name));
+            toast.info(`Switched to ${lang.name}`);
+        }
+    };
+
+    // Monaco language is now handled via selectedLanguage.monacoId
+    // This legacy mapping is kept for reference but not used
+    const monacoLanguageMap = {
         'JavaScript': 'javascript',
         'Python': 'python',
         'Java': 'java',
@@ -44,7 +152,7 @@ const CodeIDE = ({
         'TypeScript': 'typescript',
         'Rust': 'rust',
         'Kotlin': 'kotlin'
-    }[language] || 'javascript';
+    };
 
     // Timer countdown
     useEffect(() => {
@@ -89,8 +197,8 @@ const CodeIDE = ({
         try {
             const response = await api.post('/code/execute', {
                 code,
-                language,
-                languageId
+                language: selectedLanguage.name,
+                languageId: selectedLanguage.id
             });
 
             if (response.success) {
@@ -127,8 +235,8 @@ const CodeIDE = ({
             const response = await api.post('/code/evaluate', {
                 code,
                 problem,
-                language,
-                languageId
+                language: selectedLanguage.name,
+                languageId: selectedLanguage.id
             });
 
             if (response.success) {
@@ -147,7 +255,7 @@ const CodeIDE = ({
                 setTimeout(() => {
                     onComplete?.({
                         code,
-                        language,
+                        language: selectedLanguage.name,
                         score,
                         evaluation: response.evaluation,
                         testsPassed: response.execution?.success,
@@ -211,28 +319,7 @@ const CodeIDE = ({
                         <pre>{problem?.description || 'No problem description available.'}</pre>
                     </div>
 
-                    {/* Hints Section */}
-                    {problem?.hints && problem.hints.length > 0 && (
-                        <div className="hints-section">
-                            <button
-                                className="hint-btn"
-                                onClick={showHint}
-                                disabled={hintsUsed >= problem.hints.length}
-                            >
-                                💡 Get Hint ({problem.hints.length - hintsUsed} remaining)
-                            </button>
-
-                            {showHints && (
-                                <div className="hints-list">
-                                    {problem.hints.slice(0, hintsUsed).map((hint, i) => (
-                                        <div key={i} className="hint-item">
-                                            <strong>Hint {i + 1}:</strong> {hint}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    {/* Hints section removed for professionalism */}
 
                     {/* Test Cases */}
                     {problem?.testCases && (
@@ -251,7 +338,17 @@ const CodeIDE = ({
                 {/* Editor Panel */}
                 <div className="editor-panel">
                     <div className="editor-header">
-                        <span className="language-badge">{language}</span>
+                        <select
+                            className="language-dropdown"
+                            value={selectedLanguage.name}
+                            onChange={handleLanguageChange}
+                        >
+                            {SUPPORTED_LANGUAGES.map(lang => (
+                                <option key={lang.id} value={lang.name}>
+                                    {lang.name}
+                                </option>
+                            ))}
+                        </select>
                         <div className="editor-actions">
                             <button
                                 className="btn btn-small"
@@ -266,7 +363,7 @@ const CodeIDE = ({
                     <div className="monaco-container">
                         <Editor
                             height="100%"
-                            language={monacoLanguage}
+                            language={selectedLanguage.monacoId}
                             value={code}
                             onChange={setCode}
                             onMount={handleEditorMount}

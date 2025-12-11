@@ -22,6 +22,27 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+
+    // Platform Interview Status (Phase 1 - mandatory before applying)
+    platformInterview: {
+        status: {
+            type: String,
+            enum: ['pending', 'skipped', 'in_progress', 'passed', 'failed'],
+            default: 'pending'
+        },
+        completedAt: Date,
+        score: Number,
+        attempts: { type: Number, default: 0 },
+        lastAttemptAt: Date,
+        // Retry policy: Can retry after 2 days of failure
+        canRetry: { type: Boolean, default: true },
+        retryAfter: Date,
+        // Reminder tracking
+        lastReminderAt: Date,
+        lastEmailReminderAt: Date,
+        reminderCount: { type: Number, default: 0 }
+    },
+
     password: {
         type: String,
         select: false // Don't return password by default

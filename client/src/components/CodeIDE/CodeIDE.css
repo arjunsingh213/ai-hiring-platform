@@ -495,3 +495,35 @@
         justify-content: space-between;
     }
 }
+
+/* Language Dropdown */
+.language-dropdown {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    min-width: 140px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 20px;
+    padding-right: 30px;
+}
+
+.language-dropdown:hover {
+    background: linear-gradient(135deg, #5558E8, #7C4DFF);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.language-dropdown option {
+    background: #1f2937;
+    color: white;
+    padding: 10px;
+}

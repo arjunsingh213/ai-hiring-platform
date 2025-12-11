@@ -135,4 +135,21 @@ router.post('/create', async (req, res) => {
     }
 });
 
+// Trigger daily interview reminder job (admin/cron endpoint)
+router.post('/trigger-interview-reminders', async (req, res) => {
+    try {
+        const { runDailyReminderJob } = require('../jobs/dailyInterviewReminder');
+        const result = await runDailyReminderJob();
+
+        res.json({
+            success: true,
+            message: 'Daily reminder job executed',
+            result
+        });
+    } catch (error) {
+        console.error('Error triggering reminder job:', error);
+        res.status(500).json({ error: 'Failed to run reminder job' });
+    }
+});
+
 module.exports = router;

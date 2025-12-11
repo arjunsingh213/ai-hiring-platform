@@ -1,17 +1,132 @@
 /**
  * Onboarding Interview API
  * Generates personalized interview questions based on resume
- * Uses Gemini Flash 2.0 for question generation and evaluation
+ * Uses DeepSeek-R1 for question generation, validation and evaluation
  */
 
 const express = require('express');
 const router = express.Router();
-const geminiService = require('../services/ai/geminiService');
+// Switch from Gemini to DeepSeek
+const deepseekService = require('../services/ai/deepseekService');
+const geminiService = require('../services/ai/geminiService'); // Keep as fallback
 const User = require('../models/User');
 
 /**
+ * POST /api/onboarding-interview/validate-answer
+ * Validate candidate's answer for gibberish/relevance
+ */
+router.post('/validate-answer', async (req, res) => {
+    try {
+        const { question, answer } = req.body;
+
+        console.log('Validating answer:', answer.substring(0, 50) + '...');
+        const result = await deepseekService.validateAnswer(question, answer);
+
+        res.json({
+            success: true,
+            valid: result.valid,
+            message: result.message
+        });
+    } catch (error) {
+        console.error('Validation route error:', error);
+        res.json({ success: true, valid: true }); // Fail open
+    }
+});
+
+/**
+ * POST /api/onboarding-interview/start
+ * Start a new dynamic interview session
+ */
+router.post('/start', async (req, res) => {
+    try {
+        const { parsedResume, desiredRole, experienceLevel } = req.body;
+        console.log('Starting dynamic interview for:', desiredRole);
+
+        // Prepare resume text
+        const resumeSummary = `Skills: ${parsedResume?.skills?.join(', ') || 'None'}`;
+
+        // Generates just the first question
+        const firstQuestion = await deepseekService.generateNextQuestion(
+            resumeSummary,
+            desiredRole || 'Software Engineer',
+            experienceLevel || 'Entry Level',
+            [] // No history
+        );
+
+        res.json({
+            success: true,
+            question: {
+                ...firstQuestion,
+                round: 'technical', // First one is tech
+                questionNumber: 1
+            },
+            totalQuestions: 10
+        });
+    } catch (error) {
+        console.error('Start interview failed:', error);
+        res.status(500).json({ success: false, error: 'Failed to start interview' });
+    }
+});
+
+/**
+ * POST /api/onboarding-interview/next
+ * Validate previous answer and generate next question
+ */
+router.post('/next', async (req, res) => {
+    try {
+        const { currentQuestion, answer, history, parsedResume, desiredRole, experienceLevel } = req.body;
+
+        // 1. Strict Validation
+        const validation = await deepseekService.validateAnswer(currentQuestion.question, answer);
+        if (!validation.valid) {
+            return res.json({
+                success: true,
+                valid: false,
+                message: validation.message || 'Please provide a clearer answer.'
+            });
+        }
+
+        // 2. Check if interview is done (10 questions)
+        const currentCount = (history?.length || 0) + 1;
+        if (currentCount >= 10) {
+            return res.json({
+                success: true,
+                valid: true,
+                completed: true
+            });
+        }
+
+        // 3. Generate Next Question based on History + New Answer
+        const updatedHistory = [...(history || []), { question: currentQuestion.question, answer }];
+        const resumeSummary = `Skills: ${parsedResume?.skills?.join(', ') || 'None'}`;
+
+        const nextQ = await deepseekService.generateNextQuestion(
+            resumeSummary,
+            desiredRole || 'Software Engineer',
+            experienceLevel || 'Entry Level',
+            updatedHistory
+        );
+
+        res.json({
+            success: true,
+            valid: true,
+            completed: false,
+            question: {
+                ...nextQ,
+                questionNumber: currentCount + 1,
+                round: currentCount + 1 <= 5 ? 'technical' : 'hr'
+            }
+        });
+
+    } catch (error) {
+        console.error('Next question failed:', error);
+        res.status(500).json({ success: false, error: 'Failed to generate next question' });
+    }
+});
+
+/**
  * POST /api/onboarding-interview/generate-questions
- * Generate interview questions based on parsed resume data
+ * (Legacy/Fallback) Generate all questions at once
  */
 router.post('/generate-questions', async (req, res) => {
     try {
@@ -25,88 +140,83 @@ router.post('/generate-questions', async (req, res) => {
             projects: []
         };
 
-        console.log('Generating interview questions for:', desiredRole || 'General Role');
-        console.log('Resume skills:', resumeData.skills?.slice(0, 5) || 'none');
+        console.log('Generating customized DeepSeek-R1 interview questions for:', desiredRole || 'General Role');
 
-        // Generate 5 Technical Questions using Gemini
-        let technicalQuestions = [];
+        // Prepare resume text for DeepSeek
+        const resumeSummary = `
+            Skills: ${resumeData.skills?.join(', ') || 'General'}
+            Projects: ${resumeData.projects?.map(p => `${p.name}: ${p.description}`).join('; ') || 'None'}
+            Experience: ${resumeData.experience?.map(e => `${e.role} at ${e.company}`).join('; ') || 'None'}
+        `;
+
         try {
-            technicalQuestions = await geminiService.generateQuestions(
+            // Generate All Questions using DeepSeek-R1
+            const generatedQuestions = await deepseekService.generateInterviewQuestions(
+                resumeSummary,
+                desiredRole || 'Software Engineer',
+                experienceLevel || 'Intern/Junior'
+            );
+
+            console.log('DeepSeek generated', generatedQuestions.length, 'questions');
+
+            res.json({
+                success: true,
+                data: {
+                    questions: generatedQuestions.slice(0, 10),
+                    totalQuestions: generatedQuestions.length,
+                    basedOnSkills: resumeData.skills?.slice(0, 5) || [],
+                    basedOnProjects: resumeData.projects?.map(p => p.name).slice(0, 3) || []
+                }
+            });
+
+        } catch (deepseekError) {
+            console.error('DeepSeek generation failed, falling back to Gemini:', deepseekError.message);
+
+            // FALLBACK TO GEMINI (Original Logic)
+            let technicalQuestions = await geminiService.generateQuestions(
                 resumeData,
                 desiredRole || 'Software Developer',
                 'technical'
             );
-            console.log('Generated', technicalQuestions.length, 'technical questions');
-        } catch (techError) {
-            console.error('Technical questions failed:', techError.message);
-            technicalQuestions = geminiService.getFallbackQuestions('technical', desiredRole, resumeData.skills?.join(', ') || '');
-        }
 
-        // Generate 5 HR/Behavioral Questions using Gemini
-        let hrQuestions = [];
-        try {
-            hrQuestions = await geminiService.generateQuestions(
+            let hrQuestions = await geminiService.generateQuestions(
                 resumeData,
                 desiredRole || 'Software Developer',
                 'behavioral'
             );
-            console.log('Generated', hrQuestions.length, 'HR questions');
-        } catch (hrError) {
-            console.error('HR questions failed:', hrError.message);
-            hrQuestions = geminiService.getFallbackQuestions('behavioral', desiredRole, resumeData.skills?.join(', ') || '');
-        }
 
-        // Combine and ensure we have 10 questions total
-        const allQuestions = [
-            ...technicalQuestions.slice(0, 5).map(q => ({ ...q, round: 'technical' })),
-            ...hrQuestions.slice(0, 5).map(q => ({ ...q, round: 'hr' }))
-        ];
+            // Combine
+            const allQuestions = [
+                ...technicalQuestions.slice(0, 5).map(q => ({ ...q, round: 'technical' })),
+                ...hrQuestions.slice(0, 5).map(q => ({ ...q, round: 'hr' }))
+            ];
 
-        // Fill with fallback if needed
-        while (allQuestions.length < 10) {
-            const fallback = geminiService.getFallbackQuestions(
-                allQuestions.length < 5 ? 'technical' : 'behavioral',
-                desiredRole || 'this position',
-                resumeData.skills?.join(', ') || ''
-            );
-            allQuestions.push({
-                ...fallback[allQuestions.length % 5],
-                round: allQuestions.length < 5 ? 'technical' : 'hr'
+            // Fill if needed
+            while (allQuestions.length < 10) {
+                const fallback = geminiService.getFallbackQuestions(
+                    allQuestions.length < 5 ? 'technical' : 'behavioral',
+                    desiredRole || 'this position',
+                    resumeData.skills?.join(', ') || ''
+                );
+                allQuestions.push({
+                    ...fallback[allQuestions.length % 5],
+                    round: allQuestions.length < 5 ? 'technical' : 'hr'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    questions: allQuestions.slice(0, 10),
+                    totalQuestions: 10,
+                    basedOnSkills: resumeData.skills?.slice(0, 5) || []
+                }
             });
         }
 
-        res.json({
-            success: true,
-            data: {
-                questions: allQuestions.slice(0, 10),
-                totalQuestions: 10,
-                technicalCount: 5,
-                hrCount: 5,
-                basedOnSkills: resumeData.skills?.slice(0, 5) || [],
-                basedOnProjects: resumeData.projects?.map(p => p.name).slice(0, 3) || []
-            }
-        });
-
     } catch (error) {
         console.error('Question generation error:', error);
-
-        // Return fallback questions on error
-        const fallbackTech = geminiService.getFallbackQuestions('technical', req.body.desiredRole || 'this position', '');
-        const fallbackHR = geminiService.getFallbackQuestions('behavioral', req.body.desiredRole || 'this position', '');
-
-        res.json({
-            success: true,
-            data: {
-                questions: [
-                    ...fallbackTech.slice(0, 5).map(q => ({ ...q, round: 'technical' })),
-                    ...fallbackHR.slice(0, 5).map(q => ({ ...q, round: 'hr' }))
-                ],
-                totalQuestions: 10,
-                technicalCount: 5,
-                hrCount: 5,
-                fallback: true
-            }
-        });
+        res.status(500).json({ success: false, error: 'Failed to generate questions' });
     }
 });
 
@@ -160,11 +270,10 @@ router.post('/submit', async (req, res) => {
             });
         }
 
-        // Use OpenRouter Qwen3 235B for proper AI evaluation
-        const openRouterService = require('../services/ai/openRouterService');
+        // Use DeepSeek R1 Chimera for proper AI evaluation
         let evaluation;
         try {
-            evaluation = await openRouterService.evaluateAllAnswers(questionsAndAnswers, {
+            evaluation = await deepseekService.evaluateAllAnswers(questionsAndAnswers, {
                 jobTitle: desiredRole || 'Software Developer',
                 jobDescription: 'General position',
                 requiredSkills: parsedResume?.skills || []
@@ -204,15 +313,33 @@ router.post('/submit', async (req, res) => {
             }))
         };
 
-        // Save interview results to user profile
+        // Save interview results to user profile AND update platform interview status
         try {
+            // Determine pass/fail based on strict criteria
+            const passed = (
+                (evaluation.overallScore ?? 0) >= 60 &&
+                (evaluation.technicalScore ?? 0) >= 50 &&
+                (evaluation.hrScore ?? 0) >= 50
+            );
+
+            // Calculate retry date (2 days from now if failed)
+            const retryAfterDate = passed ? null : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+
             await User.findByIdAndUpdate(userId, {
                 $set: {
                     'jobSeekerProfile.onboardingInterview': interviewResults,
-                    'jobSeekerProfile.interviewScore': evaluation.overallScore || 70
-                }
+                    'jobSeekerProfile.interviewScore': evaluation.overallScore || 10,
+                    // Update platform interview status
+                    'platformInterview.status': passed ? 'passed' : 'failed',
+                    'platformInterview.score': evaluation.overallScore || 10,
+                    'platformInterview.completedAt': new Date(),
+                    'platformInterview.lastAttemptAt': new Date(),
+                    'platformInterview.canRetry': !passed,
+                    'platformInterview.retryAfter': retryAfterDate
+                },
+                $inc: { 'platformInterview.attempts': 1 }
             });
-            console.log('Interview results saved to user profile');
+            console.log(`Interview results saved. Platform interview ${passed ? 'PASSED' : 'FAILED'}`);
         } catch (dbError) {
             console.error('Failed to save to DB (continuing anyway):', dbError);
         }
@@ -220,25 +347,35 @@ router.post('/submit', async (req, res) => {
         res.json({
             success: true,
             data: {
-                // Core scores
-                score: evaluation.overallScore || 70,
-                technicalScore: evaluation.technicalScore || 70,
-                hrScore: evaluation.hrScore || 70,
-                passed: (evaluation.overallScore || 70) >= 50,
+                // Core scores - FALLBACKS ARE NOW 0-10 (NOT 50)
+                score: evaluation.overallScore ?? 10,
+                technicalScore: evaluation.technicalScore ?? 10,
+                hrScore: evaluation.hrScore ?? 10,
 
-                // Detailed analysis
-                communication: evaluation.communication || calculateCommunicationScore(questionsAndAnswers),
-                confidence: evaluation.confidence || 70,
-                relevance: evaluation.relevance || 70,
-                problemSolving: evaluation.problemSolving || 70,
+                // STRICT PASS CRITERIA:
+                // Must have: Overall >= 60 AND both Technical & HR >= 50 AND Communication >= 40
+                passed: (
+                    (evaluation.overallScore ?? 0) >= 60 &&
+                    (evaluation.technicalScore ?? 0) >= 50 &&
+                    (evaluation.hrScore ?? 0) >= 50 &&
+                    (evaluation.communication ?? 0) >= 40
+                ),
+
+                // Detailed analysis - fallbacks are now 0-10
+                communication: evaluation.communication ?? calculateCommunicationScore(questionsAndAnswers),
+                confidence: evaluation.confidence ?? 10,
+                relevance: evaluation.relevance ?? 10,
+                problemSolving: evaluation.problemSolving ?? 10,
 
                 // Strengths & Weaknesses
-                strengths: evaluation.strengths || ['Completed interview'],
-                weaknesses: evaluation.weaknesses || [],
+                strengths: evaluation.strengths || (evaluation.overallScore >= 40 ? ['Completed interview'] : []),
+                weaknesses: evaluation.weaknesses || (evaluation.overallScore < 40 ? ['Needs to provide more substantive answers'] : []),
                 areasToImprove: evaluation.areasToImprove || generateImprovementAreas(evaluation),
 
                 // Detailed feedback
-                feedback: evaluation.feedback || 'Thank you for completing the interview!',
+                feedback: evaluation.feedback || (evaluation.overallScore < 30
+                    ? 'Your answers were insufficient. Please provide thoughtful, detailed responses.'
+                    : 'Thank you for completing the interview!'),
                 technicalFeedback: evaluation.technicalFeedback || 'Review your technical fundamentals and practice problem-solving.',
                 communicationFeedback: evaluation.communicationFeedback || 'Practice structuring your answers with examples.',
 
@@ -584,5 +721,164 @@ function calculateStrictScore(questionsAndAnswers, validationResult) {
         ]
     };
 }
+
+/**
+ * POST /api/onboarding-interview/skip
+ * User skips the platform interview
+ */
+router.post('/skip', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID required' });
+        }
+
+        await User.findByIdAndUpdate(userId, {
+            $set: {
+                'platformInterview.status': 'skipped',
+                'platformInterview.lastAttemptAt': new Date()
+            }
+        });
+
+        console.log(`User ${userId} skipped platform interview`);
+
+        res.json({
+            success: true,
+            message: 'Interview skipped. You can complete it later to apply for jobs.',
+            warning: 'You cannot apply for jobs until you pass the platform interview.'
+        });
+    } catch (error) {
+        console.error('Skip interview error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/onboarding-interview/start-session
+ * Mark platform interview as in_progress
+ */
+router.post('/start-session', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID required' });
+        }
+
+        // Check if user can retry (if previously failed)
+        const user = await User.findById(userId).select('platformInterview');
+
+        if (user?.platformInterview?.status === 'failed') {
+            if (!user.platformInterview.canRetry) {
+                const retryAfter = user.platformInterview.retryAfter;
+                if (retryAfter && new Date() < new Date(retryAfter)) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Cannot retry yet',
+                        message: `You can retry after ${new Date(retryAfter).toLocaleDateString()}`,
+                        retryAfter
+                    });
+                }
+            }
+        }
+
+        await User.findByIdAndUpdate(userId, {
+            $set: {
+                'platformInterview.status': 'in_progress'
+            }
+        });
+
+        console.log(`User ${userId} started platform interview`);
+
+        res.json({
+            success: true,
+            message: 'Interview session started'
+        });
+    } catch (error) {
+        console.error('Start session error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/onboarding-interview/status/:userId
+ * Get platform interview status for a user
+ */
+router.get('/status/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId).select('platformInterview role isOnboardingComplete interviewStatus jobSeekerProfile.interviewScore');
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Recruiters don't need platform interview
+        if (user.role === 'recruiter') {
+            return res.json({
+                success: true,
+                data: {
+                    status: 'not_required',
+                    canApplyForJobs: true,
+                    message: 'Recruiters do not need platform interview'
+                }
+            });
+        }
+
+        const platformInterview = user.platformInterview || {};
+        let status = platformInterview.status || 'pending';
+
+        // BACKWARD COMPATIBILITY: If user completed onboarding before this feature,
+        // treat them as having passed the platform interview
+        if (status === 'pending' || !status) {
+            if (user.isOnboardingComplete ||
+                user.interviewStatus?.completed ||
+                user.jobSeekerProfile?.interviewScore >= 60) {
+                status = 'passed';
+
+                // Auto-update their platformInterview status
+                await User.findByIdAndUpdate(userId, {
+                    $set: {
+                        'platformInterview.status': 'passed',
+                        'platformInterview.score': user.jobSeekerProfile?.interviewScore || 70,
+                        'platformInterview.completedAt': new Date()
+                    }
+                });
+                console.log(`[BACKWARD COMPAT] User ${userId} auto-marked as passed platform interview`);
+            }
+        }
+
+        const canApplyForJobs = status === 'passed';
+
+        // Check if can retry
+        let canRetry = false;
+        if (status === 'failed' && platformInterview.retryAfter) {
+            canRetry = new Date() >= new Date(platformInterview.retryAfter);
+        } else if (status === 'skipped' || status === 'pending') {
+            canRetry = true;
+        }
+
+        res.json({
+            success: true,
+            data: {
+                status,
+                score: platformInterview.score || user.jobSeekerProfile?.interviewScore,
+                attempts: platformInterview.attempts || 0,
+                completedAt: platformInterview.completedAt,
+                canApplyForJobs,
+                canRetry,
+                retryAfter: platformInterview.retryAfter,
+                message: canApplyForJobs
+                    ? 'You can apply for jobs!'
+                    : 'Complete the platform interview to apply for jobs.'
+            }
+        });
+    } catch (error) {
+        console.error('Get status error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 module.exports = router;

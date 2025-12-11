@@ -1197,3 +1197,128 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Coding Challenge Preparation Animation */
+.coding-prep {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+.code-animation {
+    background: #0d1117;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.code-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.code-line {
+    color: #e5e7eb;
+    font-size: 1rem;
+    opacity: 0;
+    animation: typeIn 0.5s ease forwards;
+}
+
+.code-line:nth-child(1) {
+    color: #c084fc;
+}
+
+.code-line:nth-child(2) {
+    color: #6b7280;
+}
+
+.code-line:nth-child(3) {
+    color: #60a5fa;
+}
+
+.code-line:nth-child(4) {
+    color: #34d399;
+}
+
+.code-line:nth-child(5) {
+    color: #c084fc;
+}
+
+@keyframes typeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.cursor-blink {
+    color: #10b981;
+    font-size: 1.2rem;
+    animation: blink 0.8s infinite;
+    margin-top: 8px;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+.coding-prep h2 {
+    color: white;
+    margin-bottom: 15px;
+}
+
+.coding-prep p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+.coding-prep p strong {
+    color: #a5b4fc;
+}
+
+.skill-tags {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.skill-tag {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 20px;
+    color: #a5b4fc;
+    font-size: 0.9rem;
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

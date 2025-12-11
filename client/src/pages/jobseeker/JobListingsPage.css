@@ -420,3 +420,40 @@
 .btn-success:hover {
     background: var(--accent);
 }
+
+/* Blocked Apply Button */
+.apply-blocked {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.btn-disabled {
+    opacity: 0.7;
+    cursor: pointer !important;
+    position: relative;
+}
+
+.btn-disabled:hover {
+    opacity: 0.9;
+}
+
+.apply-blocked-message {
+    font-size: 0.75rem;
+    color: var(--text-warning);
+    text-align: center;
+    padding: var(--spacing-xs);
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: var(--radius-md);
+    margin: 0;
+}
+
+.apply-blocked-message a {
+    color: var(--primary);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.apply-blocked-message a:hover {
+    color: var(--accent);
+}

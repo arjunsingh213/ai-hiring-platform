@@ -41,6 +41,7 @@ const OnboardingInterview = ({
     const [detectedLanguages, setDetectedLanguages] = useState([]);
     const [codingResults, setCodingResults] = useState(null);
     const [loadingProblem, setLoadingProblem] = useState(false);
+    const [isValidating, setIsValidating] = useState(false);
 
     // Initialize speech recognition
     useEffect(() => {
@@ -84,9 +85,25 @@ const OnboardingInterview = ({
         };
     }, []);
 
-    // Load questions on mount
+    const toggleListening = () => {
+        if (!recognitionRef.current) return;
+
+        if (isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        } else {
+            try {
+                recognitionRef.current.start();
+                setIsListening(true);
+            } catch (e) {
+                console.error("Mic start error", e);
+            }
+        }
+    };
+
+    // Load questions (start interview) on mount
     useEffect(() => {
-        generateQuestions();
+        startInterview();
     }, []);
 
     // Detect programming languages from resume
@@ -119,6 +136,22 @@ const OnboardingInterview = ({
             return () => clearInterval(timer);
         }
     }, [loading, completed, timeLeft]);
+
+    const speakQuestion = (text) => {
+        if (!text || !ttsSupported) return;
+
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 1.0;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+    };
 
     // Speak question when it changes
     useEffect(() => {
@@ -153,118 +186,107 @@ const OnboardingInterview = ({
         }
     };
 
-    const generateQuestions = async () => {
+    const [loadingNext, setLoadingNext] = useState(false);
+
+    // Start dynamic interview on mount
+    useEffect(() => {
+        startInterview();
+    }, []);
+
+    const startInterview = async () => {
         try {
             setLoading(true);
-            const response = await api.post('/onboarding-interview/generate-questions', {
+            const response = await api.post('/onboarding-interview/start', {
                 parsedResume,
                 desiredRole,
                 experienceLevel: parsedResume?.experience?.length > 2 ? 'experienced' : 'fresher'
             });
 
-            if (response.success && response.data.questions) {
-                setQuestions(response.data.questions);
-                setTimeLeft(response.data.questions[0]?.timeLimit || 120);
+            if (response.success && response.question) {
+                setQuestions([response.question]);
+                setTimeLeft(120);
             } else {
-                throw new Error('No questions received');
+                throw new Error('Failed to start interview');
             }
         } catch (error) {
-            console.error('Failed to generate questions:', error);
-            toast.error('Failed to load questions. Using default set.');
-            // Use fallback questions
+            console.error('Failed to start interview:', error);
+            // Fallback to static if server fails
             setQuestions(getDefaultQuestions());
         } finally {
             setLoading(false);
         }
     };
 
-    const getDefaultQuestions = () => [
-        { question: 'Tell me about yourself and your background.', category: 'behavioral', round: 'hr', timeLimit: 120 },
-        { question: 'What are your key technical skills?', category: 'technical', round: 'technical', timeLimit: 120 },
-        { question: 'Describe a challenging project you worked on.', category: 'technical', round: 'technical', timeLimit: 150 },
-        { question: 'How do you handle tight deadlines?', category: 'behavioral', round: 'hr', timeLimit: 120 },
-        { question: 'What programming languages are you most comfortable with?', category: 'technical', round: 'technical', timeLimit: 120 },
-        { question: 'Tell me about a time you worked in a team.', category: 'behavioral', round: 'hr', timeLimit: 120 },
-        { question: 'How do you approach debugging a complex issue?', category: 'technical', round: 'technical', timeLimit: 150 },
-        { question: 'What are your career goals?', category: 'behavioral', round: 'hr', timeLimit: 120 },
-        { question: 'Explain a technical concept to someone non-technical.', category: 'technical', round: 'technical', timeLimit: 150 },
-        { question: 'Why should we hire you?', category: 'behavioral', round: 'hr', timeLimit: 120 }
-    ];
+    const handleSubmitAnswer = async (manualAnswer = null) => {
+        const textToSubmit = (typeof manualAnswer === 'string') ? manualAnswer : answer;
 
-    const speakQuestion = (text) => {
-        if (!ttsSupported) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-    };
-
-    const toggleListening = () => {
-        if (!speechSupported || !recognitionRef.current) {
-            toast.warning('Speech recognition not available. Please type your answer.');
-            return;
-        }
-        if (isListening) {
-            recognitionRef.current.stop();
-        } else {
-            try {
-                recognitionRef.current.start();
-                setIsListening(true);
-            } catch (e) {
-                console.error('Speech recognition failed:', e);
-                toast.error('Microphone access failed. Please check permissions.');
-            }
-        }
-    };
-
-    const handleSubmitAnswer = () => {
-        if (!answer.trim()) {
+        if (!textToSubmit.trim()) {
             toast.warning('Please provide an answer');
             return;
         }
 
         const currentQ = questions[currentIndex];
-        const newAnswer = {
-            question: currentQ.question,
-            answer: answer.trim(),
-            category: currentQ.category,
-            round: currentQ.round,
-            timeSpent: (currentQ.timeLimit || 120) - timeLeft
-        };
+        setLoadingNext(true); // Show analyzing state
 
-        setAnswers(prev => [...prev, newAnswer]);
-        setAnswer('');
+        try {
+            // Call next endpoint which handles validation AND generation
+            const response = await api.post('/onboarding-interview/next', {
+                currentQuestion: currentQ,
+                answer: textToSubmit.trim(),
+                history: answers, // Send previous answers for context
+                parsedResume,
+                desiredRole,
+                experienceLevel: parsedResume?.experience?.length > 2 ? 'experienced' : 'fresher'
+            });
 
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-            setTimeLeft(questions[currentIndex + 1]?.timeLimit || 120);
-        } else {
-            submitInterview([...answers, newAnswer]);
+            if (response.success) {
+                if (!response.valid) {
+                    // Validation failed (Gibberish/Irrelevant)
+                    toast.error(response.message || 'Please provide a valid, relevant answer.');
+                    setLoadingNext(false);
+                    return; // Stop here, let them retry
+                }
+
+                // Answer is valid
+                const newAnswer = {
+                    question: currentQ.question,
+                    answer: textToSubmit.trim(),
+                    category: currentQ.category,
+                    round: currentQ.round,
+                    timeSpent: 120 - timeLeft
+                };
+
+                const updatedAnswers = [...answers, newAnswer];
+                setAnswers(updatedAnswers);
+                setAnswer('');
+
+                // HARD LIMIT: Stop at 10 questions (5 tech + 5 HR)
+                // Check both answer count AND currentIndex to be safe
+                if (response.completed || updatedAnswers.length >= 10 || currentIndex >= 9) {
+                    // Interview done - move to coding test or final evaluation
+                    submitInterview(updatedAnswers);
+                } else if (response.question && updatedAnswers.length < 10 && currentIndex < 9) {
+                    // Add next question and proceed (only if under limit)
+                    setQuestions(prev => [...prev, response.question]);
+                    setCurrentIndex(prev => prev + 1);
+                    setTimeLeft(120);
+                } else {
+                    // Safety fallback - submit if somehow we're at limit
+                    submitInterview(updatedAnswers);
+                }
+            } else {
+                toast.error('Failed to process answer. Please try again.');
+            }
+        } catch (error) {
+            console.error('Submission error:', error);
+            toast.error('Network error. Please try again.');
+        } finally {
+            setLoadingNext(false);
         }
     };
 
     const handleSkipQuestion = () => {
-        const currentQ = questions[currentIndex];
-        const skippedAnswer = {
-            question: currentQ.question,
-            answer: answer.trim() || '(Skipped)',
-            category: currentQ.category,
-            round: currentQ.round,
-            timeSpent: 0
-        };
-
-        setAnswers(prev => [...prev, skippedAnswer]);
-        setAnswer('');
-
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-            setTimeLeft(questions[currentIndex + 1]?.timeLimit || 120);
-        } else {
-            submitInterview([...answers, skippedAnswer]);
-        }
+        handleSubmitAnswer("I don't know the answer to this question (Skipped).");
     };
 
     const submitInterview = async (allAnswers) => {
@@ -309,26 +331,42 @@ const OnboardingInterview = ({
 
     // Load coding problem for the candidate
     const loadCodingProblem = async () => {
+        console.log('🔵 [CODING TEST] Starting loadCodingProblem...');
+        console.log('🔵 [CODING TEST] Detected languages:', detectedLanguages);
+
         setLoadingProblem(true);
         try {
             const primaryLanguage = detectedLanguages[0];
-            const response = await api.post('/code/generate-problem', {
+            console.log('🔵 [CODING TEST] Primary language:', primaryLanguage);
+
+            const requestData = {
                 skills: parsedResume?.skills || [],
-                language: primaryLanguage.name,
-                difficulty: 'easy' // Start with easy
-            });
+                language: primaryLanguage?.name || 'JavaScript',
+                difficulty: 'easy'
+            };
+            console.log('🔵 [CODING TEST] Request data:', requestData);
+
+            const response = await api.post('/code/generate-problem', requestData);
+            console.log('🔵 [CODING TEST] Response:', response);
 
             if (response.success && response.problem) {
+                console.log('✅ [CODING TEST] Problem generated successfully:', response.problem.title);
                 setCodingProblem({
                     ...response.problem,
-                    languageId: primaryLanguage.judge0Id
+                    languageId: primaryLanguage?.judge0Id || 71
                 });
                 setShowCodingTest(true);
             } else {
+                console.error('❌ [CODING TEST] Response missing success or problem:', response);
                 throw new Error('Failed to generate problem');
             }
         } catch (error) {
-            console.error('Failed to load coding problem:', error);
+            console.error('❌ [CODING TEST] Error loading coding problem:', error);
+            console.error('❌ [CODING TEST] Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
             toast.error('Could not load coding test. Skipping to results.');
             setCompleted(true);
         } finally {
@@ -375,8 +413,9 @@ const OnboardingInterview = ({
     };
 
     const currentQ = questions[currentIndex];
-    const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
-    const isHRRound = currentQ?.round === 'hr';
+    const progress = questions.length > 0 ? ((currentIndex + 1) / 10) * 100 : 0; // Fixed to 10 max
+    // Questions 1-5 (index 0-4) are Technical, Questions 6-10 (index 5-9) are HR
+    const isHRRound = currentIndex >= 5;
 
     if (loading) {
         return (
@@ -391,10 +430,24 @@ const OnboardingInterview = ({
     // Show loading state when generating coding problem
     if (loadingProblem) {
         return (
-            <div className="onboarding-interview loading-state">
-                <div className="loading-spinner"></div>
-                <h2>🧑‍💻 Preparing Coding Challenge...</h2>
-                <p>Generating a personalized coding problem based on your {detectedLanguages[0]?.name || 'programming'} skills.</p>
+            <div className="onboarding-interview loading-state coding-prep">
+                <div className="code-animation">
+                    <div className="code-lines">
+                        <span className="code-line" style={{ animationDelay: '0s' }}>{'function solve() {'}</span>
+                        <span className="code-line" style={{ animationDelay: '0.3s' }}>{'  // Analyzing your skills...'}</span>
+                        <span className="code-line" style={{ animationDelay: '0.6s' }}>{'  const challenge = generate();'}</span>
+                        <span className="code-line" style={{ animationDelay: '0.9s' }}>{'  return personalize(challenge);'}</span>
+                        <span className="code-line" style={{ animationDelay: '1.2s' }}>{'}'}</span>
+                    </div>
+                    <div className="cursor-blink">|</div>
+                </div>
+                <h2>🧑‍💻 Preparing Your Coding Challenge...</h2>
+                <p>Creating a personalized problem for <strong>{detectedLanguages[0]?.name || 'programming'}</strong></p>
+                <div className="skill-tags">
+                    {detectedLanguages.slice(0, 4).map((lang, i) => (
+                        <span key={i} className="skill-tag">{lang.name}</span>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -423,7 +476,13 @@ const OnboardingInterview = ({
                         <span className="score-label">Overall Score</span>
                     </div>
 
-                    <h2>{results.passed ? '🎉 Great Performance!' : '👍 Thanks for completing!'}</h2>
+                    <h2>
+                        {results.passed
+                            ? '🎉 Great Performance!'
+                            : results.score >= 50
+                                ? '⚠️ Needs Improvement'
+                                : '❌ Did Not Pass'}
+                    </h2>
                     <p className="feedback">{results.feedback}</p>
 
                     {/* Score Breakdown Grid */}
@@ -533,7 +592,7 @@ const OnboardingInterview = ({
                         {isHRRound ? 'HR Round' : 'Technical Round'}
                     </span>
                     <span className="question-counter">
-                        Question {currentIndex + 1} of {questions.length}
+                        Question {currentIndex + 1} of 10
                     </span>
                 </div>
                 <div className="header-right">
@@ -628,9 +687,11 @@ const OnboardingInterview = ({
                     <button
                         className="btn-primary"
                         onClick={handleSubmitAnswer}
-                        disabled={submitting || !answer.trim()}
+                        disabled={submitting || !answer.trim() || loadingNext}
                     >
-                        {currentIndex < questions.length - 1 ? 'Next Question →' : 'Submit Interview'}
+                        {loadingNext
+                            ? 'Analyzing & Generating Next Question...'
+                            : (currentIndex < 9 ? 'Next Question →' : 'Submit Interview')}
                     </button>
                 </div>
             </div>

@@ -6,15 +6,16 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const geminiService = require('../services/ai/geminiService');
+const deepseekService = require('../services/ai/deepseekService');
 
-// Dynamic import for pdf-parse (handles ESM/CommonJS compatibility)
+// pdf-parse import with proper handling
 let pdfParse;
 try {
-    const pdfParseModule = require('pdf-parse');
-    pdfParse = pdfParseModule.default || pdfParseModule;
+    const pdfModule = require('pdf-parse');
+    // Handle both default export and direct function export
+    pdfParse = typeof pdfModule === 'function' ? pdfModule : (pdfModule.default || pdfModule);
 } catch (e) {
-    console.error('pdf-parse module not found:', e.message);
+    console.error('Failed to load pdf-parse:', e.message);
     pdfParse = null;
 }
 
@@ -52,11 +53,16 @@ router.post('/parse', upload.single('resume'), async (req, res) => {
         try {
             if (req.file.mimetype === 'application/pdf') {
                 if (pdfParse && typeof pdfParse === 'function') {
-                    const pdfData = await pdfParse(req.file.buffer);
-                    resumeText = pdfData.text;
+                    try {
+                        const pdfData = await pdfParse(req.file.buffer);
+                        resumeText = pdfData.text;
+                    } catch (pdfError) {
+                        console.error('PDF Parse failed:', pdfError);
+                        // Fallback: try to extract text from buffer
+                        resumeText = req.file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+                    }
                 } else {
-                    console.log('pdf-parse not available, using buffer text extraction');
-                    // Try to extract text directly from buffer (works for some PDFs)
+                    console.log('pdf-parse not available, using basic extraction');
                     resumeText = req.file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
                 }
             } else if (req.file.mimetype === 'text/plain') {
@@ -86,11 +92,11 @@ router.post('/parse', upload.single('resume'), async (req, res) => {
             });
         }
 
-        // Try to parse resume using Gemini Flash 2.0
+        // Try to parse resume using DeepSeek-R1
         let parsedResume;
         try {
-            parsedResume = await geminiService.parseResume(resumeText);
-            console.log('Gemini parsed resume successfully, skills:', parsedResume?.skills?.length || 0);
+            parsedResume = await deepseekService.parseResume(resumeText);
+            console.log('DeepSeek parsed resume successfully, skills:', parsedResume?.skills?.length || 0);
         } catch (aiError) {
             console.error('AI parsing failed, using rule-based extraction:', aiError.message);
             // Fallback to rule-based extraction

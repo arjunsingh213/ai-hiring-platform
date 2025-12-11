@@ -254,7 +254,8 @@ const AIInterview = () => {
                 category: currentQ?.category
             }]);
 
-            await api.post(`/interviews/${interviewId}/response`, {
+            // Submit answer (backend will generate next question for job interviews)
+            const response = await api.post(`/interviews/${interviewId}/response`, {
                 questionIndex: currentQuestionIndex,
                 answer: answer.trim(),
                 timeSpent,
@@ -265,11 +266,20 @@ const AIInterview = () => {
             setTranscript('');
             setTimeSpent(0);
 
+            // Re-fetch interview to get the dynamically generated next question
+            const updatedInterview = await api.get(`/interviews/${interviewId}`);
+            const latestInterview = updatedInterview.data || updatedInterview;
+            setInterview(latestInterview);
+
+            const updatedQuestions = latestInterview.questions || [];
             const nextIndex = currentQuestionIndex + 1;
-            if (nextIndex >= questions.length) {
+
+            // Check if interview is complete (using progress from response if available)
+            const totalQuestions = response.data?.progress?.total || updatedQuestions.length;
+            if (nextIndex >= totalQuestions) {
                 await completeInterview();
             } else {
-                const halfPoint = Math.ceil(questions.length / 2);
+                const halfPoint = Math.ceil(totalQuestions / 2);
                 if (currentRound === 'technical' && nextIndex >= halfPoint) {
                     setCurrentRound('hr');
                 }
@@ -277,7 +287,12 @@ const AIInterview = () => {
             }
         } catch (e) {
             console.error('Submit error:', e);
-            toast.error('Failed to submit');
+            // Check if this is a validation error (gibberish rejection)
+            if (e.response?.status === 400 && e.response?.data?.code === 'INVALID_ANSWER') {
+                toast.error(e.response.data.error || 'Please provide a valid answer');
+            } else {
+                toast.error('Failed to submit');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -289,11 +304,12 @@ const AIInterview = () => {
                 allAnswers,
                 evaluateOverall: true
             });
-            setCompleted(true);
-            setFinalResults(response.data || response);
             stopCamera();
+            // Redirect to detailed results page instead of showing basic scorecard
+            navigate(`/interview/${interviewId}/results`);
         } catch (e) {
             console.error('Complete error:', e);
+            toast.error('Failed to complete interview');
         }
     };
 
@@ -379,7 +395,9 @@ const AIInterview = () => {
 
     // Current question with safety check
     const currentQuestion = questions[currentQuestionIndex] || { question: 'No question available' };
-    const totalQ = questions.length || 1;
+    // Use totalQuestions from metadata for job interviews (dynamic generation)
+    // For job interviews, always show 10 total questions (5 technical + 5 HR)
+    const totalQ = interview.jobId ? 10 : (interview.totalQuestions || questions.length || 1);
     const halfPoint = Math.ceil(totalQ / 2);
     const inTechnical = currentQuestionIndex < halfPoint;
     const qInRound = inTechnical ? currentQuestionIndex + 1 : currentQuestionIndex - halfPoint + 1;

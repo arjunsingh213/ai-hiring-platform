@@ -75,10 +75,37 @@ const InterviewResults = () => {
         );
     }
 
-    const { interview, candidate, job, scoring, strengths, weaknesses, breakdown, recommendations } = results;
+    const { interview, candidate, job, scoring, strengths, weaknesses, breakdown, recommendations } = results.data || results || {};
+
+    // Safety checks
+    if (!interview || !scoring) {
+        return (
+            <div className="results-page">
+                <div className="error-container card">
+                    <h2>Unable to Load Results</h2>
+                    <p>Interview data is incomplete. Please try again.</p>
+                    <button className="btn btn-primary" onClick={() => navigate('/jobseeker/interviews')}>
+                        Back to Interviews
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="results-page">
+            {/* Back Navigation */}
+            <button
+                className="back-btn"
+                onClick={() => navigate('/jobseeker/interviews')}
+                title="Back to Interviews"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back
+            </button>
+
             {/* Header */}
             <div className="results-header card">
                 <div className="header-content">
@@ -87,7 +114,7 @@ const InterviewResults = () => {
                         {job && <p className="job-title">{job.title} at {job.company}</p>}
                         <div className="meta-badges">
                             <span className={`badge ${interview.passed ? 'badge-success' : 'badge-danger'}`}>
-                                {interview.passed ? '✓ Passed' : '✗ Not Passed'}
+                                {interview.passed ? 'Passed' : 'Not Passed'}
                             </span>
                             <span className="badge">Duration: {formatDuration(interview.duration)}</span>
                             <span className="badge">{interview.interviewType} Interview</span>
@@ -118,12 +145,6 @@ const InterviewResults = () => {
                     Overview
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'questions' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('questions')}
-                >
-                    Question Breakdown
-                </button>
-                <button
                     className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`}
                     onClick={() => setActiveTab('recommendations')}
                 >
@@ -138,7 +159,11 @@ const InterviewResults = () => {
                         {/* Score Cards */}
                         <div className="score-cards">
                             <div className="score-card card">
-                                <div className="score-icon technical">📊</div>
+                                <div className="score-icon technical">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                                    </svg>
+                                </div>
                                 <div className="score-details">
                                     <span className="score-title">Technical Skills</span>
                                     <span className="score-num" style={{ color: getScoreColor(scoring.technical) }}>
@@ -157,7 +182,11 @@ const InterviewResults = () => {
                             </div>
 
                             <div className="score-card card">
-                                <div className="score-icon communication">💬</div>
+                                <div className="score-icon communication">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                </div>
                                 <div className="score-details">
                                     <span className="score-title">Communication</span>
                                     <span className="score-num" style={{ color: getScoreColor(scoring.communication) }}>
@@ -176,7 +205,11 @@ const InterviewResults = () => {
                             </div>
 
                             <div className="score-card card">
-                                <div className="score-icon confidence">💪</div>
+                                <div className="score-icon confidence">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                                    </svg>
+                                </div>
                                 <div className="score-details">
                                     <span className="score-title">Confidence</span>
                                     <span className="score-num" style={{ color: getScoreColor(scoring.confidence) }}>
@@ -195,7 +228,13 @@ const InterviewResults = () => {
                             </div>
 
                             <div className="score-card card">
-                                <div className="score-icon relevance">🎯</div>
+                                <div className="score-icon relevance">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="6" />
+                                        <circle cx="12" cy="12" r="2" />
+                                    </svg>
+                                </div>
                                 <div className="score-details">
                                     <span className="score-title">Relevance</span>
                                     <span className="score-num" style={{ color: getScoreColor(scoring.relevance) }}>
@@ -217,18 +256,18 @@ const InterviewResults = () => {
                         {/* Strengths & Weaknesses */}
                         <div className="analysis-section">
                             <div className="strengths-card card">
-                                <h3>✓ Strengths</h3>
+                                <h3>Strengths</h3>
                                 <ul>
-                                    {strengths.map((s, i) => (
+                                    {(strengths || []).map((s, i) => (
                                         <li key={i} className="strength-item">{s}</li>
                                     ))}
                                 </ul>
                             </div>
 
                             <div className="weaknesses-card card">
-                                <h3>⚠ Areas for Improvement</h3>
+                                <h3>Areas for Improvement</h3>
                                 <ul>
-                                    {weaknesses.length > 0 ? weaknesses.map((w, i) => (
+                                    {(weaknesses || []).length > 0 ? (weaknesses || []).map((w, i) => (
                                         <li key={i} className="weakness-item">{w}</li>
                                     )) : (
                                         <li className="no-items">Great job! No major weaknesses identified.</li>
@@ -240,87 +279,14 @@ const InterviewResults = () => {
                         {/* Detailed Feedback */}
                         {results.detailedFeedback && (
                             <div className="feedback-section card">
-                                <h3>📝 Detailed Feedback</h3>
+                                <h3>Detailed Feedback</h3>
                                 <p>{results.detailedFeedback}</p>
                             </div>
                         )}
                     </div>
                 )}
 
-                {activeTab === 'questions' && (
-                    <div className="questions-tab">
-                        <div className="questions-list">
-                            {breakdown.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className={`question-card card ${expandedQuestion === index ? 'expanded' : ''}`}
-                                >
-                                    <div
-                                        className="question-header"
-                                        onClick={() => setExpandedQuestion(expandedQuestion === index ? null : index)}
-                                    >
-                                        <div className="question-info">
-                                            <span className="question-number">Q{item.questionNumber}</span>
-                                            <div className="question-meta">
-                                                <span className={`category-badge ${item.category}`}>
-                                                    {item.category}
-                                                </span>
-                                                <span className="difficulty-badge">
-                                                    {item.difficulty}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div
-                                            className="quality-badge"
-                                            style={{ background: getQualityColor(item.qualityScore) }}
-                                        >
-                                            {item.qualityLabel}
-                                        </div>
-                                        <span className="expand-icon">
-                                            {expandedQuestion === index ? '▼' : '▶'}
-                                        </span>
-                                    </div>
 
-                                    <div className="question-text">
-                                        <strong>Question:</strong> {item.question}
-                                    </div>
-
-                                    {expandedQuestion === index && (
-                                        <div className="question-details">
-                                            <div className="answer-section">
-                                                <h4>Your Answer:</h4>
-                                                <p className="answer-text">{item.answer}</p>
-                                                <span className="word-count">{item.wordCount} words</span>
-                                            </div>
-
-                                            {item.assessingSkill && (
-                                                <div className="skill-section">
-                                                    <strong>Skill Assessed:</strong> {item.assessingSkill}
-                                                </div>
-                                            )}
-
-                                            <div className="feedback-section">
-                                                <h4>Feedback:</h4>
-                                                <p>{item.feedback}</p>
-                                            </div>
-
-                                            {item.expectedTopics.length > 0 && (
-                                                <div className="topics-section">
-                                                    <strong>Expected Topics:</strong>
-                                                    <div className="topic-tags">
-                                                        {item.expectedTopics.map((t, i) => (
-                                                            <span key={i} className="topic-tag">{t}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {activeTab === 'recommendations' && (
                     <div className="recommendations-tab">
@@ -366,9 +332,6 @@ const InterviewResults = () => {
 
             {/* Actions */}
             <div className="results-actions">
-                <button className="btn btn-secondary" onClick={() => navigate('/jobseeker/interviews')}>
-                    Back to Interviews
-                </button>
                 <button className="btn btn-primary" onClick={() => navigate('/jobseeker/jobs')}>
                     Browse More Jobs
                 </button>

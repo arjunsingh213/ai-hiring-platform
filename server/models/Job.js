@@ -94,7 +94,7 @@ const jobSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['applied', 'reviewing', 'shortlisted', 'interviewed', 'rejected', 'hired'],
+            enum: ['applied', 'reviewing', 'interviewing', 'shortlisted', 'interviewed', 'rejected', 'hired'],
             default: 'applied'
         },
         // Interview results

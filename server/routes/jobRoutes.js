@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Resume = require('../models/Resume');
 const Interview = require('../models/Interview');
 const aiService = require('../services/ai/aiService');
+const { requirePlatformInterview } = require('../middleware/platformInterviewGuard');
 
 // Create job posting
 router.post('/', async (req, res) => {
@@ -335,7 +336,8 @@ router.get('/:id', async (req, res) => {
 });
 
 // Apply to job - ENHANCED with AI Interview integration
-router.post('/:id/apply', async (req, res) => {
+// REQUIRES: Platform interview must be passed before applying
+router.post('/:id/apply', requirePlatformInterview, async (req, res) => {
     try {
         const { userId, answers } = req.body;
 
@@ -366,104 +368,26 @@ router.post('/:id/apply', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Already applied to this job' });
         }
 
-        // Get user's resume for JD-Resume matching
-        const resume = await Resume.findOne({ userId });
-        const user = await User.findById(userId);
-
-        let matchScore = null;
-        let resumeData = null;
-
-        if (resume && resume.parsedData) {
-            resumeData = resume.parsedData;
-
-            // Match resume to job description using Gemma 2 9B
-            try {
-                matchScore = await aiService.matchResumeToJD(
-                    resumeData,
-                    job.description,
-                    job.requirements
-                );
-            } catch (matchError) {
-                console.error('Match scoring failed:', matchError);
-                matchScore = {
-                    overall: 70,
-                    skills: 70,
-                    experience: 70,
-                    education: 70,
-                    matchedSkills: [],
-                    missingSkills: [],
-                    interviewFocus: []
-                };
-            }
-        }
-
-        // Generate interview questions using Qwen3 235B
-        // Questions are based on job skills, roles, and responsibilities
-        let questions = [];
-        try {
-            questions = await aiService.generateInterviewQuestions(
-                resumeData || {},
-                'combined', // Combined technical + behavioral
-                {
-                    title: job.title,
-                    description: job.description,
-                    requirements: job.requirements, // Pass full requirements (skills, experience, education)
-                    matchScore
-                }
-            );
-        } catch (questionError) {
-            console.error('Question generation failed:', questionError);
-            // Pass job title and skills for job-specific fallback questions
-            questions = aiService.getFallbackQuestions('combined', job.title, job.requirements?.skills?.join(', ') || '');
-        }
-
-        // Create interview record
-        const interview = new Interview({
-            userId,
-            resumeId: resume?._id,
-            jobId: job._id,
-            interviewType: 'combined',
-            status: 'scheduled',
-            matchScore: matchScore ? {
-                overall: matchScore.overallMatch || matchScore.overall,
-                skills: matchScore.skillsMatch || matchScore.skills,
-                experience: matchScore.experienceMatch || matchScore.experience,
-                education: matchScore.educationMatch || matchScore.education,
-                matchedSkills: matchScore.matchedSkills || [],
-                missingSkills: matchScore.missingSkills || [],
-                interviewFocus: matchScore.interviewFocus || []
-            } : null,
-            questions: questions.map(q => ({
-                question: q.question,
-                generatedBy: 'ai',
-                category: q.category || 'general',
-                difficulty: q.difficulty || 'medium',
-                expectedTopics: q.expectedTopics || [],
-                timeLimit: q.timeLimit || 120
-            }))
-        });
-
-        await interview.save();
-
-        // Add to job applicants with interview reference
+        // Add to job applicants WITHOUT creating interview yet
+        // The interview will be created when user starts it via /job-interview/start
         job.applicants.push({
             userId,
             answers: answers || [],
             status: 'applied',
-            interviewId: interview._id
+            interviewId: null // Will be set when interview is started
         });
 
         await job.save();
 
+        console.log(`[JOB APPLY] User ${userId} applied to job ${job._id} (${job.title})`);
+
         res.json({
             success: true,
-            message: 'Application submitted! Please complete the AI interview to proceed.',
+            message: 'Application submitted! You will need to complete an AI interview.',
             interviewRequired: true,
-            interviewId: interview._id,
-            matchScore: matchScore ? {
-                overall: matchScore.overallMatch || matchScore.overall,
-                skills: matchScore.skillsMatch || matchScore.skills
-            } : null
+            jobId: job._id,
+            // Frontend should redirect to /job-interview/start with this jobId
+            note: 'Please start the interview via /api/job-interview/start'
         });
     } catch (error) {
         console.error('Job application error:', error);

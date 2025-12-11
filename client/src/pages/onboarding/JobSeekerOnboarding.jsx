@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -7,10 +7,23 @@ import ImageCropModal from '../../components/ImageCropModal';
 import OnboardingInterview from './OnboardingInterview';
 import LiveCameraVerification from '../../components/LiveCameraVerification';
 import { validateProfilePhoto } from '../../services/faceValidationService';
+import AutocompleteInput from '../../components/AutocompleteInput';
+import { search as searchColleges } from 'aishe-institutions-list';
+import {
+    DOMAINS,
+    JOB_ROLES,
+    PROFESSIONS,
+    validateAgeAndDOB,
+    validateName,
+    validateMobile,
+    validateLinkedIn,
+    validateGitHub
+} from '../../data/validationData';
 import './Onboarding.css';
 
 const JobSeekerOnboarding = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const toast = useToast();
     const [step, setStep] = useState(1);
     const [showInterviewPrompt, setShowInterviewPrompt] = useState(false);
@@ -49,6 +62,43 @@ const JobSeekerOnboarding = () => {
     const [showInterview, setShowInterview] = useState(false);
     const [parsedResume, setParsedResume] = useState(null);
     const [parsingResume, setParsingResume] = useState(false);
+
+    // Validation errors state
+    const [errors, setErrors] = useState({});
+
+    // Custom "Other" values for autocomplete fields
+    const [otherValues, setOtherValues] = useState({
+        college: '',
+        domain: '',
+        desiredRole: '',
+        profession: ''
+    });
+
+    // Handle step query parameter for direct interview access
+    useEffect(() => {
+        const stepParam = searchParams.get('step');
+        if (stepParam === 'interview') {
+            // Check if user has completed basic onboarding
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                // User might have already onboarded, just show interview
+                setStep(4); // Step 4 is the interview step
+                setShowInterview(true);
+                toast.info('Complete the platform interview to apply for jobs');
+            }
+        }
+    }, [searchParams]);
+
+    // College search wrapper for AISHE
+    const searchCollegeWrapper = (query, limit = 10) => {
+        try {
+            const results = searchColleges(query, limit);
+            return results || [];
+        } catch (error) {
+            console.log('College search error:', error);
+            return [];
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -150,7 +200,72 @@ const JobSeekerOnboarding = () => {
         setCropImageSrc(null);
     };
 
+    // Validate current step before proceeding
+    const validateStep = (currentStep) => {
+        const newErrors = {};
+
+        if (currentStep === 1) {
+            // Validate name
+            const nameError = validateName(formData.name);
+            if (nameError) newErrors.name = nameError;
+
+            // Validate age (must be number between 16-70)
+            if (!formData.age || isNaN(formData.age) || formData.age < 16 || formData.age > 70) {
+                newErrors.age = 'Please enter a valid age (16-70)';
+            }
+
+            // Validate DOB
+            if (!formData.dob) {
+                newErrors.dob = 'Date of birth is required';
+            }
+
+            // Validate Age and DOB consistency
+            if (formData.age && formData.dob) {
+                const ageDobError = validateAgeAndDOB(formData.age, formData.dob);
+                if (ageDobError) {
+                    newErrors.dob = ageDobError;
+                }
+            }
+
+            // Validate mobile
+            const mobileError = validateMobile(formData.mobile);
+            if (mobileError) newErrors.mobile = mobileError;
+        }
+
+        if (currentStep === 2) {
+            // Validate required fields
+            if (!formData.profession && !otherValues.profession) {
+                newErrors.profession = 'Profession is required';
+            }
+            if (!formData.college && !otherValues.college) {
+                newErrors.college = 'College is required';
+            }
+            if (!formData.domain && !otherValues.domain) {
+                newErrors.domain = 'Domain is required';
+            }
+            if (!formData.desiredRole && !otherValues.desiredRole) {
+                newErrors.desiredRole = 'Desired role is required';
+            }
+        }
+
+        if (currentStep === 3) {
+            // Validate optional URLs if provided
+            const linkedinError = validateLinkedIn(formData.linkedin);
+            if (linkedinError) newErrors.linkedin = linkedinError;
+
+            const githubError = validateGitHub(formData.github);
+            if (githubError) newErrors.github = githubError;
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const nextStep = () => {
+        if (!validateStep(step)) {
+            toast.error('Please fix the errors before proceeding');
+            return;
+        }
         if (step < 4) setStep(step + 1);
     };
 
@@ -272,10 +387,11 @@ const JobSeekerOnboarding = () => {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className="input"
-                                placeholder="John Doe"
+                                className={`input ${errors.name ? 'input-error' : ''}`}
+                                placeholder="Enter your full name"
                                 required
                             />
+                            {errors.name && <span className="error-message">{errors.name}</span>}
                         </div>
 
                         <div className="form-row">
@@ -286,10 +402,13 @@ const JobSeekerOnboarding = () => {
                                     name="age"
                                     value={formData.age}
                                     onChange={handleChange}
-                                    className="input"
+                                    className={`input ${errors.age ? 'input-error' : ''}`}
                                     placeholder="25"
+                                    min="16"
+                                    max="70"
                                     required
                                 />
+                                {errors.age && <span className="error-message">{errors.age}</span>}
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Date of Birth *</label>
@@ -298,9 +417,11 @@ const JobSeekerOnboarding = () => {
                                     name="dob"
                                     value={formData.dob}
                                     onChange={handleChange}
-                                    className="input"
+                                    className={`input ${errors.dob ? 'input-error' : ''}`}
+                                    max={new Date().toISOString().split('T')[0]}
                                     required
                                 />
+                                {errors.dob && <span className="error-message">{errors.dob}</span>}
                             </div>
                         </div>
 
@@ -311,10 +432,11 @@ const JobSeekerOnboarding = () => {
                                 name="mobile"
                                 value={formData.mobile}
                                 onChange={handleChange}
-                                className="input"
-                                placeholder="+1 234 567 8900"
+                                className={`input ${errors.mobile ? 'input-error' : ''}`}
+                                placeholder="9876543210"
                                 required
                             />
+                            {errors.mobile && <span className="error-message">{errors.mobile}</span>}
                         </div>
 
                         <div className="form-group">
@@ -357,41 +479,50 @@ const JobSeekerOnboarding = () => {
                         <p className="step-description">Your educational and professional background</p>
 
                         <div className="form-group">
-                            <label className="form-label">Profession *</label>
-                            <input
-                                type="text"
+                            <AutocompleteInput
                                 name="profession"
+                                label="Profession"
                                 value={formData.profession}
                                 onChange={handleChange}
-                                className="input"
-                                placeholder="Software Engineer"
+                                suggestions={PROFESSIONS}
+                                placeholder="Start typing your profession..."
                                 required
+                                allowOther={true}
+                                otherValue={otherValues.profession}
+                                onOtherChange={(val) => setOtherValues(prev => ({ ...prev, profession: val }))}
+                                error={errors.profession}
                             />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">College/University *</label>
-                            <input
-                                type="text"
+                            <AutocompleteInput
                                 name="college"
+                                label="College/University"
                                 value={formData.college}
                                 onChange={handleChange}
-                                className="input"
-                                placeholder="MIT"
+                                searchFunction={searchCollegeWrapper}
+                                placeholder="Start typing your college name..."
                                 required
+                                allowOther={true}
+                                otherValue={otherValues.college}
+                                onOtherChange={(val) => setOtherValues(prev => ({ ...prev, college: val }))}
+                                error={errors.college}
                             />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Domain/Field *</label>
-                            <input
-                                type="text"
+                            <AutocompleteInput
                                 name="domain"
+                                label="Domain/Field of Study"
                                 value={formData.domain}
                                 onChange={handleChange}
-                                className="input"
-                                placeholder="Computer Science"
+                                suggestions={DOMAINS}
+                                placeholder="Start typing your field..."
                                 required
+                                allowOther={true}
+                                otherValue={otherValues.domain}
+                                onOtherChange={(val) => setOtherValues(prev => ({ ...prev, domain: val }))}
+                                error={errors.domain}
                             />
                         </div>
 
@@ -410,15 +541,18 @@ const JobSeekerOnboarding = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Desired Role *</label>
-                            <input
-                                type="text"
+                            <AutocompleteInput
                                 name="desiredRole"
+                                label="Desired Role"
                                 value={formData.desiredRole}
                                 onChange={handleChange}
-                                className="input"
-                                placeholder="Full Stack Developer"
+                                suggestions={JOB_ROLES}
+                                placeholder="Start typing your desired role..."
                                 required
+                                allowOther={true}
+                                otherValue={otherValues.desiredRole}
+                                onOtherChange={(val) => setOtherValues(prev => ({ ...prev, desiredRole: val }))}
+                                error={errors.desiredRole}
                             />
                         </div>
                     </div>

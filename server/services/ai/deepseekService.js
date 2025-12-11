@@ -6,39 +6,95 @@
 const axios = require('axios');
 
 // DeepSeek API configuration
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
-const DEEPSEEK_MODEL = 'deepseek-reasoner'; // DeepSeek-R1 model
+// DeepSeek API configuration (via OpenRouter for Free Tier)
+// AI Model Configurations - Using exact model names
+const MODELS = {
+    CHIMERA: {
+        name: 'tngtech/deepseek-r1t-chimera:free',
+        key: process.env.OPENROUTER_CHIMERA_KEY || process.env.DEEPSEEK_API_KEY
+    },
+    LLAMA: {
+        name: 'meta-llama/llama-3.1-8b-instruct',
+        key: process.env.OPENROUTER_LLAMA_KEY
+    },
+    MISTRAL: {
+        name: 'mistralai/mistral-7b-instruct',
+        key: process.env.OPENROUTER_MISTRAL_KEY
+    },
+    GEMMA: {
+        name: 'google/gemma-2-9b-it',
+        key: process.env.OPENROUTER_GEMMA_KEY || process.env.OPENROUTER_LLAMA_KEY
+    }
+};
+
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 /**
- * Make a request to DeepSeek API
+ * Base function to call OpenRouter
  */
-async function callDeepSeek(messages, options = {}) {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-
-    if (!apiKey) {
-        throw new Error('DEEPSEEK_API_KEY not found in environment variables');
+async function callOpenRouter(messages, modelConfig, options = {}) {
+    if (!modelConfig.key) {
+        throw new Error(`Missing API Key for model: ${modelConfig.name}`);
     }
 
     try {
-        const response = await axios.post(DEEPSEEK_API_URL, {
-            model: DEEPSEEK_MODEL,
-            messages,
+        const response = await axios.post(OPENROUTER_URL, {
+            model: modelConfig.name,
+            messages: messages,
             temperature: options.temperature || 0.7,
-            max_tokens: options.max_tokens || 4096,
-            ...options
+            max_tokens: options.max_tokens || 4096
         }, {
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${modelConfig.key}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'http://localhost:5173',
+                'X-Title': 'AI Hiring Platform'
             },
-            timeout: 120000 // 2 minute timeout for R1 model (reasoning takes time)
+            timeout: 120000
         });
 
         return response.data.choices[0].message.content;
     } catch (error) {
-        console.error('DeepSeek API error:', error.response?.data || error.message);
-        throw new Error(`DeepSeek API failed: ${error.response?.data?.error?.message || error.message}`);
+        const errorMsg = error.response?.data?.error?.message || error.message;
+        const status = error.response?.status;
+        const enhancedError = new Error(`AI Call Failed (${modelConfig.name}): ${errorMsg}`);
+        enhancedError.status = status;
+        throw enhancedError;
     }
+}
+
+/**
+ * Execute AI call with chained fallback strategy
+ * @param {Array} messages - Chat messages
+ * @param {Array} models - Array of model configs to try in order [primary, fallback1, fallback2, ...]
+ * @param {Object} options - API options
+ */
+async function callWithFallback(messages, models, options = {}) {
+    const modelList = Array.isArray(models) ? models : [models];
+
+    for (let i = 0; i < modelList.length; i++) {
+        const model = modelList[i];
+        try {
+            return await callOpenRouter(messages, model, options);
+        } catch (error) {
+            const isRetryable = error.status === 429 || error.status === 503 || error.status === 404 ||
+                error.message.includes('Rate limit') || error.message.includes('No endpoints');
+
+            if (isRetryable && i < modelList.length - 1) {
+                console.warn(`⚠️ Model ${model.name} failed (${error.status}). Trying next: ${modelList[i + 1].name}`);
+                continue;
+            }
+            console.error(`❌ All models exhausted. Last error:`, error.message);
+            throw error;
+        }
+    }
+}
+
+/**
+ * Legacy wrapper with 2-tier fallback: Chimera -> Llama
+ */
+async function callDeepSeek(messages, options = {}) {
+    return callWithFallback(messages, [MODELS.CHIMERA, MODELS.LLAMA, MODELS.MISTRAL], options);
 }
 
 /**
@@ -95,6 +151,9 @@ function detectProgrammingLanguages(skills) {
  * @param {Array} skills - User's skills from resume
  */
 async function generateCodingProblem(language, skillLevel = 'easy', skills = []) {
+    console.log('🔵 [AI] generateCodingProblem called');
+    console.log('🔵 [AI] Parameters:', { language, skillLevel, skillsCount: skills.length });
+
     const prompt = `Generate a coding problem for a ${skillLevel} level interview in ${language}.
 
 The candidate has these skills: ${skills.join(', ') || 'general programming'}
@@ -118,10 +177,13 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no code 
 Make the problem practical and relevant to real-world scenarios. Include 3-4 test cases.`;
 
     try {
+        console.log('🔵 [AI] Calling DeepSeek API for coding problem...');
         const response = await callDeepSeek([
             { role: 'system', content: 'You are a coding interview expert. Always respond with valid JSON only, no markdown formatting.' },
             { role: 'user', content: prompt }
         ]);
+
+        console.log('🔵 [AI] Raw response length:', response?.length);
 
         // Clean the response - remove any markdown code blocks
         let cleanResponse = response
@@ -129,10 +191,14 @@ Make the problem practical and relevant to real-world scenarios. Include 3-4 tes
             .replace(/```\n?/g, '')
             .trim();
 
-        return JSON.parse(cleanResponse);
+        const parsed = JSON.parse(cleanResponse);
+        console.log('✅ [AI] Coding problem parsed successfully:', parsed.title);
+        return parsed;
     } catch (error) {
-        console.error('Failed to generate coding problem:', error);
+        console.error('❌ [AI] Failed to generate coding problem:', error.message);
+        console.error('❌ [AI] Full error:', error);
         // Return a fallback problem
+        console.log('🔶 [AI] Returning fallback problem for:', language);
         return getFallbackProblem(language);
     }
 }
@@ -141,7 +207,33 @@ Make the problem practical and relevant to real-world scenarios. Include 3-4 tes
  * Evaluate code solution using DeepSeek-R1
  */
 async function evaluateCodeSolution(code, problem, language, output, passed) {
-    const prompt = `Evaluate this code solution:
+    // Check for empty or minimal code (just comments/template)
+    const codeWithoutComments = code
+        .replace(/\/\/.*$/gm, '') // Remove single-line comments
+        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+        .replace(/#.*$/gm, '') // Remove Python comments
+        .replace(/\s+/g, '') // Remove whitespace
+        .trim();
+
+    const isEmptyOrMinimal = codeWithoutComments.length < 20;
+    const isJustTemplate = code.includes('# Your code here') ||
+        code.includes('// Write your code here') ||
+        code.includes('pass') && codeWithoutComments.length < 50;
+
+    // If code is empty or just template, give 0
+    if (isEmptyOrMinimal || isJustTemplate) {
+        console.log('[CODING] Empty or minimal code detected, score: 0');
+        return {
+            score: 0,
+            codeQuality: 'No solution provided',
+            efficiency: 'N/A - no code submitted',
+            correctness: 'Incorrect - no solution was implemented',
+            suggestions: ['Actually implement a solution', 'Write code that solves the problem'],
+            overallFeedback: 'You did not submit a solution. Please write code that addresses the problem.'
+        };
+    }
+
+    const prompt = `Evaluate this code solution STRICTLY. Be harsh on poor solutions.
 
 Language: ${language}
 Problem: ${problem.title}
@@ -150,8 +242,18 @@ Description: ${problem.description}
 Submitted Code:
 ${code}
 
-Execution Output: ${output}
+Execution Output: ${output || 'No output'}
 Test Cases Passed: ${passed ? 'Yes' : 'No'}
+
+SCORING GUIDELINES:
+- 0-20: No solution / completely wrong / just template code
+- 21-40: Attempted but significantly wrong
+- 41-60: Partially correct, has bugs or missing edge cases
+- 61-80: Mostly correct, minor issues
+- 81-100: Correct and well-written
+
+If the code is just a template with "pass" or "# Your code here", score it 0.
+If tests did not pass, score should be below 50 unless logic is sound.
 
 Provide evaluation as JSON:
 {
@@ -165,7 +267,7 @@ Provide evaluation as JSON:
 
     try {
         const response = await callDeepSeek([
-            { role: 'system', content: 'You are a code review expert. Respond with valid JSON only.' },
+            { role: 'system', content: 'You are a strict code review expert. Score fairly but harshly. Respond with valid JSON only.' },
             { role: 'user', content: prompt }
         ]);
 
@@ -174,16 +276,19 @@ Provide evaluation as JSON:
             .replace(/```\n?/g, '')
             .trim();
 
-        return JSON.parse(cleanResponse);
+        const result = JSON.parse(cleanResponse);
+        console.log('[CODING] AI evaluation score:', result.score);
+        return result;
     } catch (error) {
         console.error('Code evaluation failed:', error);
+        // Fallback scores are now much lower
         return {
-            score: passed ? 70 : 30,
+            score: passed ? 40 : 10,
             codeQuality: 'Unable to evaluate code quality',
             efficiency: 'N/A',
-            correctness: passed ? 'Solution passed test cases' : 'Solution did not pass all test cases',
+            correctness: passed ? 'Solution passed test cases but could not be fully evaluated' : 'Solution did not pass test cases',
             suggestions: ['Review your solution and try again'],
-            overallFeedback: passed ? 'Good job! Your solution works.' : 'Your solution needs improvement.'
+            overallFeedback: passed ? 'Your solution works but needs review.' : 'Your solution needs significant improvement.'
         };
     }
 }
@@ -303,11 +408,387 @@ public class Solution {
     return problems[language] || problems['JavaScript'];
 }
 
+/**
+ * Generate personalized interview questions using DeepSeek-R1 (Legacy Batch Mode)
+ */
+async function generateInterviewQuestions(resumeText, role, experienceLevel) {
+    const prompt = `You are an expert technical interviewer. Generate 10 personalized interview questions based STRICTLY on the candidate's resume and desired role.
+    
+    Role: ${role}
+    Experience Level: ${experienceLevel}
+    Resume Summary: ${resumeText.substring(0, 3000)}...
+
+    Requirements:
+    1. Questions MUST be specific to the projects and skills mentioned in the resume.
+    2. Include 5 Technical questions (deep dive into their specific tech stack).
+    3. Include 5 Behavioral/HR questions based on their experience level.
+    
+    Return ONLY a valid JSON object with this structure:
+    {
+        "technical": [
+            { "question": "Question text", "type": "technical", "topic": "React/Node/etc", "difficulty": "medium" }
+        ],
+        "behavioral": [
+            { "question": "Question text", "type": "hr", "topic": "Leadership/Conflict", "difficulty": "easy" }
+        ]
+    }`;
+
+    try {
+        const response = await callDeepSeek([
+            { role: 'system', content: 'You are a strict technical interviewer using DeepSeek-R1 model for deep reasoning. Return only valid JSON.' },
+            { role: 'user', content: prompt }
+        ]);
+
+        let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsed = JSON.parse(cleanResponse);
+
+        return [
+            ...parsed.technical,
+            ...parsed.behavioral
+        ];
+    } catch (error) {
+        console.error('DeepSeek question generation failed:', error);
+        throw error;
+    }
+}
+
+/**
+ * Generate a SINGLE personalized interview question based on history
+ */
+async function generateNextQuestion(resumeText, role, experienceLevel, history = []) {
+    const questionCount = history.length + 1;
+    const isTechnical = questionCount <= 5; // First 5 technical, last 5 behavioral
+
+    // Debug logging
+    console.log(`[Interview] Generating Q${questionCount}/10 - ${isTechnical ? 'TECHNICAL' : 'HR/BEHAVIORAL'}`);
+    console.log(`[Interview] History length: ${history.length}`);
+
+    // Construct conversation history for context
+    const conversationContext = history.map((h, i) => `Q${i + 1}: ${h.question}\nA: ${h.answer}`).join('\n\n');
+
+    const prompt = `You are an expert ${isTechnical ? 'technical' : 'HR'} interviewer conducting a live interview.
+    
+    Candidate Role: ${role}
+    Experience: ${experienceLevel}
+    Resume Snippet: ${resumeText.substring(0, 500)}...
+    
+    Current Interview Progress: ${questionCount}/10
+    
+    ${!isTechnical ? '🔴 THIS IS THE HR ROUND (Questions 6-10). DO NOT ASK TECHNICAL QUESTIONS.' : ''}
+    
+    Previous Conversation:
+    ${conversationContext}
+    
+    Task: Generate the NEXT question (Question #${questionCount}).
+    Type: ${isTechnical ? 'TECHNICAL - Conceptual/Theory based' : 'HR/BEHAVIORAL - Soft Skills Assessment'}
+    
+    ${isTechnical ? `
+    TECHNICAL ROUND RULES:
+    - Ask CONCEPTUAL questions about technology (explain concepts, compare technologies, describe approaches)
+    - DO NOT ask to write code or implement anything
+    - Questions should test understanding, not coding ability
+    ` : `
+    HR ROUND RULES (YOU MUST FOLLOW THESE):
+    - Ask about: teamwork, challenges, problem-solving, communication, leadership, conflict resolution
+    - Examples: "Tell me about a time when...", "How do you handle...", "Describe a situation where..."
+    - DO NOT ASK ANY TECHNICAL QUESTIONS - this is NOT the technical round
+    - Focus on: soft skills, personality, work ethic, collaboration, time management
+    `}
+    
+    Return ONLY this JSON:
+    {
+        "question": "The actual question text",
+        "type": "${isTechnical ? 'technical' : 'hr'}",
+        "difficulty": "medium",
+        "topic": "${isTechnical ? 'Technical concept' : 'Behavioral/Soft Skills'}"
+    }`;
+
+    try {
+        const response = await callDeepSeek([
+            { role: 'system', content: 'You are an adaptive technical interviewer. Return valid JSON only.' },
+            { role: 'user', content: prompt }
+        ]);
+
+        return extractJson(response);
+    } catch (error) {
+        console.error('DeepSeek dynamic question failed:', error);
+        // Fallback
+        return {
+            question: `Tell me more about your experience with ${isTechnical ? 'technical challenges' : 'teamwork'}.`,
+            type: isTechnical ? 'technical' : 'hr',
+            topic: 'General'
+        };
+    }
+}
+
+/**
+ * Helper to extract JSON from conversational response
+ */
+function extractJson(text) {
+    try {
+        // 1. Try direct parse
+        return JSON.parse(text);
+    } catch (e) {
+        // 2. Extract between ```json and ```
+        const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/);
+        if (jsonMatch) {
+            try { return JSON.parse(jsonMatch[1]); } catch (e) { }
+        }
+
+        // 3. Extract between first { and last }
+        const bracketMatch = text.match(/\{[\s\S]*\}/);
+        if (bracketMatch) {
+            try { return JSON.parse(bracketMatch[0]); } catch (e) { }
+        }
+
+        throw new Error(`Failed to extract JSON from response: ${text.substring(0, 100)}...`);
+    }
+}
+
+
+/**
+ * Validates answer - ONLY blocks gibberish and completely off-topic responses
+ * Wrong technical answers are ALLOWED - the final evaluation will score them appropriately
+ */
+async function validateAnswer(question, answer) {
+    // Minimum length check
+    if (!answer || answer.trim().length < 5) {
+        return { valid: false, message: "Please provide a longer response." };
+    }
+
+    // Simple gibberish detection (no AI needed for obvious cases)
+    const gibberishPattern = /^[a-z]{10,}$|^[^a-zA-Z]*$|^(.)\1{5,}$/i;
+    if (gibberishPattern.test(answer.trim())) {
+        return { valid: false, message: "Please provide a real answer, not random characters." };
+    }
+
+    const prompt = `You are a LENIENT answer validator. Your job is to check if the answer is a GENUINE ATTEMPT to respond.
+
+Question: "${question}"
+Answer: "${answer}"
+
+ONLY mark as INVALID if:
+1. The answer is GIBBERISH (random characters like "asdfgh", "jkljkl", keyboard mashing)
+2. The answer is COMPLETELY OFF-TOPIC (e.g., answering "the weather is nice" when asked about JavaScript)
+3. The answer is in a non-English language
+
+MARK AS VALID even if:
+- The answer is WRONG (e.g., saying "var is block-scoped" when it's actually function-scoped)
+- The answer is incomplete or vague
+- The answer shows misunderstanding of the concept
+- The answer is too short but makes an attempt
+
+This is an EXAM - wrong answers get low scores at the end, but they should NOT be blocked here.
+
+Return JSON:
+{
+    "valid": true/false,
+    "message": "Only if invalid: brief reason (max 15 words)"
+}`;
+
+    try {
+        const response = await callDeepSeek([
+            { role: 'system', content: 'You are lenient. Allow wrong answers through. Only block gibberish and off-topic. Return JSON.' },
+            { role: 'user', content: prompt }
+        ]);
+
+        return extractJson(response);
+    } catch (error) {
+        console.error('Validation failed:', error);
+        // If validation fails, ALLOW the answer through (fail-open)
+        return { valid: true };
+    }
+}
+
+/**
+ * Parse resume text into structured JSON using DeepSeek-R1
+ */
+async function parseResume(resumeText) {
+    if (!resumeText || resumeText.length < 50) {
+        throw new Error('Resume text too short');
+    }
+
+    const prompt = `You are an expert resume parser. Extract structured data from the following resume text.
+    
+    Resume Text:
+    ${resumeText.substring(0, 5000)}... (truncated if too long)
+    
+    Return ONLY a valid JSON object with this exact structure:
+    {
+        "basics": {
+            "name": "Full Name",
+            "email": "email@example.com",
+            "phone": "Phone Number",
+            "linkedin": "LinkedIn URL",
+            "summary": "Brief professional summary (max 3 sentences)"
+        },
+        "skills": ["Skill 1", "Skill 2", "Skill 3"],
+        "experience": [
+            {
+                "company": "Company Name",
+                "role": "Job Title",
+                "duration": "Start - End",
+                "description": "Key responsibilities (max 2 sentences)"
+            }
+        ],
+        "education": [
+            {
+                "institution": "University Name",
+                "degree": "Degree",
+                "year": "Year"
+            }
+        ],
+        "projects": [
+            {
+                "name": "Project Name",
+                "description": "Brief description",
+                "techStack": ["Tech 1", "Tech 2"]
+            }
+        ]
+    }
+    
+    If specific fields are missing, leave them as empty strings or empty arrays. Do not invent information.`;
+
+    try {
+        const response = await callDeepSeek([
+            { role: 'system', content: 'You are a precise JSON extractor. Return only valid JSON.' },
+            { role: 'user', content: prompt }
+        ]);
+
+        return extractJson(response);
+    } catch (error) {
+        console.error('DeepSeek resume parsing failed:', error);
+        throw error;
+    }
+}
+
+/**
+ * Evaluate ALL answers HOLISTICALLY using DeepSeek-R1 (Chimera)
+ */
+async function evaluateAllAnswers(questionsAndAnswers, jobContext) {
+    const { jobTitle, jobDescription, requiredSkills } = jobContext;
+
+    // PRE-EVALUATION: Check for non-answers
+    const nonAnswerPatterns = [
+        /^i\s*don'?t\s*know$/i,
+        /^idk$/i,
+        /^no\s*idea$/i,
+        /^not\s*sure$/i,
+        /^i\s*have\s*no\s*(idea|clue)$/i,
+        /^pass$/i,
+        /^skip$/i,
+        /^next$/i,
+        /^n\/a$/i,
+        /^\.+$/,
+        /^no$/i,
+        /^yes$/i,
+        /^maybe$/i
+    ];
+
+    const nonAnswerCount = questionsAndAnswers.filter(qa => {
+        const answer = (qa.answer || '').trim().toLowerCase();
+        return answer.length < 15 || nonAnswerPatterns.some(p => p.test(answer));
+    }).length;
+
+    const totalQuestions = questionsAndAnswers.length;
+    const nonAnswerPercentage = (nonAnswerCount / totalQuestions) * 100;
+
+    console.log(`[EVALUATION] Non-answer percentage: ${nonAnswerPercentage.toFixed(0)}% (${nonAnswerCount}/${totalQuestions})`);
+
+    // If more than 60% are non-answers, skip AI and give very low score
+    if (nonAnswerPercentage >= 60) {
+        console.log('[EVALUATION] Majority non-answers detected, returning low score');
+        return {
+            overallScore: Math.max(5, 30 - nonAnswerPercentage * 0.3),
+            technicalScore: 10,
+            hrScore: 10,
+            confidence: 5,
+            relevance: 5,
+            communication: 10,
+            strengths: [],
+            weaknesses: ['Provided no substantive answers', 'Failed to demonstrate any knowledge or skills'],
+            feedback: 'The candidate did not provide meaningful answers to the interview questions. All or most responses were "I don\'t know" or similar non-answers.',
+            areasToImprove: [
+                { area: 'Preparation', suggestion: 'Research the role and prepare answers before the interview', priority: 'high' },
+                { area: 'Knowledge', suggestion: 'Study the fundamental concepts required for this position', priority: 'high' }
+            ],
+            recommendations: [
+                'This candidate is not ready for this position',
+                'Recommend gaining more experience before reapplying'
+            ]
+        };
+    }
+
+    const qaFormatted = questionsAndAnswers.map((qa, i) =>
+        `Q${i + 1} [${qa.category || qa.type}]: ${qa.question}\nA${i + 1}: ${qa.answer}`
+    ).join('\n\n');
+
+    const prompt = `You are a STRICT and CRITICAL interview evaluator. Your job is to evaluate interview answers HONESTLY.
+
+=== JOB CONTEXT ===
+Job Title: ${jobTitle}
+Required Skills: ${requiredSkills?.join(', ') || 'Not specified'}
+Job Description: ${jobDescription?.substring(0, 500) || 'Not provided'}
+
+=== INTERVIEW Q&A ===
+${qaFormatted}
+
+=== STRICT EVALUATION RULES ===
+1. GIBBERISH/NONSENSE answers (random text, "asdf", single words, unrelated content) = 0-15 points
+2. VERY SHORT answers (less than 20 words) = 15-30 points
+3. IRRELEVANT answers (doesn't address the question) = 20-40 points
+4. GENERIC answers (no specific examples, very vague) = 40-55 points
+5. BASIC answers (addresses question but lacks depth) = 55-70 points
+6. GOOD answers (clear, relevant, some examples) = 70-85 points
+7. EXCELLENT answers (detailed, specific examples, demonstrates expertise) = 85-100 points
+
+BE HARSH. If the answers don't demonstrate real knowledge or provide specific examples, the score should be LOW.
+
+Return JSON:
+{
+    "overallScore": 0-100,
+    "technicalScore": 0-100,
+    "hrScore": 0-100,
+    "confidence": 0-100,
+    "relevance": 0-100,
+    "communication": 0-100,
+    "strengths": ["specific strength 1", "specific strength 2"],
+    "weaknesses": ["specific weakness 1", "specific weakness 2"],
+    "feedback": "Overall assessment of the candidate's performance",
+    "areasToImprove": [
+        { "area": "Topic", "suggestion": "Specific suggestion", "priority": "high/medium" }
+    ],
+    "recommendations": ["Recommendation 1", "Recommendation 2"]
+}
+
+BE STRICT AND HONEST. Return ONLY valid JSON.`;
+
+    try {
+        const response = await callWithFallback(
+            [
+                { role: 'system', content: 'You are a strict technical interviewer. Return only valid JSON.' },
+                { role: 'user', content: prompt }
+            ],
+            [MODELS.CHIMERA, MODELS.LLAMA, MODELS.MISTRAL]
+        );
+
+        return extractJson(response);
+    } catch (error) {
+        console.error('DeepSeek evaluation failed:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     callDeepSeek,
     detectProgrammingLanguages,
     generateCodingProblem,
     evaluateCodeSolution,
     getFallbackProblem,
+    generateInterviewQuestions,
+    generateNextQuestion,
+    validateAnswer,
+    parseResume,
+    evaluateAllAnswers,
     PROGRAMMING_LANGUAGES
 };
