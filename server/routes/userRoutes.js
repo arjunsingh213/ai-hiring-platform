@@ -247,7 +247,8 @@ router.get('/top-candidates/:domainId', async (req, res) => {
         const { domainId } = req.params;
         const { limit = 5 } = req.query;
 
-        const candidates = await User.find({
+        // First try to find candidates in the specific domain
+        let candidates = await User.find({
             role: 'jobseeker',
             'jobSeekerProfile.jobDomains': domainId,
             'aiTalentPassport.talentScore': { $gt: 0 }
@@ -256,11 +257,23 @@ router.get('/top-candidates/:domainId', async (req, res) => {
             .sort({ 'aiTalentPassport.talentScore': -1 })
             .limit(parseInt(limit));
 
+        // If no candidates found in domain, show all top candidates globally
+        if (candidates.length === 0) {
+            candidates = await User.find({
+                role: 'jobseeker',
+                'aiTalentPassport.talentScore': { $gt: 0 }
+            })
+                .select('profile.name profile.photo profile.headline jobSeekerProfile.domain jobSeekerProfile.jobDomains aiTalentPassport.talentScore aiTalentPassport.levelBand')
+                .sort({ 'aiTalentPassport.talentScore': -1 })
+                .limit(parseInt(limit));
+        }
+
         res.json({
             success: true,
             data: candidates,
             domain: domainId,
-            count: candidates.length
+            count: candidates.length,
+            isGlobalFallback: candidates.length > 0 && !candidates.some(c => c.jobSeekerProfile?.jobDomains?.includes(domainId))
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
