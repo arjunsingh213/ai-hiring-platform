@@ -72,6 +72,9 @@ app.use('/api/hiring', require('../server/routes/documents'));
 app.use('/api/resume', require('../server/routes/resumeParser'));
 app.use('/api/onboarding-interview', require('../server/routes/onboardingInterview'));
 
+// AI Talent Passport (NEW ADDITIVE FEATURE)
+app.use('/api/talent-passport', require('../server/routes/talentPassportRoutes'));
+
 // Health endpoints
 app.get('/api', (req, res) => {
     res.json({ success: true, message: 'API Running', time: new Date().toISOString() });

@@ -1,18 +1,26 @@
+/* ═══════════════════════════════════════════════════════════════
+   FRAMER-STYLE RECRUITER DASHBOARD
+   Premium frosted glass layout
+   ═══════════════════════════════════════════════════════════════ */
+
 .recruiter-dashboard {
     display: flex;
     min-height: 100vh;
+    background: var(--bg-gradient);
 }
 
 .recruiter-main {
     flex: 1;
-    padding: var(--spacing-xl);
-    margin-left: 290px;
+    padding: 32px;
+    margin-left: 300px;
     margin-top: 110px;
+    animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @media (max-width: 1024px) {
     .recruiter-main {
         margin-left: 100px;
+        padding: 24px;
     }
 }
 
@@ -21,13 +29,25 @@
         margin-left: 0;
         margin-top: 80px;
         margin-bottom: 80px;
-        padding: var(--spacing-md);
+        padding: 16px;
     }
 }
 
 @media (max-width: 480px) {
     .recruiter-main {
         margin-top: 74px;
-        padding: var(--spacing-sm);
+        padding: 12px;
+    }
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

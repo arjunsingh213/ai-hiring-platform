@@ -152,7 +152,280 @@ An AI-first hiring platform that automates the initial screening process using a
 - Track application status
 - View interview schedules
 
-### **7. Smart Resume Parser**
+### **7. Home Feed & Social Features**
+**Purpose:** LinkedIn-style professional networking and content sharing
+
+**Post Types:**
+- **Text Posts:** Share thoughts, achievements, updates
+- **Media Posts:** Images, videos, documents (Cloudinary storage)
+- **Achievement Posts:** Celebrate milestones, certifications
+- **Job Updates:** Share career changes, promotions
+- **Open to Work:** Signal job search status
+
+**Engagement Features:**
+- **Likes:** Express appreciation
+- **Dislikes:** Show disagreement
+- **Comments:** threaded discussions
+- **Shares:** Spread content to your network
+- **Reposts:** Quote and add your thoughts
+- **Mentions:** @mention other users
+- **Tags:** Categorize content with hashtags
+
+**Post Visibility:**
+- **Public:** Everyone can see
+- **Connections:** Only your network
+- **Private:** Only you
+
+**Feed Algorithm:**
+- Chronological timeline
+- Engagement-based ranking
+- View tracking and analytics
+
+### **8. Profile Management System**
+**Comprehensive Job Seeker Profile:**
+
+**Basic Information:**
+- Name, email, location
+- Profile photo (croppable upload)
+- Cover photo (banner image)
+- Professional headline
+- About/Bio section
+- Contact information
+
+**Professional Details:**
+- **Work Experience:**
+  - Company name, logo
+  - Position/role
+  - Duration (start/end dates)
+  - Description and achievements
+  - Add/edit/delete multiple entries
+- **Education:**
+  - Institution name
+  - Degree and field of study
+  - Graduation year
+  - GPA/honors
+  - Add/edit/delete multiple entries
+- **Skills:**
+  - Technical skills
+  - Soft skills
+  - Skill endorsements (future feature)
+  - Add/remove dynamically
+
+**Additional Sections:**
+- **Certifications:** Professional credentials
+- **Projects:** Portfolio items with descriptions
+- **Languages:** Proficiency levels
+- **Achievements:** Awards, recognitions
+- **Interests:** Professional and personal
+
+**Privacy Controls:**
+- Profile visibility settings
+- What recruiters can see
+- Connection preferences
+
+**Profile Completion:**
+- Progress indicator
+- Suggestions for improvement
+- Motivational prompts
+
+### **9. Messaging System**
+**Real-Time Communication:**
+
+**Features:**
+- One-on-one messaging
+- Message history persistence
+- Read receipts
+- Typing indicators
+- File attachments support
+
+**Message Types:**
+- Text messages
+- File attachments (resumes, documents)
+- System notifications
+- Automated messages
+
+**Message Management:**
+- Mark as read/unread
+- Delete messages
+- Edit sent messages (metadata tracked)
+- Search conversations
+- Archive chats
+
+**Use Cases:**
+- Recruiter-candidate communication
+- Interview coordination
+- Offer negotiation
+- Follow-up questions
+
+### **10. Notification System**
+**Multi-Channel Alerts:**
+
+**Notification Types:**
+1. **Job Alerts:** New matching jobs posted
+2. **Interview Reminders:** Upcoming schedule
+3. **Profile Completion:** Suggestions to improve profile
+4. **Message Received:** New unread messages
+5. **Application Status:** Updates on job applications
+6. **Job Recommendations:** AI-suggested positions
+7. **Post Engagement:** Likes, comments on your posts
+8. **Motivational:** Encouragement to stay active
+9. **System:** Platform updates, announcements
+10. **Social:** Follows, mentions, tags
+11. **Hiring Workflow:** Hired, rejected status
+12. **Interview Completed:** Results available
+
+**Notification Features:**
+- Real-time in-app notifications
+- Notification badges on icons
+- Mark as read
+- Priority levels (low/medium/high)
+- Action buttons (quick links)
+- Popup notifications for important events
+- Notification preferences
+
+**Analytics:**
+- Track view rates
+- Click-through rates
+- Engagement metrics
+
+### **11. Hiring Pipeline & Offer Management**
+**Complete Recruitment Workflow:**
+
+**Hiring Process Stages:**
+1. **Offer Extended:**
+   - Generate offer letter
+   - Set expiry date
+   - Send to candidate
+2. **Offer Accepted/Declined:**
+   - Digital signature collection
+   - Decline reason tracking
+3. **Documents Pending:**
+   - Required document checklist
+   - Upload interface
+   - Progress tracking
+4. **Documents Complete:**
+   - Verification status
+   - Compliance checks
+5. **Onboarding Complete:**
+   - Final confirmation
+   - Access granted
+6. **Cancelled:**
+   - Process termination with reason
+
+**Offer Letter Details:**
+- Position title
+- Salary (amount, currency, period)
+- Start date
+- Location (on-site/remote/hybrid)
+- Employment type (full-time/part-time/contract/internship)
+- Department
+- Reporting manager
+- Benefits package
+- Custom terms and conditions
+- Offer expiry date
+- Digital signature field
+
+**Progress Tracking:**
+- Visual progress bar
+- Document completion percentage
+- Timeline milestones
+- Automated reminders
+- Deadline tracking
+
+**Analytics:**
+- Offer acceptance rate
+- Time to acceptance
+- Drop-off points
+- Conversion metrics
+
+### **12. Analytics & Insights**
+**For Recruiters:**
+
+**Recruitment Analytics:**
+- Applications received
+- Interview to hire ratio
+- Average time to hire
+- Source of best candidates
+- Diversity metrics
+- Cost per hire
+
+**Job Performance:**
+- Views per job posting
+- Application conversion rate
+- Most effective job descriptions
+- Skill demand analysis
+
+**Candidate Quality:**
+- AI match score distributions
+- Interview success rates
+- Skill gap analysis
+- Experience level trends
+
+**For Job Seekers:**
+
+**Profile Analytics:**
+- Profile views
+- Search appearances
+- Who viewed your profile
+- Engagement on posts
+
+**Application Insights:**
+- Applications sent
+- Interview invitations
+- Success rate
+- Areas for improvement
+
+### **13. Advanced Search & Filtering**
+**Job Search:**
+- Keyword search
+- Location-based filtering
+- Salary range filters
+- Experience level
+- Job type (remote/on-site/hybrid)
+- Company size
+- Industry
+- Posted date
+- Sort by relevance/recent
+
+**Candidate Search (for Recruiters):**
+- Skills matching
+- Years of experience
+- Location
+- Education level
+- Current company
+- Interview score threshold
+- Availability
+
+### **14. Settings & Preferences**
+**User Settings:**
+
+**Account Settings:**
+- Email and password
+- Two-factor authentication (future)
+- Account deletion
+- Export data
+
+**Privacy Settings:**
+- Profile visibility
+- Who can message you
+- Who can see your activity
+- Block/unblock users
+
+**Notification Preferences:**
+- Email notifications
+- In-app notifications
+- Notification frequency
+- Specific alert types
+
+**Job Preferences:**
+- Desired roles
+- Preferred locations
+- Expected salary range
+- Work type (remote/hybrid/on-site)
+- Industries of interest
+- Company sizes
+
+**7. Smart Resume Parser**
 **Capabilities:**
 - Text extraction from PDF and DOCX files
 - AI-powered parsing via Llama 3.1 8B
@@ -226,17 +499,40 @@ An AI-first hiring platform that automates the initial screening process using a
 {
   name, email, password,
   role: 'jobseeker' | 'employer',
+  
+  // Job Seeker Profile
   jobSeekerProfile: {
-    resume, skills, experience, education,
+    photo, coverPhoto, headline, bio, location,
+    skills: [{ name, proficiency }],
+    experience: [{ company, position, duration, description }],
+    education: [{ institution, degree, year, field }],
+    certifications: [String],
+    projects: [{ name, description, technologies }],
+    languages: [{ language, proficiency }],
+    resume, 
+    resumeId,
     onboardingInterview: { questions, answers, score },
-    interviewScore
+    interviewScore,
+    preferences: { desiredRoles, locations, salary, workType }
   },
+  
+  // Platform Interview Gating
   platformInterview: {
     status: 'pending' | 'passed' | 'failed',
     score, attempts, canRetry, retryAfter,
     completedAt, lastAttemptAt
   },
-  employerProfile: { company details }
+  
+  // Employer Profile
+  employerProfile: { 
+    companyName, industry, size, website,
+    description, logo, location
+  },
+  
+  // Social Features
+  connections: [userId],
+  followers: [userId],
+  following: [userId]
 }
 ```
 
@@ -245,31 +541,264 @@ An AI-first hiring platform that automates the initial screening process using a
 {
   userId, resumeId, jobId,
   interviewType: 'technical' | 'hr' | 'combined',
-  questions: [{ question, category, difficulty, timeLimit }],
-  responses: [{ answer, evaluation, score }],
+  
+  // Questions
+  questions: [{
+    question, category, difficulty,
+    expectedTopics, timeLimit,
+    generatedBy: 'ai' | 'manual' | 'adaptive'
+  }],
+  
+  // Responses
+  responses: [{
+    questionIndex, answer,
+    audioRecording, videoRecording, timeSpent,
+    evaluation: {
+      score, technicalAccuracy, communication,
+      confidence, relevance, completeness,
+      feedback, topicsAddressed, topicsMissed,
+      strengthsShown, improvementAreas
+    },
+    quickScore: { score, brief }
+  }],
+  
+  // Overall Scoring
   scoring: {
     technicalAccuracy, communication, confidence,
-    overallScore, strengths, weaknesses
+    relevance, overallScore,
+    strengths: [String], weaknesses: [String],
+    detailedFeedback
   },
-  recruiterReport: { recommendations, assessments },
-  status: 'scheduled' | 'in_progress' | 'completed',
-  passed: boolean
+  
+  // JD Matching (for job-specific interviews)
+  matchScore: {
+    overall, skills, experience, education,
+    matchedSkills, missingSkills, interviewFocus
+  },
+  
+  // Recruiter Report (AI-generated)
+  recruiterReport: {
+    summary, recommendation,
+    overallAssessment: { score, grade, verdict },
+    keyStrengths, concerns,
+    technicalAssessment, communicationAssessment,
+    cultureFit, suggestedNextSteps,
+    suggestedQuestions, salaryRecommendation,
+    riskFactors, finalNotes
+  },
+  
+  // Proctoring
+  proctoring: {
+    flags: [{ type, timestamp, severity, description }],
+    totalFlags, riskLevel: 'low' | 'medium' | 'high'
+  },
+  
+  status: 'scheduled' | 'in_progress' | 'completed' | 'abandoned',
+  passed: boolean,
+  startedAt, completedAt, duration
 }
 ```
 
 ### **Job Model**
 ```javascript
 {
-  title, description, company,
+  title, description,
+  company: { name, logo, industry, size },
   requirements: {
-    skills, minExperience, maxExperience,
-    education, experienceLevel
+    skills: [String],
+    minExperience, maxExperience,
+    education: [String],
+    experienceLevel: 'entry' | 'mid' | 'senior'
   },
-  location, salary, jobType,
-  status: 'active' | 'closed',
-  postedBy: employer_id
+  location, salary: { min, max, currency },
+  jobType: 'full-time' | 'part-time' | 'contract' | 'internship',
+  workMode: 'remote' | 'on-site' | 'hybrid',
+  status: 'active' | 'closed' | 'draft',
+  postedBy: employer_id,
+  applications: [{ userId, status, appliedAt }],
+  views, applicantsCount,
+  createdAt, updatedAt
 }
 ```
+
+### **Post Model**
+```javascript
+{
+  userId,
+  content: {
+    text: String,
+    media: [{
+      type: 'image' | 'video' | 'document',
+      fileId, fileName, url, thumbnail
+    }]
+  },
+  postType: 'text' | 'media' | 'achievement' | 'job_update' | 'open_to_work',
+  
+  // Engagement
+  engagement: {
+    likes: [{ userId, likedAt }],
+    dislikes: [{ userId, dislikedAt }],
+    comments: [{ userId, text, createdAt }],
+    shares: [{ userId, sharedAt }],
+    reposts: [{ userId, repostedAt }]
+  },
+  
+  visibility: 'public' | 'connections' | 'private',
+  tags: [String],
+  mentions: [userId],
+  views: Number,
+  createdAt, updatedAt
+}
+```
+
+### **Message Model**
+```javascript
+{
+  senderId, recipientId,
+  content: String,
+  attachments: [{
+    fileId, fileName, fileType, fileSize
+  }],
+  read: boolean,
+  readAt: Date,
+  metadata: {
+    edited: boolean, editedAt,
+    deleted: boolean, deletedAt
+  },
+  createdAt, updatedAt
+}
+```
+
+### **Notification Model**
+```javascript
+{
+  userId, sender: userId,
+  type: 'job_alert' | 'interview_reminder' | 'profile_completion' | 
+        'message_received' | 'application_status' | 'job_recommendation' |
+        'post_engagement' | 'motivational' | 'system' | 'follow' |
+        'like' | 'comment' | 'mention' | 'hired' | 'rejected',
+  title, message,
+  relatedEntity: {
+    entityType: 'job' | 'interview' | 'message' | 'post' | 'user',
+    entityId
+  },
+  actionUrl, actionText,
+  read: boolean, readAt,
+  priority: 'low' | 'medium' | 'high',
+  isPopup: boolean, popupShown: boolean,
+  createdAt
+}
+```
+
+### **HiringProcess Model**
+```javascript
+{
+  jobId, applicantId, recruiterId,
+  currentStage: 'offer_extended' | 'offer_accepted' | 'offer_declined' |
+                'documents_pending' | 'documents_complete' | 
+                'onboarding_complete' | 'cancelled',
+  status: 'active' | 'completed' | 'cancelled',
+  
+  // Offer Details
+  offer: {
+    position, 
+    salary: { amount, currency, period },
+    startDate, location,
+    employmentType: 'full-time' | 'part-time' | 'contract' | 'internship',
+    department, reportingManager,
+    benefits: [String],
+    customTerms, offerLetterUrl,
+    expiryDate, acceptedAt, declinedAt,
+    declineReason, signature
+  },
+  
+  // Timeline
+  timeline: {
+    offerSentAt, offerAcceptedAt,
+    documentsDeadline, startDate, actualStartDate
+  },
+  
+  // Progress
+  progress: {
+    documentsCompleted, documentsTotal,
+    overallProgress: 0-100
+  },
+  
+  notifications: {
+    remindersSent, lastReminderAt
+  },
+  
+  createdAt, updatedAt
+}
+```
+
+### **Resume Model**
+```javascript
+{
+  userId, fileId, fileName, fileType, fileUrl,
+  parsedData: {
+    personalInfo: { name, email, phone, location },
+    summary,
+    skills: [String],
+    experience: [{ company, position, duration, description, achievements }],
+    education: [{ institution, degree, field, year }],
+    projects: [{ name, description, technologies }],
+    certifications: [String],
+    languages: [String]
+  },
+  aiAnalysis: {
+    keyStrengths, suggestedRoles, skillLevel
+  },
+  uploadedAt, lastModified
+}
+```
+
+---
+
+## 📱 Complete Page/Component Listing
+
+### **Job Seeker Pages:**
+1. **HomeFeed.jsx** - Social feed with posts, engagement
+2. **ProfilePage.jsx** - Complete profile management
+3. **JobListingsPage.jsx** - Browse and search jobs
+4. **InterviewsPage.jsx** - Platform/job interviews, scorecards
+5. **MessagingPage.jsx** - Real-time chat with recruiters
+6. **SettingsPage.jsx** - Account preferences
+7. **OnboardingPortal.jsx** - Initial setup wizard
+8. **JobSeekerDashboard.jsx** - Overview, analytics
+9. **OfferAcceptancePage.jsx** - Review and sign offers
+
+### **Recruiter/Employer Pages:**
+1. **RecruiterHome.jsx** - Recruiter dashboard
+2. **JobPostingPage.jsx** - Create new job listings
+3. **MyJobsPage.jsx** - Manage posted jobs
+4. **CandidatesPage.jsx** - View applicants
+5. **RecruiterApplicationsPage.jsx** - Application management
+6. **HiringPipelinePage.jsx** - Offer and onboarding workflow
+7. **RecruiterMessages.jsx** - Chat with candidates
+8. **RecruiterAnalytics.jsx** - Recruitment metrics
+9. **RecruiterDashboard.jsx** - Overview stats
+10. **RecruiterSettings.jsx** - Account configuration
+
+### **Shared/Common Pages:**
+1. **Login.jsx** - Authentication
+2. **Signup.jsx** - Registration
+3. **LandingPage.jsx** - Marketing homepage
+4. **NotFoundPage.jsx** - 404 error
+
+### **Onboarding Pages:**
+1. **OnboardingInterview.jsx** - Platform interview interface
+2. **OnboardingWelcome.jsx** - Welcome screen
+3. **ResumeUpload.jsx** - Resume submission
+4. **ProfileSetup.jsx** - Initial profile creation
+5. **InterviewResults.jsx** - Scorecard display
+6. **CodeIDE.jsx** - Coding test interface
+
+### **Interview Pages:**
+1. **InterviewRoom.jsx** - Live interview screen
+2. **InterviewQuestions.jsx** - Q&A interface
+3. **InterviewResults.jsx** - Detailed scorecard
+4. **CodingTest.jsx** - Programming challenges
 
 ---
 

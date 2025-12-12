@@ -366,6 +366,19 @@ router.post('/submit', async (req, res) => {
             } catch (interviewError) {
                 console.error('Failed to create Interview document:', interviewError);
             }
+
+            // ==================== AI TALENT PASSPORT UPDATE (NEW) ====================
+            // Auto-update AI Talent Passport after interview completion
+            // This is a PURE ADDITION - doesn't affect existing flow
+            try {
+                const aiTalentPassportService = require('../services/aiTalentPassportService');
+                await aiTalentPassportService.updateTalentPassport(userId);
+                console.log('✅ AI Talent Passport updated after interview completion');
+            } catch (atpError) {
+                console.error('Failed to update AI Talent Passport (non-critical):', atpError);
+                // Don't throw - this is a non-critical feature
+            }
+            // ==================== END ATP UPDATE ====================
         } catch (dbError) {
             console.error('Failed to save to DB (continuing anyway):', dbError);
         }

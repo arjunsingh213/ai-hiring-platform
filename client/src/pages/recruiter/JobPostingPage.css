@@ -1,59 +1,111 @@
+/* ═══════════════════════════════════════════════════════════════
+   FRAMER-STYLE JOB POSTING PAGE
+   Premium frosted glass form
+   ═══════════════════════════════════════════════════════════════ */
+
 .job-posting-page {
     max-width: 900px;
     margin: 0 auto;
+    padding: 0 20px;
 }
 
 .page-header {
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: 40px;
+    animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .page-header h1 {
     font-size: 2rem;
-    margin-bottom: var(--spacing-sm);
+    font-weight: 800;
+    background: linear-gradient(135deg, #007DFF 0%, #4CC8FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
 }
 
 .job-form {
-    padding: var(--spacing-2xl);
+    padding: 32px;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 22px;
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: 0.1s;
+    opacity: 0;
 }
 
 .form-section {
-    margin-bottom: var(--spacing-2xl);
-    padding-bottom: var(--spacing-2xl);
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .form-section:last-of-type {
     border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .form-section h3 {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: #0F172A;
 }
 
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-md);
+    gap: 16px;
 }
 
 .checkbox-label {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: 10px;
     cursor: pointer;
-    color: var(--text-secondary);
+    color: #475569;
+    font-size: 0.9375rem;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 125, 255, 0.25);
 }
 
 .checkbox-label input[type="checkbox"] {
     width: 20px;
     height: 20px;
     cursor: pointer;
+    accent-color: #007DFF;
 }
 
 .form-actions {
     display: flex;
-    gap: var(--spacing-md);
+    gap: 14px;
     justify-content: flex-end;
-    padding-top: var(--spacing-xl);
-    border-top: 1px solid var(--border-color);
+    padding-top: 28px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

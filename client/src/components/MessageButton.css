@@ -1,3 +1,8 @@
+/* ═══════════════════════════════════════════════════════════════
+   FRAMER-STYLE MESSAGE BUTTON
+   Frosted glass notification bubble
+   ═══════════════════════════════════════════════════════════════ */
+
 .message-button {
     position: relative;
     display: flex;
@@ -5,26 +10,32 @@
     justify-content: center;
     width: 44px;
     height: 44px;
-    background: var(--glass-white);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 14px;
+    color: #475569;
     cursor: pointer;
-    transition: all var(--transition-fast);
-    color: var(--text-primary);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .message-button:hover {
-    background: var(--bg-hover);
-    border-color: var(--primary);
-    color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    background: rgba(255, 255, 255, 0.75);
+    color: #007DFF;
+    border-color: rgba(0, 125, 255, 0.25);
+    box-shadow: 0 4px 16px rgba(0, 125, 255, 0.15);
 }
 
 .message-button svg {
-    flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
+.message-button:hover svg {
+    transform: scale(1.05);
+}
+
+/* Notification Badge */
 .message-button-badge {
     position: absolute;
     top: -4px;
@@ -32,38 +43,14 @@
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: #f44;
+    background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
     color: white;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 700;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--bg-primary);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-}
-
-@media (max-width: 768px) {
-    .message-button {
-        width: 40px;
-        height: 40px;
-    }
-
-    .message-button svg {
-        width: 20px;
-        height: 20px;
-    }
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+    border: 2px solid white;
 }

@@ -262,13 +262,19 @@ const OnboardingInterview = ({
 
                 // HARD LIMIT: Stop at 10 questions (5 tech + 5 HR)
                 // Check both answer count AND currentIndex to be safe
-                if (response.completed || updatedAnswers.length >= 10 || currentIndex >= 9) {
+                // HARD LIMIT: Stop at question 10
+                const nextIndex = currentIndex + 1;
+
+                if (response.completed || updatedAnswers.length >= 10 || nextIndex >= 10) {
                     // Interview done - move to coding test or final evaluation
                     submitInterview(updatedAnswers);
-                } else if (response.question && updatedAnswers.length < 10 && currentIndex < 9) {
+                } else if (response.question && questions.length < 10) {
                     // Add next question and proceed (only if under limit)
-                    setQuestions(prev => [...prev, response.question]);
-                    setCurrentIndex(prev => prev + 1);
+                    setQuestions(prev => {
+                        if (prev.length >= 10) return prev; // Safety check
+                        return [...prev, response.question];
+                    });
+                    setCurrentIndex(nextIndex);
                     setTimeLeft(120);
                 } else {
                     // Safety fallback - submit if somehow we're at limit
@@ -302,28 +308,19 @@ const OnboardingInterview = ({
             if (response.success) {
                 setResults(response.data);
 
-                // Check if user has programming skills → show coding test
-                if (detectedLanguages.length > 0) {
-                    toast.success('Interview complete! Preparing coding challenge...');
-                    loadCodingProblem();
-                } else {
-                    // Non-technical user → skip to results
-                    setCompleted(true);
-                }
+                // ALWAYS show coding test after interview
+                toast.success('Interview complete! Preparing coding challenge...');
+                loadCodingProblem();
             } else {
                 throw new Error(response.error || 'Submission failed');
             }
         } catch (error) {
             console.error('Interview submission error:', error);
-            toast.error('Failed to submit interview. Proceeding anyway.');
-            setResults({ score: 70, passed: true, feedback: 'Interview recorded.' });
+            toast.error('Failed to submit interview. Proceeding to coding test.');
+            setResults({ score: 0, passed: false, feedback: 'Interview submission had issues.' });
 
-            // Still check for coding test
-            if (detectedLanguages.length > 0) {
-                loadCodingProblem();
-            } else {
-                setCompleted(true);
-            }
+            // Still proceed to coding test
+            loadCodingProblem();
         } finally {
             setSubmitting(false);
         }
@@ -331,38 +328,39 @@ const OnboardingInterview = ({
 
     // Load coding problem for the candidate
     const loadCodingProblem = async () => {
-        console.log('🔵 [CODING TEST] Starting loadCodingProblem...');
-        console.log('🔵 [CODING TEST] Detected languages:', detectedLanguages);
+        console.log('[CODING TEST] Starting loadCodingProblem...');
+        console.log('[CODING TEST] Detected languages:', detectedLanguages);
 
         setLoadingProblem(true);
         try {
-            const primaryLanguage = detectedLanguages[0];
-            console.log('🔵 [CODING TEST] Primary language:', primaryLanguage);
+            // Use detected language or fallback to JavaScript
+            const primaryLanguage = detectedLanguages[0] || { name: 'JavaScript', judge0Id: 63 };
+            console.log('[CODING TEST] Primary language:', primaryLanguage);
 
             const requestData = {
                 skills: parsedResume?.skills || [],
                 language: primaryLanguage?.name || 'JavaScript',
                 difficulty: 'easy'
             };
-            console.log('🔵 [CODING TEST] Request data:', requestData);
+            console.log('[CODING TEST] Request data:', requestData);
 
             const response = await api.post('/code/generate-problem', requestData);
-            console.log('🔵 [CODING TEST] Response:', response);
+            console.log('[CODING TEST] Response:', response);
 
             if (response.success && response.problem) {
-                console.log('✅ [CODING TEST] Problem generated successfully:', response.problem.title);
+                console.log('[CODING TEST] Problem generated successfully:', response.problem.title);
                 setCodingProblem({
                     ...response.problem,
-                    languageId: primaryLanguage?.judge0Id || 71
+                    languageId: primaryLanguage?.judge0Id || 63 // JavaScript fallback
                 });
                 setShowCodingTest(true);
             } else {
-                console.error('❌ [CODING TEST] Response missing success or problem:', response);
+                console.error('[CODING TEST] Response missing success or problem:', response);
                 throw new Error('Failed to generate problem');
             }
         } catch (error) {
-            console.error('❌ [CODING TEST] Error loading coding problem:', error);
-            console.error('❌ [CODING TEST] Error details:', {
+            console.error('[CODING TEST] Error loading coding problem:', error);
+            console.error('[CODING TEST] Error details:', {
                 message: error.message,
                 response: error.response?.data,
                 status: error.response?.status
@@ -592,7 +590,7 @@ const OnboardingInterview = ({
                         {isHRRound ? 'HR Round' : 'Technical Round'}
                     </span>
                     <span className="question-counter">
-                        Question {currentIndex + 1} of 10
+                        Question {Math.min(currentIndex + 1, 10)} of 10
                     </span>
                 </div>
                 <div className="header-right">

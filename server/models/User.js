@@ -256,6 +256,211 @@ const userSchema = new mongoose.Schema({
         default: Date.now
     },
 
+    // ==================== AI TALENT PASSPORT (NEW ADDITIVE FEATURE) ====================
+    // This is a PURE ADDITION - does not modify any existing fields or functionality
+    aiTalentPassport: {
+        // Core Scores (0-100)
+        talentScore: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        domainScore: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        communicationScore: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        problemSolvingScore: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        gdScore: { // Group Discussion Score
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        professionalismScore: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+
+        // Global Rankings
+        globalPercentile: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        levelBand: {
+            type: String,
+            enum: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6', 'Level 7'],
+            default: 'Level 1'
+        },
+
+        // Skill Heatmap (AI-generated)
+        skillHeatmap: [{
+            skillName: String,
+            proficiency: {
+                type: Number,
+                min: 0,
+                max: 100
+            },
+            assessedDate: Date
+        }],
+
+        // Proof-of-Work Scores
+        proofOfWork: {
+            codingTasks: {
+                completed: { type: Number, default: 0 },
+                avgScore: { type: Number, default: 0 }
+            },
+            simulations: {
+                completed: { type: Number, default: 0 },
+                avgScore: { type: Number, default: 0 }
+            },
+            missions: {
+                completed: { type: Number, default: 0 },
+                avgScore: { type: Number, default: 0 }
+            }
+        },
+
+        // Behavioral Profile
+        behavioralProfile: {
+            leadership: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            teamwork: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            confidence: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            stressResponse: {
+                type: String,
+                enum: ['Excellent', 'Good', 'Average', 'Needs Improvement'],
+                default: 'Average'
+            },
+            communicationStyle: {
+                type: String,
+                enum: ['Assertive', 'Passive', 'Analytical', 'Expressive'],
+                default: 'Analytical'
+            }
+        },
+
+        // Reliability Metrics
+        reliability: {
+            punctuality: {
+                type: Number,
+                default: 100,
+                min: 0,
+                max: 100
+            },
+            taskCompletionRate: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            responsiveness: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            consistency: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            }
+        },
+
+        // Career Predictions (AI-generated)
+        careerPredictions: {
+            recommendedRoles: [{
+                role: String,
+                fitScore: Number,
+                salaryEstimate: {
+                    min: Number,
+                    max: Number,
+                    currency: { type: String, default: 'USD' }
+                }
+            }],
+            readinessPercentage: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            learningRoadmap: [{
+                skill: String,
+                currentLevel: String,
+                targetLevel: String,
+                estimatedTime: String,
+                priority: {
+                    type: String,
+                    enum: ['High', 'Medium', 'Low'],
+                    default: 'Medium'
+                }
+            }]
+        },
+
+        // Role Fit Scores (for specific job types)
+        roleFitScores: [{
+            roleType: String, // e.g., "Full Stack Developer", "Data Scientist"
+            fitScore: {
+                type: Number,
+                min: 0,
+                max: 100
+            },
+            strengths: [String],
+            gaps: [String]
+        }],
+
+        // Passport Versioning
+        version: {
+            type: String,
+            default: 'v1.0'
+        },
+        lastUpdated: {
+            type: Date,
+            default: Date.now
+        },
+
+        // Metadata
+        totalAssessmentsCompleted: {
+            type: Number,
+            default: 0
+        },
+        isActive: {
+            type: Boolean,
+            default: true
+        }
+    },
+    // ==================== END AI TALENT PASSPORT ====================
+
     // Testing mode flag
     testingMode: {
         type: Boolean,
