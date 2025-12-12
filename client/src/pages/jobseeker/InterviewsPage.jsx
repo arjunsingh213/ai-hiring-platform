@@ -133,7 +133,7 @@ const InterviewsPage = () => {
                     <div className="status-content">
                         <h3>Platform Interview Completed</h3>
                         <p>
-                            Score: {platformInterviewStatus?.score || 'N/A'} |
+                            Score: <strong>{platformInterviewStatus?.score || platformInterviewStatus?.data?.score || '—'}%</strong> |
                             You can now apply for jobs and complete job-specific interviews.
                         </p>
                     </div>

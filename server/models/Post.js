@@ -9,21 +9,32 @@ const postSchema = new mongoose.Schema({
 
     content: {
         text: String,
+        title: String,           // For achievements
+        score: Number,           // Performance score
+        skills: [String],        // Skill tags
+        atpReference: {          // Reference to user's ATP for live sync
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        jobId: {                 // For job postings
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Job'
+        },
         media: [{
             type: {
                 type: String,
                 enum: ['image', 'video', 'document']
             },
-            fileId: String, // Cloudinary public_id
+            fileId: String,
             fileName: String,
-            url: String, // Cloudinary secure_url
-            thumbnail: String // For videos
+            url: String,
+            thumbnail: String
         }]
     },
 
     postType: {
         type: String,
-        enum: ['text', 'media', 'achievement', 'job_update', 'open_to_work'],
+        enum: ['text', 'media', 'achievement', 'proof_of_work', 'atp', 'job_posting', 'company_update', 'job_update', 'open_to_work'],
         default: 'text'
     },
 

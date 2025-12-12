@@ -29,7 +29,7 @@ const TopNav = () => {
 
     // Determine user role from current path
     const isRecruiter = location.pathname.startsWith('/recruiter');
-    const profilePath = `/profile/${userId}`; // Navigate to public profile
+    const profilePath = isRecruiter ? '/recruiter/profile' : '/jobseeker/profile';
     const userName = user?.profile?.name || 'User';
 
     return (

@@ -1,385 +1,882 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
-import CommentInput from '../../components/CommentInput';
+import TopCandidatesSidebar from '../../components/TopCandidatesSidebar';
 import './HomeFeed.css';
+
+// SVG Icons Component
+const Icons = {
+    trophy: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 9H4.5C3.67 9 3 8.33 3 7.5V4.5C3 3.67 3.67 3 4.5 3H6M18 9H19.5C20.33 9 21 8.33 21 7.5V4.5C21 3.67 20.33 3 19.5 3H18M6 3H18V10C18 13.31 15.31 16 12 16C8.69 16 6 13.31 6 10V3Z" />
+            <path d="M12 16V21M8 21H16" />
+        </svg>
+    ),
+    chart: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 20V10M12 20V4M6 20V14" />
+        </svg>
+    ),
+    check: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" />
+            <path d="M22 4L12 14.01L9 11.01" />
+        </svg>
+    ),
+    briefcase: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" />
+            <path d="M16 7V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V7" />
+        </svg>
+    ),
+    building: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 21H21M5 21V7L13 3V21M19 21V11L13 7M9 9V9.01M9 13V13.01M9 17V17.01" />
+        </svg>
+    ),
+    edit: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4C3.44772 4 3 4.44772 3 5V20C3 20.5523 3.44772 21 4 21H19C19.5523 21 20 20.5523 20 20V13" />
+            <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" />
+        </svg>
+    ),
+    star: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+        </svg>
+    ),
+    plus: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 5V19M5 12H19" />
+        </svg>
+    ),
+    upvote: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+            <path d="M12 4L3 15H9V20H15V15H21L12 4Z" />
+        </svg>
+    ),
+    share: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12M16 6L12 2L8 6M12 2V15" />
+        </svg>
+    ),
+    close: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M18 6L6 18M6 6L18 18" />
+        </svg>
+    ),
+    empty: (
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+        </svg>
+    ),
+    arrow: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M5 12H19M19 12L12 5M19 12L12 19" />
+        </svg>
+    ),
+    passport: (
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 17C8 15.3431 9.79086 14 12 14C14.2091 14 16 15.3431 16 17" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M15 6H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+    )
+};
 
 const HomeFeed = () => {
     const toast = useToast();
-    const [posts, setPosts] = useState([]);
-    const [postContent, setPostContent] = useState('');
-    const [mediaFile, setMediaFile] = useState(null);
-    const [mediaPreview, setMediaPreview] = useState(null);
-    const [mediaType, setMediaType] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('jobseeker');
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    const [commentingPostId, setCommentingPostId] = useState(null);
+    const [showAchievementModal, setShowAchievementModal] = useState(false);
+    const [achievementForm, setAchievementForm] = useState({
+        type: 'achievement',
+        title: '',
+        description: '',
+        score: '',
+        skills: []
+    });
+    const [skillInput, setSkillInput] = useState('');
+    const [expandedATP, setExpandedATP] = useState(null); // Track which ATP post is expanded
+    const [atpData, setAtpData] = useState({}); // Cache ATP data by userId
     const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
 
     useEffect(() => {
-        fetchPosts();
         fetchUser();
-    }, []);
+        fetchActivities();
+    }, [activeTab]);
 
     const fetchUser = async () => {
         try {
             if (userId) {
                 const response = await api.get(`/users/${userId}`);
-                const userData = response.data.data || response.data;
-                setUser(userData);
+                setUser(response.data?.data || response.data);
             }
         } catch (error) {
             console.error('Error fetching user:', error);
         }
     };
 
-    const fetchPosts = async () => {
-        try {
-            const response = await api.get('/posts/feed');
-            setPosts(response.data || []);
-        } catch (error) {
-            console.error('Error fetching posts:', error);
-        }
-    };
-
-    const handleMediaSelect = (type) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-
-        if (type === 'photo') {
-            input.accept = 'image/*';
-        } else if (type === 'video') {
-            input.accept = 'video/*';
-        } else if (type === 'document') {
-            input.accept = '.pdf,.doc,.docx,.txt';
-        }
-
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                setMediaFile(file);
-                setMediaType(type);
-
-                // Create preview for images and videos
-                if (type === 'photo' || type === 'video') {
-                    const reader = new FileReader();
-                    reader.onload = (e) => setMediaPreview(e.target.result);
-                    reader.readAsDataURL(file);
-                } else {
-                    setMediaPreview(file.name);
-                }
-            }
-        };
-
-        input.click();
-    };
-
-    const removeMedia = () => {
-        setMediaFile(null);
-        setMediaPreview(null);
-        setMediaType(null);
-    };
-
-    const createPost = async () => {
-        if (!postContent.trim() && !mediaFile) return;
-
+    const fetchActivities = async () => {
         setLoading(true);
         try {
-            if (mediaFile) {
-                // Upload post with media
-                const formData = new FormData();
-                formData.append('userId', userId);
-                formData.append('text', postContent);
-                formData.append('media', mediaFile);
-                formData.append('postType', 'media');
-                formData.append('visibility', 'public');
-
-                await api.post('/posts/with-media', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-            } else {
-                // Text-only post
-                await api.post('/posts', {
-                    userId,
-                    content: { text: postContent },
-                    postType: 'text',
-                    visibility: 'public'
-                });
-            }
-
-            setPostContent('');
-            removeMedia();
-            fetchPosts();
+            const response = await api.get(`/posts/feed?type=${activeTab}`);
+            setActivities(response.data?.data || response.data || []);
         } catch (error) {
-            console.error('Error creating post:', error);
-            toast.error('Failed to create post. Please try again.');
+            console.error('Error fetching activities:', error);
+            setActivities([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleLike = async (postId) => {
+    const handleUpvote = async (postId) => {
         try {
             await api.post(`/posts/${postId}/like`, { userId });
-            fetchPosts();
+            fetchActivities();
         } catch (error) {
-            console.error('Error liking post:', error);
+            console.error('Error upvoting:', error);
         }
-    };
-
-    const handleCommentClick = (postId) => {
-        setCommentingPostId(commentingPostId === postId ? null : postId);
-    };
-
-    const handleCommentSubmit = async (postId, comment) => {
-        try {
-            await api.post(`/posts/${postId}/comment`, {
-                userId,
-                text: comment
-            });
-            setCommentingPostId(null);
-            fetchPosts();
-            toast.success('Comment posted!');
-        } catch (error) {
-            console.error('Error commenting:', error);
-            toast.error('Failed to post comment');
-        }
-    };
-
-    const handleCommentCancel = () => {
-        setCommentingPostId(null);
     };
 
     const handleShare = async (postId) => {
         try {
-            await api.post(`/posts/${postId}/share`, { userId });
-            toast.success('Post shared successfully!');
-            fetchPosts();
+            await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
+            toast.success('Link copied to clipboard!');
         } catch (error) {
-            console.error('Error sharing post:', error);
+            toast.error('Failed to copy link');
         }
     };
 
-    return (
-        <div className="home-feed">
-            <div className="feed-header">
-                <h1>Home Feed</h1>
-            </div>
+    const addSkill = () => {
+        if (skillInput.trim() && !achievementForm.skills.includes(skillInput.trim())) {
+            setAchievementForm({
+                ...achievementForm,
+                skills: [...achievementForm.skills, skillInput.trim()]
+            });
+            setSkillInput('');
+        }
+    };
 
-            {/* Post Creator */}
-            <div className="post-creator card">
-                <div className="creator-header">
-                    <div className="user-avatar">
-                        {user?.profile?.photo ? (
-                            <img src={user.profile.photo} alt="Profile" />
-                        ) : (
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" fill="var(--primary)" />
-                                <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
-                                <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
-                            </svg>
-                        )}
+    const removeSkill = (skill) => {
+        setAchievementForm({
+            ...achievementForm,
+            skills: achievementForm.skills.filter(s => s !== skill)
+        });
+    };
+
+    const postAchievement = async () => {
+        if (!achievementForm.title.trim()) {
+            toast.error('Please enter a title');
+            return;
+        }
+
+        try {
+            await api.post('/posts', {
+                userId,
+                postType: achievementForm.type,
+                content: {
+                    text: achievementForm.description,
+                    title: achievementForm.title,
+                    score: achievementForm.score ? parseInt(achievementForm.score) : null,
+                    skills: achievementForm.skills
+                },
+                visibility: 'public'
+            });
+
+            toast.success('Achievement posted!');
+            setShowAchievementModal(false);
+            setAchievementForm({ type: 'achievement', title: '', description: '', score: '', skills: [] });
+            fetchActivities();
+        } catch (error) {
+            console.error('Error posting achievement:', error);
+            toast.error('Failed to post achievement');
+        }
+    };
+
+    const postATP = async () => {
+        try {
+            await api.post('/posts', {
+                userId,
+                postType: 'atp',
+                content: {
+                    text: 'Check out my AI Talent Passport!',
+                    atpReference: userId
+                },
+                visibility: 'public'
+            });
+            toast.success('ATP shared to your feed!');
+            setShowAchievementModal(false);
+            fetchActivities();
+        } catch (error) {
+            console.error('Error posting ATP:', error);
+            toast.error('Failed to share ATP');
+        }
+    };
+
+    const getTimeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return new Date(date).toLocaleDateString();
+    };
+
+    const getPostTypeInfo = (postType) => {
+        switch (postType) {
+            case 'achievement':
+                return { icon: Icons.trophy, label: 'Achievement', className: 'type-achievement' };
+            case 'atp':
+                return { icon: Icons.chart, label: 'Talent Passport', className: 'type-atp' };
+            case 'proof_of_work':
+                return { icon: Icons.check, label: 'Proof of Work', className: 'type-proof' };
+            case 'job_posting':
+                return { icon: Icons.briefcase, label: 'Job Opportunity', className: 'type-job' };
+            case 'company_update':
+                return { icon: Icons.building, label: 'Company Update', className: 'type-company' };
+            default:
+                return { icon: Icons.edit, label: 'Update', className: 'type-text' };
+        }
+    };
+
+    const renderActivityCard = (activity) => {
+        const postType = activity.postType || 'text';
+        const typeInfo = getPostTypeInfo(postType);
+
+        return (
+            <motion.div
+                key={activity._id}
+                className={`activity-card ${postType}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -2 }}
+            >
+                {/* Card Header */}
+                <div className="activity-header">
+                    <div className="activity-user">
+                        <div className="activity-avatar">
+                            {activity.userId?.profile?.photo ? (
+                                <img src={activity.userId.profile.photo} alt="" />
+                            ) : (
+                                <div className="avatar-placeholder">
+                                    {activity.userId?.profile?.name?.charAt(0) || 'U'}
+                                </div>
+                            )}
+                        </div>
+                        <div className="activity-user-info">
+                            <UserProfileLink
+                                userId={activity.userId?._id}
+                                name={activity.userId?.profile?.name || 'Anonymous'}
+                                showAvatar={false}
+                            />
+                            <span className={`activity-type-badge ${typeInfo.className}`}>
+                                {typeInfo.icon}
+                                <span>{typeInfo.label}</span>
+                            </span>
+                        </div>
                     </div>
-                    <textarea
-                        className="post-input"
-                        placeholder="Start a post..."
-                        value={postContent}
-                        onChange={(e) => setPostContent(e.target.value)}
-                        rows="3"
-                    />
+                    <span className="activity-time">{getTimeAgo(activity.createdAt)}</span>
                 </div>
 
-                {/* Media Preview */}
-                {mediaPreview && (
-                    <div className="media-preview">
-                        {mediaType === 'photo' && (
-                            <img src={mediaPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: 'var(--radius-md)' }} />
-                        )}
-                        {mediaType === 'video' && (
-                            <video src={mediaPreview} controls style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: 'var(--radius-md)' }} />
-                        )}
-                        {mediaType === 'document' && (
-                            <div style={{ padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ display: 'inline', marginRight: 'var(--spacing-sm)' }}>
-                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" />
-                                    <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" />
+                {/* Card Content */}
+                <div className="activity-content">
+                    {activity.content?.title && (
+                        <h3 className="activity-title">{activity.content.title}</h3>
+                    )}
+                    {activity.content?.text && (
+                        <p className="activity-text">{activity.content.text}</p>
+                    )}
+
+                    {/* Score Circle for achievements */}
+                    {activity.content?.score && (
+                        <div className="score-display">
+                            <div className="score-circle-container">
+                                <svg className="score-ring" viewBox="0 0 100 100">
+                                    <circle className="score-ring-bg" cx="50" cy="50" r="45" />
+                                    <circle
+                                        className="score-ring-progress"
+                                        cx="50" cy="50" r="45"
+                                        strokeDasharray={`${(activity.content.score / 100) * 283} 283`}
+                                    />
                                 </svg>
-                                {mediaPreview}
+                                <span className="score-value">{activity.content.score}</span>
                             </div>
-                        )}
-                        <button onClick={removeMedia} className="btn btn-secondary btn-sm" style={{ marginTop: 'var(--spacing-sm)' }}>
-                            Remove
-                        </button>
-                    </div>
-                )}
+                            <span className="score-label">Performance Score</span>
+                        </div>
+                    )}
 
-                <div className="creator-actions">
-                    <button className="action-btn" onClick={() => handleMediaSelect('photo')}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-                            <path d="M21 15L16 10L5 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        Photo
-                    </button>
-                    <button className="action-btn" onClick={() => handleMediaSelect('video')}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M23 7L16 12L23 17V7Z" stroke="currentColor" strokeWidth="2" />
-                            <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-                        </svg>
-                        Video
-                    </button>
-                    <button className="action-btn" onClick={() => handleMediaSelect('document')}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" />
-                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" />
-                        </svg>
-                        Document
-                    </button>
-                    <button
-                        className="btn btn-primary btn-sm"
-                        onClick={createPost}
-                        disabled={loading || (!postContent.trim() && !mediaFile)}
-                    >
-                        {loading ? 'Posting...' : 'Post'}
-                    </button>
-                </div>
-            </div>
+                    {/* Skills Tags */}
+                    {activity.content?.skills?.length > 0 && (
+                        <div className="activity-skills">
+                            {activity.content.skills.map((skill, idx) => (
+                                <span key={idx} className="skill-tag">{skill}</span>
+                            ))}
+                        </div>
+                    )}
 
-            {/* Feed */}
-            <div className="feed-content">
-                {posts.length === 0 ? (
-                    <div className="empty-state card">
-                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" />
-                        </svg>
-                        <h3>No posts yet</h3>
-                        <p>Be the first to share something!</p>
-                    </div>
-                ) : (
-                    posts.map((post) => (
-                        <div key={post._id} className="feed-card card">
-                            <div className="card-header">
-                                <div className="user-info">
-                                    <div className="user-avatar">
-                                        {post.userId?.profile?.photo ? (
-                                            <img src={post.userId.profile.photo} alt="Profile" />
-                                        ) : (
-                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                                                <circle cx="12" cy="12" r="10" fill="var(--primary)" />
-                                                <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
-                                                <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <UserProfileLink
-                                            userId={post.userId?._id}
-                                            name={post.userId?.profile?.name || 'Anonymous'}
-                                            showAvatar={false}
-                                        />
-                                        <p className="text-muted">{new Date(post.createdAt).toLocaleDateString()}</p>
-                                    </div>
+                    {/* ATP Preview (live data) */}
+                    {postType === 'atp' && activity.content?.atpReference && (
+                        <div className={`atp-preview ${expandedATP === activity._id ? 'expanded' : ''}`}>
+                            <div className="atp-header">
+                                <div className="atp-icon">
+                                    {Icons.star}
+                                </div>
+                                <div>
+                                    <h4>AI Talent Passport</h4>
+                                    <p>Verified Skills & Credentials</p>
                                 </div>
                             </div>
-                            <div className="card-content">
-                                <p>{post.content?.text}</p>
-                                {/* Render media if present */}
-                                {post.content?.media && post.content.media.length > 0 && (
-                                    <div className="post-media">
-                                        {post.content.media.map((media, index) => (
-                                            <div key={index} className="media-item">
-                                                {media.type === 'image' && (
-                                                    <img
-                                                        src={media.url || `http://localhost:5000/uploads/posts/${media.fileId}`}
-                                                        alt={media.fileName}
-                                                        style={{
-                                                            width: '100%',
-                                                            maxHeight: '500px',
-                                                            objectFit: 'cover',
-                                                            borderRadius: 'var(--radius-lg)',
-                                                            marginTop: 'var(--spacing-md)'
-                                                        }}
-                                                    />
-                                                )}
-                                                {media.type === 'video' && (
-                                                    <video
-                                                        controls
-                                                        style={{
-                                                            width: '100%',
-                                                            maxHeight: '500px',
-                                                            borderRadius: 'var(--radius-lg)',
-                                                            marginTop: 'var(--spacing-md)'
-                                                        }}
-                                                    >
-                                                        <source src={media.url || `http://localhost:5000/uploads/posts/${media.fileId}`} />
-                                                        Your browser does not support the video tag.
-                                                    </video>
-                                                )}
-                                                {media.type === 'document' && (
-                                                    <a
-                                                        href={media.url || `http://localhost:5000/uploads/posts/${media.fileId}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="document-link"
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 'var(--spacing-sm)',
-                                                            padding: 'var(--spacing-md)',
-                                                            background: 'var(--glass-white)',
-                                                            borderRadius: 'var(--radius-md)',
-                                                            marginTop: 'var(--spacing-md)',
-                                                            textDecoration: 'none'
-                                                        }}
-                                                    >
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" />
-                                                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" />
-                                                        </svg>
-                                                        <span>{media.fileName}</span>
-                                                    </a>
-                                                )}
+
+                            {/* Expanded ATP Details */}
+                            <AnimatePresence>
+                                {(() => {
+                                    const atpKey = activity.userId?._id || activity.userId;
+                                    const atpInfo = atpData[atpKey];
+                                    if (expandedATP !== activity._id || !atpInfo) return null;
+                                    return (
+                                        <motion.div
+                                            className="atp-details"
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            {/* Talent Score + Global Ranking */}
+                                            <div className="atp-main-score">
+                                                <div className="atp-score-ring">
+                                                    <svg viewBox="0 0 100 100">
+                                                        <circle className="atp-ring-bg" cx="50" cy="50" r="45" />
+                                                        <circle
+                                                            className="atp-ring-progress"
+                                                            cx="50" cy="50" r="45"
+                                                            strokeDasharray={`${(atpInfo.talentScore || 0) / 100 * 283} 283`}
+                                                        />
+                                                    </svg>
+                                                    <div className="atp-score-text">
+                                                        <span className="atp-score-num">{atpInfo.talentScore || 0}</span>
+                                                        <span className="atp-score-max">/100</span>
+                                                    </div>
+                                                </div>
+                                                <span className="atp-score-title">Talent Score</span>
                                             </div>
-                                        ))}
+
+                                            <div className="atp-global-rank">
+                                                <span className="rank-value">Top {Math.max(1, 100 - (atpInfo.globalPercentile || 0))}%</span>
+                                                <span className="rank-label">Global Ranking</span>
+                                            </div>
+
+                                            {/* Core Competencies */}
+                                            <div className="atp-competencies">
+                                                <h5>Core Competencies</h5>
+                                                <div className="atp-competencies-grid">
+                                                    <div className="competency-item">
+                                                        <span className="comp-score">{atpInfo.domainScore || 0}</span>
+                                                        <span className="comp-label">Domain Expertise</span>
+                                                    </div>
+                                                    <div className="competency-item">
+                                                        <span className="comp-score">{atpInfo.communicationScore || 0}</span>
+                                                        <span className="comp-label">Communication</span>
+                                                    </div>
+                                                    <div className="competency-item">
+                                                        <span className="comp-score">{atpInfo.problemSolvingScore || 0}</span>
+                                                        <span className="comp-label">Problem Solving</span>
+                                                    </div>
+                                                    <div className="competency-item">
+                                                        <span className="comp-score">{atpInfo.gdScore || 0}</span>
+                                                        <span className="comp-label">Group Discussion</span>
+                                                    </div>
+                                                    <div className="competency-item">
+                                                        <span className="comp-score">{atpInfo.professionalismScore || 0}</span>
+                                                        <span className="comp-label">Professionalism</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Reliability Metrics */}
+                                            {atpInfo.reliability && (
+                                                <div className="atp-reliability">
+                                                    <h5>Reliability Metrics</h5>
+                                                    <div className="reliability-grid">
+                                                        <div className="reliability-item">
+                                                            <span className="rel-value">{atpInfo.reliability?.punctuality || 0}%</span>
+                                                            <span className="rel-label">Punctuality</span>
+                                                        </div>
+                                                        <div className="reliability-item">
+                                                            <span className="rel-value">{atpInfo.reliability?.taskCompletionRate || 0}%</span>
+                                                            <span className="rel-label">Task Completion</span>
+                                                        </div>
+                                                        <div className="reliability-item">
+                                                            <span className="rel-value">{atpInfo.reliability?.responsiveness || 0}%</span>
+                                                            <span className="rel-label">Responsiveness</span>
+                                                        </div>
+                                                        <div className="reliability-item">
+                                                            <span className="rel-value">{atpInfo.reliability?.consistency || 0}%</span>
+                                                            <span className="rel-label">Consistency</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    );
+                                })()}
+                            </AnimatePresence>
+
+                            <button
+                                className="view-atp-btn"
+                                onClick={async () => {
+                                    if (expandedATP === activity._id) {
+                                        setExpandedATP(null);
+                                    } else {
+                                        setExpandedATP(activity._id);
+                                        const userIdKey = activity.userId?._id || activity.userId;
+                                        // Use populated data first, then fetch if needed
+                                        if (!atpData[userIdKey]) {
+                                            // Try to use already populated data from activity.userId
+                                            const passport = activity.userId?.aiTalentPassport;
+                                            if (passport && passport.talentScore !== undefined) {
+                                                setAtpData(prev => ({
+                                                    ...prev,
+                                                    [userIdKey]: {
+                                                        talentScore: passport.talentScore || 0,
+                                                        domainScore: passport.domainScore || 0,
+                                                        communicationScore: passport.communicationScore || 0,
+                                                        problemSolvingScore: passport.problemSolvingScore || 0,
+                                                        gdScore: passport.gdScore || 0,
+                                                        professionalismScore: passport.professionalismScore || 0,
+                                                        globalPercentile: passport.globalPercentile || 0,
+                                                        levelBand: passport.levelBand || 'Level 1',
+                                                        reliability: passport.reliability || null
+                                                    }
+                                                }));
+                                            } else {
+                                                // Fallback: fetch from API
+                                                try {
+                                                    const res = await api.get(`/users/${userIdKey}`);
+                                                    const userData = res.data?.data || res.data;
+                                                    const fetchedPassport = userData?.aiTalentPassport;
+                                                    if (fetchedPassport) {
+                                                        setAtpData(prev => ({
+                                                            ...prev,
+                                                            [userIdKey]: {
+                                                                talentScore: fetchedPassport.talentScore || 0,
+                                                                domainScore: fetchedPassport.domainScore || 0,
+                                                                communicationScore: fetchedPassport.communicationScore || 0,
+                                                                problemSolvingScore: fetchedPassport.problemSolvingScore || 0,
+                                                                gdScore: fetchedPassport.gdScore || 0,
+                                                                professionalismScore: fetchedPassport.professionalismScore || 0,
+                                                                globalPercentile: fetchedPassport.globalPercentile || 0,
+                                                                levelBand: fetchedPassport.levelBand || 'Level 1',
+                                                                reliability: fetchedPassport.reliability || null
+                                                            }
+                                                        }));
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Error fetching ATP:', err);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }}
+                            >
+                                {expandedATP === activity._id ? 'Hide Details' : 'View Full Passport'}
+                                {Icons.arrow}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Job Posting Link */}
+                    {postType === 'job_posting' && activity.content?.jobId && (
+                        <a href={`/jobseeker/jobs?id=${activity.content.jobId}`} className="job-link-card">
+                            <span>View Job Details</span>
+                            {Icons.arrow}
+                        </a>
+                    )}
+                </div>
+
+                {/* Card Actions */}
+                <div className="activity-actions">
+                    <motion.button
+                        className="action-btn upvote"
+                        onClick={() => handleUpvote(activity._id)}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        {Icons.upvote}
+                        <span>{activity.engagement?.likes?.length || 0}</span>
+                    </motion.button>
+                    <motion.button
+                        className="action-btn share"
+                        onClick={() => handleShare(activity._id)}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        {Icons.share}
+                    </motion.button>
+                </div>
+            </motion.div>
+        );
+    };
+
+    return (
+        <div className="activity-feed">
+            {/* Header */}
+            <div className="activity-feed-header">
+                <h1>Your Activity</h1>
+                <motion.button
+                    className="btn btn-primary post-achievement-btn"
+                    onClick={() => setShowAchievementModal(true)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                >
+                    {Icons.plus}
+                    {userRole === 'recruiter' ? 'Create Post' : 'Post Achievement'}
+                </motion.button>
+            </div>
+
+            {/* Tabs */}
+            <div className="activity-tabs">
+                <button
+                    className={`tab-btn ${activeTab === 'jobseeker' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('jobseeker')}
+                >
+                    Job Seeker Feed
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'recruiter' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('recruiter')}
+                >
+                    Recruiter Feed
+                </button>
+                <div
+                    className="tab-indicator"
+                    style={{ transform: `translateX(${activeTab === 'recruiter' ? '100%' : '0'})` }}
+                />
+            </div>
+
+            {/* Two Column Layout: Feed + Sidebar */}
+            <div className="feed-layout">
+                {/* Feed Content */}
+                <div className="activity-content-area">
+                    {loading ? (
+                        <div className="loading-state">
+                            <div className="loading-spinner" />
+                            <p>Loading activities...</p>
+                        </div>
+                    ) : activities.length === 0 ? (
+                        <motion.div
+                            className="empty-state"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <div className="empty-icon">
+                                {Icons.empty}
+                            </div>
+                            <h3>No Activity Yet</h3>
+                            <p>
+                                {activeTab === 'jobseeker'
+                                    ? 'Be the first to share your achievements and showcase your skills!'
+                                    : 'No recruiter posts yet. Check back later for company updates and job opportunities.'
+                                }
+                            </p>
+                            {activeTab === 'jobseeker' && userRole !== 'recruiter' && (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => setShowAchievementModal(true)}
+                                >
+                                    Post Your First Achievement
+                                </button>
+                            )}
+                        </motion.div>
+                    ) : (
+                        <div className="activities-list">
+                            {activities.map(renderActivityCard)}
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Sidebar */}
+                <aside className="feed-sidebar">
+                    <TopCandidatesSidebar jobDomains={user?.jobSeekerProfile?.jobDomains} />
+
+                    {/* Quick Profile Check Card */}
+                    {user && (
+                        <div className="sidebar-card quick-profile-card">
+                            <div className="sidebar-card-header">
+                                <div className="header-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </div>
+                                <h3>Your Profile</h3>
+                            </div>
+
+                            {user?.aiTalentPassport?.talentScore ? (
+                                <>
+                                    <div className="profile-score-section">
+                                        <div className="profile-score-ring">
+                                            <svg viewBox="0 0 100 100">
+                                                <circle className="profile-ring-bg" cx="50" cy="50" r="42" />
+                                                <circle
+                                                    className="profile-ring-progress"
+                                                    cx="50" cy="50" r="42"
+                                                    stroke={
+                                                        user.aiTalentPassport.talentScore >= 80 ? '#10B981' :
+                                                            user.aiTalentPassport.talentScore >= 60 ? '#6366F1' :
+                                                                user.aiTalentPassport.talentScore >= 40 ? '#F59E0B' : '#EF4444'
+                                                    }
+                                                    strokeDasharray={`${(user.aiTalentPassport.talentScore / 100) * 264} 264`}
+                                                />
+                                            </svg>
+                                            <div className="profile-score-text">
+                                                <span className="profile-score-num">{user.aiTalentPassport.talentScore}</span>
+                                                <span className="profile-score-label">Score</span>
+                                            </div>
+                                        </div>
+                                        <div className="profile-details">
+                                            <span className={`level-badge ${user.aiTalentPassport.talentScore >= 90 ? 'expert' :
+                                                    user.aiTalentPassport.talentScore >= 70 ? 'advanced' :
+                                                        user.aiTalentPassport.talentScore >= 50 ? 'intermediate' : 'beginner'
+                                                }`}>
+                                                {user.aiTalentPassport.talentScore >= 90 ? '🏆 Expert' :
+                                                    user.aiTalentPassport.talentScore >= 70 ? '⭐ Advanced' :
+                                                        user.aiTalentPassport.talentScore >= 50 ? '📈 Intermediate' : '🌱 Beginner'}
+                                            </span>
+                                            <span className="global-rank">
+                                                Global: <strong>Top {Math.max(1, 100 - (user.aiTalentPassport.globalPercentile || 0))}%</strong>
+                                            </span>
+                                        </div>
                                     </div>
+                                    <a href={`/profile/${userId}`} className="profile-cta">
+                                        View Full Profile
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M5 12h14M12 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                </>
+                            ) : (
+                                <div className="no-score-state">
+                                    <p>Complete an AI interview to get your talent score!</p>
+                                    <a href="/jobseeker/interviews" className="take-interview-btn">
+                                        Take Interview
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M5 12h14M12 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Top Skills Card */}
+                    <div className="sidebar-card top-skills-card">
+                        <div className="sidebar-card-header">
+                            <div className="header-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                </svg>
+                            </div>
+                            <h3>Top Skills</h3>
+                        </div>
+                        <div className="skills-grid">
+                            {[
+                                { name: 'React.js', demand: 95, count: '2.4k' },
+                                { name: 'Python', demand: 90, count: '2.1k' },
+                                { name: 'Machine Learning', demand: 85, count: '1.8k' },
+                                { name: 'Node.js', demand: 80, count: '1.5k' },
+                                { name: 'Data Science', demand: 75, count: '1.2k' }
+                            ].map((skill, idx) => (
+                                <div key={idx} className="trending-skill-item">
+                                    <span className="skill-name">{skill.name}</span>
+                                    <div className="skill-demand">
+                                        <div className="demand-bar">
+                                            <div className="demand-fill" style={{ width: `${skill.demand}%` }} />
+                                        </div>
+                                        <span className="demand-count">{skill.count}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            {/* Achievement Modal */}
+            <AnimatePresence>
+                {showAchievementModal && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowAchievementModal(false)}
+                    >
+                        <motion.div
+                            className="achievement-modal"
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="modal-header">
+                                <h2>{userRole === 'recruiter' ? 'Create Post' : 'Share Achievement'}</h2>
+                                <button
+                                    className="modal-close"
+                                    onClick={() => setShowAchievementModal(false)}
+                                >
+                                    {Icons.close}
+                                </button>
+                            </div>
+
+                            <div className="modal-body">
+                                {/* Post Type Selection */}
+                                <div className="post-type-selector">
+                                    {userRole === 'recruiter' ? (
+                                        <>
+                                            <button
+                                                className={`type-btn ${achievementForm.type === 'job_posting' ? 'active' : ''}`}
+                                                onClick={() => setAchievementForm({ ...achievementForm, type: 'job_posting' })}
+                                            >
+                                                <span className="type-icon">{Icons.briefcase}</span>
+                                                Job Posting
+                                            </button>
+                                            <button
+                                                className={`type-btn ${achievementForm.type === 'company_update' ? 'active' : ''}`}
+                                                onClick={() => setAchievementForm({ ...achievementForm, type: 'company_update' })}
+                                            >
+                                                <span className="type-icon">{Icons.building}</span>
+                                                Company Update
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                className={`type-btn ${achievementForm.type === 'achievement' ? 'active' : ''}`}
+                                                onClick={() => setAchievementForm({ ...achievementForm, type: 'achievement' })}
+                                            >
+                                                <span className="type-icon">{Icons.trophy}</span>
+                                                Achievement
+                                            </button>
+                                            <button
+                                                className={`type-btn ${achievementForm.type === 'proof_of_work' ? 'active' : ''}`}
+                                                onClick={() => setAchievementForm({ ...achievementForm, type: 'proof_of_work' })}
+                                            >
+                                                <span className="type-icon">{Icons.check}</span>
+                                                Proof of Work
+                                            </button>
+                                            <button
+                                                className={`type-btn ${achievementForm.type === 'atp' ? 'active' : ''}`}
+                                                onClick={() => setAchievementForm({ ...achievementForm, type: 'atp' })}
+                                            >
+                                                <span className="type-icon">{Icons.chart}</span>
+                                                Share ATP
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+
+                                {achievementForm.type === 'atp' ? (
+                                    <div className="atp-share-preview">
+                                        <div className="atp-preview-card">
+                                            <div className="atp-icon-large">
+                                                {Icons.passport}
+                                            </div>
+                                            <h3>Share Your AI Talent Passport</h3>
+                                            <p>Your ATP will be shared with live data - any updates to your profile will automatically reflect in this post.</p>
+                                        </div>
+                                        <button className="btn btn-primary full-width" onClick={postATP}>
+                                            Share My ATP
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="form-group">
+                                            <label>Title *</label>
+                                            <input
+                                                type="text"
+                                                className="input"
+                                                placeholder="e.g., Completed Advanced React Certification"
+                                                value={achievementForm.title}
+                                                onChange={(e) => setAchievementForm({ ...achievementForm, title: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Description</label>
+                                            <textarea
+                                                className="input"
+                                                placeholder="Tell others about your achievement..."
+                                                rows="3"
+                                                value={achievementForm.description}
+                                                onChange={(e) => setAchievementForm({ ...achievementForm, description: e.target.value })}
+                                            />
+                                        </div>
+
+                                        {(achievementForm.type === 'achievement' || achievementForm.type === 'proof_of_work') && (
+                                            <>
+                                                <div className="form-group">
+                                                    <label>Score (optional)</label>
+                                                    <input
+                                                        type="number"
+                                                        className="input"
+                                                        placeholder="e.g., 92"
+                                                        min="0"
+                                                        max="100"
+                                                        value={achievementForm.score}
+                                                        onChange={(e) => setAchievementForm({ ...achievementForm, score: e.target.value })}
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Skills</label>
+                                                    <div className="skill-input-row">
+                                                        <input
+                                                            type="text"
+                                                            className="input"
+                                                            placeholder="Add a skill..."
+                                                            value={skillInput}
+                                                            onChange={(e) => setSkillInput(e.target.value)}
+                                                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                                                        />
+                                                        <button className="btn btn-secondary" onClick={addSkill}>Add</button>
+                                                    </div>
+                                                    {achievementForm.skills.length > 0 && (
+                                                        <div className="skills-list">
+                                                            {achievementForm.skills.map((skill, idx) => (
+                                                                <span key={idx} className="skill-chip">
+                                                                    {skill}
+                                                                    <button onClick={() => removeSkill(skill)}>×</button>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <button className="btn btn-primary full-width" onClick={postAchievement}>
+                                            Post {achievementForm.type === 'achievement' ? 'Achievement' :
+                                                achievementForm.type === 'job_posting' ? 'Job' : 'Update'}
+                                        </button>
+                                    </>
                                 )}
                             </div>
-                            <div className="card-actions">
-                                <button className="action-btn" onClick={() => handleLike(post._id)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M14 9V5C14 4.46957 13.7893 3.96086 13.4142 3.58579C13.0391 3.21071 12.5304 3 12 3C11.4696 3 10.9609 3.21071 10.5858 3.58579C10.2107 3.96086 10 4.46957 10 5V9L7 12V21H18.28C18.7623 21.0055 19.2304 20.8364 19.5979 20.524C19.9654 20.2116 20.2077 19.7769 20.28 19.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.9499 8.99672 19.66 9H14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M7 12H4C3.46957 12 2.96086 12.2107 2.58579 12.5858C2.21071 12.9609 2 13.4696 2 14V19C2 19.5304 2.21071 20.0391 2.58579 20.4142C2.96086 20.7893 3.46957 21 4 21H7V12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    Like ({post.engagement?.likes?.length || 0})
-                                </button>
-                                <button className="action-btn" onClick={() => handleCommentClick(post._id)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" />
-                                    </svg>
-                                    Comment ({post.engagement?.comments?.length || 0})
-                                </button>
-                                <button className="action-btn" onClick={() => handleShare(post._id)}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M16 6L12 2L8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M12 2V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    Share
-                                </button>
-                            </div>
-                            <CommentInput
-                                postId={post._id}
-                                isOpen={commentingPostId === post._id}
-                                onSubmit={(comment) => handleCommentSubmit(post._id, comment)}
-                                onCancel={handleCommentCancel}
-                            />
-                        </div>
-                    ))
+                        </motion.div>
+                    </motion.div>
                 )}
-            </div >
-        </div >
+            </AnimatePresence>
+        </div>
     );
 };
 

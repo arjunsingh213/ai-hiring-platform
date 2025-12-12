@@ -1,0 +1,230 @@
+.top-candidates-sidebar {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    /* Removed position: sticky - parent .feed-sidebar handles this */
+}
+
+.sidebar-header {
+    margin-bottom: 12px;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0F172A;
+}
+
+/* Domain Tabs */
+.domain-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.domain-tab {
+    padding: 6px 10px;
+    border: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.domain-tab:hover {
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+}
+
+.domain-tab.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    border-color: #6366F1;
+}
+
+.tab-icon {
+    font-size: 1rem;
+}
+
+/* Active Domain Badge */
+.active-domain-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.badge-icon {
+    font-size: 1rem;
+}
+
+.badge-name {
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+
+
+.sidebar-loading,
+.sidebar-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 0;
+    color: #94A3B8;
+}
+
+.sidebar-loading .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #E2E8F0;
+    border-top-color: #6366F1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.sidebar-empty svg {
+    margin-bottom: 12px;
+    color: #CBD5E1;
+}
+
+.sidebar-empty p {
+    margin: 0;
+    font-size: 0.8125rem;
+    text-align: center;
+}
+
+/* Candidates List */
+.candidates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.candidate-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    background: #F8FAFC;
+    border: 1px solid transparent;
+}
+
+.candidate-card:hover {
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+    transform: translateX(4px);
+}
+
+.rank-badge {
+    font-size: 1.125rem;
+    min-width: 28px;
+    text-align: center;
+}
+
+.candidate-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.candidate-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.candidate-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.candidate-info h4 {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #0F172A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.candidate-info p {
+    margin: 2px 0 0;
+    font-size: 0.6875rem;
+    color: #64748B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.candidate-score {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: white;
+}
+
+.candidate-score span {
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Footer */
+.sidebar-footer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #E2E8F0;
+}
+
+.view-all-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #6366F1;
+    text-decoration: none;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.view-all-link:hover {
+    background: rgba(99, 102, 241, 0.08);
+}

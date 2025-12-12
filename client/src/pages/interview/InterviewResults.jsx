@@ -50,6 +50,22 @@ const InterviewResults = () => {
         }
     };
 
+    // Helper to safely render any value as a string
+    const safeRender = (value) => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        if (typeof value === 'object') {
+            // If it's an object, try to extract a meaningful string
+            if (value.text) return value.text;
+            if (value.message) return value.message;
+            if (value.name) return value.name;
+            if (value.title) return value.title;
+            return JSON.stringify(value);
+        }
+        return String(value);
+    };
+
     if (loading) {
         return (
             <div className="results-page">
@@ -66,7 +82,7 @@ const InterviewResults = () => {
             <div className="results-page">
                 <div className="error-container card">
                     <h2>Unable to Load Results</h2>
-                    <p>{error}</p>
+                    <p>{safeRender(error)}</p>
                     <button className="btn btn-primary" onClick={() => navigate('/jobseeker/interviews')}>
                         Back to Interviews
                     </button>
@@ -75,7 +91,7 @@ const InterviewResults = () => {
         );
     }
 
-    const { interview, candidate, job, scoring, strengths, weaknesses, breakdown, recommendations } = results.data || results || {};
+    const { interview, candidate, job, scoring, strengths, weaknesses, breakdown, recommendations, codingResults } = results.data || results || {};
 
     // Safety checks
     if (!interview || !scoring) {
@@ -111,13 +127,13 @@ const InterviewResults = () => {
                 <div className="header-content">
                     <div className="interview-info">
                         <h1>Interview Results</h1>
-                        {job && <p className="job-title">{job.title} at {job.company}</p>}
+                        {job && <p className="job-title">{safeRender(job.title)} at {safeRender(job.company)}</p>}
                         <div className="meta-badges">
                             <span className={`badge ${interview.passed ? 'badge-success' : 'badge-danger'}`}>
                                 {interview.passed ? 'Passed' : 'Not Passed'}
                             </span>
-                            <span className="badge">Duration: {formatDuration(interview.duration)}</span>
-                            <span className="badge">{interview.interviewType} Interview</span>
+                            <span className="badge">Duration: {formatDuration(interview.duration || 0)}</span>
+                            <span className="badge">{safeRender(interview.interviewType)} Interview</span>
                         </div>
                     </div>
                     <div className="overall-score">
@@ -251,6 +267,42 @@ const InterviewResults = () => {
                                     ></div>
                                 </div>
                             </div>
+
+                            {/* Coding Score Card - Only show if coding was done */}
+                            {(typeof scoring.coding === 'number' || codingResults) && (
+                                <div className="score-card card coding-score">
+                                    <div className="score-icon coding">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="16 18 22 12 16 6" />
+                                            <polyline points="8 6 2 12 8 18" />
+                                        </svg>
+                                    </div>
+                                    <div className="score-details">
+                                        <span className="score-title">
+                                            Coding {codingResults?.language ? `(${codingResults.language})` : ''}
+                                        </span>
+                                        <span className="score-num" style={{ color: getScoreColor(scoring.coding || 0) }}>
+                                            {codingResults?.skipped === true ? 'Skipped' : `${scoring.coding || 0}%`}
+                                        </span>
+                                    </div>
+                                    {codingResults?.skipped !== true && typeof scoring.coding === 'number' && (
+                                        <div className="score-bar">
+                                            <div
+                                                className="score-fill"
+                                                style={{
+                                                    width: `${scoring.coding || 0}%`,
+                                                    background: getScoreColor(scoring.coding || 0)
+                                                }}
+                                            ></div>
+                                        </div>
+                                    )}
+                                    {typeof codingResults?.testsPassed === 'number' && (
+                                        <div className="coding-tests-info">
+                                            Tests: {codingResults.testsPassed}/{codingResults.totalTests || 0}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Strengths & Weaknesses */}
@@ -259,7 +311,7 @@ const InterviewResults = () => {
                                 <h3>Strengths</h3>
                                 <ul>
                                     {(strengths || []).map((s, i) => (
-                                        <li key={i} className="strength-item">{s}</li>
+                                        <li key={i} className="strength-item">{safeRender(s)}</li>
                                     ))}
                                 </ul>
                             </div>
@@ -268,7 +320,7 @@ const InterviewResults = () => {
                                 <h3>Areas for Improvement</h3>
                                 <ul>
                                     {(weaknesses || []).length > 0 ? (weaknesses || []).map((w, i) => (
-                                        <li key={i} className="weakness-item">{w}</li>
+                                        <li key={i} className="weakness-item">{safeRender(w)}</li>
                                     )) : (
                                         <li className="no-items">Great job! No major weaknesses identified.</li>
                                     )}
@@ -280,7 +332,7 @@ const InterviewResults = () => {
                         {results.detailedFeedback && (
                             <div className="feedback-section card">
                                 <h3>Detailed Feedback</h3>
-                                <p>{results.detailedFeedback}</p>
+                                <p>{safeRender(results.detailedFeedback)}</p>
                             </div>
                         )}
                     </div>
@@ -296,22 +348,22 @@ const InterviewResults = () => {
                         </p>
 
                         <div className="recommendations-list">
-                            {recommendations.map((rec, index) => (
-                                <div key={index} className={`recommendation-card card priority-${rec.priority}`}>
+                            {(recommendations || []).map((rec, index) => (
+                                <div key={index} className={`recommendation-card card priority-${safeRender(rec?.priority)}`}>
                                     <div className="rec-header">
-                                        <span className={`priority-badge ${rec.priority}`}>
-                                            {rec.priority === 'high' ? '🔴' : rec.priority === 'medium' ? '🟡' : '🟢'}
-                                            {rec.priority} priority
+                                        <span className={`priority-badge ${safeRender(rec?.priority)}`}>
+                                            {rec?.priority === 'high' ? '🔴' : rec?.priority === 'medium' ? '🟡' : '🟢'}
+                                            {safeRender(rec?.priority)} priority
                                         </span>
-                                        <h3>{rec.area}</h3>
+                                        <h3>{safeRender(rec?.area)}</h3>
                                     </div>
-                                    <p className="rec-suggestion">{rec.suggestion}</p>
-                                    {rec.resources.length > 0 && (
+                                    <p className="rec-suggestion">{safeRender(rec?.suggestion)}</p>
+                                    {rec?.resources?.length > 0 && (
                                         <div className="rec-resources">
                                             <strong>Helpful Resources:</strong>
                                             <div className="resource-tags">
                                                 {rec.resources.map((r, i) => (
-                                                    <span key={i} className="resource-tag">{r}</span>
+                                                    <span key={i} className="resource-tag">{safeRender(r)}</span>
                                                 ))}
                                             </div>
                                         </div>

@@ -395,6 +395,63 @@ router.post('/:id/apply', requirePlatformInterview, async (req, res) => {
     }
 });
 
+// Withdraw application from a job
+router.delete('/:id/withdraw', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const jobId = req.params.id;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID required' });
+        }
+
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // Find the applicant
+        const applicantIndex = job.applicants.findIndex(
+            app => app.userId.toString() === userId || app.userId?._id?.toString() === userId
+        );
+
+        if (applicantIndex === -1) {
+            return res.status(404).json({ success: false, error: 'Application not found' });
+        }
+
+        const applicant = job.applicants[applicantIndex];
+
+        // Check if interview was already completed - don't allow withdrawal after completion
+        if (applicant.interviewId) {
+            const interview = await Interview.findById(applicant.interviewId);
+            if (interview && interview.status === 'completed') {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Cannot withdraw after completing the interview'
+                });
+            }
+            // Delete the pending interview
+            if (interview) {
+                await Interview.findByIdAndDelete(applicant.interviewId);
+            }
+        }
+
+        // Remove the applicant from the job
+        job.applicants.splice(applicantIndex, 1);
+        await job.save();
+
+        console.log(`[JOB WITHDRAW] User ${userId} withdrew from job ${jobId} (${job.title})`);
+
+        res.json({
+            success: true,
+            message: 'Application withdrawn successfully'
+        });
+    } catch (error) {
+        console.error('Withdraw application error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Check interview status for a job application
 router.get('/:id/interview-status/:userId', async (req, res) => {
     try {

@@ -248,4 +248,163 @@ router.post('/login', async (req, res) => {
     }
 });
 
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Send password reset OTP to email
+ * @access  Public
+ */
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide an email address'
+            });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            // Don't reveal if user exists or not for security
+            return res.json({
+                success: true,
+                message: 'If an account with that email exists, an OTP has been sent.'
+            });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store OTP and expiry (10 minutes)
+        user.passwordResetOTP = otp;
+        user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        await user.save();
+
+        // Send OTP email
+        const { sendPasswordResetOTP } = require('../utils/email');
+        await sendPasswordResetOTP(user, otp);
+
+        res.json({
+            success: true,
+            message: 'If an account with that email exists, an OTP has been sent.'
+        });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process request. Please try again.'
+        });
+    }
+});
+
+/**
+ * @route   POST /api/auth/verify-otp
+ * @desc    Verify the OTP for password reset
+ * @access  Public
+ */
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide email and OTP'
+            });
+        }
+
+        const user = await User.findOne({
+            email,
+            passwordResetOTP: otp,
+            passwordResetExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid or expired OTP'
+            });
+        }
+
+        // Generate a temporary reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        user.passwordResetToken = resetToken;
+        await user.save();
+
+        res.json({
+            success: true,
+            data: { resetToken },
+            message: 'OTP verified successfully'
+        });
+    } catch (error) {
+        console.error('Verify OTP error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password with verified token
+ * @access  Public
+ */
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { email, resetToken, newPassword } = req.body;
+
+        if (!email || !resetToken || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide email, reset token, and new password'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password must be at least 6 characters'
+            });
+        }
+
+        const user = await User.findOne({
+            email,
+            passwordResetToken: resetToken,
+            passwordResetExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid or expired reset token. Please start over.'
+            });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+
+        // Clear reset fields
+        user.passwordResetOTP = undefined;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Password reset successfully. You can now login with your new password.'
+        });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

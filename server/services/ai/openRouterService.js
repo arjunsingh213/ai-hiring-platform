@@ -15,14 +15,14 @@ class OpenRouterService {
     constructor() {
         this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-        // Model configurations
+        // Model configurations - NO :free suffix
         this.models = {
-            resumeParsing: 'meta-llama/llama-3.1-8b-instruct:free',
-            jdMatching: 'meta-llama/llama-3.1-8b-instruct:free',
-            questionGeneration: 'qwen/qwen3-235b-a22b:free',
-            answerEvaluation: 'qwen/qwen3-235b-a22b:free',
-            fastScoring: 'mistralai/mistral-7b-instruct:free',
-            recruiterReport: 'meta-llama/llama-3.1-8b-instruct:free'
+            resumeParsing: 'meta-llama/llama-3.1-8b-instruct',
+            jdMatching: 'meta-llama/llama-3.1-8b-instruct',
+            questionGeneration: 'meta-llama/llama-3.1-8b-instruct',
+            answerEvaluation: 'meta-llama/llama-3.1-8b-instruct',
+            fastScoring: 'mistralai/mistral-7b-instruct',
+            recruiterReport: 'meta-llama/llama-3.1-8b-instruct'
         };
 
         // API Keys from environment

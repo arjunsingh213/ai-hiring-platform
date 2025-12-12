@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema({
         default: false
     },
     verificationToken: String,
+
+    // Password Reset Fields
+    passwordResetOTP: String,
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+
     isOnboardingComplete: {
         type: Boolean,
         default: false
@@ -149,12 +155,17 @@ const userSchema = new mongoose.Schema({
     jobSeekerProfile: {
         profession: String,
         college: String,
-        domain: String,
+        domain: String, // Field of study from college
         experienceLevel: {
             type: String,
             enum: ['fresher', 'experienced']
         },
         desiredRole: String,
+        // Job domains user wants to work in (max 3)
+        jobDomains: [{
+            type: String,
+            enum: ['web_dev', 'frontend', 'backend', 'fullstack', 'mobile', 'data_science', 'data_analyst', 'ml_ai', 'devops', 'cybersecurity', 'network', 'database', 'ui_ux', 'graphic_design', 'product', 'project', 'qa_testing', 'hr', 'marketing', 'sales', 'finance', 'content', 'support', 'research', 'consulting', 'other']
+        }],
         about: String, // About me section (longer bio)
         bannerImage: String, // Banner image URL
         portfolioLinks: {

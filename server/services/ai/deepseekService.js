@@ -15,15 +15,15 @@ const MODELS = {
     },
     LLAMA: {
         name: 'meta-llama/llama-3.1-8b-instruct',
-        key: process.env.OPENROUTER_LLAMA_KEY
+        key: process.env.OPENROUTER_LLAMA_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_CHIMERA_KEY
     },
     MISTRAL: {
         name: 'mistralai/mistral-7b-instruct',
-        key: process.env.OPENROUTER_MISTRAL_KEY
+        key: process.env.OPENROUTER_MISTRAL_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_CHIMERA_KEY
     },
     GEMMA: {
         name: 'google/gemma-2-9b-it',
-        key: process.env.OPENROUTER_GEMMA_KEY || process.env.OPENROUTER_LLAMA_KEY
+        key: process.env.OPENROUTER_GEMMA_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY
     }
 };
 
@@ -77,8 +77,12 @@ async function callWithFallback(messages, models, options = {}) {
         try {
             return await callOpenRouter(messages, model, options);
         } catch (error) {
-            const isRetryable = error.status === 429 || error.status === 503 || error.status === 404 || error.status === 401 ||
-                error.message.includes('Rate limit') || error.message.includes('No endpoints') || error.message.includes('auth');
+            // 402 = Payment Required (out of credits) - MUST fallback
+            // 429 = Rate limit, 503 = Service unavailable, 404 = Not found, 401 = Auth error
+            const isRetryable = error.status === 402 || error.status === 429 || error.status === 503 ||
+                error.status === 404 || error.status === 401 || error.status === 500 ||
+                error.message.includes('Rate limit') || error.message.includes('No endpoints') ||
+                error.message.includes('auth') || error.message.includes('credits');
 
             if (isRetryable && i < modelList.length - 1) {
                 console.warn(`⚠️ Model ${model.name} failed (${error.status}). Trying next: ${modelList[i + 1].name}`);
@@ -89,6 +93,7 @@ async function callWithFallback(messages, models, options = {}) {
         }
     }
 }
+
 
 /**
  * Legacy wrapper with 2-tier fallback: Chimera -> Llama

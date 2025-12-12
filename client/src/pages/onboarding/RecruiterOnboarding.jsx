@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
@@ -20,9 +20,70 @@ const RecruiterOnboarding = () => {
     });
     const [loading, setLoading] = useState(false);
 
+    // Company search state
+    const [companySuggestions, setCompanySuggestions] = useState([]);
+    const [companySearching, setCompanySearching] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [companyValidated, setCompanyValidated] = useState(false);
+    const [selectedCompany, setSelectedCompany] = useState(null);
+
+    // Debounce company search
+    const debounce = (func, delay) => {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func(...args), delay);
+        };
+    };
+
+    const searchCompanies = async (query) => {
+        if (!query || query.length < 2) {
+            setCompanySuggestions([]);
+            return;
+        }
+
+        setCompanySearching(true);
+        try {
+            const response = await api.get(`/companies/search?q=${encodeURIComponent(query)}`);
+            console.log('Company search response:', response.data);
+
+            // Access nested data structure: response.data.data.companies
+            const companies = response.data?.data?.companies || response.data?.companies || [];
+
+            if (companies.length > 0) {
+                setCompanySuggestions(companies);
+                setShowSuggestions(true);
+            } else {
+                setCompanySuggestions([]);
+            }
+        } catch (error) {
+            console.error('Company search error:', error);
+            setCompanySuggestions([]);
+        } finally {
+            setCompanySearching(false);
+        }
+    };
+
+    const debouncedSearch = useCallback(debounce(searchCompanies, 300), []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        // If company name changes, search and reset validation
+        if (name === 'companyName') {
+            setCompanyValidated(false);
+            setSelectedCompany(null);
+            debouncedSearch(value);
+        }
+    };
+
+    const selectCompany = (company) => {
+        setFormData(prev => ({ ...prev, companyName: company.name }));
+        setSelectedCompany(company);
+        setCompanyValidated(true);
+        setShowSuggestions(false);
+        setCompanySuggestions([]);
     };
 
     const nextStep = () => {
@@ -40,6 +101,12 @@ const RecruiterOnboarding = () => {
             return;
         }
 
+        // Warn if company not validated
+        if (!companyValidated && !selectedCompany) {
+            const proceed = window.confirm('Company name could not be verified. Do you want to proceed anyway?');
+            if (!proceed) return;
+        }
+
         setLoading(true);
         try {
             const userData = {
@@ -52,22 +119,20 @@ const RecruiterOnboarding = () => {
                     companyName: formData.companyName.trim(),
                     companyDomain: formData.industry.trim(),
                     companyWebsite: formData.website || '',
+                    companyJurisdiction: selectedCompany?.jurisdiction || '',
+                    companyVerified: companyValidated,
                     verified: false
                 },
-                isOnboardingComplete: true // Mark onboarding as effective
+                isOnboardingComplete: true
             };
-
-            console.log('Updating recruiter data:', userData);
 
             let userId = localStorage.getItem('userId');
 
-            // Fallback: Try to get from 'user' object
             if (!userId) {
                 try {
                     const userObj = JSON.parse(localStorage.getItem('user'));
                     if (userObj && userObj._id) {
                         userId = userObj._id;
-                        // Fix the missing key for future
                         localStorage.setItem('userId', userId);
                     }
                 } catch (e) {
@@ -75,20 +140,12 @@ const RecruiterOnboarding = () => {
                 }
             }
 
-            console.log('RecruiterOnboarding submit - userId:', userId);
-
             if (!userId) {
-                // Last resort: check URL or other state?
-                // For now, throw specific error
-                console.error('LocalStorage keys:', Object.keys(localStorage));
                 throw new Error('User ID not found. Please try logging in again.');
             }
 
             await api.put(`/users/${userId}`, userData);
-
-            // Should already be set, but ensure role is correct
             localStorage.setItem('userRole', 'recruiter');
-
             navigate('/recruiter/home');
         } catch (error) {
             console.error('Onboarding error:', error);
@@ -98,6 +155,17 @@ const RecruiterOnboarding = () => {
             setLoading(false);
         }
     };
+
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!e.target.closest('.company-search-container')) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
     const renderStep = () => {
         switch (step) {
@@ -169,17 +237,68 @@ const RecruiterOnboarding = () => {
                         <h2>Company Information</h2>
                         <p className="step-description">Tell us about your company</p>
 
-                        <div className="form-group">
-                            <label className="form-label">Company Name *</label>
-                            <input
-                                type="text"
-                                name="companyName"
-                                value={formData.companyName}
-                                onChange={handleChange}
-                                className="input"
-                                placeholder="Tech Corp"
-                                required
-                            />
+                        <div className="form-group company-search-container">
+                            <label className="form-label">
+                                Company Name *
+                                {companyValidated && (
+                                    <span className="verified-badge">✓ Verified</span>
+                                )}
+                            </label>
+                            <div className="company-input-wrapper">
+                                <input
+                                    type="text"
+                                    name="companyName"
+                                    value={formData.companyName}
+                                    onChange={handleChange}
+                                    onFocus={() => formData.companyName.length >= 2 && setShowSuggestions(true)}
+                                    className={`input ${companyValidated ? 'input-validated' : ''}`}
+                                    placeholder="Start typing company name..."
+                                    required
+                                    autoComplete="off"
+                                />
+                                {companySearching && (
+                                    <span className="input-spinner">⏳</span>
+                                )}
+                            </div>
+
+                            {/* Company Suggestions Dropdown */}
+                            {showSuggestions && companySuggestions.length > 0 && (
+                                <div className="company-suggestions">
+                                    <div className="suggestions-header">
+                                        <span>Select from verified companies:</span>
+                                    </div>
+                                    {companySuggestions.map((company, index) => (
+                                        <div
+                                            key={index}
+                                            className="suggestion-item"
+                                            onClick={() => selectCompany(company)}
+                                        >
+                                            <div className="suggestion-content">
+                                                {company.logo && (
+                                                    <img
+                                                        src={company.logo}
+                                                        alt={company.name}
+                                                        className="company-logo"
+                                                        onError={(e) => e.target.style.display = 'none'}
+                                                    />
+                                                )}
+                                                <div className="suggestion-info">
+                                                    <div className="suggestion-name">{company.name}</div>
+                                                    {company.domain && (
+                                                        <div className="suggestion-meta">🌐 {company.domain}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {!companyValidated && formData.companyName.length >= 2 && !companySearching && companySuggestions.length === 0 && (
+                                <p className="validation-warning">
+                                    ⚠️ Company not found in registry. Please ensure the name is correct.
+                                </p>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -277,3 +396,4 @@ const RecruiterOnboarding = () => {
 };
 
 export default RecruiterOnboarding;
+

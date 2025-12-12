@@ -241,4 +241,30 @@ router.get('/role/:role', async (req, res) => {
     }
 });
 
+// Get top candidates by job domain (sorted by talent score)
+router.get('/top-candidates/:domainId', async (req, res) => {
+    try {
+        const { domainId } = req.params;
+        const { limit = 5 } = req.query;
+
+        const candidates = await User.find({
+            role: 'jobseeker',
+            'jobSeekerProfile.jobDomains': domainId,
+            'aiTalentPassport.talentScore': { $gt: 0 }
+        })
+            .select('profile.name profile.photo profile.headline jobSeekerProfile.domain jobSeekerProfile.jobDomains aiTalentPassport.talentScore aiTalentPassport.levelBand')
+            .sort({ 'aiTalentPassport.talentScore': -1 })
+            .limit(parseInt(limit));
+
+        res.json({
+            success: true,
+            data: candidates,
+            domain: domainId,
+            count: candidates.length
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;

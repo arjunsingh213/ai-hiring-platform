@@ -48,6 +48,37 @@ export const DOMAINS = [
     "Other"
 ];
 
+// Job Domains - Areas where users want to work (max 3 selectable)
+export const JOB_DOMAINS = [
+    { id: 'web_dev', name: 'Web Development', icon: '🌐' },
+    { id: 'frontend', name: 'Frontend Development', icon: '🎨' },
+    { id: 'backend', name: 'Backend Development', icon: '⚙️' },
+    { id: 'fullstack', name: 'Full Stack Development', icon: '💻' },
+    { id: 'mobile', name: 'Mobile App Development', icon: '📱' },
+    { id: 'data_science', name: 'Data Science', icon: '📊' },
+    { id: 'data_analyst', name: 'Data Analytics', icon: '📈' },
+    { id: 'ml_ai', name: 'AI & Machine Learning', icon: '🤖' },
+    { id: 'devops', name: 'DevOps & Cloud', icon: '☁️' },
+    { id: 'cybersecurity', name: 'Cybersecurity', icon: '🔒' },
+    { id: 'network', name: 'Network Engineering', icon: '🔌' },
+    { id: 'database', name: 'Database Administration', icon: '🗄️' },
+    { id: 'ui_ux', name: 'UI/UX Design', icon: '✏️' },
+    { id: 'graphic_design', name: 'Graphic Design', icon: '🎭' },
+    { id: 'product', name: 'Product Management', icon: '📋' },
+    { id: 'project', name: 'Project Management', icon: '📅' },
+    { id: 'qa_testing', name: 'QA & Testing', icon: '🧪' },
+    { id: 'hr', name: 'Human Resources', icon: '👥' },
+    { id: 'marketing', name: 'Marketing', icon: '📣' },
+    { id: 'sales', name: 'Sales', icon: '💼' },
+    { id: 'finance', name: 'Finance & Accounting', icon: '💰' },
+    { id: 'content', name: 'Content Writing', icon: '✍️' },
+    { id: 'support', name: 'Technical Support', icon: '🎧' },
+    { id: 'research', name: 'Research & Development', icon: '🔬' },
+    { id: 'consulting', name: 'Consulting', icon: '💡' },
+    { id: 'other', name: 'Other', icon: '📦' }
+];
+
+
 // Job Roles
 export const JOB_ROLES = [
     "Full Stack Developer",

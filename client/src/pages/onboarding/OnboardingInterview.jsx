@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useToast } from '../../components/Toast';
 import api from '../../services/api';
 import CodeIDE from '../../components/CodeIDE';
@@ -42,6 +43,12 @@ const OnboardingInterview = ({
     const [codingResults, setCodingResults] = useState(null);
     const [loadingProblem, setLoadingProblem] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
+
+    // Draggable camera state
+    const [cameraPosition, setCameraPosition] = useState({ x: null, y: null });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const cameraRef = useRef(null);
 
     // Initialize speech recognition
     useEffect(() => {
@@ -162,8 +169,12 @@ const OnboardingInterview = ({
 
     // Initialize camera
     useEffect(() => {
-        initCamera();
+        // Small delay to ensure video element is mounted
+        const timer = setTimeout(() => {
+            initCamera();
+        }, 500);
         return () => {
+            clearTimeout(timer);
             if (videoRef.current?.srcObject) {
                 videoRef.current.srcObject.getTracks().forEach(track => track.stop());
             }
@@ -172,21 +183,64 @@ const OnboardingInterview = ({
 
     const initCamera = async () => {
         try {
+            console.log('Initializing camera...');
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 320, height: 240 },
+                video: { width: 320, height: 240, facingMode: 'user' },
                 audio: false
             });
+            console.log('Camera stream obtained:', stream);
+
+            // Wait a moment for video element to be ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 setCameraEnabled(true);
+                console.log('Camera enabled successfully');
+            } else {
+                console.log('Video ref not ready, retrying...');
+                // Retry once more after a short delay
+                setTimeout(() => {
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        setCameraEnabled(true);
+                        console.log('Camera enabled on retry');
+                    }
+                }, 500);
             }
         } catch (error) {
-            console.log('Camera not available:', error);
+            console.error('Camera initialization error:', error.name, error.message);
             setCameraEnabled(false);
         }
     };
 
     const [loadingNext, setLoadingNext] = useState(false);
+
+    // Handle camera drag events
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!isDragging) return;
+            const newX = e.clientX - dragOffset.x;
+            const newY = e.clientY - dragOffset.y;
+            // Keep within viewport bounds
+            const maxX = window.innerWidth - 200;
+            const maxY = window.innerHeight - 150;
+            setCameraPosition({
+                x: Math.max(0, Math.min(newX, maxX)),
+                y: Math.max(0, Math.min(newY, maxY))
+            });
+        };
+        const handleMouseUp = () => setIsDragging(false);
+
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, dragOffset]);
 
     // Start dynamic interview on mount
     useEffect(() => {
@@ -610,8 +664,29 @@ const OnboardingInterview = ({
 
             {/* Main content */}
             <div className="interview-content">
-                {/* Camera preview */}
-                <div className="camera-section">
+                {/* Draggable Camera preview */}
+                <div
+                    ref={cameraRef}
+                    className={`camera-section draggable ${isDragging ? 'dragging' : ''}`}
+                    style={{
+                        ...(cameraPosition.x !== null && {
+                            right: 'auto',
+                            top: 'auto',
+                            left: cameraPosition.x,
+                            top: cameraPosition.y
+                        })
+                    }}
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        const rect = cameraRef.current.getBoundingClientRect();
+                        setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                        setIsDragging(true);
+                    }}
+                >
+                    <div className="camera-drag-handle">
+                        <span className="drag-icon">⋮⋮</span>
+                        <span className="drag-hint">Drag to move</span>
+                    </div>
                     <video
                         ref={videoRef}
                         autoPlay
@@ -623,75 +698,131 @@ const OnboardingInterview = ({
                         <div className="camera-placeholder">
                             <span>📷</span>
                             <p>Camera unavailable</p>
+                            <button
+                                className="camera-retry-btn"
+                                onClick={initCamera}
+                            >
+                                🔄 Retry
+                            </button>
                         </div>
                     )}
                 </div>
 
-                {/* Question */}
-                <div className="question-section">
+                {/* Question Card - Full Width Expanded */}
+                <motion.div
+                    className="question-card"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    <div className="question-header">
+                        <span className="question-icon">💭</span>
+                        <span className="question-label">Interview Question</span>
+                        {ttsSupported && (
+                            <motion.button
+                                className="repeat-btn"
+                                onClick={() => speakQuestion(currentQ?.question)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                🔄 Repeat
+                            </motion.button>
+                        )}
+                    </div>
                     <h2 className="question-text">
                         {isSpeaking && <span className="speaking-indicator">🔊</span>}
                         {currentQ?.question}
                     </h2>
-
                     {currentQ?.assessingSkill && (
-                        <p className="assessing-skill">
-                            Assessing: {currentQ.assessingSkill}
-                        </p>
+                        <div className="skill-badge">
+                            <span className="skill-icon">🎯</span>
+                            Assessing: <strong>{currentQ.assessingSkill}</strong>
+                        </div>
                     )}
+                </motion.div>
 
-                    {ttsSupported && (
-                        <button
-                            className="btn-icon repeat-btn"
-                            onClick={() => speakQuestion(currentQ?.question)}
-                            title="Repeat question"
-                        >
-                            🔄 Repeat
-                        </button>
-                    )}
-                </div>
-
-                {/* Answer input */}
-                <div className="answer-section">
+                {/* Answer Section - Full Width */}
+                <motion.div
+                    className="answer-card"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                >
                     <textarea
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
                         placeholder="Type your answer here or use the microphone..."
-                        rows={5}
                         className="answer-input"
                     />
 
-                    <div className="answer-controls">
-                        <button
-                            className={`btn-mic ${isListening ? 'listening' : ''}`}
+                    <div className="answer-footer">
+                        <motion.button
+                            className={`mic-btn ${isListening ? 'listening' : ''}`}
                             onClick={toggleListening}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            {isListening ? '🎙️ Listening...' : '🎤 Speak'}
-                        </button>
-
+                            {isListening ? (
+                                <>
+                                    <span className="mic-pulse"></span>
+                                    🎙️ Listening...
+                                </>
+                            ) : (
+                                <>🎤 Speak</>
+                            )}
+                        </motion.button>
                         <span className="char-count">{answer.length} characters</span>
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Action buttons */}
-                <div className="action-buttons">
-                    <button
-                        className="btn-secondary"
+                {/* Action Buttons - Sleek Design */}
+                <motion.div
+                    className="action-buttons"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                >
+                    <motion.button
+                        className="btn-skip"
                         onClick={handleSkipQuestion}
                         disabled={submitting}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                     >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
                         Skip Question
-                    </button>
-                    <button
-                        className="btn-primary"
+                    </motion.button>
+                    <motion.button
+                        className="btn-next"
                         onClick={handleSubmitAnswer}
                         disabled={submitting || !answer.trim() || loadingNext}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                     >
-                        {loadingNext
-                            ? 'Analyzing & Generating Next Question...'
-                            : (currentIndex < 9 ? 'Next Question →' : 'Submit Interview')}
-                    </button>
-                </div>
+                        {loadingNext ? (
+                            <>
+                                <span className="btn-spinner"></span>
+                                Analyzing...
+                            </>
+                        ) : currentIndex < 9 ? (
+                            <>
+                                Next Question
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                            </>
+                        ) : (
+                            <>
+                                Submit Interview
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M5 13l4 4L19 7" />
+                                </svg>
+                            </>
+                        )}
+                    </motion.button>
+                </motion.div>
             </div>
 
             {submitting && (

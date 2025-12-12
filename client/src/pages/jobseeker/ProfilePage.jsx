@@ -3,6 +3,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import ImageCropModal from '../../components/ImageCropModal';
 import AITalentPassport from '../../components/AITalentPassport/AITalentPassport';
+import { JOB_DOMAINS } from '../../data/validationData';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -29,6 +30,7 @@ const ProfilePage = () => {
         college: '',
         domain: '',
         desiredRole: '',
+        jobDomains: [],
         linkedin: '',
         github: '',
         portfolio: '',
@@ -69,6 +71,7 @@ const ProfilePage = () => {
                     college: userData.jobSeekerProfile?.college || '',
                     domain: userData.jobSeekerProfile?.domain || '',
                     desiredRole: userData.jobSeekerProfile?.desiredRole || '',
+                    jobDomains: userData.jobSeekerProfile?.jobDomains || [],
                     linkedin: userData.jobSeekerProfile?.portfolioLinks?.linkedin || '',
                     github: userData.jobSeekerProfile?.portfolioLinks?.github || '',
                     portfolio: userData.jobSeekerProfile?.portfolioLinks?.portfolio || '',
@@ -103,6 +106,7 @@ const ProfilePage = () => {
                     college: formData.college,
                     domain: formData.domain,
                     desiredRole: formData.desiredRole,
+                    jobDomains: formData.jobDomains,
                     portfolioLinks: {
                         linkedin: formData.linkedin,
                         github: formData.github,
@@ -569,6 +573,46 @@ const ProfilePage = () => {
                                     <input type="text" name="desiredRole" value={formData.desiredRole} onChange={handleChange} />
                                 </div>
                             </div>
+
+                            {/* Job Domains Selection */}
+                            <div className="form-group">
+                                <label>
+                                    Job Domains
+                                    <span className="label-hint"> (Select up to 3)</span>
+                                </label>
+                                <div className="job-domains-grid-edit">
+                                    {JOB_DOMAINS.map(domain => (
+                                        <button
+                                            key={domain.id}
+                                            type="button"
+                                            className={`domain-chip-edit ${formData.jobDomains?.includes(domain.id) ? 'selected' : ''} ${formData.jobDomains?.length >= 3 && !formData.jobDomains?.includes(domain.id) ? 'disabled' : ''}`}
+                                            onClick={() => {
+                                                const current = formData.jobDomains || [];
+                                                if (current.includes(domain.id)) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        jobDomains: current.filter(d => d !== domain.id)
+                                                    }));
+                                                } else if (current.length < 3) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        jobDomains: [...current, domain.id]
+                                                    }));
+                                                }
+                                            }}
+                                            disabled={formData.jobDomains?.length >= 3 && !formData.jobDomains?.includes(domain.id)}
+                                        >
+                                            <span className="chip-icon">{domain.icon}</span>
+                                            <span className="chip-name">{domain.name}</span>
+                                            {formData.jobDomains?.includes(domain.id) && <span className="chip-check">✓</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                                {formData.jobDomains?.length > 0 && (
+                                    <div className="domains-selected-count">{formData.jobDomains.length}/3 selected</div>
+                                )}
+                            </div>
+
                             <div className="form-group">
                                 <label>LinkedIn URL</label>
                                 <input type="url" name="linkedin" value={formData.linkedin} onChange={handleChange} />

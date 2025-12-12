@@ -61,7 +61,44 @@ const sendVerificationEmail = async (user, token) => {
     }
 };
 
+const sendPasswordResetOTP = async (user, otp) => {
+    const message = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #6366F1; margin-bottom: 24px;">Password Reset Request</h2>
+            <p>Hi ${user.profile?.name || 'there'},</p>
+            <p>You requested to reset your password. Use the OTP code below to continue:</p>
+            <div style="margin: 32px 0; text-align: center;">
+                <div style="display: inline-block; background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); color: white; padding: 20px 40px; border-radius: 12px; font-size: 32px; font-weight: bold; letter-spacing: 8px;">
+                    ${otp}
+                </div>
+            </div>
+            <p style="color: #64748B; font-size: 14px;">This code will expire in <strong>10 minutes</strong>.</p>
+            <p style="color: #64748B; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #E2E8F0; margin: 24px 0;" />
+            <p style="color: #94A3B8; font-size: 12px;">Best regards,<br/>The AI Hiring Platform Team</p>
+        </div>
+    `;
+
+    try {
+        console.log('=================================================');
+        console.log(`PASSWORD RESET OTP FOR ${user.email}: ${otp}`);
+        console.log('=================================================');
+
+        await sendEmail({
+            email: user.email,
+            subject: 'Password Reset OTP - AI Hiring Platform',
+            html: message
+        });
+        console.log(`Password reset OTP sent to ${user.email}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending password reset OTP:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmail,
-    sendVerificationEmail
+    sendVerificationEmail,
+    sendPasswordResetOTP
 };

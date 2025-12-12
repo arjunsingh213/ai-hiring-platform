@@ -495,6 +495,56 @@ router.post('/:interviewId/complete', async (req, res) => {
     }
 });
 
+// Save coding test results
+router.post('/:interviewId/coding-results', async (req, res) => {
+    try {
+        const { interviewId } = req.params;
+        const { codingResults } = req.body;
+
+        const interview = await Interview.findById(interviewId);
+        if (!interview) {
+            return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // Save coding results
+        interview.codingResults = {
+            score: codingResults.score || 0,
+            passed: codingResults.testsPassed >= codingResults.totalTests / 2,
+            language: codingResults.language || 'JavaScript',
+            testsPassed: codingResults.testsPassed || 0,
+            totalTests: codingResults.totalTests || 0,
+            skipped: codingResults.skipped || false,
+            completedAt: new Date(),
+            code: codingResults.code || ''
+        };
+
+        // Update overall score to include coding
+        if (!codingResults.skipped && interview.scoring) {
+            const interviewScore = interview.scoring.overallScore || 0;
+            const codingScore = codingResults.score || 0;
+            // Combined score: 70% interview, 30% coding
+            interview.scoring.overallScore = Math.round(interviewScore * 0.7 + codingScore * 0.3);
+            interview.scoring.codingScore = codingScore;
+        }
+
+        await interview.save();
+
+        console.log(`[CODING RESULTS] Saved for interview ${interviewId}: score=${codingResults.score}, skipped=${codingResults.skipped}`);
+
+        res.json({
+            success: true,
+            message: 'Coding results saved',
+            data: {
+                codingResults: interview.codingResults,
+                updatedOverallScore: interview.scoring?.overallScore
+            }
+        });
+    } catch (error) {
+        console.error('Save coding results error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 /**
  * STRICT LOCAL EVALUATION - When AI is unavailable
  * Analyzes answers for quality, relevance, and content
@@ -815,8 +865,10 @@ router.get('/:id/detailed-results', async (req, res) => {
                     technical: interview.scoring?.technicalAccuracy || 0,
                     communication: interview.scoring?.communication || 0,
                     confidence: interview.scoring?.confidence || 0,
-                    relevance: interview.scoring?.relevance || 0
+                    relevance: interview.scoring?.relevance || 0,
+                    coding: interview.codingResults?.score // Only included if coding was done
                 },
+                codingResults: interview.codingResults || null,
                 strengths: interview.scoring?.strengths || [],
                 weaknesses: interview.scoring?.weaknesses || [],
                 detailedFeedback: interview.scoring?.detailedFeedback || '',

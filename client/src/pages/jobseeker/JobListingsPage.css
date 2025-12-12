@@ -460,6 +460,55 @@
     cursor: default;
 }
 
+/* Applied Status Group */
+.applied-status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.applied-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.applied-indicator svg {
+    stroke: white;
+}
+
+.btn-withdraw {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid #E8EDF4;
+    border-radius: 10px;
+    color: #64748B;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-withdraw:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    color: #DC2626;
+}
+
+.btn-withdraw:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .btn-disabled {
     opacity: 0.7;
     cursor: pointer !important;

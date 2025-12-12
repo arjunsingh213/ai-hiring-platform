@@ -4,6 +4,7 @@ import { ToastProvider } from './components/Toast';
 import LandingPage from './pages/landing/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import RoleSelection from './pages/onboarding/RoleSelection';
 import JobSeekerOnboarding from './pages/onboarding/JobSeekerOnboarding';
@@ -26,6 +27,7 @@ function App() {
           {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
           {/* Onboarding */}

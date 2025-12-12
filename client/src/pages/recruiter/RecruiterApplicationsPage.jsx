@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import OfferLetterModal from '../../components/OfferLetterModal';
@@ -21,8 +22,12 @@ const RecruiterApplicationsPage = () => {
         status: '',
         interviewCompleted: '',
         sortBy: 'score',
-        jobId: initialJobId  // Auto-set from navigation if provided
+        jobId: initialJobId,
+        minScore: '',
+        maxScore: ''
     });
+    // Separate pending score input state (only applied when clicking Apply)
+    const [pendingScore, setPendingScore] = useState({ min: '', max: '' });
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
@@ -76,11 +81,29 @@ const RecruiterApplicationsPage = () => {
                 applicantsData = applicantsData.filter(item => item.jobId === filters.jobId);
             }
 
+            // Apply score range filter
+            if (filters.minScore !== '' || filters.maxScore !== '') {
+                const minScore = filters.minScore !== '' ? parseInt(filters.minScore) : 0;
+                const maxScore = filters.maxScore !== '' ? parseInt(filters.maxScore) : 100;
+                applicantsData = applicantsData.filter(item => {
+                    const score = item.interview?.overallScore || 0;
+                    return score >= minScore && score <= maxScore;
+                });
+            }
+
             console.log('Applicants data:', applicantsData);
             setApplicants(applicantsData);
 
-            if (applicantsData.length > 0 && !selectedApplicant) {
-                setSelectedApplicant(applicantsData[0]);
+            // Don't auto-select - only show details when user clicks on an applicant
+            // Reset selection if current selection is not in the filtered list
+            if (selectedApplicant) {
+                const isInList = applicantsData.some(item =>
+                    (item.applicant?.userId?._id || item.applicant?.userId) ===
+                    (selectedApplicant.applicant?.userId?._id || selectedApplicant.applicant?.userId)
+                );
+                if (!isInList) {
+                    setSelectedApplicant(null);
+                }
             }
         } catch (error) {
             console.error('Error fetching applicants:', error);
@@ -276,9 +299,43 @@ const RecruiterApplicationsPage = () => {
                         </select>
                     </div>
 
+                    <div className="filter-group">
+                        <label>Score Range</label>
+                        <div className="score-range-inputs">
+                            <input
+                                type="number"
+                                className="input score-input"
+                                placeholder="Min"
+                                min="0"
+                                max="100"
+                                value={pendingScore.min}
+                                onChange={(e) => setPendingScore({ ...pendingScore, min: e.target.value })}
+                            />
+                            <span className="range-separator">to</span>
+                            <input
+                                type="number"
+                                className="input score-input"
+                                placeholder="Max"
+                                min="0"
+                                max="100"
+                                value={pendingScore.max}
+                                onChange={(e) => setPendingScore({ ...pendingScore, max: e.target.value })}
+                            />
+                            <button
+                                className="btn btn-primary btn-apply-filter"
+                                onClick={() => setFilters({ ...filters, minScore: pendingScore.min, maxScore: pendingScore.max })}
+                            >
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+
                     <button
                         className="btn btn-secondary"
-                        onClick={() => setFilters({ status: '', interviewCompleted: '', sortBy: 'score', jobId: '' })}
+                        onClick={() => {
+                            setFilters({ status: '', interviewCompleted: '', sortBy: 'score', jobId: '', minScore: '', maxScore: '' });
+                            setPendingScore({ min: '', max: '' });
+                        }}
                     >
                         Clear Filters
                     </button>
@@ -406,35 +463,71 @@ const RecruiterApplicationsPage = () => {
                                 <div className="header-actions">
                                     {status !== 'hired' && status !== 'rejected' && (
                                         <>
-                                            <button
-                                                className="btn btn-success"
+                                            <motion.button
+                                                className="action-btn action-btn-hire"
                                                 onClick={handleHire}
                                                 disabled={actionLoading}
+                                                whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)' }}
+                                                whileTap={{ scale: 0.95 }}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.2 }}
                                             >
-                                                ✓ Hire
-                                            </button>
-                                            <button
-                                                className="btn btn-danger"
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                                Hire
+                                            </motion.button>
+                                            <motion.button
+                                                className="action-btn action-btn-reject"
                                                 onClick={() => setShowRejectModal(true)}
                                                 disabled={actionLoading}
+                                                whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4)' }}
+                                                whileTap={{ scale: 0.95 }}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.2, delay: 0.05 }}
                                             >
-                                                ✗ Reject
-                                            </button>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                </svg>
+                                                Reject
+                                            </motion.button>
                                         </>
                                     )}
                                     {status === 'rejected' && (
-                                        <button
-                                            className="btn btn-warning"
+                                        <motion.button
+                                            className="action-btn action-btn-reconsider"
                                             onClick={handleUndoReject}
                                             disabled={actionLoading}
+                                            whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(245, 158, 11, 0.4)' }}
+                                            whileTap={{ scale: 0.95 }}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
                                             title="Give this candidate another chance"
                                         >
-                                            🔄 Reconsider
-                                        </button>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M2.5 2v6h6M21.5 22v-6h-6" />
+                                                <path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2" />
+                                            </svg>
+                                            Reconsider
+                                        </motion.button>
                                     )}
-                                    <button className="btn btn-primary" onClick={handleMessage}>
-                                        💬 Message
-                                    </button>
+                                    <motion.button
+                                        className="action-btn action-btn-message"
+                                        onClick={handleMessage}
+                                        whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)' }}
+                                        whileTap={{ scale: 0.95 }}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.2, delay: 0.1 }}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                        Message
+                                    </motion.button>
                                 </div>
                             </div>
 

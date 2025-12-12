@@ -204,6 +204,21 @@
     color: var(--success);
 }
 
+.score-card .score-icon.coding {
+    background: rgba(234, 88, 12, 0.1);
+    color: #ea580c;
+}
+
+.score-card.coding-score {
+    border-left: 3px solid #ea580c;
+}
+
+.coding-tests-info {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
 .score-card .score-details {
     display: flex;
     justify-content: space-between;

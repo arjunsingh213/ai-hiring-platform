@@ -1041,3 +1041,113 @@
         padding: var(--spacing-lg);
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL TEXT VISIBILITY FIX - Light theme for modals
+   ═══════════════════════════════════════════════════════════════ */
+
+.modal-overlay .modal {
+    background: #ffffff !important;
+    color: #0F172A !important;
+}
+
+.modal-overlay .modal-header h2 {
+    color: #0F172A !important;
+}
+
+.modal-overlay .modal-body label {
+    color: #334155 !important;
+    font-weight: 500;
+}
+
+.modal-overlay .modal-body .label-hint {
+    color: #94A3B8 !important;
+    font-weight: 400;
+    font-size: 0.75rem;
+}
+
+.modal-overlay .modal-body input,
+.modal-overlay .modal-body textarea,
+.modal-overlay .modal-body select {
+    background: #F8FAFC !important;
+    color: #0F172A !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+.modal-overlay .modal-body input::placeholder,
+.modal-overlay .modal-body textarea::placeholder {
+    color: #94A3B8 !important;
+}
+
+.modal-overlay .modal-body input:focus,
+.modal-overlay .modal-body textarea:focus {
+    border-color: #6366F1 !important;
+    outline: none;
+}
+
+/* Job Domains Grid in Edit Modal */
+.job-domains-grid-edit {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.domain-chip-edit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #F1F5F9;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.domain-chip-edit:hover:not(.disabled) {
+    background: #E2E8F0;
+    border-color: #6366F1;
+}
+
+.domain-chip-edit.selected {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+    border-color: #6366F1;
+    color: #4F46E5;
+}
+
+.domain-chip-edit.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.chip-icon {
+    font-size: 0.875rem;
+}
+
+.chip-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chip-check {
+    color: #10B981;
+    font-weight: 700;
+}
+
+.domains-selected-count {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6366F1;
+    font-weight: 600;
+}

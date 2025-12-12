@@ -99,6 +99,21 @@ const interviewSchema = new mongoose.Schema({
         detailedFeedback: String
     },
 
+    // NEW: Coding Test Results
+    codingResults: {
+        score: Number, // 0-100
+        passed: Boolean,
+        language: String,
+        testsPassed: Number,
+        totalTests: Number,
+        skipped: {
+            type: Boolean,
+            default: false
+        },
+        completedAt: Date,
+        code: String // The submitted code
+    },
+
     // NEW: Recruiter Report (Gemma 2 9B)
     recruiterReport: {
         summary: String,

@@ -11,6 +11,7 @@ import AutocompleteInput from '../../components/AutocompleteInput';
 import { search as searchColleges } from 'aishe-institutions-list';
 import {
     DOMAINS,
+    JOB_DOMAINS,
     JOB_ROLES,
     PROFESSIONS,
     validateAgeAndDOB,
@@ -37,6 +38,7 @@ const JobSeekerOnboarding = () => {
         mobile: '',
         experienceLevel: 'fresher',
         desiredRole: '',
+        jobDomains: [], // Array of selected job domains (max 3)
         linkedin: '',
         github: '',
         portfolio: '',
@@ -246,6 +248,9 @@ const JobSeekerOnboarding = () => {
             if (!formData.desiredRole && !otherValues.desiredRole) {
                 newErrors.desiredRole = 'Desired role is required';
             }
+            if (formData.jobDomains.length === 0) {
+                newErrors.jobDomains = 'Please select at least 1 job domain';
+            }
         }
 
         if (currentStep === 3) {
@@ -327,6 +332,7 @@ const JobSeekerOnboarding = () => {
                     domain: formData.domain.trim(),
                     experienceLevel: formData.experienceLevel,
                     desiredRole: formData.desiredRole.trim(),
+                    jobDomains: formData.jobDomains,
                     portfolioLinks: {
                         linkedin: formData.linkedin,
                         github: formData.github,
@@ -554,6 +560,49 @@ const JobSeekerOnboarding = () => {
                                 onOtherChange={(val) => setOtherValues(prev => ({ ...prev, desiredRole: val }))}
                                 error={errors.desiredRole}
                             />
+                        </div>
+
+                        {/* Job Domains Multi-Select */}
+                        <div className="form-group">
+                            <label className="form-label">
+                                Job Domains You're Interested In *
+                                <span className="label-hint">(Select up to 3)</span>
+                            </label>
+                            <div className="job-domains-grid">
+                                {JOB_DOMAINS.map(domain => (
+                                    <button
+                                        key={domain.id}
+                                        type="button"
+                                        className={`job-domain-chip ${formData.jobDomains.includes(domain.id) ? 'selected' : ''} ${formData.jobDomains.length >= 3 && !formData.jobDomains.includes(domain.id) ? 'disabled' : ''}`}
+                                        onClick={() => {
+                                            if (formData.jobDomains.includes(domain.id)) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    jobDomains: prev.jobDomains.filter(d => d !== domain.id)
+                                                }));
+                                            } else if (formData.jobDomains.length < 3) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    jobDomains: [...prev.jobDomains, domain.id]
+                                                }));
+                                            }
+                                        }}
+                                        disabled={formData.jobDomains.length >= 3 && !formData.jobDomains.includes(domain.id)}
+                                    >
+                                        <span className="domain-icon">{domain.icon}</span>
+                                        <span className="domain-name">{domain.name}</span>
+                                        {formData.jobDomains.includes(domain.id) && (
+                                            <span className="domain-check">✓</span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            {formData.jobDomains.length > 0 && (
+                                <div className="selected-domains-count">
+                                    {formData.jobDomains.length}/3 selected
+                                </div>
+                            )}
+                            {errors.jobDomains && <span className="error-message">{errors.jobDomains}</span>}
                         </div>
                     </div>
                 );

@@ -106,15 +106,31 @@ router.post('/', async (req, res) => {
 // Get feed (all public posts)
 router.get('/feed', async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
+        const { page = 1, limit = 20, type = 'jobseeker' } = req.query;
 
-        const posts = await Post.find({ visibility: 'public' })
-            .populate('userId')
+        // Filter posts based on feed type
+        let postTypeFilter;
+        if (type === 'recruiter') {
+            // Recruiter feed: job postings and company updates only
+            postTypeFilter = { postType: { $in: ['job_posting', 'company_update'] } };
+        } else {
+            // Job seeker feed: achievements, ATP, proof of work, text posts
+            postTypeFilter = { postType: { $in: ['achievement', 'atp', 'proof_of_work', 'text'] } };
+        }
+
+        const posts = await Post.find({
+            visibility: 'public',
+            ...postTypeFilter
+        })
+            .populate('userId', 'profile role aiTalentPassport jobSeekerProfile')
             .sort({ createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit);
 
-        const count = await Post.countDocuments({ visibility: 'public' });
+        const count = await Post.countDocuments({
+            visibility: 'public',
+            ...postTypeFilter
+        });
 
         res.json({
             success: true,
