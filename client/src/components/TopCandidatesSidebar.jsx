@@ -21,25 +21,48 @@ const TopCandidatesSidebar = ({ jobDomains = [] }) => {
     }, [jobDomains]);
 
     useEffect(() => {
+        let isMounted = true;
+
+        const fetchTopCandidates = async (domainId) => {
+            try {
+                setLoading(true);
+                console.log('🔍 Fetching top candidates for domain:', domainId);
+                const response = await api.get(`/users/top-candidates/${encodeURIComponent(domainId)}?limit=5`);
+                console.log('📊 Top candidates response:', response.data);
+
+                if (isMounted) {
+                    // Handle both formats: direct array or {data: array}
+                    let candidatesData = [];
+                    if (Array.isArray(response.data)) {
+                        candidatesData = response.data;
+                    } else if (response.data?.data && Array.isArray(response.data.data)) {
+                        candidatesData = response.data.data;
+                    }
+                    console.log('✅ Setting candidates:', candidatesData.length, candidatesData);
+                    setCandidates(candidatesData);
+                }
+            } catch (error) {
+                console.error('Error fetching top candidates:', error);
+                if (isMounted) {
+                    setCandidates([]);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
         if (activeDomain) {
             fetchTopCandidates(activeDomain);
         } else {
             setLoading(false);
         }
-    }, [activeDomain]);
 
-    const fetchTopCandidates = async (domainId) => {
-        try {
-            setLoading(true);
-            const response = await api.get(`/users/top-candidates/${encodeURIComponent(domainId)}?limit=5`);
-            setCandidates(response.data?.data || []);
-        } catch (error) {
-            console.error('Error fetching top candidates:', error);
-            setCandidates([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+        return () => {
+            isMounted = false;
+        };
+    }, [activeDomain]);
 
     const getRankBadge = (index) => {
         const ranks = ['🥇', '🥈', '🥉'];
@@ -59,6 +82,11 @@ const TopCandidatesSidebar = ({ jobDomains = [] }) => {
         if (score >= 50) return 'Intermediate';
         return 'Beginner';
     };
+
+    // Debug: log candidates state changes
+    useEffect(() => {
+        console.log('👥 Candidates state updated:', candidates.length, candidates);
+    }, [candidates]);
 
     if (!jobDomains || jobDomains.length === 0) {
         return null;
