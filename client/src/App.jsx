@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import LandingPage from './pages/landing/LandingPage';
-import LandingPageNew from './pages/Landing/LandingPageNew';
+import LandingPageNew from './pages/landing/LandingPageNew';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
