@@ -671,7 +671,6 @@ const OnboardingInterview = ({
                     style={{
                         ...(cameraPosition.x !== null && {
                             right: 'auto',
-                            top: 'auto',
                             left: cameraPosition.x,
                             top: cameraPosition.y
                         })
