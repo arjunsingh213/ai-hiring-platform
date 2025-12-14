@@ -23,8 +23,8 @@ function App() {
       <Router>
         <Routes>
           {/* Landing Page */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/landing-new" element={<LandingPageNew />} />
+          <Route path="/" element={<LandingPageNew />} />
+          <Route path="/landing-old" element={<LandingPage />} />
 
           {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />

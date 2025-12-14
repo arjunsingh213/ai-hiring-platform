@@ -21,14 +21,14 @@ const features = [
         icon: '🎤',
         title: 'Adaptive AI Interviews',
         description: 'Real-time AI-powered interviews that adapt to candidate responses, ensuring fair and comprehensive skill assessment.',
-        image: codeIdeImg,
+        image: workSampleImg,
         color: '#10B981'
     },
     {
         icon: '💻',
         title: 'Live Code Evaluation',
         description: 'Integrated coding IDE with AI analysis for technical role evaluations. Real execution in 50+ programming languages.',
-        image: workSampleImg,
+        image: codeIdeImg,
         color: '#6366F1'
     },
     {
