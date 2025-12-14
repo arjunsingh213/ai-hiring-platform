@@ -59,38 +59,96 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
 
         let parsedData = {
             rawText: '',
+            htmlContent: '',
             skills: [],
+            skillCategories: {
+                programmingLanguages: [],
+                frameworks: [],
+                databases: [],
+                tools: [],
+                softSkills: []
+            },
             experience: [],
             education: [],
             projects: []
         };
 
-        // Try to parse resume, but don't fail if parsing fails
+        let aiParsedData = null;
+        let htmlContent = '';
+
+        // Step 1: Parse resume to get raw text and HTML
         try {
-            // Download from Cloudinary URL and parse
             const fileUrl = cloudinaryResult.secure_url;
-            parsedData = await resumeParser.parseResumeFromUrl(fileUrl, req.file.mimetype);
+            console.log(`[Resume] Parsing resume from URL: ${fileUrl}`);
+
+            const basicParsedData = await resumeParser.parseResumeFromUrl(fileUrl, req.file.mimetype);
+            parsedData = { ...parsedData, ...basicParsedData };
+            htmlContent = basicParsedData.htmlContent || '';
+
+            console.log(`[Resume] Basic parsing complete. Skills found: ${parsedData.skills?.length || 0}`);
         } catch (parseError) {
-            console.error('Resume parsing error (non-fatal):', parseError.message);
-            // Continue with empty parsed data
+            console.error('[Resume] Basic parsing error (non-fatal):', parseError.message);
         }
 
-        // Create resume record with Cloudinary URL
+        // Step 2: Use AI (LLama 3.1) to extract detailed skills from HTML/text
+        try {
+            const contentToAnalyze = htmlContent || parsedData.rawText;
+            if (contentToAnalyze && contentToAnalyze.length > 50) {
+                console.log(`[Resume] Calling LLama 3.1 for AI skill extraction...`);
+
+                aiParsedData = await aiService.parseResume(contentToAnalyze);
+
+                if (aiParsedData) {
+                    console.log(`[Resume] AI parsing complete. Skills: ${aiParsedData.skills?.length || 0}, ` +
+                        `Languages: ${aiParsedData.skillCategories?.programmingLanguages?.length || 0}`);
+
+                    // Merge AI parsed data with basic parsed data
+                    parsedData = {
+                        ...parsedData,
+                        skills: [...new Set([
+                            ...(parsedData.skills || []),
+                            ...(aiParsedData.skills || [])
+                        ])],
+                        skillCategories: aiParsedData.skillCategories || parsedData.skillCategories,
+                        experience: aiParsedData.experience?.length > 0 ? aiParsedData.experience : parsedData.experience,
+                        education: aiParsedData.education?.length > 0 ? aiParsedData.education : parsedData.education,
+                        projects: aiParsedData.projects?.length > 0 ? aiParsedData.projects : parsedData.projects,
+                        totalYearsExperience: aiParsedData.totalYearsExperience || 0
+                    };
+                }
+            }
+        } catch (aiError) {
+            console.error('[Resume] AI parsing error (non-fatal):', aiError.message);
+        }
+
+        // Determine skill level and interview focus based on parsed data
+        const programmingLangs = parsedData.skillCategories?.programmingLanguages || [];
+        const frameworks = parsedData.skillCategories?.frameworks || [];
+        const totalYears = parsedData.totalYearsExperience || 0;
+
+        const skillLevel = totalYears >= 7 ? 'expert' :
+            totalYears >= 4 ? 'advanced' :
+                totalYears >= 2 ? 'intermediate' : 'beginner';
+
+        // Create resume record with all data
         const resume = new Resume({
             userId,
             fileId: cloudinaryResult.public_id,
             fileName: req.file.originalname,
             fileType: req.file.mimetype,
             fileUrl: cloudinaryResult.secure_url,
+            htmlContent: htmlContent,
             parsedData,
             aiAnalysis: {
-                keyStrengths: ['Communication', 'Problem Solving'],
-                suggestedRoles: ['Software Engineer', 'Full Stack Developer'],
-                skillLevel: 'intermediate'
+                keyStrengths: aiParsedData?.skillCategories?.softSkills?.slice(0, 3) || ['Communication', 'Problem Solving'],
+                suggestedRoles: aiParsedData?.suggestedRoles || ['Software Engineer', 'Full Stack Developer'],
+                skillLevel: skillLevel,
+                interviewFocus: [...programmingLangs.slice(0, 3), ...frameworks.slice(0, 2)]
             }
         });
 
         await resume.save();
+        console.log(`[Resume] Saved resume for user ${userId} with ${parsedData.skills?.length || 0} skills`);
 
         // Update user with resume reference
         await User.findByIdAndUpdate(userId, { resume: resume._id });
@@ -98,10 +156,10 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
         res.status(201).json({
             success: true,
             data: resume,
-            message: 'Resume uploaded successfully'
+            message: 'Resume uploaded and analyzed successfully'
         });
     } catch (error) {
-        console.error('Resume upload error:', error);
+        console.error('[Resume] Upload error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

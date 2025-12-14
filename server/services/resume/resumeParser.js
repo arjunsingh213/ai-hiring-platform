@@ -32,7 +32,201 @@ class ResumeParser {
     }
 
     /**
-     * Parse PDF file
+     * Parse resume from URL (for Cloudinary stored files)
+     * Converts to semantic HTML for structured parsing
+     */
+    async parseResumeFromUrl(fileUrl, mimeType) {
+        try {
+            const axios = require('axios');
+            const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+            const buffer = Buffer.from(response.data);
+
+            let rawText = '';
+            let htmlContent = '';
+
+            if (mimeType === 'application/pdf' || fileUrl.endsWith('.pdf')) {
+                // Parse PDF to text using pdf-parse
+                try {
+                    const pdf = require('pdf-parse');
+                    const pdfData = await pdf(buffer);
+                    rawText = pdfData.text || '';
+                    console.log(`[ResumeParser] PDF parsed, text length: ${rawText.length}`);
+                } catch (pdfError) {
+                    console.error('[ResumeParser] pdf-parse failed, using pdfjs-dist fallback:', pdfError.message);
+                    // Fallback to pdfjs-dist
+                    rawText = await this.parsePDFFromBuffer(buffer);
+                }
+                // Convert text to semantic HTML
+                htmlContent = this.textToSemanticHtml(rawText);
+
+            } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileUrl.endsWith('.docx')) {
+                // Parse DOCX to HTML (mammoth preserves structure)
+                try {
+                    const mammothResult = await mammoth.convertToHtml({ buffer: buffer });
+                    htmlContent = mammothResult.value;
+                    // Sanitize the HTML
+                    htmlContent = this.sanitizeHtml(htmlContent);
+                    // Also get raw text
+                    const textResult = await mammoth.extractRawText({ buffer: buffer });
+                    rawText = textResult.value;
+                    console.log(`[ResumeParser] DOCX parsed, text length: ${rawText.length}`);
+                } catch (docxError) {
+                    console.error('[ResumeParser] DOCX parsing failed:', docxError.message);
+                    throw docxError;
+                }
+            } else {
+                throw new Error('Unsupported file type: ' + mimeType);
+            }
+
+            // Extract structured data from raw text
+            const parsedData = await this.extractData(rawText);
+
+            return {
+                rawText,
+                htmlContent,
+                ...parsedData
+            };
+        } catch (error) {
+            console.error('[ResumeParser] Error parsing resume from URL:', error.message);
+            // Return empty structure on error
+            return {
+                rawText: '',
+                htmlContent: '',
+                skills: [],
+                skillCategories: {
+                    programmingLanguages: [],
+                    frameworks: [],
+                    databases: [],
+                    tools: [],
+                    softSkills: []
+                },
+                experience: [],
+                education: [],
+                projects: [],
+                certifications: [],
+                languages: []
+            };
+        }
+    }
+
+    /**
+     * Parse PDF from buffer using pdfjs-dist (fallback)
+     */
+    async parsePDFFromBuffer(buffer) {
+        try {
+            const data = new Uint8Array(buffer);
+            const loadingTask = pdfjsLib.getDocument({ data });
+            const pdfDocument = await loadingTask.promise;
+
+            let fullText = '';
+            for (let i = 1; i <= pdfDocument.numPages; i++) {
+                const page = await pdfDocument.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
+            }
+            return fullText;
+        } catch (error) {
+            console.error('[ResumeParser] pdfjs-dist fallback failed:', error.message);
+            return '';
+        }
+    }
+
+    /**
+     * Sanitize HTML - keep only semantic tags
+     * Removes: inline styles, fonts, layout positioning
+     * Keeps: h1-h4, p, ul, ol, li, table, tr, td, strong, em
+     */
+    sanitizeHtml(html) {
+        // Remove style attributes
+        html = html.replace(/\s*style="[^"]*"/gi, '');
+        // Remove class attributes
+        html = html.replace(/\s*class="[^"]*"/gi, '');
+        // Remove script tags
+        html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+        // Remove style tags
+        html = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+        // Remove empty paragraphs
+        html = html.replace(/<p>\s*<\/p>/gi, '');
+        // Normalize whitespace
+        html = html.replace(/\s+/g, ' ').trim();
+        return html;
+    }
+
+    /**
+     * Convert plain text to semantic HTML
+     * Preserves structure with proper heading hierarchy
+     */
+    textToSemanticHtml(text) {
+        if (!text) return '';
+
+        const lines = text.split('\n').filter(line => line.trim());
+        let html = '<article class="resume">';
+
+        const sectionHeaders = [
+            'summary', 'objective', 'profile',
+            'experience', 'work history', 'employment', 'professional experience',
+            'education', 'academic', 'qualification',
+            'skills', 'technical skills', 'core competencies',
+            'projects', 'personal projects', 'academic projects',
+            'certifications', 'certificates', 'licenses',
+            'languages', 'languages known',
+            'achievements', 'awards', 'honors',
+            'contact', 'personal details'
+        ];
+
+        let currentSection = 'header';
+        let inList = false;
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            const lowerLine = trimmedLine.toLowerCase();
+
+            // Check if this is a section header
+            const isHeader = sectionHeaders.some(header =>
+                lowerLine === header ||
+                (lowerLine.startsWith(header) && lowerLine.length < header.length + 10)
+            );
+
+            if (isHeader) {
+                if (inList) {
+                    html += '</ul>';
+                    inList = false;
+                }
+                html += `</section><section><h2>${trimmedLine}</h2>`;
+                currentSection = lowerLine;
+            } else if (trimmedLine.length > 0) {
+                // Check if it looks like a bullet point
+                const isBullet = /^[•\-\*▪◦●]/.test(trimmedLine) || /^\d+[\.\)]/.test(trimmedLine);
+
+                if (isBullet) {
+                    if (!inList) {
+                        html += '<ul>';
+                        inList = true;
+                    }
+                    const cleanText = trimmedLine.replace(/^[•\-\*▪◦●\d+\.\)]\s*/, '');
+                    html += `<li>${cleanText}</li>`;
+                } else {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    // Check if it looks like a job title or company name
+                    if (this.looksLikeJobTitle(trimmedLine)) {
+                        html += `<h3>${trimmedLine}</h3>`;
+                    } else {
+                        html += `<p>${trimmedLine}</p>`;
+                    }
+                }
+            }
+        }
+
+        if (inList) html += '</ul>';
+        return html;
+    }
+
+    /**
+     * Parse PDF file from file path
      */
     async parsePDF(filePath) {
         try {
@@ -306,7 +500,7 @@ class ResumeParser {
     extractDuration(text) {
         const durationMatch = text.match(/(\d{4})\s*-\s*(\d{4}|present)/i);
         if (durationMatch) {
-            return `${durationMatch[1]} - ${durationMatch[2]}`;
+            return `${durationMatch[1]} - ${durationMatch[2]} `;
         }
         return text.trim();
     }

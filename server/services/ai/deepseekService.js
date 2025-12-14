@@ -473,9 +473,13 @@ async function generateNextQuestion(resumeText, role, experienceLevel, history =
 
     const prompt = `You are an expert ${isTechnical ? 'technical' : 'HR'} interviewer conducting a live interview.
     
+    ⚠️ CRITICAL: You MUST ask questions about the SPECIFIC SKILLS listed below. Do NOT ask generic questions.
+    
     Candidate Role: ${role}
     Experience: ${experienceLevel}
-    Resume Snippet: ${resumeText.substring(0, 500)}...
+    
+    📋 CANDIDATE'S ACTUAL SKILLS FROM RESUME (USE THESE):
+    ${resumeText}
     
     Current Interview Progress: ${questionCount}/10
     
@@ -485,13 +489,15 @@ async function generateNextQuestion(resumeText, role, experienceLevel, history =
     ${conversationContext}
     
     Task: Generate the NEXT question (Question #${questionCount}).
-    Type: ${isTechnical ? 'TECHNICAL - Conceptual/Theory based' : 'HR/BEHAVIORAL - Soft Skills Assessment'}
+    Type: ${isTechnical ? 'TECHNICAL - About their ACTUAL skills listed above' : 'HR/BEHAVIORAL - Soft Skills Assessment'}
     
     ${isTechnical ? `
     TECHNICAL ROUND RULES:
-    - Ask CONCEPTUAL questions about technology (explain concepts, compare technologies, describe approaches)
+    - Ask about the SPECIFIC technologies/skills listed in the candidate's resume above
+    - If resume shows "Python, React, MongoDB" - ask about Python OR React OR MongoDB specifically
+    - Ask CONCEPTUAL questions about their actual skills (explain concepts, compare technologies, describe approaches)
     - DO NOT ask to write code or implement anything
-    - Questions should test understanding, not coding ability
+    - Questions should test understanding of THEIR LISTED SKILLS, not random topics
     ` : `
     HR ROUND RULES (YOU MUST FOLLOW THESE):
     - Ask about: teamwork, challenges, problem-solving, communication, leadership, conflict resolution
@@ -502,10 +508,10 @@ async function generateNextQuestion(resumeText, role, experienceLevel, history =
     
     Return ONLY this JSON:
     {
-        "question": "The actual question text",
+        "question": "The actual question text - MUST reference their specific skills if technical",
         "type": "${isTechnical ? 'technical' : 'hr'}",
         "difficulty": "medium",
-        "topic": "${isTechnical ? 'Technical concept' : 'Behavioral/Soft Skills'}"
+        "topic": "${isTechnical ? 'Specific skill from their resume' : 'Behavioral/Soft Skills'}"
     }`;
 
     try {

@@ -1,0 +1,121 @@
+# AI Interview Platform - Desktop Landing Page Integration Instructions
+
+## Overview
+This landing page is a production-ready, desktop-first React component package using framer-motion for animations. It's designed to be dropped into the existing codebase without modifying any backend, APIs, or existing features.
+
+## Files Included
+
+```
+client/src/pages/Landing/
+├── LandingPageNew.jsx           # Main landing page component
+├── LandingPageNew.module.css    # Main styles
+├── animations/
+│   └── animations.js            # Framer-motion timing constants & variants
+├── components/
+│   ├── Header.jsx              # Navigation header
+│   ├── Header.module.css
+│   ├── Hero.jsx                # Hero section with parallax
+│   ├── Hero.module.css
+│   ├── Features.jsx            # Feature grid
+│   ├── Features.module.css
+│   ├── Proof.jsx               # Social proof & testimonials
+│   ├── Proof.module.css
+│   ├── CTA.jsx                 # Call-to-action section
+│   ├── CTA.module.css
+│   ├── Footer.jsx              # Footer with links
+│   └── Footer.module.css
+└── assets/                      # Placeholder images (generate or replace)
+```
+
+## Integration Steps
+
+### 1. Install framer-motion (if not already installed)
+```bash
+cd client
+npm install framer-motion
+```
+
+### 2. Add Route to App.jsx
+Add the following import and route to your `client/src/App.jsx`:
+
+```jsx
+// Import at the top of App.jsx
+import LandingPageNew from './pages/Landing/LandingPageNew';
+
+// Add route inside your Routes component
+<Route path="/landing" element={<LandingPageNew />} />
+```
+
+### 3. Create Placeholder Assets
+Create the following placeholder images in `public/assets/landing/`:
+- hero-dashboard.webp (1600x900) - Dashboard screenshot
+- passport-snapshot.webp (1200x800) - Talent passport preview
+- code-ide.webp (1400x900) - Code IDE screenshot
+- work-sample.webp (800x600) - Work sample preview
+- recruiter-report.webp (1200x700) - Recruiter dashboard
+- avatar-1.webp, avatar-2.webp, avatar-3.webp (256x256) - Testimonial avatars
+
+Or use the generate_image tool to create these assets.
+
+### 4. Verify CTA Links
+All CTAs link to existing routes:
+- Sign up → `/signup`
+- Demo → `/demo`
+- Jobs → `/jobs`
+- Login → `/login`
+
+Ensure these routes exist in your App.jsx.
+
+## Animation Constants (animations/animations.js)
+
+The following timing constants are used throughout:
+
+| Constant | Value | Usage |
+|----------|-------|-------|
+| EASE_OUT | [0.22, 1, 0.36, 1] | Natural easing for reveals |
+| EASE_IN_OUT | [0.2, 0.8, 0.2, 1] | Symmetric transitions |
+| TIMINGS.short | 0.28s | Quick interactions |
+| TIMINGS.medium | 0.5s | Standard reveals |
+| TIMINGS.long | 0.66s | Section reveals |
+| TIMINGS.hero | 0.72s | Hero animations |
+| STAGGER.staggerChildren | 0.08s | List item delays |
+
+## QA Checklist
+
+- [ ] Landing renders at `/landing`
+- [ ] Hero animations match timing (0.72s reveal)
+- [ ] Feature grid uses staggered animations (0.08s delay)
+- [ ] Buttons have micro-interactions on hover/tap
+- [ ] Parallax effect works on hero image (scrollY [0,400] → translateY [0,-40])
+- [ ] No backend calls from landing page
+- [ ] Sign-up CTA navigates to `/signup`
+- [ ] Login CTA navigates to `/login`
+- [ ] Demo CTA navigates to `/demo`
+- [ ] All existing features (ATP, interviews, etc.) unchanged
+- [ ] Responsive at 992px, 768px, 420px breakpoints
+
+## Important Notes
+
+1. **DO NOT MODIFY** any existing backend code, APIs, or database schemas
+2. **DO NOT MODIFY** existing authentication flows or interview logic
+3. **DO NOT MODIFY** global CSS files (index.css, App.css)
+4. This is a purely presentational component with no backend dependencies
+5. All images should be placed in `public/assets/landing/`
+
+## Responsive Breakpoints
+
+| Breakpoint | Layout Changes |
+|------------|---------------|
+| > 992px | Full desktop layout |
+| 768-992px | Single column features, hidden floating cards |
+| 420-768px | Stacked CTAs, mobile navigation |
+| < 420px | Compact typography, single column stats |
+
+## Customization
+
+To customize colors, modify the CSS variables in individual module files. Key colors:
+- Primary: #0090FF (blue)
+- Accent: #4CC8FF (light blue)
+- Success: #10B981 (green)
+- Text: #0F172A (dark)
+- Muted: #94A3B8 (gray)

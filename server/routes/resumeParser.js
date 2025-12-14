@@ -52,28 +52,51 @@ router.post('/parse', upload.single('resume'), async (req, res) => {
         // Extract text based on file type
         try {
             if (req.file.mimetype === 'application/pdf') {
+                // Try pdf-parse first
                 if (pdfParse && typeof pdfParse === 'function') {
                     try {
                         const pdfData = await pdfParse(req.file.buffer);
-                        resumeText = pdfData.text;
+                        resumeText = pdfData.text || '';
+                        console.log('[ResumeParser] pdf-parse extracted text:', resumeText.length, 'chars');
                     } catch (pdfError) {
-                        console.error('PDF Parse failed:', pdfError);
-                        // Fallback: try to extract text from buffer
-                        resumeText = req.file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+                        console.error('[ResumeParser] pdf-parse failed:', pdfError.message);
+                        // Try pdfjs-dist as fallback
+                        resumeText = await extractPDFWithPdfjs(req.file.buffer);
                     }
                 } else {
-                    console.log('pdf-parse not available, using basic extraction');
-                    resumeText = req.file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ' ');
+                    console.log('[ResumeParser] pdf-parse not available, using pdfjs-dist');
+                    resumeText = await extractPDFWithPdfjs(req.file.buffer);
                 }
             } else if (req.file.mimetype === 'text/plain') {
                 resumeText = req.file.buffer.toString('utf-8');
-            } else {
-                // For DOC/DOCX, try to extract basic text
-                resumeText = req.file.buffer.toString('utf-8');
+            } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                // DOCX - use mammoth
+                try {
+                    const mammoth = require('mammoth');
+                    const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+                    resumeText = result.value || '';
+                    console.log('[ResumeParser] mammoth extracted text:', resumeText.length, 'chars');
+                } catch (docxError) {
+                    console.error('[ResumeParser] mammoth failed:', docxError.message);
+                    resumeText = '';
+                }
+            } else if (req.file.mimetype === 'application/msword') {
+                // Legacy DOC format - limited support
+                console.log('[ResumeParser] Legacy DOC format, limited extraction');
+                resumeText = '';
             }
         } catch (extractError) {
-            console.error('Text extraction error:', extractError);
+            console.error('[ResumeParser] Text extraction error:', extractError);
             resumeText = '';
+        }
+
+        // Clean extracted text
+        if (resumeText) {
+            resumeText = resumeText
+                .replace(/\x00/g, '') // Remove null bytes
+                .replace(/[^\x20-\x7E\n\r\t\u00A0-\u024F]/g, ' ') // Keep only printable chars
+                .replace(/\s+/g, ' ') // Normalize whitespace
+                .trim();
         }
 
         console.log('Extracted resume text length:', resumeText?.length || 0);
@@ -206,5 +229,32 @@ router.post('/parse-text', async (req, res) => {
         });
     }
 });
+
+/**
+ * Extract text from PDF using pdfjs-dist
+ * Fallback when pdf-parse fails
+ */
+async function extractPDFWithPdfjs(buffer) {
+    try {
+        const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+        const data = new Uint8Array(buffer);
+        const loadingTask = pdfjsLib.getDocument({ data });
+        const pdfDocument = await loadingTask.promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdfDocument.numPages; i++) {
+            const page = await pdfDocument.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+        }
+
+        console.log('[ResumeParser] pdfjs-dist extracted text:', fullText.length, 'chars');
+        return fullText;
+    } catch (error) {
+        console.error('[ResumeParser] pdfjs-dist extraction failed:', error.message);
+        return '';
+    }
+}
 
 module.exports = router;

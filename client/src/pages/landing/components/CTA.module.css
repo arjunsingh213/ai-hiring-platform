@@ -1,0 +1,162 @@
+/* CTA.module.css */
+.cta {
+    padding: 7rem 2rem;
+    background: linear-gradient(180deg, #F8FAFF 0%, #FFFFFF 100%);
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.content {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    border-radius: 32px;
+    padding: 5rem 4rem;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.text {
+    position: relative;
+    z-index: 2;
+}
+
+.title {
+    font-size: 2.75rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: white;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.25rem;
+}
+
+.subtitle {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: #94A3B8;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.primaryBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0F172A;
+    background: white;
+    border-radius: 100px;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+    transition: all 0.25s ease;
+}
+
+.primaryBtn:hover {
+    background: #F8FAFC;
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.secondaryBtn {
+    display: inline-flex;
+    align-items: center;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 100px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+
+.secondaryBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.note {
+    font-size: 0.875rem;
+    color: #64748B;
+    margin: 0;
+}
+
+/* Decorative Orbs */
+.decorativeOrb1,
+.decorativeOrb2 {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+}
+
+.decorativeOrb1 {
+    width: 300px;
+    height: 300px;
+    background: rgba(0, 144, 255, 0.15);
+    top: -100px;
+    right: -50px;
+}
+
+.decorativeOrb2 {
+    width: 200px;
+    height: 200px;
+    background: rgba(99, 102, 241, 0.15);
+    bottom: -50px;
+    left: -50px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cta {
+        padding: 5rem 1rem;
+    }
+
+    .content {
+        padding: 3rem 2rem;
+        border-radius: 24px;
+    }
+
+    .title {
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .buttons {
+        flex-direction: column;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .primaryBtn,
+    .secondaryBtn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .content {
+        padding: 2.5rem 1.5rem;
+    }
+
+    .title {
+        font-size: 1.75rem;
+    }
+}

@@ -70,11 +70,14 @@ class OpenRouterService {
 
     /**
      * Parse resume using Llama 8B
+     * Enhanced with detailed skill categorization
      */
-    async parseResume(resumeText) {
-        const prompt = `You are an expert resume parser. Extract structured information from the following resume text.
+    async parseResume(resumeText, isHtml = false) {
+        const contentType = isHtml ? 'HTML' : 'Text';
 
-Resume Text:
+        const prompt = `You are an expert resume parser. Extract structured information from the following resume ${contentType}.
+
+Resume ${contentType}:
 ${resumeText}
 
 Extract and return in JSON format:
@@ -87,13 +90,21 @@ Extract and return in JSON format:
     },
     "summary": "",
     "skills": [],
+    "skillCategories": {
+        "programmingLanguages": ["Python", "JavaScript", "Java", etc.],
+        "frameworks": ["React", "Django", "Spring Boot", etc.],
+        "databases": ["MongoDB", "PostgreSQL", "MySQL", etc.],
+        "tools": ["Git", "Docker", "AWS", "Jenkins", etc.],
+        "softSkills": ["Leadership", "Communication", "Problem Solving", etc.]
+    },
     "experience": [
         {
             "company": "",
             "position": "",
             "duration": "",
             "description": "",
-            "achievements": []
+            "achievements": [],
+            "technologiesUsed": []
         }
     ],
     "education": [
@@ -108,26 +119,48 @@ Extract and return in JSON format:
         {
             "name": "",
             "description": "",
-            "technologies": []
+            "technologies": [],
+            "role": ""
         }
     ],
     "certifications": [],
-    "languages": []
+    "languages": [],
+    "totalYearsExperience": 0
 }
 
-Return ONLY valid JSON, no additional text.`;
+IMPORTANT:
+1. Be specific with programming languages - list each one separately
+2. Categorize all skills into the appropriate skillCategories
+3. Extract technologies used from each experience and project
+4. Calculate total years of experience from the experience section
+5. Return ONLY valid JSON, no additional text.`;
 
         try {
             const response = await this.callModel(
                 this.models.resumeParsing,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.llama,
-                { temperature: 0.3 }
+                { temperature: 0.3, maxTokens: 2500 }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
+                const parsed = JSON.parse(jsonMatch[0]);
+
+                // Merge all skills into a flat array if needed
+                if (parsed.skillCategories) {
+                    const allSkills = new Set([
+                        ...(parsed.skills || []),
+                        ...(parsed.skillCategories.programmingLanguages || []),
+                        ...(parsed.skillCategories.frameworks || []),
+                        ...(parsed.skillCategories.databases || []),
+                        ...(parsed.skillCategories.tools || []),
+                        ...(parsed.skillCategories.softSkills || [])
+                    ]);
+                    parsed.skills = [...allSkills];
+                }
+
+                return parsed;
             }
             throw new Error('Failed to parse resume JSON');
         } catch (error) {

@@ -480,6 +480,60 @@ a:hover {
   transform: none !important;
 }
 
+.btn-danger {
+  background: var(--gradient-danger);
+  color: white;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  filter: brightness(1.05);
+}
+
+.btn-danger:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  color: white;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+}
+
+.btn-warning:hover {
+  background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+  filter: brightness(1.05);
+}
+
+.btn-warning:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-success {
+  background: var(--gradient-success);
+  color: white;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  filter: brightness(1.05);
+}
+
+.btn-success:active {
+  transform: translateY(0) scale(0.98);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    FORM INPUTS - Soft & Rounded
    ═══════════════════════════════════════════════════════════════ */

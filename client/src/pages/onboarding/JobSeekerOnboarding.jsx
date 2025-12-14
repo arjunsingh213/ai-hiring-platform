@@ -353,10 +353,27 @@ const JobSeekerOnboarding = () => {
                     const resumeFormData = new FormData();
                     resumeFormData.append('resume', resumeFile);
                     resumeFormData.append('userId', userId);
-                    await api.post('/resumes/upload', resumeFormData, {
+                    const resumeResponse = await api.post('/resumes/upload', resumeFormData, {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     console.log('Resume uploaded successfully');
+
+                    // IMPORTANT: Store parsed resume data for interview use
+                    if (resumeResponse.success && resumeResponse.data?.parsedData) {
+                        const uploadedParsedData = resumeResponse.data.parsedData;
+                        console.log('Parsed resume skills count:', uploadedParsedData.skills?.length || 0);
+                        console.log('Parsed resume skills:', uploadedParsedData.skills);
+
+                        // Store in state for interview component
+                        setParsedResume({
+                            skills: uploadedParsedData.skills || [],
+                            experience: uploadedParsedData.experience || [],
+                            education: uploadedParsedData.education || [],
+                            projects: uploadedParsedData.projects || [],
+                            skillCategories: uploadedParsedData.skillCategories || {},
+                            summary: `${uploadedParsedData.skills?.join(', ') || 'No skills extracted'}`
+                        });
+                    }
                 } catch (resumeError) {
                     console.error('Resume upload failed (continuing anyway):', resumeError);
                     // Don't fail the entire onboarding if resume upload fails
@@ -761,8 +778,10 @@ const JobSeekerOnboarding = () => {
                 variant="info"
                 onConfirm={async () => {
                     setShowInterviewPrompt(false);
-                    // Parse resume if available
-                    if (resumeFile) {
+
+                    // Only parse resume if not already parsed from upload
+                    if (!parsedResume && resumeFile) {
+                        console.log('No parsed resume from upload, parsing now...');
                         setParsingResume(true);
                         try {
                             const formData = new FormData();
@@ -772,13 +791,17 @@ const JobSeekerOnboarding = () => {
                             });
                             if (response.success && response.data.parsedResume) {
                                 setParsedResume(response.data.parsedResume);
+                                console.log('Resume parsed with skills:', response.data.parsedResume.skills);
                             }
                         } catch (error) {
                             console.error('Resume parsing failed:', error);
                             // Continue with empty resume data
                         }
                         setParsingResume(false);
+                    } else if (parsedResume) {
+                        console.log('Using pre-parsed resume with skills:', parsedResume.skills);
                     }
+
                     setShowInterview(true);
                 }}
                 onCancel={() => {

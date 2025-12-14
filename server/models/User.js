@@ -481,8 +481,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Indexes for performance
-userSchema.index({ email: 1 });
+// Indexes for performance (email index already created by unique: true in schema)
 userSchema.index({ role: 1 });
 userSchema.index({ 'profile.name': 'text' });
 

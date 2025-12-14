@@ -1,0 +1,54 @@
+/* LandingPageNew.module.css */
+.landing {
+    min-height: 100vh;
+    background: #FFFFFF;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+}
+
+/* Reset for landing page */
+.landing * {
+    box-sizing: border-box;
+}
+
+.landing h1,
+.landing h2,
+.landing h3,
+.landing h4,
+.landing h5,
+.landing h6 {
+    margin: 0;
+    font-family: inherit;
+}
+
+.landing p {
+    margin: 0;
+}
+
+.landing a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.landing button {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+}
+
+.landing ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Smooth scroll behavior */
+.landing {
+    scroll-behavior: smooth;
+}
+
+/* Ensure proper z-stacking */
+.landing main {
+    position: relative;
+    z-index: 1;
+}

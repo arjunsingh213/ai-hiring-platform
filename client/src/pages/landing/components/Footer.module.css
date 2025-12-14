@@ -1,0 +1,155 @@
+/* Footer.module.css */
+.footer {
+    padding: 5rem 2rem 2rem;
+    background: #0F172A;
+    color: white;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 4rem;
+}
+
+.brand {
+    max-width: 280px;
+}
+
+.logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    text-decoration: none;
+    margin-bottom: 1rem;
+}
+
+.logoIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logoText {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: white;
+}
+
+.description {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: #94A3B8;
+    margin: 0 0 1.5rem;
+}
+
+.social {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.socialLink {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94A3B8;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.socialLink:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.linksColumn {
+    min-width: 100px;
+}
+
+.columnTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 1rem;
+    letter-spacing: 0.02em;
+}
+
+.linksList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.link {
+    font-size: 0.875rem;
+    color: #94A3B8;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.link:hover {
+    color: white;
+}
+
+.bottom {
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+}
+
+.copyright {
+    font-size: 0.8125rem;
+    color: #64748B;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .grid {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .brand {
+        grid-column: 1 / -1;
+        max-width: none;
+        text-align: center;
+    }
+
+    .social {
+        justify-content: center;
+    }
+
+    .linksColumn {
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .footer {
+        padding: 4rem 1rem 2rem;
+    }
+
+    .grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 1.5rem;
+    }
+}

@@ -869,24 +869,28 @@ router.get('/status/:userId', async (req, res) => {
         const platformInterview = user.platformInterview || {};
         let status = platformInterview.status || 'pending';
 
-        // BACKWARD COMPATIBILITY: If user completed onboarding before this feature,
-        // treat them as having passed the platform interview
+        // BACKWARD COMPATIBILITY: If user completed onboarding before platformInterview feature,
+        // only treat them as passed if they ACTUALLY have a passing interview score
+        // DO NOT auto-pass users who just completed onboarding but skipped the interview
         if (status === 'pending' || !status) {
-            if (user.isOnboardingComplete ||
-                user.interviewStatus?.completed ||
-                user.jobSeekerProfile?.interviewScore >= 60) {
+            const actualInterviewScore = user.jobSeekerProfile?.interviewScore;
+            const hasActuallyCompletedInterview = user.interviewStatus?.completed === true;
+
+            // Only auto-pass if they have an actual passing score from a real interview
+            if (hasActuallyCompletedInterview && actualInterviewScore >= 60) {
                 status = 'passed';
 
                 // Auto-update their platformInterview status
                 await User.findByIdAndUpdate(userId, {
                     $set: {
                         'platformInterview.status': 'passed',
-                        'platformInterview.score': user.jobSeekerProfile?.interviewScore || 70,
+                        'platformInterview.score': actualInterviewScore,
                         'platformInterview.completedAt': new Date()
                     }
                 });
-                console.log(`[BACKWARD COMPAT] User ${userId} auto-marked as passed platform interview`);
+                console.log(`[BACKWARD COMPAT] User ${userId} auto-marked as passed with score ${actualInterviewScore}`);
             }
+            // If user only completed onboarding but didn't pass interview, keep status as 'pending'
         }
 
         const canApplyForJobs = status === 'passed';

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import LandingPage from './pages/landing/LandingPage';
+import LandingPageNew from './pages/Landing/LandingPageNew';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -23,6 +24,7 @@ function App() {
         <Routes>
           {/* Landing Page */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/landing-new" element={<LandingPageNew />} />
 
           {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />
