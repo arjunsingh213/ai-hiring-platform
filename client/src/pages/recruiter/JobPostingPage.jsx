@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
+import InterviewPipelineConfig from '../../components/InterviewPipelineConfig';
 import './JobPostingPage.css';
 
 const JobPostingPage = () => {
@@ -29,6 +30,25 @@ const JobPostingPage = () => {
     });
     const [loading, setLoading] = useState(false);
 
+    // Two-step flow: Show pipeline config modal after job creation
+    const [showPipelineModal, setShowPipelineModal] = useState(false);
+    const [createdJobId, setCreatedJobId] = useState(null);
+    const [savingPipeline, setSavingPipeline] = useState(false);
+
+    // Interview Pipeline Configuration
+    const [interviewPipeline, setInterviewPipeline] = useState({
+        pipelineType: 'standard_4round',
+        rounds: [],
+        settings: {
+            requirePlatformInterview: false,
+            autoRejectBelowScore: null,
+            autoAdvanceAboveScore: 70,
+            allowReschedule: true,
+            maxAttempts: 1,
+            expiryDays: 7
+        }
+    });
+
     // Get user from localStorage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user._id || localStorage.getItem('userId');
@@ -50,6 +70,11 @@ const JobPostingPage = () => {
                 salaryMax: existingJob.jobDetails?.salary?.max?.toString() || '',
                 currency: existingJob.jobDetails?.salary?.currency || 'USD'
             });
+
+            // Pre-fill interview pipeline if exists
+            if (existingJob.interviewPipeline) {
+                setInterviewPipeline(existingJob.interviewPipeline);
+            }
         }
     }, [editMode, existingJob]);
 
@@ -61,6 +86,7 @@ const JobPostingPage = () => {
         }));
     };
 
+    // Step 1: Submit job details (without pipeline)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -91,25 +117,58 @@ const JobPostingPage = () => {
             };
 
             if (editMode && existingJob) {
-                // UPDATE existing job
+                // UPDATE existing job - include pipeline since we're editing
+                jobData.interviewPipeline = interviewPipeline;
                 await api.put(`/jobs/${existingJob._id}`, jobData);
                 toast.success('Job updated successfully! ✅');
+                setTimeout(() => navigate('/recruiter/my-jobs'), 1500);
             } else {
-                // CREATE new job
-                await api.post('/jobs', jobData);
-                toast.success('Job posted successfully! 🎉');
-            }
+                // CREATE new job - then show pipeline modal
+                const response = await api.post('/jobs', jobData);
+                const createdJob = response.data || response.job;
 
-            // Navigate after a short delay so user can see the toast
-            setTimeout(() => {
-                navigate('/recruiter/my-jobs');
-            }, 1500);
+                if (createdJob && createdJob._id) {
+                    setCreatedJobId(createdJob._id);
+                    toast.success('Job created! Now configure the interview process.');
+                    setShowPipelineModal(true);
+                } else {
+                    toast.success('Job posted successfully! 🎉');
+                    setTimeout(() => navigate('/recruiter/my-jobs'), 1500);
+                }
+            }
         } catch (error) {
             console.error('Error saving job:', error);
             toast.error('Failed to post job. Please try again.');
         } finally {
             setLoading(false);
         }
+    };
+
+    // Step 2: Save pipeline configuration
+    const handleSavePipeline = async () => {
+        if (!createdJobId) return;
+
+        setSavingPipeline(true);
+        try {
+            await api.put(`/jobs/${createdJobId}`, {
+                interviewPipeline: interviewPipeline
+            });
+            toast.success('Interview pipeline configured! 🎉');
+            setShowPipelineModal(false);
+            setTimeout(() => navigate('/recruiter/my-jobs'), 1000);
+        } catch (error) {
+            console.error('Error saving pipeline:', error);
+            toast.error('Failed to save pipeline. Please try again.');
+        } finally {
+            setSavingPipeline(false);
+        }
+    };
+
+    // Skip pipeline configuration
+    const handleSkipPipeline = () => {
+        toast.info('You can configure the interview pipeline later from My Jobs.');
+        setShowPipelineModal(false);
+        navigate('/recruiter/my-jobs');
     };
 
     return (
@@ -300,20 +359,90 @@ const JobPostingPage = () => {
                     </div>
                 </section>
 
+                {/* Show inline pipeline config only in edit mode */}
+                {editMode && existingJob && (
+                    <section className="form-section">
+                        <InterviewPipelineConfig
+                            value={interviewPipeline}
+                            onChange={setInterviewPipeline}
+                            jobSkills={formData.skills.split(',').map(s => s.trim()).filter(s => s)}
+                        />
+                    </section>
+                )}
+
                 <div className="form-actions">
                     <button type="button" className="btn btn-secondary" onClick={() => navigate('/recruiter/my-jobs')}>
                         Cancel
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading 
-                            ? (editMode ? 'Updating...' : 'Posting...') 
-                            : (editMode ? '✅ Update Job' : '🚀 Post Job')
+                        {loading
+                            ? (editMode ? 'Updating...' : 'Creating Job...')
+                            : (editMode ? 'Update Job' : 'Next: Configure Interview')
                         }
+                        {!loading && !editMode && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '6px' }}>
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        )}
                     </button>
                 </div>
             </form>
+
+            {/* Pipeline Configuration Modal - Step 2 */}
+            {showPipelineModal && (
+                <div className="pipeline-modal-overlay">
+                    <div className="pipeline-modal">
+                        <div className="pipeline-modal-header">
+                            <h2>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <circle cx="12" cy="12" r="6" />
+                                    <circle cx="12" cy="12" r="2" />
+                                </svg>
+                                Configure Interview Pipeline
+                            </h2>
+                            <p>Set up how candidates will be evaluated for this position</p>
+                        </div>
+
+                        <div className="pipeline-modal-body">
+                            <InterviewPipelineConfig
+                                value={interviewPipeline}
+                                onChange={setInterviewPipeline}
+                                jobSkills={formData.skills.split(',').map(s => s.trim()).filter(s => s)}
+                            />
+                        </div>
+
+                        <div className="pipeline-modal-footer">
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                onClick={handleSkipPipeline}
+                            >
+                                Skip for Now
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleSavePipeline}
+                                disabled={savingPipeline}
+                            >
+                                {savingPipeline ? 'Saving...' : (
+                                    <>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                        Save & Publish Job
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default JobPostingPage;
+

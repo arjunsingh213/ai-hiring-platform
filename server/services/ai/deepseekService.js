@@ -1,29 +1,33 @@
 /**
  * DeepSeek AI Service
- * Uses DeepSeek-R1 model for resume parsing, skill matching, and code generation
+ * Uses OpenRouter for AI model access - Llama 3.1 as primary (free tier)
  */
 
 const axios = require('axios');
 
 // DeepSeek API configuration
 // DeepSeek API configuration (via OpenRouter for Free Tier)
-// AI Model Configurations - Using exact model names
+// AI Model Configurations - Llama 3.1 is PRIMARY (free tier reliable)
 const MODELS = {
+    // Primary model - Llama 3.1 8B (free and reliable)
+    LLAMA: {
+        name: 'meta-llama/llama-3.1-8b-instruct',  // Exact model name as specified
+        key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY || process.env.OPENROUTER_CHIMERA_KEY
+    },
+    // Fallback 1 - Mistral 7B (also free)
+    MISTRAL: {
+        name: 'mistralai/mistral-7b-instruct:free',
+        key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_MISTRAL_KEY
+    },
+    // Fallback 2 - Gemma (free)
+    GEMMA: {
+        name: 'google/gemma-2-9b-it:free',
+        key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_GEMMA_KEY
+    },
+    // Premium model - DeepSeek (requires credits)
     CHIMERA: {
         name: 'deepseek/deepseek-r1',
         key: process.env.OPENROUTER_CHIMERA_KEY || process.env.DEEPSEEK_API_KEY
-    },
-    LLAMA: {
-        name: 'meta-llama/llama-3.1-8b-instruct',
-        key: process.env.OPENROUTER_LLAMA_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_CHIMERA_KEY
-    },
-    MISTRAL: {
-        name: 'mistralai/mistral-7b-instruct',
-        key: process.env.OPENROUTER_MISTRAL_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_CHIMERA_KEY
-    },
-    GEMMA: {
-        name: 'google/gemma-2-9b-it',
-        key: process.env.OPENROUTER_GEMMA_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY
     }
 };
 
@@ -34,8 +38,10 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  */
 async function callOpenRouter(messages, modelConfig, options = {}) {
     if (!modelConfig.key) {
-        throw new Error(`Missing API Key for model: ${modelConfig.name}`);
+        throw new Error(`Missing API Key for model: ${modelConfig.name}. Please set OPENROUTER_API_KEY in your .env file.`);
     }
+
+    console.log(`[AI] Calling model: ${modelConfig.name}`);
 
     try {
         const response = await axios.post(OPENROUTER_URL, {
@@ -50,13 +56,14 @@ async function callOpenRouter(messages, modelConfig, options = {}) {
                 'HTTP-Referer': 'http://localhost:5173',
                 'X-Title': 'AI Hiring Platform'
             },
-            timeout: 120000
+            timeout: 60000  // 60 second timeout
         });
 
         return response.data.choices[0].message.content;
     } catch (error) {
         const errorMsg = error.response?.data?.error?.message || error.message;
         const status = error.response?.status;
+        console.error(`[AI] Model ${modelConfig.name} failed (${status}): ${errorMsg}`);
         const enhancedError = new Error(`AI Call Failed (${modelConfig.name}): ${errorMsg}`);
         enhancedError.status = status;
         throw enhancedError;
@@ -96,10 +103,11 @@ async function callWithFallback(messages, models, options = {}) {
 
 
 /**
- * Legacy wrapper with 2-tier fallback: Chimera -> Llama
+ * Main AI call function - Uses Llama 3.1 as primary (free tier)
  */
 async function callDeepSeek(messages, options = {}) {
-    return callWithFallback(messages, [MODELS.CHIMERA, MODELS.LLAMA, MODELS.MISTRAL], options);
+    // Use free-tier models in order: Llama -> Mistral -> Gemma
+    return callWithFallback(messages, [MODELS.LLAMA, MODELS.MISTRAL, MODELS.GEMMA], options);
 }
 
 /**

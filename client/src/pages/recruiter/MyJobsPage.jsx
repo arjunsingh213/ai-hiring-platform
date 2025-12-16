@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
@@ -11,19 +11,12 @@ const MyJobsPage = () => {
     const [selectedJob, setSelectedJob] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Delete with undo state
-    const [deleteToast, setDeleteToast] = useState(null);
-    const deleteTimerRef = useRef(null);
-    const countdownRef = useRef(null);
+    // Delete confirmation modal state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         fetchMyJobs();
-
-        // Cleanup timers on unmount
-        return () => {
-            if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-            if (countdownRef.current) clearInterval(countdownRef.current);
-        };
     }, []);
 
     const fetchMyJobs = async () => {
@@ -84,64 +77,32 @@ const MyJobsPage = () => {
         });
     };
 
-    // Delete Job with undo countdown
-    const handleDeleteJob = () => {
+    // Open delete confirmation modal
+    const handleDeleteClick = () => {
         if (!selectedJob) return;
-
-        const jobToDelete = selectedJob;
-        const UNDO_SECONDS = 10;
-
-        // Remove from local state immediately
-        setJobs(prev => prev.filter(j => j._id !== jobToDelete._id));
-        setSelectedJob(jobs.find(j => j._id !== jobToDelete._id) || null);
-
-        // Start countdown
-        let countdown = UNDO_SECONDS;
-        setDeleteToast({
-            job: jobToDelete,
-            countdown,
-            message: `"${jobToDelete.title}" will be deleted in ${countdown} seconds`
-        });
-
-        // Update countdown every second
-        countdownRef.current = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                setDeleteToast(prev => prev ? {
-                    ...prev,
-                    countdown,
-                    message: `"${jobToDelete.title}" will be deleted in ${countdown} seconds`
-                } : null);
-            }
-        }, 1000);
-
-        // Actually delete after countdown
-        deleteTimerRef.current = setTimeout(async () => {
-            clearInterval(countdownRef.current);
-            try {
-                await api.delete(`/jobs/${jobToDelete._id}`);
-                setDeleteToast(null);
-            } catch (error) {
-                console.error('Error deleting job:', error);
-                // Restore job if delete failed
-                setJobs(prev => [...prev, jobToDelete]);
-                toast.error('Failed to delete job: ' + (error.response?.data?.error || error.message));
-            }
-        }, UNDO_SECONDS * 1000);
+        setShowDeleteModal(true);
     };
 
-    // Undo delete
-    const handleUndoDelete = () => {
-        if (!deleteToast) return;
+    // Confirm delete
+    const confirmDelete = async () => {
+        if (!selectedJob) return;
 
-        // Clear timers
-        if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-        if (countdownRef.current) clearInterval(countdownRef.current);
+        setDeleting(true);
+        try {
+            await api.delete(`/jobs/${selectedJob._id}`);
+            toast.success(`"${selectedJob.title}" deleted successfully`);
 
-        // Restore job
-        setJobs(prev => [...prev, deleteToast.job]);
-        setSelectedJob(deleteToast.job);
-        setDeleteToast(null);
+            // Remove from local state and select next job
+            const remainingJobs = jobs.filter(j => j._id !== selectedJob._id);
+            setJobs(remainingJobs);
+            setSelectedJob(remainingJobs[0] || null);
+            setShowDeleteModal(false);
+        } catch (error) {
+            console.error('Error deleting job:', error);
+            toast.error('Failed to delete job: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setDeleting(false);
+        }
     };
 
     if (loading) {
@@ -156,51 +117,84 @@ const MyJobsPage = () => {
 
     return (
         <div className="job-listings">
-            {/* Delete Undo Toast */}
-            {deleteToast && (
-                <div className="delete-toast" style={{
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="modal-overlay" style={{
                     position: 'fixed',
-                    bottom: '24px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--danger)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: 'var(--spacing-md) var(--spacing-xl)',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    backdropFilter: 'blur(4px)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 'var(--spacing-lg)',
-                    boxShadow: 'var(--shadow-xl)',
-                    zIndex: 1000
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                        <span style={{ fontSize: '1.5rem' }}>🗑️</span>
-                        <div>
-                            <p style={{ margin: 0, fontWeight: 500 }}>{deleteToast.message}</p>
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }} onClick={() => !deleting && setShowDeleteModal(false)}>
+                    <div className="delete-modal card" style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: 'var(--radius-xl)',
+                        padding: 'var(--spacing-xl)',
+                        maxWidth: '420px',
+                        width: '90%',
+                        boxShadow: 'var(--shadow-xl)',
+                        border: '1px solid var(--border-color)',
+                        animation: 'fadeInUp 0.2s ease-out'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-lg)' }}>
                             <div style={{
-                                width: '100%',
-                                height: '4px',
-                                background: 'var(--bg-tertiary)',
-                                borderRadius: '2px',
-                                marginTop: 'var(--spacing-xs)',
-                                overflow: 'hidden'
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1))',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto var(--spacing-md)',
+                                fontSize: '28px'
                             }}>
-                                <div style={{
-                                    width: `${(deleteToast.countdown / 10) * 100}%`,
-                                    height: '100%',
-                                    background: 'var(--danger)',
-                                    transition: 'width 1s linear'
-                                }}></div>
+                                🗑️
                             </div>
+                            <h2 style={{ margin: '0 0 var(--spacing-sm)', color: 'var(--text-primary)' }}>
+                                Delete Job?
+                            </h2>
+                            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                                Are you sure you want to delete <strong>"{selectedJob?.title}"</strong>?
+                            </p>
+                        </div>
+
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: 'var(--spacing-md)',
+                            marginBottom: 'var(--spacing-lg)'
+                        }}>
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--danger)' }}>
+                                ⚠️ This will permanently remove the job from all listings. This action cannot be undone.
+                            </p>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                            <button
+                                className="btn btn-secondary"
+                                style={{ flex: 1 }}
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                style={{ flex: 1 }}
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? 'Deleting...' : 'Delete Job'}
+                            </button>
                         </div>
                     </div>
-                    <button
-                        className="btn btn-warning"
-                        onClick={handleUndoDelete}
-                        style={{ whiteSpace: 'nowrap' }}
-                    >
-                        ↩ Undo
-                    </button>
                 </div>
             )}
 
@@ -289,7 +283,7 @@ const MyJobsPage = () => {
                                 </button>
                                 <button
                                     className="btn btn-danger"
-                                    onClick={handleDeleteJob}
+                                    onClick={handleDeleteClick}
                                 >
                                     🗑️ Delete
                                 </button>

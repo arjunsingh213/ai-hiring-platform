@@ -35,6 +35,55 @@ const interviewSchema = new mongoose.Schema({
         interviewFocus: [String]
     },
 
+    // NEW: Pipeline tracking for recruiter-configured interview flow
+    pipelineConfig: {
+        pipelineType: String, // 'quick_2round', 'standard_4round', 'dsa_only', 'assessment_only', 'custom'
+        rounds: [{
+            roundNumber: Number,
+            roundType: String, // 'technical', 'hr', 'dsa', 'coding', 'assessment', 'screening', 'behavioral'
+            title: String,
+            duration: Number, // minutes
+            isAIEnabled: Boolean,
+            codingConfig: {
+                difficulty: String,
+                problemCount: Number,
+                topics: [String],
+                languages: [String]
+            },
+            questionConfig: {
+                questionCount: Number,
+                focusSkills: [String]
+            },
+            assessmentConfig: {
+                assessmentTypes: [String], // 'technical', 'communication', 'aptitude'
+                questionCount: Number,
+                passingScore: Number
+            },
+            scoring: {
+                passingScore: Number,
+                weight: Number
+            }
+        }],
+        settings: {
+            requirePlatformInterview: Boolean,
+            autoRejectBelowScore: Number,
+            autoAdvanceAboveScore: Number
+        }
+    },
+    currentRoundIndex: {
+        type: Number,
+        default: 0
+    },
+    roundResults: [{
+        roundIndex: Number,
+        roundType: String,
+        score: Number,
+        passed: Boolean,
+        details: mongoose.Schema.Types.Mixed, // Round-specific data (MCQ answers, code submission, etc)
+        completedAt: Date
+    }],
+
+
     // Questions and answers
     questions: [{
         question: String,

@@ -82,6 +82,90 @@ const jobSchema = new mongoose.Schema({
         requirePortfolio: Boolean
     },
 
+    // Interview Pipeline Configuration - Recruiter customizable
+    interviewPipeline: {
+        // Preset type for quick selection
+        pipelineType: {
+            type: String,
+            enum: ['quick_2round', 'standard_4round', 'dsa_only', 'assessment_only', 'custom'],
+            default: 'standard_4round'
+        },
+
+        // Individual rounds configuration
+        rounds: [{
+            roundNumber: { type: Number, required: true },
+            roundType: {
+                type: String,
+                enum: ['screening', 'technical', 'coding', 'dsa', 'hr', 'assessment', 'system_design', 'behavioral', 'portfolio_review', 'group_discussion'],
+                required: true
+            },
+            title: { type: String, required: true },
+            description: String,
+            duration: { type: Number, default: 30 }, // Minutes
+            isAIEnabled: { type: Boolean, default: true },
+            isRequired: { type: Boolean, default: true },
+
+            // Coding/DSA specific config
+            codingConfig: {
+                difficulty: {
+                    type: String,
+                    enum: ['easy', 'medium', 'hard', 'mixed'],
+                    default: 'medium'
+                },
+                languages: [String],
+                problemCount: { type: Number, default: 2 },
+                topics: [String], // e.g., ['arrays', 'trees', 'dynamic_programming', 'graphs']
+                timePerProblem: { type: Number, default: 20 }, // Minutes
+                allowCodeExecution: { type: Boolean, default: true }
+            },
+
+            // Interview question config
+            questionConfig: {
+                questionCount: { type: Number, default: 5 },
+                categories: [String], // ['conceptual', 'practical', 'situational']
+                focusSkills: [String], // Skills to focus questions on
+                difficultyDistribution: {
+                    easy: { type: Number, default: 20 },
+                    medium: { type: Number, default: 60 },
+                    hard: { type: Number, default: 20 }
+                }
+            },
+
+            // Assessment config (for MCQ/written tests)
+            assessmentConfig: {
+                questionCount: { type: Number, default: 20 },
+                duration: { type: Number, default: 30 },
+                passingScore: { type: Number, default: 60 },
+                topics: [String],
+                randomize: { type: Boolean, default: true }
+            },
+
+            // Scoring thresholds for this round
+            scoring: {
+                passingScore: { type: Number, default: 60 },
+                weightage: { type: Number, default: 100 } // % weightage in overall score
+            }
+        }],
+
+        // Global pipeline settings
+        settings: {
+            requirePlatformInterview: { type: Boolean, default: false },
+            autoRejectBelowScore: Number,    // Auto-reject if overall score < this
+            autoAdvanceAboveScore: Number,   // Auto-advance to next round if score > this
+            allowReschedule: { type: Boolean, default: true },
+            maxAttempts: { type: Number, default: 1 },
+            expiryDays: { type: Number, default: 7 }, // Days to complete interview
+            notifyOnCompletion: { type: Boolean, default: true },
+            sendFeedbackToCandidate: { type: Boolean, default: false }
+        },
+
+        // Domain-specific presets (auto-applied based on job domain)
+        domainPreset: {
+            type: String,
+            enum: ['engineering', 'data_science', 'design', 'product', 'marketing', 'sales', 'hr', 'finance', 'general']
+        }
+    },
+
     // Applicants
     applicants: [{
         userId: {

@@ -20,12 +20,24 @@ const PROGRAMMING_LANGUAGES = [
     { name: 'C#', aliases: ['c#', 'csharp', '.net', 'dotnet'], judge0Id: 51 }
 ];
 
+// Round type display names and icons
+const ROUND_TYPE_INFO = {
+    technical: { icon: '💻', label: 'Technical Interview' },
+    hr: { icon: '👔', label: 'HR Interview' },
+    behavioral: { icon: '🤝', label: 'Behavioral Interview' },
+    dsa: { icon: '#️⃣', label: 'DSA Challenge' },
+    coding: { icon: '👨‍💻', label: 'Coding Challenge' },
+    assessment: { icon: '📝', label: 'Assessment' },
+    screening: { icon: '📋', label: 'Screening' }
+};
+
 const AIInterview = () => {
     const { interviewId } = useParams();
     const navigate = useNavigate();
     const toast = useToast();
     const videoRef = useRef(null);
 
+    // Core interview state
     const [interview, setInterview] = useState(null);
     const [job, setJob] = useState(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -35,8 +47,18 @@ const AIInterview = () => {
     const [submitting, setSubmitting] = useState(false);
     const [completed, setCompleted] = useState(false);
     const [finalResults, setFinalResults] = useState(null);
-    const [currentRound, setCurrentRound] = useState('technical');
     const [allAnswers, setAllAnswers] = useState([]);
+
+    // Pipeline-aware state
+    const [pipelineConfig, setPipelineConfig] = useState(null);
+    const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
+    const [currentRound, setCurrentRound] = useState(null);
+
+    // Round-specific data from backend
+    const [dsaProblem, setDsaProblem] = useState(null);
+    const [assessmentQuestions, setAssessmentQuestions] = useState([]);
+    const [assessmentAnswers, setAssessmentAnswers] = useState({});
+    const [currentAssessmentIndex, setCurrentAssessmentIndex] = useState(0);
 
     // Speech-to-Text states
     const [isListening, setIsListening] = useState(false);
@@ -54,6 +76,8 @@ const AIInterview = () => {
     const [codingProblem, setCodingProblem] = useState(null);
     const [codingResults, setCodingResults] = useState(null);
     const [loadingProblem, setLoadingProblem] = useState(false);
+
+
 
     // Init Speech Recognition
     useEffect(() => {
@@ -202,7 +226,7 @@ const AIInterview = () => {
         try {
             const response = await api.get(`/interviews/${interviewId}`);
             const data = response.data || response;
-            console.log('Loaded interview:', data);
+            console.log('[PIPELINE] Loaded interview:', data);
 
             // Check if completed
             if (data.status === 'completed') {
@@ -218,15 +242,45 @@ const AIInterview = () => {
             setInterview(data);
             if (data.jobId) setJob(data.jobId);
 
-            // Set question index with bounds check
+            // Pipeline-aware setup
+            if (data.pipelineConfig) {
+                console.log('[PIPELINE] Config found:', data.pipelineConfig);
+                setPipelineConfig(data.pipelineConfig);
+                setCurrentRoundIndex(data.currentRoundIndex || 0);
+
+                // Get current round info
+                const roundIdx = data.currentRoundIndex || 0;
+                const round = data.pipelineConfig.rounds?.[roundIdx];
+                if (round) {
+                    setCurrentRound(round);
+                    console.log('[PIPELINE] Current round:', round.roundType, round.title);
+
+                    // Get jobId from the loaded data (not from state which might be stale)
+                    const currentJobId = data.jobId?._id || data.jobId;
+
+                    // If DSA/coding round, we need to fetch or have the problem
+                    if ((round.roundType === 'dsa' || round.roundType === 'coding') && !dsaProblem) {
+                        // Try to get DSA problem from job-interview start response
+                        // For now, trigger a re-fetch via job-interview/start
+                        await startRoundContent(round, currentJobId);
+                    }
+
+                    // If assessment round, fetch questions
+                    if (round.roundType === 'assessment' && assessmentQuestions.length === 0) {
+                        await startRoundContent(round, currentJobId);
+                    }
+                }
+            }
+
+            // Set question index with bounds check for Q&A rounds
             const questionsLen = data.questions?.length || 0;
             const responsesLen = data.responses?.length || 0;
 
             if (responsesLen > 0 && responsesLen < questionsLen) {
                 setCurrentQuestionIndex(responsesLen);
                 setAllAnswers(data.responses);
-            } else if (responsesLen >= questionsLen && questionsLen > 0) {
-                // All questions answered - show completion
+            } else if (responsesLen >= questionsLen && questionsLen > 0 && !data.pipelineConfig) {
+                // Legacy: All questions answered without pipeline - show completion
                 setCompleted(true);
                 setFinalResults({
                     scoring: data.scoring || {},
@@ -235,7 +289,73 @@ const AIInterview = () => {
             }
         } catch (error) {
             console.error('Error:', error);
+            toast.error('Failed to load interview');
             navigate('/jobseeker/interviews');
+        }
+    };
+
+    // State for loading assessment questions
+    const [loadingAssessment, setLoadingAssessment] = useState(false);
+
+    // Fetch round-specific content (DSA problem or assessment questions)
+    // jobIdParam is passed directly to avoid stale state issues
+    const startRoundContent = async (round, jobIdParam = null) => {
+        try {
+            const userId = localStorage.getItem('userId');
+            // Use passed jobId first, then fallback to state (state might be stale)
+            const jobId = jobIdParam || interview?.jobId?._id || interview?.jobId;
+
+            console.log('[ASSESSMENT] startRoundContent called for:', round.roundType, 'jobId:', jobId);
+
+            if (!jobId) {
+                console.error('[ASSESSMENT] No jobId available! Check if jobIdParam was passed.');
+                return;
+            }
+
+            // Show loading for DSA/coding rounds
+            if (round.roundType === 'dsa' || round.roundType === 'coding') {
+                setLoadingProblem(true);
+            }
+
+            // Show loading for assessment rounds
+            if (round.roundType === 'assessment') {
+                setLoadingAssessment(true);
+                console.log('[ASSESSMENT] Loading MCQ questions...');
+            }
+
+            const apiResponse = await api.post('/job-interview/start', { userId, jobId });
+            // Handle both response.data and direct response
+            const response = apiResponse.data || apiResponse;
+
+            console.log('[ASSESSMENT] Full API response:', JSON.stringify(response, null, 2).substring(0, 500));
+
+            if (response.dsaProblem) {
+                console.log('[PIPELINE] DSA problem received:', response.dsaProblem.title);
+                setDsaProblem(response.dsaProblem);
+                setCodingProblem({
+                    ...response.dsaProblem,
+                    languageId: 63 // Default to JavaScript
+                });
+                setShowCodingTest(true);
+            }
+
+            if (response.assessmentQuestions && Array.isArray(response.assessmentQuestions)) {
+                console.log('[ASSESSMENT] ✅ MCQ questions received:', response.assessmentQuestions.length);
+                console.log('[ASSESSMENT] First question:', response.assessmentQuestions[0]?.question?.substring(0, 50));
+                setAssessmentQuestions(response.assessmentQuestions);
+                setCurrentAssessmentIndex(0);
+                setAssessmentAnswers({});
+                setLoadingAssessment(false);  // Explicitly set loading false here
+            } else if (round.roundType === 'assessment') {
+                console.error('[ASSESSMENT] ❌ No questions in response. Response keys:', Object.keys(response));
+                toast.error('Failed to load assessment questions');
+            }
+        } catch (error) {
+            console.error('[PIPELINE] Error fetching round content:', error);
+            toast.error('Failed to load round content');
+        } finally {
+            setLoadingProblem(false);
+            setLoadingAssessment(false);
         }
     };
 
@@ -311,11 +431,12 @@ const AIInterview = () => {
         }
     };
 
-    // Handle coding test completion
+    // Handle coding test completion - FIXED to advance to next pipeline round
     const handleCodingComplete = async (codingResult) => {
         console.log('[CODING] Coding test completed:', codingResult);
         setCodingResults(codingResult);
         setShowCodingTest(false);
+        setDsaProblem(null); // Reset for potential next coding round
 
         try {
             // Save coding results to interview
@@ -323,30 +444,96 @@ const AIInterview = () => {
                 codingResults: codingResult
             });
 
+            // Submit round completion to advance pipeline
+            const roundResponse = await api.post(`/interviews/${interviewId}/round-complete`, {
+                roundIndex: currentRoundIndex,
+                roundType: currentRound?.roundType || 'coding',
+                score: codingResult.score || 0,
+                details: codingResult
+            });
+
             toast.success(`Coding test completed! Score: ${codingResult.score}/100`);
+
+            // Check if there are more rounds
+            if (roundResponse.data?.isComplete || roundResponse.isComplete) {
+                // All rounds done - go to results
+                navigate(`/interview/${interviewId}/results`);
+            } else {
+                // Advance to next round
+                const nextRoundIdx = (roundResponse.data?.currentRoundIndex ?? roundResponse.currentRoundIndex) || currentRoundIndex + 1;
+                setCurrentRoundIndex(nextRoundIdx);
+
+                const nextRound = pipelineConfig?.rounds?.[nextRoundIdx];
+                if (nextRound) {
+                    setCurrentRound(nextRound);
+                    setCurrentQuestionIndex(0);
+                    setAnswer('');
+                    console.log(`[PIPELINE] Advancing to round ${nextRoundIdx + 1}: ${nextRound.title}`);
+                    toast.info(`Starting ${nextRound.title}...`);
+
+                    // Re-fetch interview to get questions for next round
+                    await fetchInterview();
+                } else {
+                    // No more rounds defined - go to results
+                    navigate(`/interview/${interviewId}/results`);
+                }
+            }
         } catch (error) {
             console.error('[CODING] Error saving coding results:', error);
+            toast.error('Error saving results, but continuing...');
+            // Still try to advance
+            if (pipelineConfig?.rounds?.length > currentRoundIndex + 1) {
+                setCurrentRoundIndex(prev => prev + 1);
+                setCurrentRound(pipelineConfig.rounds[currentRoundIndex + 1]);
+                await fetchInterview();
+            } else {
+                navigate(`/interview/${interviewId}/results`);
+            }
         }
-
-        // Navigate to results page
-        navigate(`/interview/${interviewId}/results`);
     };
 
-    // Skip coding test
+    // Skip coding test - FIXED to advance to next pipeline round
     const handleSkipCoding = async () => {
         setShowCodingTest(false);
         setCodingResults({ skipped: true, score: 0 });
+        setDsaProblem(null);
 
         try {
             await api.post(`/interviews/${interviewId}/coding-results`, {
                 codingResults: { skipped: true, score: 0 }
             });
+
+            // Submit round completion
+            const roundResponse = await api.post(`/interviews/${interviewId}/round-complete`, {
+                roundIndex: currentRoundIndex,
+                roundType: currentRound?.roundType || 'coding',
+                score: 0,
+                details: { skipped: true }
+            });
+
+            toast.info('Coding test skipped.');
+
+            // Check if there are more rounds
+            if (roundResponse.data?.isComplete || roundResponse.isComplete) {
+                navigate(`/interview/${interviewId}/results`);
+            } else {
+                const nextRoundIdx = (roundResponse.data?.currentRoundIndex ?? roundResponse.currentRoundIndex) || currentRoundIndex + 1;
+                setCurrentRoundIndex(nextRoundIdx);
+
+                const nextRound = pipelineConfig?.rounds?.[nextRoundIdx];
+                if (nextRound) {
+                    setCurrentRound(nextRound);
+                    setCurrentQuestionIndex(0);
+                    toast.info(`Starting ${nextRound.title}...`);
+                    await fetchInterview();
+                } else {
+                    navigate(`/interview/${interviewId}/results`);
+                }
+            }
         } catch (error) {
             console.error('[CODING] Error saving skip:', error);
+            navigate(`/interview/${interviewId}/results`);
         }
-
-        toast.info('Coding test skipped.');
-        navigate(`/interview/${interviewId}/results`);
     };
 
     const submitAnswer = async () => {
@@ -391,15 +578,20 @@ const AIInterview = () => {
             const updatedQuestions = latestInterview.questions || [];
             const nextIndex = currentQuestionIndex + 1;
 
-            // Check if interview is complete (using progress from response if available)
-            const totalQuestions = response.data?.progress?.total || updatedQuestions.length;
-            if (nextIndex >= totalQuestions) {
-                await completeInterview();
+            // Pipeline-aware: Check if round is complete based on question count for this round
+            const roundQuestionCount = currentRound?.questionConfig?.questionCount ||
+                pipelineConfig?.rounds?.[currentRoundIndex]?.questionConfig?.questionCount || 5;
+
+            // Use currentQuestionIndex + 1 as the count of answered questions (0-indexed)
+            const answeredInRound = currentQuestionIndex + 1;
+
+            console.log(`[INTERVIEW] Q ${answeredInRound}/${roundQuestionCount} in ${currentRound?.roundType || 'round'}`);
+
+            if (answeredInRound >= roundQuestionCount || nextIndex >= updatedQuestions.length) {
+                // This round is complete - complete round and check for next
+                console.log('[INTERVIEW] Round complete - advancing to next round or completing interview');
+                await completeCurrentRound();
             } else {
-                const halfPoint = Math.ceil(totalQuestions / 2);
-                if (currentRound === 'technical' && nextIndex >= halfPoint) {
-                    setCurrentRound('hr');
-                }
                 setCurrentQuestionIndex(nextIndex);
             }
         } catch (e) {
@@ -415,30 +607,68 @@ const AIInterview = () => {
         }
     };
 
-    const completeInterview = async () => {
+    // Complete current round and advance to next (or finish interview)
+    const completeCurrentRound = async () => {
         try {
-            const response = await api.post(`/interviews/${interviewId}/complete`, {
-                allAnswers,
-                evaluateOverall: true
+            // Submit round completion to backend
+            const roundResponse = await api.post(`/interviews/${interviewId}/round-complete`, {
+                roundIndex: currentRoundIndex,
+                roundType: currentRound?.roundType || 'technical',
+                score: 0, // Backend will calculate from responses
+                details: { completedQuestions: currentQuestionIndex + 1 }
             });
-            stopCamera();
 
-            // Detect programming languages from job
-            const languages = detectLanguagesFromJob(job);
-            setDetectedLanguages(languages);
+            const roundRes = roundResponse.data || roundResponse;
+            // API returns: { success: true, data: { isComplete, currentRoundIndex, ... }}
+            const resData = roundRes.data || roundRes;
 
-            if (languages.length > 0) {
-                // Programming languages found - show coding test
-                toast.success('Interview complete! Preparing coding challenge...');
-                await loadCodingProblem(languages);
+            console.log('[INTERVIEW] Round complete response:', { isComplete: resData.isComplete, currentRoundIndex: resData.currentRoundIndex });
+
+            if (resData.isComplete) {
+                // All rounds complete - go to results
+                stopCamera();
+                toast.success('Interview complete!');
+                navigate(`/interview/${interviewId}/results`);
             } else {
-                // No programming languages - go directly to results
+                // Advance to next round
+                const nextRoundIdx = resData.currentRoundIndex || currentRoundIndex + 1;
+                const nextRound = pipelineConfig?.rounds?.[nextRoundIdx];
+
+                if (nextRound) {
+                    console.log(`[PIPELINE] Advancing to round ${nextRoundIdx + 1}: ${nextRound.title}`);
+                    toast.info(`Starting ${nextRound.title}...`);
+
+                    setCurrentRoundIndex(nextRoundIdx);
+                    setCurrentRound(nextRound);
+                    setCurrentQuestionIndex(0);
+                    setAllAnswers([]);
+
+                    // Re-fetch to get new questions for next round
+                    await fetchInterview();
+                } else {
+                    // No more rounds
+                    stopCamera();
+                    navigate(`/interview/${interviewId}/results`);
+                }
+            }
+        } catch (error) {
+            console.error('Complete round error:', error);
+            toast.error('Error completing round');
+            // Try to continue anyway
+            if (pipelineConfig?.rounds?.length > currentRoundIndex + 1) {
+                setCurrentRoundIndex(prev => prev + 1);
+                setCurrentRound(pipelineConfig.rounds[currentRoundIndex + 1]);
+                setCurrentQuestionIndex(0);
+                await fetchInterview();
+            } else {
                 navigate(`/interview/${interviewId}/results`);
             }
-        } catch (e) {
-            console.error('Complete error:', e);
-            toast.error('Failed to complete interview');
         }
+    };
+
+    // Legacy complete interview (for non-pipeline interviews)
+    const completeInterview = async () => {
+        await completeCurrentRound();
     };
 
     // Loading
@@ -462,6 +692,235 @@ const AIInterview = () => {
                     {detectedLanguages.slice(0, 4).map((lang, i) => (
                         <span key={i} className="skill-tag">{lang.name}</span>
                     ))}
+                </div>
+            </div>
+        );
+    }
+
+    // Show CodeIDE for DSA/coding pipeline rounds - USE EXISTING CODEIDE WITHOUT AI GENERATION
+    if (currentRound?.roundType === 'dsa' || currentRound?.roundType === 'coding') {
+        // Create simple problem from pipeline config - no AI generation
+        const codingConfig = currentRound?.codingConfig || {};
+        const jobSkills = job?.requirements?.skills || pipelineConfig?.settings?.focusSkills || [];
+
+        const simpleProblem = {
+            title: currentRound?.title || 'Coding Challenge',
+            description: `Complete the coding challenge for this interview.\n\nFocus Areas: ${codingConfig.topics?.join(', ') || jobSkills.slice(0, 3).join(', ') || 'General Programming'}\n\nDifficulty: ${codingConfig.difficulty || 'medium'}\n\nWrite clean, efficient code that demonstrates your programming skills.`,
+            difficulty: codingConfig.difficulty || 'medium',
+            starterCode: null, // Will use default template
+            timeLimit: codingConfig.timePerProblem || 25
+        };
+
+        return (
+            <CodeIDE
+                language={codingConfig.languages?.[0] || 'JavaScript'}
+                languageId={63} // JavaScript default
+                problem={simpleProblem}
+                onComplete={handleCodingComplete}
+                onSkip={handleSkipCoding}
+                timeLimit={simpleProblem.timeLimit}
+            />
+        );
+    }
+
+    // Show loading for Assessment MCQ generation
+    if (currentRound?.roundType === 'assessment' && (loadingAssessment || assessmentQuestions.length === 0)) {
+        return (
+            <div className="ai-interview loading-state assessment-prep">
+                <div className="loading-animation" style={{ textAlign: 'center' }}>
+                    <div className="mcq-animation" style={{ fontSize: '64px', marginBottom: 'var(--spacing-md)' }}>
+                        📝
+                    </div>
+                    <div className="loading-spinner" style={{
+                        width: '50px',
+                        height: '50px',
+                        border: '4px solid var(--bg-tertiary)',
+                        borderTop: '4px solid var(--primary)',
+                        borderRadius: '50%',
+                        margin: '0 auto var(--spacing-md)',
+                        animation: 'spin 1s linear infinite'
+                    }}></div>
+                </div>
+                <h2>🎯 Generating Assessment Questions...</h2>
+                <p>Creating personalized MCQ questions based on</p>
+                <div className="skill-tags" style={{ justifyContent: 'center', marginTop: 'var(--spacing-md)' }}>
+                    {(currentRound.assessmentConfig?.assessmentTypes || ['technical']).map((type, i) => (
+                        <span key={i} className="skill-tag" style={{
+                            background: type === 'technical' ? 'rgba(59, 130, 246, 0.2)' :
+                                type === 'communication' ? 'rgba(16, 185, 129, 0.2)' :
+                                    type === 'aptitude' ? 'rgba(249, 115, 22, 0.2)' :
+                                        'rgba(139, 92, 246, 0.2)',
+                            color: type === 'technical' ? '#3B82F6' :
+                                type === 'communication' ? '#10B981' :
+                                    type === 'aptitude' ? '#F97316' : '#8B5CF6'
+                        }}>
+                            {type === 'technical' ? '💻' : type === 'communication' ? '💬' : type === 'aptitude' ? '🧠' : '📊'} {type}
+                        </span>
+                    ))}
+                </div>
+                <style>{`
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `}</style>
+            </div>
+        );
+    }
+
+    // Show Assessment MCQ if assessment round is active
+    if (currentRound?.roundType === 'assessment' && assessmentQuestions.length > 0) {
+        const currentQ = assessmentQuestions[currentAssessmentIndex];
+        const assessmentProgress = ((currentAssessmentIndex + 1) / assessmentQuestions.length) * 100;
+        const typeInfo = ROUND_TYPE_INFO[currentQ?.type] || ROUND_TYPE_INFO.assessment;
+
+        const handleAssessmentAnswer = (questionId, answerId) => {
+            setAssessmentAnswers(prev => ({ ...prev, [questionId]: answerId }));
+        };
+
+        const handleNextAssessmentQuestion = () => {
+            if (currentAssessmentIndex < assessmentQuestions.length - 1) {
+                setCurrentAssessmentIndex(prev => prev + 1);
+            } else {
+                // Submit all assessment answers
+                handleAssessmentComplete();
+            }
+        };
+
+        const handleAssessmentComplete = async () => {
+            setSubmitting(true);
+            try {
+                // Calculate score with detailed logging
+                let correct = 0;
+                const answerDetails = [];
+
+                assessmentQuestions.forEach((q, idx) => {
+                    // Try multiple key formats: q.id, array index, or string index
+                    const userAnswer = assessmentAnswers[q.id] || assessmentAnswers[idx] || assessmentAnswers[idx.toString()];
+                    const isCorrect = userAnswer === q.correctAnswer;
+
+                    console.log(`[SCORING] Q${idx + 1}: User answered "${userAnswer}", Correct is "${q.correctAnswer}", Match: ${isCorrect}`);
+
+                    if (isCorrect) correct++;
+                    answerDetails.push({
+                        questionId: q.id || idx,
+                        question: q.question?.substring(0, 50),
+                        userAnswer,
+                        correctAnswer: q.correctAnswer,
+                        isCorrect
+                    });
+                });
+
+                const score = Math.round((correct / assessmentQuestions.length) * 100);
+                console.log(`[SCORING] Assessment complete: ${correct}/${assessmentQuestions.length} = ${score}%`);
+
+                // Save to backend
+                await api.post(`/interviews/${interviewId}/round-complete`, {
+                    roundIndex: currentRoundIndex,
+                    roundType: 'assessment',
+                    score,
+                    details: { assessmentAnswers, answerDetails, correct, total: assessmentQuestions.length }
+                });
+
+                toast.success(`Assessment complete! Score: ${score}% (${correct}/${assessmentQuestions.length} correct)`);
+
+                // Check if more rounds
+                if (pipelineConfig?.rounds?.length > currentRoundIndex + 1) {
+                    // Advance to next round
+                    setCurrentRoundIndex(prev => prev + 1);
+                    setCurrentRound(pipelineConfig.rounds[currentRoundIndex + 1]);
+                    setAssessmentQuestions([]);
+                    setAssessmentAnswers({});
+                    setCurrentAssessmentIndex(0);
+                    await fetchInterview();
+                } else {
+                    // All rounds complete
+                    navigate(`/interview/${interviewId}/results`);
+                }
+            } catch (error) {
+                console.error('Assessment submit error:', error);
+                toast.error('Failed to submit assessment');
+            } finally {
+                setSubmitting(false);
+            }
+        };
+
+        return (
+            <div className="ai-interview assessment-mode">
+                {/* Header with round progress */}
+                <div className="interview-header">
+                    <div className="header-left">
+                        <h2>{typeInfo.icon} {currentRound.title || 'Assessment'}</h2>
+                        {job && <p className="job-context">{job.title}</p>}
+                        {pipelineConfig?.rounds && (
+                            <div className="rounds-progress">
+                                {pipelineConfig.rounds.map((r, i) => (
+                                    <span
+                                        key={i}
+                                        className={`round-dot ${i === currentRoundIndex ? 'active' : i < currentRoundIndex ? 'done' : ''}`}
+                                        title={r.title}
+                                    >
+                                        {ROUND_TYPE_INFO[r.roundType]?.icon || '○'}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="header-right">
+                        <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+                        <button className="btn btn-secondary btn-sm" onClick={() => navigate('/jobseeker/interviews')}>Exit</button>
+                    </div>
+                </div>
+
+                {/* Progress */}
+                <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${assessmentProgress}%` }}></div>
+                </div>
+
+                {/* Assessment Question Card */}
+                <div className="assessment-content">
+                    <div className="assessment-card card">
+                        <div className="assessment-header">
+                            <span className="question-number">Question {currentAssessmentIndex + 1} of {assessmentQuestions.length}</span>
+                            <span className={`question-type-badge ${currentQ?.type}`}>
+                                {currentQ?.type === 'technical' ? '💻 Technical' :
+                                    currentQ?.type === 'communication' ? '💬 Communication' :
+                                        currentQ?.type === 'aptitude' ? '🧠 Aptitude' : '📝 Assessment'}
+                            </span>
+                        </div>
+
+                        <h3 className="assessment-question">{currentQ?.question}</h3>
+
+                        <div className="assessment-options">
+                            {currentQ?.options?.map((opt) => (
+                                <label
+                                    key={opt.id}
+                                    className={`option-card ${assessmentAnswers[currentQ.id] === opt.id ? 'selected' : ''}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`q-${currentQ.id}`}
+                                        value={opt.id}
+                                        checked={assessmentAnswers[currentQ.id] === opt.id}
+                                        onChange={() => handleAssessmentAnswer(currentQ.id, opt.id)}
+                                    />
+                                    <span className="option-letter">{opt.id}</span>
+                                    <span className="option-text">{opt.text}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        <div className="assessment-actions">
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleNextAssessmentQuestion}
+                                disabled={!assessmentAnswers[currentQ?.id] || submitting}
+                            >
+                                {submitting ? 'Saving...' :
+                                    currentAssessmentIndex < assessmentQuestions.length - 1 ? 'Next Question →' : 'Submit Assessment'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -563,14 +1022,39 @@ const AIInterview = () => {
 
     // Current question with safety check
     const currentQuestion = questions[currentQuestionIndex] || { question: 'No question available' };
-    // Use totalQuestions from metadata for job interviews (dynamic generation)
-    // For job interviews, always show 10 total questions (5 technical + 5 HR)
-    const totalQ = interview.jobId ? 10 : (interview.totalQuestions || questions.length || 1);
-    const halfPoint = Math.ceil(totalQ / 2);
-    const inTechnical = currentQuestionIndex < halfPoint;
-    const qInRound = inTechnical ? currentQuestionIndex + 1 : currentQuestionIndex - halfPoint + 1;
-    const roundTotal = inTechnical ? halfPoint : totalQ - halfPoint;
+
+    // Pipeline-aware progress calculation
+    const getCurrentRoundQuestionCount = () => {
+        if (pipelineConfig?.rounds?.[currentRoundIndex]?.questionConfig?.questionCount) {
+            return pipelineConfig.rounds[currentRoundIndex].questionConfig.questionCount;
+        }
+        return 5; // Default fallback
+    };
+
+    const totalQ = pipelineConfig?.rounds
+        ? getCurrentRoundQuestionCount()
+        : (interview.jobId ? 10 : questions.length || 1);
+
+    const currentRoundType = currentRound?.roundType || pipelineConfig?.rounds?.[0]?.roundType || 'technical';
     const progress = ((currentQuestionIndex + 1) / totalQ) * 100;
+
+    // Get next round info for button text
+    const getNextButtonText = () => {
+        if (submitting) return 'Saving...';
+
+        const isLastQuestionInRound = currentQuestionIndex >= totalQ - 1;
+
+        if (!isLastQuestionInRound) return 'Next →';
+
+        // Check if there's a next round
+        if (pipelineConfig?.rounds && currentRoundIndex < pipelineConfig.rounds.length - 1) {
+            const nextRound = pipelineConfig.rounds[currentRoundIndex + 1];
+            const nextRoundInfo = ROUND_TYPE_INFO[nextRound?.roundType];
+            return `Continue to ${nextRound?.title || nextRoundInfo?.label || 'Next Round'} →`;
+        }
+
+        return 'Complete Interview';
+    };
 
     return (
         <div className="ai-interview">
@@ -579,12 +1063,31 @@ const AIInterview = () => {
                 <div className="header-left">
                     <h2>AI Interview</h2>
                     {job && <p className="job-context">{job.title}</p>}
-                    <div className="round-indicator">
-                        <span className={`round-badge ${inTechnical ? 'active' : ''}`}>Technical</span>
-                        <span className="round-arrow">→</span>
-                        <span className={`round-badge ${!inTechnical ? 'active' : ''}`}>HR</span>
-                    </div>
-                    <p className="question-progress">Q {qInRound}/{roundTotal} ({inTechnical ? 'Technical' : 'HR'})</p>
+
+                    {/* Pipeline-aware rounds display */}
+                    {pipelineConfig?.rounds && pipelineConfig.rounds.length > 0 ? (
+                        <div className="rounds-progress">
+                            {pipelineConfig.rounds.map((r, i) => (
+                                <span
+                                    key={i}
+                                    className={`round-dot ${i === currentRoundIndex ? 'active' : i < currentRoundIndex ? 'done' : ''}`}
+                                    title={r.title || ROUND_TYPE_INFO[r.roundType]?.label}
+                                >
+                                    {ROUND_TYPE_INFO[r.roundType]?.icon || '○'}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        // Legacy fallback for non-pipeline interviews
+                        <div className="round-indicator">
+                            <span className={`round-badge active`}>Technical</span>
+                            <span className="round-arrow">→</span>
+                            <span className={`round-badge`}>HR</span>
+                        </div>
+                    )}
+                    <p className="question-progress">
+                        Q {currentQuestionIndex + 1}/{totalQ} ({currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Interview'})
+                    </p>
                 </div>
                 <div className="header-right">
                     <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
@@ -612,7 +1115,9 @@ const AIInterview = () => {
                 <div className="question-section">
                     <div className="question-card card">
                         <div className="question-header">
-                            <span className="question-badge">{inTechnical ? '💻 Technical' : '👔 HR'}</span>
+                            <span className="question-badge">
+                                {ROUND_TYPE_INFO[currentRoundType]?.icon || '💻'} {currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Technical'}
+                            </span>
                             <span className={`difficulty-badge ${currentQuestion.difficulty || 'medium'}`}>
                                 {currentQuestion.difficulty || 'Medium'}
                             </span>
@@ -667,27 +1172,28 @@ const AIInterview = () => {
                                 onClick={submitAnswer}
                                 disabled={submitting || !answer.trim()}
                             >
-                                {submitting ? 'Saving...' :
-                                    currentQuestionIndex < totalQ - 1
-                                        ? (currentQuestionIndex === halfPoint - 1 ? 'Continue to HR →' : 'Next →')
-                                        : 'Complete Interview'
-                                }
+                                {getNextButtonText()}
                             </button>
                         </div>
                     </div>
 
                     <div className="interview-tips card-glass">
-                        <h4>💡 {inTechnical ? 'Technical Tips' : 'HR Tips'}</h4>
+                        <h4>💡 {currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Interview'} Tips</h4>
                         <ul>
-                            {inTechnical ? (
+                            {(currentRoundType === 'technical' || currentRoundType === 'coding' || currentRoundType === 'dsa') ? (
                                 <>
                                     <li>Be specific about technologies</li>
                                     <li>Explain your approach step by step</li>
                                 </>
-                            ) : (
+                            ) : currentRoundType === 'hr' || currentRoundType === 'behavioral' ? (
                                 <>
                                     <li>Use STAR method</li>
                                     <li>Be honest about challenges</li>
+                                </>
+                            ) : (
+                                <>
+                                    <li>Answer clearly and concisely</li>
+                                    <li>Provide specific examples</li>
                                 </>
                             )}
                             <li>🎤 Click Speak to use voice!</li>

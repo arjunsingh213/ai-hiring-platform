@@ -545,6 +545,111 @@ router.post('/:interviewId/coding-results', async (req, res) => {
     }
 });
 
+// Save round completion results (for pipeline-aware interviews)
+router.post('/:interviewId/round-complete', async (req, res) => {
+    try {
+        const { interviewId } = req.params;
+        const { roundIndex, roundType, score, details } = req.body;
+
+        const interview = await Interview.findById(interviewId).populate('jobId');
+        if (!interview) {
+            return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // Add round result
+        interview.roundResults = interview.roundResults || [];
+        interview.roundResults.push({
+            roundIndex,
+            roundType,
+            score,
+            passed: score >= (interview.pipelineConfig?.rounds?.[roundIndex]?.scoring?.passingScore || 50),
+            details,
+            completedAt: new Date()
+        });
+
+        // Check if this was the last round
+        const totalRounds = interview.pipelineConfig?.rounds?.length || 1;
+        const completedRounds = interview.roundResults.length;
+
+        let nextRoundQuestion = null;
+
+        if (completedRounds >= totalRounds) {
+            // All rounds complete - calculate overall score
+            const avgScore = interview.roundResults.reduce((sum, r) => sum + r.score, 0) / completedRounds;
+
+            interview.status = 'completed';
+            interview.completedAt = new Date();
+            interview.passed = avgScore >= 60;
+            interview.scoring = {
+                ...interview.scoring,
+                overallScore: Math.round(avgScore),
+                roundScores: interview.roundResults.map(r => ({ round: r.roundType, score: r.score }))
+            };
+
+            console.log(`[ROUND COMPLETE] Interview ${interviewId} fully completed. Avg score: ${avgScore}`);
+        } else {
+            // Advance to next round
+            interview.currentRoundIndex = completedRounds;
+            const nextRound = interview.pipelineConfig?.rounds?.[completedRounds];
+
+            console.log(`[ROUND COMPLETE] Round ${roundIndex} (${roundType}) completed. Advancing to round ${completedRounds}: ${nextRound?.roundType}`);
+
+            // If next round is a Q&A type, generate the first question
+            if (nextRound && ['technical', 'hr', 'behavioral', 'screening'].includes(nextRound.roundType)) {
+                try {
+                    const job = interview.jobId;
+                    const jobDescriptionSummary = `
+Job Title: ${job?.title || 'Unknown'}
+Required Skills: ${job?.requirements?.skills?.join(', ') || 'Not specified'}
+Experience Level: ${job?.requirements?.experienceLevel || 'Not specified'}
+Description: ${job?.description?.substring(0, 500) || 'Not provided'}
+                    `.trim();
+
+                    // Generate first question for new round
+                    nextRoundQuestion = await deepseekService.generateNextQuestion(
+                        jobDescriptionSummary,
+                        job?.title || 'Job',
+                        job?.requirements?.experienceLevel || 'mid',
+                        [], // No previous answers for this round
+                        nextRound.roundType
+                    );
+
+                    // Add question to interview
+                    interview.questions.push({
+                        question: nextRoundQuestion.question,
+                        generatedBy: 'ai',
+                        category: nextRound.roundType,
+                        difficulty: 'medium',
+                        roundIndex: completedRounds
+                    });
+
+                    console.log(`[ROUND COMPLETE] Generated first question for ${nextRound.roundType} round`);
+                } catch (genError) {
+                    console.error('[ROUND COMPLETE] Error generating question for next round:', genError);
+                }
+            }
+        }
+
+        await interview.save();
+
+        res.json({
+            success: true,
+            message: completedRounds >= totalRounds ? 'All rounds completed' : 'Round completed',
+            data: {
+                roundResults: interview.roundResults,
+                currentRoundIndex: interview.currentRoundIndex,
+                isComplete: completedRounds >= totalRounds,
+                overallScore: interview.scoring?.overallScore,
+                nextRound: interview.pipelineConfig?.rounds?.[completedRounds],
+                nextQuestion: nextRoundQuestion
+            }
+        });
+    } catch (error) {
+        console.error('Round complete error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 /**
  * STRICT LOCAL EVALUATION - When AI is unavailable
  * Analyzes answers for quality, relevance, and content
