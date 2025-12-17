@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
-import './LoginPage.css'; // Use same CSS as LoginPage
+import './AuthPage.css';
 import './ForgotPasswordPage.css'; // Additional OTP-specific styles
 
 const ForgotPasswordPage = () => {
@@ -136,6 +136,7 @@ const ForgotPasswordPage = () => {
 
     return (
         <div className="auth-page">
+            <div className="bg-orb"></div>
             <div className="auth-container">
                 <div className="auth-card">
                     {/* Step 1: Enter Email */}

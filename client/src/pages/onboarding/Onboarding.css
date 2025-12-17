@@ -5,6 +5,7 @@
     justify-content: center;
     position: relative;
     padding: 2rem;
+    background: var(--bg-gradient, linear-gradient(145deg, #E3EEFF 0%, #F5F7FA 50%, #FFFFFF 100%));
 }
 
 .onboarding-background {
@@ -12,8 +13,158 @@
     inset: 0;
     overflow: hidden;
     z-index: 0;
+    background:
+        radial-gradient(ellipse at 20% 20%, rgba(0, 125, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
 }
 
+/* ===== Two-Panel Box Layout (like auth page) ===== */
+.onboarding-box {
+    position: relative;
+    z-index: 1;
+    width: 1000px;
+    max-width: 100%;
+    min-height: 620px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    display: flex;
+}
+
+/* ===== Left Sidebar - Purple Gradient ===== */
+.onboarding-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+}
+
+.sidebar-content {
+    text-align: center;
+    color: #fff;
+}
+
+.sidebar-content h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: #fff;
+}
+
+.sidebar-content>p {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2rem;
+}
+
+/* Step Progress Circles */
+.step-circles {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+}
+
+.step-circle.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #fff;
+}
+
+.step-circle.current {
+    background: #fff;
+    border-color: #fff;
+    color: #6366F1;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Step Labels */
+.step-labels {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 2rem;
+}
+
+.step-labels span.current {
+    color: #fff;
+    font-weight: 600;
+}
+
+.sidebar-icon {
+    font-size: 4rem;
+    opacity: 0.9;
+}
+
+/* ===== Right Main Content ===== */
+.onboarding-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+.onboarding-header {
+    padding: 1.5rem 2rem 0;
+}
+
+.header-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.onboarding-header .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-tertiary, #E2E8F0);
+    border-radius: var(--radius-full, 9999px);
+    overflow: hidden;
+}
+
+.onboarding-header .progress-fill {
+    height: 100%;
+    background: var(--gradient-primary, linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%));
+    transition: width 0.3s ease;
+}
+
+.onboarding-header .step-indicator {
+    color: var(--text-muted, #94A3B8);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.onboarding-content {
+    flex: 1;
+    padding: 1.5rem 2rem 2rem;
+    overflow-y: auto;
+}
+
+/* Legacy support for old container */
 .onboarding-container {
     position: relative;
     z-index: 1;
@@ -21,38 +172,10 @@
     width: 100%;
 }
 
-.onboarding-header {
-    text-align: center;
-    margin-bottom: var(--spacing-2xl);
-}
-
 .onboarding-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: var(--spacing-lg);
-}
-
-.progress-bar {
-    width: 100%;
-    height: 8px;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-    margin-bottom: var(--spacing-sm);
-}
-
-.progress-fill {
-    height: 100%;
-    background: var(--gradient-primary);
-    transition: width var(--transition-normal);
-}
-
-.step-indicator {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-}
-
-.onboarding-content {
-    padding: var(--spacing-2xl);
+    font-size: 2rem;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    color: var(--text-primary, #0F172A);
 }
 
 .form-step h2 {
@@ -85,37 +208,69 @@
 
 /* Upload Area */
 .upload-area {
-    border: 2px dashed var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-2xl);
+    border: 2px dashed var(--border-color, #E2E8F0);
+    border-radius: var(--radius-xl, 16px);
+    padding: var(--spacing-2xl, 2rem);
     text-align: center;
-    transition: all var(--transition-normal);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.upload-area-clickable {
+    cursor: pointer;
 }
 
 .upload-area:hover {
-    border-color: var(--primary);
+    border-color: #6366F1;
     background: rgba(99, 102, 241, 0.05);
 }
 
 .upload-icon {
     width: 80px;
     height: 80px;
-    margin: 0 auto var(--spacing-lg);
+    margin: 0 auto var(--spacing-lg, 1.5rem);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--gradient-primary);
-    border-radius: var(--radius-xl);
+    background: var(--gradient-primary, linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%));
+    border-radius: var(--radius-xl, 16px);
     color: white;
 }
 
 .upload-area h3 {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    color: var(--text-primary, #0F172A);
+    font-size: 1.125rem;
 }
 
 .upload-area p {
-    color: var(--text-muted);
-    margin-bottom: var(--spacing-lg);
+    color: var(--text-muted, #94A3B8);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    font-size: 0.875rem;
+}
+
+/* Upload Button */
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 2rem;
+    background: var(--gradient-primary, linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%));
+    color: #fff;
+    border-radius: 50px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.upload-area:hover .upload-btn {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
 }
 
 .upload-area input[type="file"] {
@@ -222,8 +377,11 @@
 }
 
 .photo-icon {
-    font-size: 2rem;
-    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    color: #6366F1;
 }
 
 .photo-placeholder span:last-child {
@@ -235,13 +393,69 @@
     display: none;
 }
 
+@media (max-width: 900px) {
+    .onboarding-box {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .onboarding-sidebar {
+        width: 100%;
+        padding: 1.5rem;
+        min-height: auto;
+    }
+
+    .sidebar-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .sidebar-content>p {
+        font-size: 0.8125rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .step-circles {
+        gap: 0.75rem;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+
+    .step-labels {
+        margin-bottom: 1rem;
+    }
+
+    .sidebar-icon {
+        font-size: 2.5rem;
+    }
+
+    .onboarding-main {
+        max-height: none;
+    }
+
+    .onboarding-content {
+        padding: 1.5rem;
+    }
+}
+
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
     }
 
     .onboarding-header h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
+    }
+
+    .onboarding {
+        padding: 1rem;
+    }
+
+    .onboarding-box {
+        border-radius: 16px;
     }
 }
 

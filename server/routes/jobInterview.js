@@ -104,6 +104,7 @@ router.post('/start', requirePlatformInterview, async (req, res) => {
         // NOTE: DSA/coding rounds use frontend CodeIDE directly - no server-side problem generation
         let firstQuestion = null;
         let assessmentQuestions = null;
+        let dsaProblem = null;
 
         const jobContext = {
             title: job.title,
@@ -113,8 +114,15 @@ router.post('/start', requirePlatformInterview, async (req, res) => {
         };
 
         if (firstRound.roundType === 'dsa' || firstRound.roundType === 'coding') {
-            // DSA/Coding uses frontend CodeIDE - no server generation needed
-            console.log('[JOB INTERVIEW] DSA/Coding round - frontend will use CodeIDE');
+            // Generate DSA problem for coding round
+            console.log('[JOB INTERVIEW] Generating DSA problem for coding round...');
+            const codingConfig = firstRound.codingConfig || {};
+            dsaProblem = await generateDSAProblem(
+                codingConfig.topics || ['arrays', 'strings'],
+                codingConfig.difficulty || 'medium',
+                job.requirements?.skills || []
+            );
+            console.log('[JOB INTERVIEW] DSA problem generated:', dsaProblem?.title);
         } else if (firstRound.roundType === 'assessment') {
             // Generate MCQ assessment questions via AI
             assessmentQuestions = await generateAssessmentQuestions(
@@ -180,7 +188,8 @@ Description: ${job.description?.substring(0, 500) || 'Not provided'}
             },
             pipelineConfig: pipelineConfig,
             currentRound: firstRound,
-            // Round-specific data (DSA uses frontend CodeIDE)
+            // Round-specific data
+            dsaProblem: dsaProblem,
             question: firstQuestion,
             assessmentQuestions: assessmentQuestions,
             jobContext: {
@@ -201,74 +210,212 @@ Description: ${job.description?.substring(0, 500) || 'Not provided'}
 
 // Helper: Generate DSA problem via AI
 async function generateDSAProblem(topics, difficulty, jobSkills) {
-    try {
-        const prompt = `Generate a coding challenge problem for a technical interview.
+    // For reliability, use curated fallback problems based on difficulty
+    // AI generation is being skipped for now to ensure proper problems are always shown
+    console.log(`[DSA] Generating ${difficulty} problem for topics: ${topics.join(', ')}`);
 
-Topics to cover: ${topics.join(', ')}
-Difficulty: ${difficulty}
-Relevant job skills: ${jobSkills.slice(0, 5).join(', ')}
+    // Curated DSA problems based on difficulty
+    const problemBank = {
+        easy: [
+            {
+                title: "Two Sum",
+                description: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
 
-Respond in JSON format:
-{
-  "title": "Problem title",
-  "description": "Problem description with clear requirements",
-  "examples": [
-    { "input": "example input", "output": "expected output", "explanation": "why" }
-  ],
-  "constraints": ["constraint 1", "constraint 2"],
-  "starterCode": {
-    "javascript": "function solve(input) {\\n  // Your code here\\n}",
-    "python": "def solve(input):\\n    # Your code here\\n    pass"
-  },
-  "testCases": [
-    { "input": "test input", "expectedOutput": "expected output", "isHidden": false }
-  ],
-  "hints": ["hint 1", "hint 2"],
-  "timeLimit": 30,
-  "spaceComplexityExpected": "O(n)",
-  "timeComplexityExpected": "O(n)"
-}`;
+You may assume that each input would have exactly one solution, and you may not use the same element twice.
 
-        const response = await deepseekService.generateRaw(prompt);
+**Example 1:**
+Input: nums = [2, 7, 11, 15], target = 9
+Output: [0, 1]
+Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
 
-        // Parse JSON from response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
+**Example 2:**
+Input: nums = [3, 2, 4], target = 6
+Output: [1, 2]
 
-        // Fallback problem
-        return {
-            title: "Array Sum Challenge",
-            description: "Given an array of integers, return the sum of all positive numbers.",
-            examples: [{ input: "[1, -2, 3, 4, -5]", output: "8", explanation: "1 + 3 + 4 = 8" }],
-            constraints: ["Array length <= 10000", "Values between -1000 and 1000"],
-            starterCode: {
-                javascript: "function sumPositive(arr) {\n  // Your code here\n}",
-                python: "def sum_positive(arr):\n    # Your code here\n    pass"
+**Constraints:**
+- 2 <= nums.length <= 10^4
+- -10^9 <= nums[i] <= 10^9
+- Only one valid answer exists.`,
+                difficulty: 'easy',
+                starterCode: `function twoSum(nums, target) {
+    // Your code here
+    
+}
+
+// Test your solution
+console.log(twoSum([2, 7, 11, 15], 9)); // Expected: [0, 1]
+console.log(twoSum([3, 2, 4], 6));       // Expected: [1, 2]`,
+                testCases: [
+                    { input: "[2, 7, 11, 15], 9", expectedOutput: "[0, 1]" },
+                    { input: "[3, 2, 4], 6", expectedOutput: "[1, 2]" },
+                    { input: "[3, 3], 6", expectedOutput: "[0, 1]" }
+                ],
+                timeLimit: 15
             },
-            testCases: [
-                { input: "[1, -2, 3, 4, -5]", expectedOutput: "8", isHidden: false },
-                { input: "[1, 2, 3]", expectedOutput: "6", isHidden: false }
-            ],
-            hints: ["Consider using filter or a loop", "Only add positive numbers"],
-            timeLimit: 30
-        };
-    } catch (error) {
-        console.error('DSA problem generation error:', error);
-        // Return fallback
-        return {
-            title: "Two Sum",
-            description: "Given an array of integers and a target sum, return indices of two numbers that add up to target.",
-            examples: [{ input: "nums = [2,7,11,15], target = 9", output: "[0, 1]", explanation: "nums[0] + nums[1] = 9" }],
-            starterCode: {
-                javascript: "function twoSum(nums, target) {\n  // Your code here\n}",
-                python: "def two_sum(nums, target):\n    # Your code here\n    pass"
+            {
+                title: "Reverse String",
+                description: `Write a function that reverses a string. The input string is given as an array of characters s.
+
+You must do this by modifying the input array in-place with O(1) extra memory.
+
+**Example 1:**
+Input: s = ["h","e","l","l","o"]
+Output: ["o","l","l","e","h"]
+
+**Example 2:**
+Input: s = ["H","a","n","n","a","h"]
+Output: ["h","a","n","n","a","H"]
+
+**Constraints:**
+- 1 <= s.length <= 10^5
+- s[i] is a printable ASCII character.`,
+                difficulty: 'easy',
+                starterCode: `function reverseString(s) {
+    // Your code here - modify array in place
+    
+}
+
+// Test your solution
+let test1 = ["h","e","l","l","o"];
+reverseString(test1);
+console.log(test1); // Expected: ["o","l","l","e","h"]`,
+                testCases: [
+                    { input: '["h","e","l","l","o"]', expectedOutput: '["o","l","l","e","h"]' },
+                    { input: '["H","a","n","n","a","h"]', expectedOutput: '["h","a","n","n","a","H"]' }
+                ],
+                timeLimit: 15
+            }
+        ],
+        medium: [
+            {
+                title: "Valid Parentheses",
+                description: `Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
+
+An input string is valid if:
+1. Open brackets must be closed by the same type of brackets.
+2. Open brackets must be closed in the correct order.
+3. Every close bracket has a corresponding open bracket of the same type.
+
+**Example 1:**
+Input: s = "()"
+Output: true
+
+**Example 2:**
+Input: s = "()[]{}"
+Output: true
+
+**Example 3:**
+Input: s = "(]"
+Output: false
+
+**Constraints:**
+- 1 <= s.length <= 10^4
+- s consists of parentheses only '()[]{}'`,
+                difficulty: 'medium',
+                starterCode: `function isValid(s) {
+    // Your code here
+    
+}
+
+// Test your solution
+console.log(isValid("()"));      // Expected: true
+console.log(isValid("()[]{}"));  // Expected: true
+console.log(isValid("(]"));      // Expected: false`,
+                testCases: [
+                    { input: '"()"', expectedOutput: "true" },
+                    { input: '"()[]{}"', expectedOutput: "true" },
+                    { input: '"(]"', expectedOutput: "false" },
+                    { input: '"{[]}"', expectedOutput: "true" }
+                ],
+                timeLimit: 20
             },
-            testCases: [{ input: "[2,7,11,15], 9", expectedOutput: "[0, 1]", isHidden: false }],
-            timeLimit: 30
-        };
-    }
+            {
+                title: "Maximum Subarray",
+                description: `Given an integer array nums, find the subarray with the largest sum, and return its sum.
+
+**Example 1:**
+Input: nums = [-2,1,-3,4,-1,2,1,-5,4]
+Output: 6
+Explanation: The subarray [4,-1,2,1] has the largest sum 6.
+
+**Example 2:**
+Input: nums = [1]
+Output: 1
+Explanation: The subarray [1] has the largest sum 1.
+
+**Example 3:**
+Input: nums = [5,4,-1,7,8]
+Output: 23
+Explanation: The subarray [5,4,-1,7,8] has the largest sum 23.
+
+**Constraints:**
+- 1 <= nums.length <= 10^5
+- -10^4 <= nums[i] <= 10^4`,
+                difficulty: 'medium',
+                starterCode: `function maxSubArray(nums) {
+    // Your code here
+    
+}
+
+// Test your solution
+console.log(maxSubArray([-2,1,-3,4,-1,2,1,-5,4])); // Expected: 6
+console.log(maxSubArray([1]));                      // Expected: 1
+console.log(maxSubArray([5,4,-1,7,8]));            // Expected: 23`,
+                testCases: [
+                    { input: "[-2,1,-3,4,-1,2,1,-5,4]", expectedOutput: "6" },
+                    { input: "[1]", expectedOutput: "1" },
+                    { input: "[5,4,-1,7,8]", expectedOutput: "23" }
+                ],
+                timeLimit: 20
+            }
+        ],
+        hard: [
+            {
+                title: "Merge K Sorted Lists",
+                description: `You are given an array of k linked-lists lists, each linked-list is sorted in ascending order.
+
+Merge all the linked-lists into one sorted linked-list and return it.
+
+**Example 1:**
+Input: lists = [[1,4,5],[1,3,4],[2,6]]
+Output: [1,1,2,3,4,4,5,6]
+Explanation: The linked-lists are:
+[1->4->5, 1->3->4, 2->6]
+merging them into one sorted list: 1->1->2->3->4->4->5->6
+
+**Example 2:**
+Input: lists = []
+Output: []
+
+**Constraints:**
+- k == lists.length
+- 0 <= k <= 10^4
+- 0 <= lists[i].length <= 500
+- -10^4 <= lists[i][j] <= 10^4`,
+                difficulty: 'hard',
+                starterCode: `function mergeKLists(lists) {
+    // Your code here
+    // lists is an array of arrays representing linked lists
+    
+}
+
+// Test your solution
+console.log(mergeKLists([[1,4,5],[1,3,4],[2,6]])); // Expected: [1,1,2,3,4,4,5,6]`,
+                testCases: [
+                    { input: "[[1,4,5],[1,3,4],[2,6]]", expectedOutput: "[1,1,2,3,4,4,5,6]" },
+                    { input: "[]", expectedOutput: "[]" }
+                ],
+                timeLimit: 30
+            }
+        ]
+    };
+
+    // Select problem based on difficulty
+    const problems = problemBank[difficulty] || problemBank.medium;
+    const selectedProblem = problems[Math.floor(Math.random() * problems.length)];
+
+    console.log(`[DSA] Selected problem: ${selectedProblem.title}`);
+    return selectedProblem;
 }
 
 // Helper: Generate assessment MCQ questions via AI

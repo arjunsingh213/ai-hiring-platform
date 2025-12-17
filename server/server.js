@@ -2,8 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const session = require('express-session');
 const connectDB = require('./config/database');
 const { initializeSocket } = require('./config/socket');
+
+// Initialize Passport (loads Google strategy)
+const passport = require('./config/passport');
 
 // Initialize Express app
 const app = express();
@@ -43,6 +47,21 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Session middleware (required for Passport OAuth)
+app.use(session({
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'your-session-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
 
@@ -54,6 +73,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/auth', require('./routes/authOAuth')); // OAuth routes
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/resumes', require('./routes/resumeRoutes'));
 app.use('/api/interviews', require('./routes/interviewRoutes'));

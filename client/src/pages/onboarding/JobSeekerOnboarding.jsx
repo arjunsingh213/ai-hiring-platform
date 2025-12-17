@@ -478,7 +478,12 @@ const JobSeekerOnboarding = () => {
                                     </div>
                                 ) : (
                                     <div className="photo-placeholder" onClick={() => document.getElementById('photo-input').click()}>
-                                        <span className="photo-icon">📷</span>
+                                        <span className="photo-icon">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                                <circle cx="12" cy="13" r="4"></circle>
+                                            </svg>
+                                        </span>
                                         <span>Click to upload</span>
                                     </div>
                                 )}
@@ -674,37 +679,44 @@ const JobSeekerOnboarding = () => {
                         <h2>Upload Resume</h2>
                         <p className="step-description">Upload your resume for AI analysis</p>
 
-                        <div className="upload-area">
-                            <div className="upload-icon">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M17 8L12 3L7 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M12 3V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </div>
-                            <h3>Upload Your Resume</h3>
-                            <p>PDF or DOCX format, max 5MB</p>
+                        <label htmlFor="resume-upload" className="upload-area upload-area-clickable">
                             <input
                                 type="file"
                                 name="resume"
                                 onChange={handleFileChange}
-                                className="input"
+                                className="hidden-input"
                                 accept=".pdf,.doc,.docx"
                                 id="resume-upload"
                             />
-                            <label htmlFor="resume-upload" className="btn btn-outline">
+                            <div className="upload-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M17 8L12 3L7 8" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M12 3V15" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                            <h3>Upload Your Resume</h3>
+                            <p>PDF or DOCX format, max 5MB</p>
+
+                            <span className="upload-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"></path>
+                                    <path d="M17 8L12 3L7 8"></path>
+                                    <path d="M12 3V15"></path>
+                                </svg>
                                 Choose File
-                            </label>
+                            </span>
+
                             {resumeFile && (
                                 <div className="file-selected">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="16 10 10.5 15 8 12.5"></polyline>
                                     </svg>
                                     <span>{resumeFile.name}</span>
                                 </div>
                             )}
-                        </div>
+                        </label>
 
                         <div className="info-box">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -713,8 +725,8 @@ const JobSeekerOnboarding = () => {
                                 <path d="M12 8H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                             <div>
-                                <strong>Why upload your resume?</strong>
-                                <p>Our AI will analyze your resume to generate personalized interview questions and match you with relevant jobs.</p>
+                                <strong>Important Note</strong>
+                                <p>Only add skills in your resume that you truly know. During the interview, questions will be based on the skills mentioned in your resume.</p>
                             </div>
                         </div>
                     </div>
@@ -734,36 +746,79 @@ const JobSeekerOnboarding = () => {
 
             {/* Hide onboarding form when interview is active */}
             {!showInterview && (
-                <div className="onboarding-container">
-                    <div className="onboarding-header">
-                        <h1>Job Seeker Onboarding</h1>
-                        <div className="progress-bar">
-                            <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
+                <div className="onboarding-box">
+                    {/* Left Panel - Purple Gradient */}
+                    <div className="onboarding-sidebar">
+                        <div className="sidebar-content">
+                            <h2>Welcome!</h2>
+                            <p>Complete your profile to unlock amazing job opportunities</p>
+
+                            {/* Step progress circles */}
+                            <div className="step-circles">
+                                {[1, 2, 3, 4].map((s) => (
+                                    <div
+                                        key={s}
+                                        className={`step-circle ${step >= s ? 'active' : ''} ${step === s ? 'current' : ''}`}
+                                    >
+                                        {step > s ? (
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        ) : s}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Step labels */}
+                            <div className="step-labels">
+                                <span className={step === 1 ? 'current' : ''}>Personal</span>
+                                <span className={step === 2 ? 'current' : ''}>Education</span>
+                                <span className={step === 3 ? 'current' : ''}>Experience</span>
+                                <span className={step === 4 ? 'current' : ''}>Preferences</span>
+                            </div>
+
+                            <div className="sidebar-icon">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
                         </div>
-                        <p className="step-indicator">Step {step} of 4</p>
                     </div>
 
-                    <div className="onboarding-content card-glass">
-                        {renderStep()}
+                    {/* Right Panel - Form Content */}
+                    <div className="onboarding-main">
+                        <div className="onboarding-header">
+                            <div className="header-top">
+                                <div className="progress-bar">
+                                    <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
+                                </div>
+                                <p className="step-indicator">Step {step} of 4</p>
+                            </div>
+                        </div>
 
-                        <div className="form-actions">
-                            {step > 1 && (
-                                <button onClick={prevStep} className="btn btn-secondary">
-                                    Previous
-                                </button>
-                            )}
-                            {step < 4 ? (
-                                <button onClick={nextStep} className="btn btn-primary">
-                                    Next
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                            ) : (
-                                <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
-                                    {loading ? <span className="loading"></span> : 'Complete Onboarding'}
-                                </button>
-                            )}
+                        <div className="onboarding-content">
+                            {renderStep()}
+
+                            <div className="form-actions">
+                                {step > 1 && (
+                                    <button onClick={prevStep} className="btn btn-secondary">
+                                        Previous
+                                    </button>
+                                )}
+                                {step < 4 ? (
+                                    <button onClick={nextStep} className="btn btn-primary">
+                                        Next
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                ) : (
+                                    <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
+                                        {loading ? <span className="loading"></span> : 'Complete Onboarding'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

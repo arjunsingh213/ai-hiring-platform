@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import api from '../../services/api';
-import './LoginPage.css';
+import './AuthPages.css';
 
 const SignupPage = () => {
     const navigate = useNavigate();
@@ -172,6 +172,7 @@ const SignupPage = () => {
     if (verificationSent) {
         return (
             <div className="auth-page">
+                <div className="bg-orb"></div>
                 <div className="auth-container">
                     <div className="auth-card signup-card verify-sent-card">
                         <div className="verify-icon">✉️</div>
@@ -212,11 +213,12 @@ const SignupPage = () => {
 
     return (
         <div className="auth-page">
+            <div className="bg-orb"></div>
             <div className="auth-container">
                 <div className="auth-card signup-card">
                     <div className="auth-header">
-                        <h1>Create Account</h1>
-                        <p>Join us and start your journey</p>
+                        <h1>Sign Up</h1>
+                        <p>Create your account to get started</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="auth-form">
@@ -230,20 +232,6 @@ const SignupPage = () => {
                                 {error}
                             </div>
                         )}
-
-                        <div className="form-group">
-                            <label htmlFor="name">Full Name</label>
-                            <input
-                                type="text"
-                                id="name"
-                                name="name"
-                                className="input"
-                                placeholder="Enter your full name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
 
                         <div className="form-group">
                             <label htmlFor="email">Email Address</label>

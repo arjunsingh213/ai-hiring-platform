@@ -54,9 +54,22 @@ const userSchema = new mongoose.Schema({
         select: false // Don't return password by default
     },
 
+    // OAuth fields
+    oauth: {
+        googleId: String,
+        facebookId: String,
+        githubId: String,
+        linkedinId: String,
+        provider: {
+            type: String,
+            enum: ['local', 'google', 'facebook', 'github', 'linkedin'],
+            default: 'local'
+        }
+    },
+
     // Common profile fields
     profile: {
-        name: { type: String, required: true },
+        name: { type: String, default: '' },
         age: Number,
         dob: Date,
         mobile: String,

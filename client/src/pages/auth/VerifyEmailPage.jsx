@@ -73,8 +73,23 @@ const VerifyEmailPage = () => {
             <div className="verify-card card-glass">
                 <div className="verify-icon">
                     {status === 'verifying' && <div className="spinner"></div>}
-                    {status === 'success' && <span className="icon-success">✅</span>}
-                    {status === 'error' && <span className="icon-error">❌</span>}
+                    {status === 'success' && (
+                        <span className="icon-success">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="16 10 10.5 15 8 12.5"></polyline>
+                            </svg>
+                        </span>
+                    )}
+                    {status === 'error' && (
+                        <span className="icon-error">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                        </span>
+                    )}
                 </div>
 
                 <h2>

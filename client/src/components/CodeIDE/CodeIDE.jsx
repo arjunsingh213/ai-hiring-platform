@@ -113,10 +113,12 @@ console.log(solution());`
         return templates[lang] || templates['Python'];
     };
 
-    // Selected language state
-    const [selectedLanguage, setSelectedLanguage] = useState(
-        SUPPORTED_LANGUAGES.find(l => l.name === initialLanguage) || SUPPORTED_LANGUAGES[0]
-    );
+    // Fallback to first detected language or passed language - Use first in list
+    const initialLang = SUPPORTED_LANGUAGES.find(l =>
+        l.name.toLowerCase() === initialLanguage?.toLowerCase()
+    ) || SUPPORTED_LANGUAGES.find(l => l.id === initialLanguageId) || SUPPORTED_LANGUAGES[0];
+
+    const [selectedLanguage, setSelectedLanguage] = useState(initialLang);
     const [code, setCode] = useState(problem?.starterCode || getStarterCode(selectedLanguage.name));
     const [output, setOutput] = useState('');
     const [isRunning, setIsRunning] = useState(false);
@@ -126,6 +128,9 @@ console.log(solution());`
     const [showHints, setShowHints] = useState(false);
     const [hintsUsed, setHintsUsed] = useState(0);
     const [evaluation, setEvaluation] = useState(null);
+
+    // Debug: Log the problem object received
+    console.log('[CODE IDE] Problem received:', JSON.stringify(problem, null, 2)?.substring(0, 500));
 
     // Handle language change
     const handleLanguageChange = (e) => {

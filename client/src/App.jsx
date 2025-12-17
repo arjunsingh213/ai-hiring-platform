@@ -3,8 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import LandingPage from './pages/landing/LandingPage';
 import LandingPageNew from './pages/landing/LandingPageNew';
-import LoginPage from './pages/auth/LoginPage';
-import SignupPage from './pages/auth/SignupPage';
+import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import RoleSelection from './pages/onboarding/RoleSelection';
@@ -26,9 +25,10 @@ function App() {
           <Route path="/" element={<LandingPageNew />} />
           <Route path="/landing-old" element={<LandingPage />} />
 
-          {/* Authentication */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          {/* Authentication - Combined sliding auth page */}
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/signup" element={<AuthPage />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 

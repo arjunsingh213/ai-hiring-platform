@@ -137,7 +137,13 @@ const jobSchema = new mongoose.Schema({
                 duration: { type: Number, default: 30 },
                 passingScore: { type: Number, default: 60 },
                 topics: [String],
-                randomize: { type: Boolean, default: true }
+                randomize: { type: Boolean, default: true },
+                // Assessment types: technical, communication, aptitude, reasoning
+                assessmentTypes: {
+                    type: [String],
+                    enum: ['technical', 'communication', 'aptitude', 'reasoning'],
+                    default: ['technical']
+                }
             },
 
             // Scoring thresholds for this round

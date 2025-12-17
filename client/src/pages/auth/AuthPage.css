@@ -1,0 +1,636 @@
+/**
+ * Sliding Auth Page - Combined Login & Signup
+ * Features smooth sliding overlay animation
+ */
+
+/* ===== Page Container ===== */
+.auth-page-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--bg-gradient, linear-gradient(145deg, #E3EEFF 0%, #F5F7FA 50%, #FFFFFF 100%));
+    position: relative;
+}
+
+/* Ambient background effect */
+.auth-page-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at 20% 20%, rgba(0, 125, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ===== Main Auth Box ===== */
+.auth-box {
+    position: relative;
+    width: 900px;
+    max-width: 100%;
+    min-height: 580px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* ===== Form Containers ===== */
+.form-container {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    transition: all 0.6s ease-in-out;
+}
+
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+}
+
+.form-container h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary, #0F172A);
+    margin-bottom: 1.5rem;
+    font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+}
+
+/* Sign Up Container - Starts on LEFT, hidden */
+.sign-up-container {
+    left: 0;
+    opacity: 1;
+    z-index: 5;
+}
+
+/* Sign In Container - Starts on RIGHT (visible position) */
+.sign-in-container {
+    left: 0;
+    opacity: 0;
+    z-index: 1;
+}
+
+/* DEFAULT: Sign Up mode (no class) - Sign Up form visible on RIGHT */
+.auth-box .sign-up-container {
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+}
+
+.auth-box .sign-in-container {
+    transform: translateX(100%);
+    opacity: 0;
+    z-index: 1;
+}
+
+/* SIGN IN MODE: Sign In form visible on LEFT */
+.auth-box.sign-in-mode .sign-up-container {
+    transform: translateX(0);
+    opacity: 0;
+    z-index: 1;
+}
+
+.auth-box.sign-in-mode .sign-in-container {
+    transform: translateX(0);
+    opacity: 1;
+    z-index: 5;
+}
+
+/* ===== Input Styling ===== */
+.input-group {
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: #f5f7fa;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    color: var(--text-primary, #0F172A);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.input-group input::placeholder {
+    color: #94A3B8;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: var(--primary, #007DFF);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(0, 125, 255, 0.1);
+}
+
+.input-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23475569' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+}
+
+/* ===== Password Strength ===== */
+.password-strength {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    transition: width 0.3s, background-color 0.3s;
+    border-radius: 2px;
+}
+
+/* ===== Checkbox Row ===== */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: #475569;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    width: 100%;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary, #007DFF);
+}
+
+/* ===== Buttons ===== */
+.btn-solid {
+    width: 100%;
+    padding: 0.875rem 2rem;
+    background: var(--gradient-primary, linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%));
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-solid:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+}
+
+.btn-solid:active {
+    transform: translateY(0);
+}
+
+.btn-solid:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-outline {
+    padding: 0.75rem 2.5rem;
+    background: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+}
+
+/* ===== Links ===== */
+.forgot-link {
+    color: #94A3B8;
+    font-size: 0.8125rem;
+    margin-bottom: 1rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: var(--primary, #007DFF);
+}
+
+/* ===== Error Message ===== */
+.error-msg {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    color: #DC2626;
+    font-size: 0.8125rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+/* ===== Social Login Buttons ===== */
+.social-login-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.social-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #475569;
+}
+
+.social-btn:hover {
+    border-color: #6366F1;
+    background: rgba(99, 102, 241, 0.05);
+    color: #6366F1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.social-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Disabled social buttons (Coming Soon) */
+.social-btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.social-btn-disabled:hover {
+    border-color: #E2E8F0;
+    background: #fff;
+    color: #475569;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ===== OR Divider ===== */
+.or-divider {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.or-divider::before,
+.or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E2E8F0;
+}
+
+.or-divider span {
+    padding: 0 1rem;
+    color: #94A3B8;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* ===== Demo Box (legacy) ===== */
+.demo-box {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 125, 255, 0.06);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: #475569;
+    text-align: center;
+    width: 100%;
+}
+
+.demo-label {
+    font-weight: 600;
+    color: var(--primary, #007DFF);
+    margin-right: 0.5rem;
+}
+
+/* ===== Sliding Overlay ===== */
+.overlay-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    transition: transform 0.6s ease-in-out;
+    z-index: 100;
+}
+
+/* When in sign-in mode, overlay slides to the RIGHT */
+.auth-box.sign-in-mode .overlay-container {
+    transform: translateX(100%);
+}
+
+.overlay {
+    position: relative;
+    height: 100%;
+    width: 200%;
+    left: 0;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
+    color: #fff;
+    transform: translateX(0);
+    transition: transform 0.6s ease-in-out;
+}
+
+.auth-box.sign-in-mode .overlay {
+    transform: translateX(-50%);
+}
+
+.overlay-panel {
+    position: absolute;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+    height: 100%;
+    padding: 2.5rem;
+    text-align: center;
+    transition: transform 0.6s ease-in-out;
+}
+
+.overlay-panel h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.overlay-panel p {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 280px;
+}
+
+/* Left Panel - Shows "Welcome Back" + Sign In button (visible in signup mode) */
+.overlay-left {
+    left: 0;
+    transform: translateX(0);
+}
+
+.auth-box.sign-in-mode .overlay-left {
+    transform: translateX(-20%);
+}
+
+/* Right Panel - Shows "Hello Friend" + Sign Up button (visible in sign-in mode) */
+.overlay-right {
+    right: 0;
+    transform: translateX(20%);
+}
+
+.auth-box.sign-in-mode .overlay-right {
+    transform: translateX(0);
+}
+
+/* ===== Verification Screen - Two Panel Layout ===== */
+.verify-overlay-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    text-align: center;
+    color: #fff;
+}
+
+.verify-overlay-panel h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #fff;
+}
+
+.verify-overlay-panel p {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 280px;
+    margin-bottom: 2rem;
+}
+
+.verify-check-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: #fff;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.verify-content-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    text-align: center;
+}
+
+.verify-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.verify-content-panel h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary, #0F172A);
+    margin-bottom: 1rem;
+}
+
+.verify-content-panel p {
+    color: #475569;
+    margin-bottom: 0.5rem;
+    font-size: 0.9375rem;
+}
+
+.verify-email {
+    margin-bottom: 1rem !important;
+}
+
+.verify-email strong {
+    color: var(--primary, #007DFF);
+    font-size: 1rem;
+}
+
+.verify-subtext {
+    font-size: 0.875rem;
+    color: #94A3B8;
+    margin-bottom: 1.5rem !important;
+    max-width: 280px;
+}
+
+/* Legacy support */
+.verify-sent-panel {
+    text-align: center;
+    padding: 3rem;
+    max-width: 400px;
+}
+
+.verify-sent-panel h1 {
+    font-size: 1.75rem;
+    color: var(--text-primary, #0F172A);
+    margin-bottom: 1rem;
+}
+
+.verify-sent-panel p {
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.verify-sent-panel strong {
+    color: var(--primary, #007DFF);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .auth-box {
+        width: 100%;
+        min-height: auto;
+        border-radius: 16px;
+    }
+
+    .form-container {
+        width: 100%;
+        position: relative;
+        padding: 2rem 1.5rem;
+    }
+
+    .sign-up-container,
+    .sign-in-container {
+        transform: none !important;
+    }
+
+    .auth-box .sign-up-container {
+        display: block;
+        opacity: 1;
+    }
+
+    .auth-box .sign-in-container {
+        display: none;
+    }
+
+    .auth-box.sign-in-mode .sign-up-container {
+        display: none;
+    }
+
+    .auth-box.sign-in-mode .sign-in-container {
+        display: block;
+        opacity: 1;
+    }
+
+    .overlay-container {
+        position: relative;
+        left: 0;
+        width: 100%;
+        height: auto;
+        padding: 2rem;
+        transform: none !important;
+    }
+
+    .overlay {
+        width: 100%;
+        left: 0;
+        transform: none !important;
+        border-radius: 12px;
+    }
+
+    .overlay-panel {
+        position: relative;
+        width: 100%;
+        padding: 1.5rem;
+    }
+
+    .overlay-left,
+    .overlay-right {
+        transform: none !important;
+    }
+
+    .auth-box .overlay-left {
+        display: none;
+    }
+
+    .auth-box .overlay-right {
+        display: flex;
+    }
+
+    .auth-box.sign-in-mode .overlay-left {
+        display: flex;
+    }
+
+    .auth-box.sign-in-mode .overlay-right {
+        display: none;
+    }
+}
