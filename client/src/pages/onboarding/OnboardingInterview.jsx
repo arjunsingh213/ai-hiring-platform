@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useToast } from '../../components/Toast';
 import api from '../../services/api';
 import CodeIDE from '../../components/CodeIDE';
+import useWhisperSTT from '../../hooks/useWhisperSTT';
 import './OnboardingInterview.css';
 
 const OnboardingInterview = ({
@@ -27,10 +28,21 @@ const OnboardingInterview = ({
     const [timeLeft, setTimeLeft] = useState(120);
     const [cameraEnabled, setCameraEnabled] = useState(false);
 
-    // Speech recognition
-    const [isListening, setIsListening] = useState(false);
-    const [speechSupported, setSpeechSupported] = useState(false);
-    const recognitionRef = useRef(null);
+    // Whisper Speech-to-Text hook
+    const {
+        isModelLoading: whisperLoading,
+        modelLoaded: whisperReady,
+        modelProgress: whisperProgress,
+        isRecording: isListening,
+        isTranscribing,
+        transcript,
+        error: whisperError,
+        loadModel: loadWhisperModel,
+        startRecording,
+        stopRecording,
+        clearTranscript,
+        setTranscript,
+    } = useWhisperSTT();
 
     // Text-to-speech
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -50,61 +62,26 @@ const OnboardingInterview = ({
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const cameraRef = useRef(null);
 
-    // Initialize speech recognition
+    // Preload Whisper model when component mounts
     useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            setSpeechSupported(true);
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-
-            recognition.onresult = (event) => {
-                let newFinalText = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        newFinalText += event.results[i][0].transcript + ' ';
-                    }
-                }
-                if (newFinalText.trim()) {
-                    setAnswer(prev => prev + (prev ? ' ' : '') + newFinalText.trim());
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Speech error:', event.error);
-                setIsListening(false);
-            };
-
-            recognition.onend = () => setIsListening(false);
-            recognitionRef.current = recognition;
-        }
-
+        loadWhisperModel();
         if ('speechSynthesis' in window) {
             setTtsSupported(true);
         }
-
-        return () => {
-            if (recognitionRef.current) {
-                try { recognitionRef.current.stop(); } catch (e) { }
-            }
-        };
     }, []);
 
-    const toggleListening = () => {
-        if (!recognitionRef.current) return;
-
+    const toggleListening = async () => {
         if (isListening) {
-            recognitionRef.current.stop();
-            setIsListening(false);
-        } else {
-            try {
-                recognitionRef.current.start();
-                setIsListening(true);
-            } catch (e) {
-                console.error("Mic start error", e);
+            // Stop recording and get transcription
+            const text = await stopRecording();
+            if (text && text.trim()) {
+                setAnswer(prev => prev + (prev ? ' ' : '') + text.trim());
             }
+            clearTranscript();
+        } else {
+            // Start recording
+            clearTranscript();
+            await startRecording();
         }
     };
 
@@ -756,12 +733,18 @@ const OnboardingInterview = ({
 
                     <div className="answer-footer">
                         <motion.button
-                            className={`mic-btn ${isListening ? 'listening' : ''}`}
+                            className={`mic-btn ${isListening ? 'listening' : ''} ${isTranscribing ? 'transcribing' : ''}`}
                             onClick={toggleListening}
+                            disabled={whisperLoading}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
+                            title={whisperLoading ? `Loading speech model (${whisperProgress}%)` : isListening ? 'Stop recording' : 'Start speaking'}
                         >
-                            {isListening ? (
+                            {whisperLoading ? (
+                                <>⏳ Loading ({whisperProgress}%)</>
+                            ) : isTranscribing ? (
+                                <>⚙️ Transcribing...</>
+                            ) : isListening ? (
                                 <>
                                     <span className="mic-pulse"></span>
                                     🎙️ Listening...
