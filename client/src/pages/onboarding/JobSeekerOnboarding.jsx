@@ -207,7 +207,7 @@ const JobSeekerOnboarding = () => {
         const newErrors = {};
 
         if (currentStep === 1) {
-            // Validate name
+            // Required fields: name, age, DOB, mobile
             const nameError = validateName(formData.name);
             if (nameError) newErrors.name = nameError;
 
@@ -232,29 +232,24 @@ const JobSeekerOnboarding = () => {
             // Validate mobile
             const mobileError = validateMobile(formData.mobile);
             if (mobileError) newErrors.mobile = mobileError;
+
+            // Photo is OPTIONAL - no validation
         }
 
         if (currentStep === 2) {
-            // Validate required fields
-            if (!formData.profession && !otherValues.profession) {
-                newErrors.profession = 'Profession is required';
-            }
-            if (!formData.college && !otherValues.college) {
-                newErrors.college = 'College is required';
-            }
-            if (!formData.domain && !otherValues.domain) {
-                newErrors.domain = 'Domain is required';
-            }
+            // Required: desiredRole and jobDomains only
             if (!formData.desiredRole && !otherValues.desiredRole) {
                 newErrors.desiredRole = 'Desired role is required';
             }
             if (formData.jobDomains.length === 0) {
                 newErrors.jobDomains = 'Please select at least 1 job domain';
             }
+            // profession, college, domain are OPTIONAL for onboarding
+            // but will be required when applying for jobs
         }
 
         if (currentStep === 3) {
-            // Validate optional URLs if provided
+            // All fields are optional - only validate format if provided
             const linkedinError = validateLinkedIn(formData.linkedin);
             if (linkedinError) newErrors.linkedin = linkedinError;
 
@@ -279,8 +274,8 @@ const JobSeekerOnboarding = () => {
     };
 
     const handleSubmit = async () => {
-        // Validate required fields
-        if (!formData.name || !formData.age || !formData.mobile || !formData.profession || !formData.college || !formData.domain || !formData.desiredRole) {
+        // Validate only strictly required fields (optional fields can be added when applying for jobs)
+        if (!formData.name || !formData.age || !formData.mobile || !formData.desiredRole || formData.jobDomains.length === 0) {
             toast.error('Please fill in all required fields');
             return;
         }
@@ -509,12 +504,11 @@ const JobSeekerOnboarding = () => {
                         <div className="form-group">
                             <AutocompleteInput
                                 name="profession"
-                                label="Profession"
+                                label="Profession (Optional)"
                                 value={formData.profession}
                                 onChange={handleChange}
                                 suggestions={PROFESSIONS}
                                 placeholder="Start typing your profession..."
-                                required
                                 allowOther={true}
                                 otherValue={otherValues.profession}
                                 onOtherChange={(val) => setOtherValues(prev => ({ ...prev, profession: val }))}
@@ -525,12 +519,11 @@ const JobSeekerOnboarding = () => {
                         <div className="form-group">
                             <AutocompleteInput
                                 name="college"
-                                label="College/University"
+                                label="College/University (Optional)"
                                 value={formData.college}
                                 onChange={handleChange}
                                 searchFunction={searchCollegeWrapper}
                                 placeholder="Start typing your college name..."
-                                required
                                 allowOther={true}
                                 otherValue={otherValues.college}
                                 onOtherChange={(val) => setOtherValues(prev => ({ ...prev, college: val }))}
@@ -541,12 +534,11 @@ const JobSeekerOnboarding = () => {
                         <div className="form-group">
                             <AutocompleteInput
                                 name="domain"
-                                label="Domain/Field of Study"
+                                label="Domain/Field of Study (Optional)"
                                 value={formData.domain}
                                 onChange={handleChange}
                                 suggestions={DOMAINS}
                                 placeholder="Start typing your field..."
-                                required
                                 allowOther={true}
                                 otherValue={otherValues.domain}
                                 onOtherChange={(val) => setOtherValues(prev => ({ ...prev, domain: val }))}
@@ -555,13 +547,12 @@ const JobSeekerOnboarding = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Experience Level *</label>
+                            <label className="form-label">Experience Level (Optional)</label>
                             <select
                                 name="experienceLevel"
                                 value={formData.experienceLevel}
                                 onChange={handleChange}
                                 className="input"
-                                required
                             >
                                 <option value="fresher">Fresher</option>
                                 <option value="experienced">Experienced</option>
