@@ -19,9 +19,10 @@ const useWhisperSTT = () => {
     const [error, setError] = useState(null);
 
     // Audio recording refs
-    const mediaRecorder = useRef(null);
-    const audioChunks = useRef([]);
     const streamRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const processorRef = useRef(null);
+    const audioDataRef = useRef([]);
 
     // Load the Whisper model
     const loadModel = useCallback(async () => {
@@ -31,7 +32,7 @@ const useWhisperSTT = () => {
         setError(null);
 
         try {
-            // Load whisper-tiny for English, optimized for speed
+            // Load whisper-tiny for English
             transcriber.current = await pipeline(
                 'automatic-speech-recognition',
                 'Xenova/whisper-tiny.en',
@@ -41,47 +42,68 @@ const useWhisperSTT = () => {
                             setModelProgress(Math.round(progress.progress));
                         }
                     },
-                    // Use WebGPU if available for faster inference
-                    device: 'webgpu',
-                    dtype: 'fp32',
                 }
             );
             setModelLoaded(true);
             console.log('Whisper model loaded successfully');
         } catch (err) {
             console.error('Failed to load Whisper model:', err);
-            // Fallback without WebGPU
-            try {
-                transcriber.current = await pipeline(
-                    'automatic-speech-recognition',
-                    'Xenova/whisper-tiny.en',
-                    {
-                        progress_callback: (progress) => {
-                            if (progress.status === 'progress') {
-                                setModelProgress(Math.round(progress.progress));
-                            }
-                        },
-                    }
-                );
-                setModelLoaded(true);
-                console.log('Whisper model loaded (CPU fallback)');
-            } catch (fallbackErr) {
-                setError('Failed to load speech recognition model');
-                console.error('Whisper fallback failed:', fallbackErr);
-            }
+            setError('Failed to load speech recognition model');
         } finally {
             setIsModelLoading(false);
         }
     }, [isModelLoading]);
 
-    // Start recording audio
+    // Convert Float32Array to WAV blob
+    const float32ToWav = (audioData, sampleRate = 16000) => {
+        const numChannels = 1;
+        const bytesPerSample = 2;
+        const blockAlign = numChannels * bytesPerSample;
+        const byteRate = sampleRate * blockAlign;
+        const dataSize = audioData.length * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
+
+        // WAV header
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bytesPerSample * 8, true);
+        writeString(36, 'data');
+        view.setUint32(40, dataSize, true);
+
+        // Audio data
+        let offset = 44;
+        for (let i = 0; i < audioData.length; i++) {
+            const sample = Math.max(-1, Math.min(1, audioData[i]));
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            offset += 2;
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+    };
+
+    // Start recording audio using Web Audio API
     const startRecording = useCallback(async () => {
         if (!modelLoaded) {
             await loadModel();
         }
 
         setError(null);
-        audioChunks.current = [];
+        audioDataRef.current = [];
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -94,18 +116,29 @@ const useWhisperSTT = () => {
             });
             streamRef.current = stream;
 
-            mediaRecorder.current = new MediaRecorder(stream, {
-                mimeType: 'audio/webm;codecs=opus'
+            // Create audio context for raw PCM capture
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
             });
+            audioContextRef.current = audioContext;
 
-            mediaRecorder.current.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.current.push(event.data);
-                }
+            const source = audioContext.createMediaStreamSource(stream);
+
+            // Use ScriptProcessor for audio capture (deprecated but widely supported)
+            const processor = audioContext.createScriptProcessor(4096, 1, 1);
+            processorRef.current = processor;
+
+            processor.onaudioprocess = (e) => {
+                const inputData = e.inputBuffer.getChannelData(0);
+                // Make a copy of the audio data
+                audioDataRef.current.push(new Float32Array(inputData));
             };
 
-            mediaRecorder.current.start(1000); // Collect data every second
+            source.connect(processor);
+            processor.connect(audioContext.destination);
+
             setIsRecording(true);
+            console.log('Recording started with Web Audio API');
         } catch (err) {
             console.error('Failed to start recording:', err);
             setError('Microphone access denied or unavailable');
@@ -114,55 +147,75 @@ const useWhisperSTT = () => {
 
     // Stop recording and transcribe
     const stopRecording = useCallback(async () => {
-        if (!mediaRecorder.current || !isRecording) return '';
+        if (!isRecording) return '';
 
-        return new Promise((resolve) => {
-            mediaRecorder.current.onstop = async () => {
-                setIsRecording(false);
-                setIsTranscribing(true);
+        setIsRecording(false);
+        setIsTranscribing(true);
 
-                try {
-                    // Create audio blob
-                    const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        try {
+            // Stop audio processing
+            if (processorRef.current) {
+                processorRef.current.disconnect();
+                processorRef.current = null;
+            }
+            if (audioContextRef.current) {
+                await audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
 
-                    // Create a URL for the blob that Whisper can read
-                    const audioUrl = URL.createObjectURL(audioBlob);
+            // Combine all audio chunks
+            const totalLength = audioDataRef.current.reduce((acc, chunk) => acc + chunk.length, 0);
+            const combinedAudio = new Float32Array(totalLength);
+            let offset = 0;
+            for (const chunk of audioDataRef.current) {
+                combinedAudio.set(chunk, offset);
+                offset += chunk.length;
+            }
 
-                    if (transcriber.current) {
-                        // Transcribe with Whisper using the blob URL
-                        const result = await transcriber.current(audioUrl, {
-                            chunk_length_s: 30,
-                            stride_length_s: 5,
-                            language: 'english',
-                            task: 'transcribe',
-                        });
+            console.log('Audio collected:', combinedAudio.length, 'samples');
 
-                        // Clean up the URL
-                        URL.revokeObjectURL(audioUrl);
+            if (combinedAudio.length < 1600) { // Less than 0.1 second
+                console.log('Audio too short, skipping transcription');
+                setIsTranscribing(false);
+                return '';
+            }
 
-                        const text = result.text || '';
-                        setTranscript(prev => prev ? `${prev} ${text}` : text);
-                        resolve(text);
-                    } else {
-                        resolve('');
-                    }
-                } catch (err) {
-                    console.error('Transcription error:', err);
-                    setError('Failed to transcribe audio');
-                    resolve('');
-                } finally {
-                    setIsTranscribing(false);
+            // Convert to WAV blob and create URL
+            const wavBlob = float32ToWav(combinedAudio, 16000);
+            const audioUrl = URL.createObjectURL(wavBlob);
 
-                    // Stop media stream
-                    if (streamRef.current) {
-                        streamRef.current.getTracks().forEach(track => track.stop());
-                        streamRef.current = null;
-                    }
+            if (transcriber.current) {
+                console.log('Starting transcription...');
+                const result = await transcriber.current(audioUrl, {
+                    chunk_length_s: 30,
+                    stride_length_s: 5,
+                    language: 'english',
+                    task: 'transcribe',
+                });
+
+                URL.revokeObjectURL(audioUrl);
+
+                const text = result.text?.trim() || '';
+                console.log('Transcription result:', text);
+
+                if (text) {
+                    setTranscript(prev => prev ? `${prev} ${text}` : text);
                 }
-            };
 
-            mediaRecorder.current.stop();
-        });
+                setIsTranscribing(false);
+                return text;
+            }
+        } catch (err) {
+            console.error('Transcription error:', err);
+            setError('Failed to transcribe audio');
+        }
+
+        setIsTranscribing(false);
+        return '';
     }, [isRecording]);
 
     // Clear transcript
@@ -173,6 +226,12 @@ const useWhisperSTT = () => {
     // Cleanup on unmount
     useEffect(() => {
         return () => {
+            if (processorRef.current) {
+                processorRef.current.disconnect();
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());
             }
