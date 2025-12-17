@@ -114,7 +114,7 @@ const useWhisperSTT = () => {
 
     // Stop recording and transcribe
     const stopRecording = useCallback(async () => {
-        if (!mediaRecorder.current || !isRecording) return;
+        if (!mediaRecorder.current || !isRecording) return '';
 
         return new Promise((resolve) => {
             mediaRecorder.current.onstop = async () => {
@@ -125,21 +125,26 @@ const useWhisperSTT = () => {
                     // Create audio blob
                     const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
 
-                    // Convert to array buffer for Whisper
-                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    // Create a URL for the blob that Whisper can read
+                    const audioUrl = URL.createObjectURL(audioBlob);
 
                     if (transcriber.current) {
-                        // Transcribe with Whisper
-                        const result = await transcriber.current(arrayBuffer, {
+                        // Transcribe with Whisper using the blob URL
+                        const result = await transcriber.current(audioUrl, {
                             chunk_length_s: 30,
                             stride_length_s: 5,
                             language: 'english',
                             task: 'transcribe',
                         });
 
+                        // Clean up the URL
+                        URL.revokeObjectURL(audioUrl);
+
                         const text = result.text || '';
                         setTranscript(prev => prev ? `${prev} ${text}` : text);
                         resolve(text);
+                    } else {
+                        resolve('');
                     }
                 } catch (err) {
                     console.error('Transcription error:', err);
