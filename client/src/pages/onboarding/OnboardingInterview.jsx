@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useToast } from '../../components/Toast';
 import api from '../../services/api';
 import CodeIDE from '../../components/CodeIDE';
-import useWhisperSTT from '../../hooks/useWhisperSTT';
+import InterviewProctor from '../../components/InterviewProctor';
 import './OnboardingInterview.css';
 
 const OnboardingInterview = ({
@@ -15,6 +15,7 @@ const OnboardingInterview = ({
 }) => {
     const toast = useToast();
     const videoRef = useRef(null);
+    const streamRef = useRef(null); // Track camera stream for proper cleanup
 
     // Interview state
     const [questions, setQuestions] = useState([]);
@@ -25,24 +26,14 @@ const OnboardingInterview = ({
     const [submitting, setSubmitting] = useState(false);
     const [completed, setCompleted] = useState(false);
     const [results, setResults] = useState(null);
-    const [timeLeft, setTimeLeft] = useState(120);
+    const [timeLeft, setTimeLeft] = useState(2700); // 45 minutes total interview timer
     const [cameraEnabled, setCameraEnabled] = useState(false);
 
-    // Whisper Speech-to-Text hook
-    const {
-        isModelLoading: whisperLoading,
-        modelLoaded: whisperReady,
-        modelProgress: whisperProgress,
-        isRecording: isListening,
-        isTranscribing,
-        transcript,
-        error: whisperError,
-        loadModel: loadWhisperModel,
-        startRecording,
-        stopRecording,
-        clearTranscript,
-        setTranscript,
-    } = useWhisperSTT();
+    // Speech recognition
+    const [isListening, setIsListening] = useState(false);
+    const [transcript, setTranscript] = useState(''); // For real-time speech display
+    const [speechSupported, setSpeechSupported] = useState(false);
+    const recognitionRef = useRef(null);
 
     // Text-to-speech
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -62,26 +53,78 @@ const OnboardingInterview = ({
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const cameraRef = useRef(null);
 
-    // Preload Whisper model when component mounts
+    // Proctoring state
+    const [proctoringEnabled, setProctoringEnabled] = useState(true);
+    const [isAutoFailed, setIsAutoFailed] = useState(false);
+
+    // Initialize speech recognition
     useEffect(() => {
-        loadWhisperModel();
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            setSpeechSupported(true);
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                // IMPORTANT: Only process new results starting from resultIndex
+                // This prevents duplication of earlier results
+                let newFinalText = '';
+                let interimText = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    if (result.isFinal) {
+                        newFinalText += result[0].transcript + ' ';
+                    } else {
+                        interimText += result[0].transcript;
+                    }
+                }
+
+                // Show interim text for real-time feedback
+                setTranscript(interimText);
+
+                // Only append final text to answer (new text only)
+                if (newFinalText.trim()) {
+                    setAnswer(prev => prev + (prev ? ' ' : '') + newFinalText.trim());
+                    setTranscript(''); // Clear interim after final result
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech error:', event.error);
+                setIsListening(false);
+            };
+
+            recognition.onend = () => setIsListening(false);
+            recognitionRef.current = recognition;
+        }
+
         if ('speechSynthesis' in window) {
             setTtsSupported(true);
         }
+
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch (e) { }
+            }
+        };
     }, []);
 
-    const toggleListening = async () => {
+    const toggleListening = () => {
+        if (!recognitionRef.current) return;
+
         if (isListening) {
-            // Stop recording and get transcription
-            const text = await stopRecording();
-            if (text && text.trim()) {
-                setAnswer(prev => prev + (prev ? ' ' : '') + text.trim());
-            }
-            clearTranscript();
+            recognitionRef.current.stop();
+            setIsListening(false);
         } else {
-            // Start recording
-            clearTranscript();
-            await startRecording();
+            try {
+                recognitionRef.current.start();
+                setIsListening(true);
+            } catch (e) {
+                console.error("Mic start error", e);
+            }
         }
     };
 
@@ -144,6 +187,25 @@ const OnboardingInterview = ({
         }
     }, [currentIndex, questions, completed]);
 
+    // Stop camera function - reusable for cleanup
+    const stopCamera = () => {
+        console.log('Stopping camera...');
+        // Stop stream from ref first (most reliable)
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => {
+                track.stop();
+                console.log('Track stopped:', track.kind);
+            });
+            streamRef.current = null;
+        }
+        // Also try from video element as backup
+        if (videoRef.current?.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setCameraEnabled(false);
+    };
+
     // Initialize camera
     useEffect(() => {
         // Small delay to ensure video element is mounted
@@ -152,9 +214,7 @@ const OnboardingInterview = ({
         }, 500);
         return () => {
             clearTimeout(timer);
-            if (videoRef.current?.srcObject) {
-                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-            }
+            stopCamera(); // Use robust cleanup function
         };
     }, []);
 
@@ -166,6 +226,9 @@ const OnboardingInterview = ({
                 audio: false
             });
             console.log('Camera stream obtained:', stream);
+
+            // Store stream in ref for cleanup
+            streamRef.current = stream;
 
             // Wait a moment for video element to be ready
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -235,7 +298,7 @@ const OnboardingInterview = ({
 
             if (response.success && response.question) {
                 setQuestions([response.question]);
-                setTimeLeft(120);
+                // Timer already set to 2700 (45 min) in initial state - no reset needed
             } else {
                 throw new Error('Failed to start interview');
             }
@@ -306,7 +369,7 @@ const OnboardingInterview = ({
                         return [...prev, response.question];
                     });
                     setCurrentIndex(nextIndex);
-                    setTimeLeft(120);
+                    // DON'T reset timer - it's a total interview timer now
                 } else {
                     // Safety fallback - submit if somehow we're at limit
                     submitInterview(updatedAnswers);
@@ -429,9 +492,15 @@ const OnboardingInterview = ({
     };
 
     const handleFinish = () => {
+        // Stop camera when finishing interview
+        if (videoRef.current?.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+            setCameraEnabled(false);
+        }
         onComplete({
             ...results,
-            codingResults
+            codingResults,
+            proctoringViolations // Include violations in final report for admin
         });
     };
 
@@ -439,6 +508,18 @@ const OnboardingInterview = ({
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // Proctoring state - store violations for final evaluation
+    const [proctoringViolations, setProctoringViolations] = useState([]);
+    const [violationReport, setViolationReport] = useState(null);
+
+    // Handle proctoring violations (log-only, no termination)
+    const handleViolationLog = (violations, getReport) => {
+        setProctoringViolations(violations);
+        if (getReport) {
+            setViolationReport(getReport());
+        }
     };
 
     const currentQ = questions[currentIndex];
@@ -682,6 +763,13 @@ const OnboardingInterview = ({
                             </button>
                         </div>
                     )}
+
+                    {/* Proctoring Component - Log Only Mode */}
+                    <InterviewProctor
+                        videoRef={videoRef}
+                        enabled={proctoringEnabled && cameraEnabled && !completed}
+                        onViolationLog={handleViolationLog}
+                    />
                 </div>
 
                 {/* Question Card - Full Width Expanded */}
@@ -724,6 +812,14 @@ const OnboardingInterview = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                 >
+                    {/* Real-time speech transcript display */}
+                    {isListening && transcript && (
+                        <div className="speech-transcript">
+                            <span className="listening-indicator">● Listening...</span>
+                            <span className="transcript-text">"{transcript}"</span>
+                        </div>
+                    )}
+
                     <textarea
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
@@ -733,18 +829,12 @@ const OnboardingInterview = ({
 
                     <div className="answer-footer">
                         <motion.button
-                            className={`mic-btn ${isListening ? 'listening' : ''} ${isTranscribing ? 'transcribing' : ''}`}
+                            className={`mic-btn ${isListening ? 'listening' : ''}`}
                             onClick={toggleListening}
-                            disabled={whisperLoading}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            title={whisperLoading ? `Loading speech model (${whisperProgress}%)` : isListening ? 'Stop recording' : 'Start speaking'}
                         >
-                            {whisperLoading ? (
-                                <>⏳ Loading ({whisperProgress}%)</>
-                            ) : isTranscribing ? (
-                                <>⚙️ Transcribing...</>
-                            ) : isListening ? (
+                            {isListening ? (
                                 <>
                                     <span className="mic-pulse"></span>
                                     🎙️ Listening...

@@ -507,9 +507,33 @@ async function generateNextQuestion(resumeText, role, experienceLevel, history =
     - DO NOT ask to write code or implement anything
     - Questions should test understanding of THEIR LISTED SKILLS, not random topics
     ` : `
-    HR ROUND RULES (YOU MUST FOLLOW THESE):
-    - Ask about: teamwork, challenges, problem-solving, communication, leadership, conflict resolution
-    - Examples: "Tell me about a time when...", "How do you handle...", "Describe a situation where..."
+    HR ROUND RULES - EXPERIENCE LEVEL: ${experienceLevel}
+    
+    ${experienceLevel === 'fresher' || experienceLevel === 'Entry Level' || experienceLevel === 'Intern/Junior' ? `
+    ⚠️ FRESHER CANDIDATE - ASK SIMPLE, RELATABLE QUESTIONS:
+    - Ask about COLLEGE PROJECTS, academic experiences, team assignments
+    - Ask about handling conflicts with classmates/teammates in group projects
+    - Ask about time management during exams/submissions
+    - Ask about learning new technologies for college projects
+    - Ask about overcoming challenges in academic work
+    - DO NOT ask about "stakeholders", "clients", "business decisions", "work deadlines"
+    - EXAMPLE GOOD QUESTIONS:
+      * "Tell me about a project you did in college that you're proud of"
+      * "How did you handle a disagreement with teammates in a group project?"
+      * "Describe a time when you had to learn something new quickly for an assignment"
+    ` : `
+    ⚠️ EXPERIENCED CANDIDATE (${experienceLevel}):
+    - Ask about workplace challenges, stakeholder management, project delivery
+    - Ask about handling conflicts with team members or clients
+    - Ask about leadership, mentoring junior developers
+    - Ask about meeting deadlines, prioritization, work pressure
+    - EXAMPLE GOOD QUESTIONS:
+      * "Describe a challenging project and how you ensured timely delivery"
+      * "Tell me about a time you had to push back on a stakeholder request"
+      * "How do you mentor junior team members?"
+    `}
+    
+    GENERAL HR RULES:
     - DO NOT ASK ANY TECHNICAL QUESTIONS - this is NOT the technical round
     - Focus on: soft skills, personality, work ethic, collaboration, time management
     `}

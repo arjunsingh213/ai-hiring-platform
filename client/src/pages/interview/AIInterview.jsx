@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import CodeIDE from '../../components/CodeIDE';
-import useWhisperSTT from '../../hooks/useWhisperSTT';
 import './AIInterview.css';
 
 // Programming languages to detect
@@ -61,21 +60,11 @@ const AIInterview = () => {
     const [assessmentAnswers, setAssessmentAnswers] = useState({});
     const [currentAssessmentIndex, setCurrentAssessmentIndex] = useState(0);
 
-    // Whisper Speech-to-Text hook
-    const {
-        isModelLoading: whisperLoading,
-        modelLoaded: whisperReady,
-        modelProgress: whisperProgress,
-        isRecording: isListening,
-        isTranscribing,
-        transcript,
-        error: whisperError,
-        loadModel: loadWhisperModel,
-        startRecording,
-        stopRecording,
-        clearTranscript,
-        setTranscript,
-    } = useWhisperSTT();
+    // Speech-to-Text states
+    const [isListening, setIsListening] = useState(false);
+    const [speechSupported, setSpeechSupported] = useState(false);
+    const [transcript, setTranscript] = useState('');
+    const recognitionRef = useRef(null);
 
     // Text-to-Speech states
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -90,10 +79,58 @@ const AIInterview = () => {
 
 
 
-    // Preload Whisper model when component mounts
+    // Init Speech Recognition
     useEffect(() => {
-        // Start loading the model in background
-        loadWhisperModel();
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            setSpeechSupported(true);
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                // IMPORTANT: Only process new results starting from resultIndex
+                // This prevents duplication of earlier results
+                let newFinalText = '';
+                let interimText = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    if (result.isFinal) {
+                        newFinalText += result[0].transcript + ' ';
+                    } else {
+                        interimText += result[0].transcript;
+                    }
+                }
+
+                // Show interim text for real-time feedback
+                setTranscript(interimText);
+
+                // Only append final text to answer (new text only)
+                if (newFinalText.trim()) {
+                    setAnswer(prev => prev + (prev ? ' ' : '') + newFinalText.trim());
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech error:', event.error);
+                if (event.error === 'not-allowed') {
+                    toast.error('Microphone access denied');
+                }
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+        }
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch (e) { }
+            }
+        };
     }, []);
 
     // Init Text-to-Speech
@@ -155,23 +192,23 @@ const AIInterview = () => {
         setIsSpeaking(false);
     };
 
-    const toggleListening = async () => {
+    const toggleListening = () => {
+        if (!speechSupported) {
+            toast.warning('Use Chrome for speech recognition');
+            return;
+        }
         // Stop TTS if speaking
         if (isSpeaking) {
             stopSpeaking();
         }
-
         if (isListening) {
-            // Stop recording and get transcription
-            const text = await stopRecording();
-            if (text && text.trim()) {
-                setAnswer(prev => prev + (prev ? ' ' : '') + text.trim());
-            }
-            clearTranscript();
+            recognitionRef.current.stop();
+            setIsListening(false);
+            setTranscript('');
         } else {
-            // Start recording
-            clearTranscript();
-            await startRecording();
+            setTranscript('');
+            recognitionRef.current.start();
+            setIsListening(true);
         }
     };
 
@@ -1104,22 +1141,18 @@ const AIInterview = () => {
                         <div className="answer-header">
                             <label className="form-label">Your Answer</label>
                             <button
-                                className={`speech-btn ${isListening ? 'listening' : ''} ${isTranscribing ? 'transcribing' : ''}`}
+                                className={`speech-btn ${isListening ? 'listening' : ''}`}
                                 onClick={toggleListening}
-                                disabled={whisperLoading || submitting}
-                                title={whisperLoading ? `Loading speech model (${whisperProgress}%)` : isListening ? 'Stop recording' : 'Start speaking'}
+                                disabled={!speechSupported || submitting}
                             >
-                                {whisperLoading ? `⏳ Loading (${whisperProgress}%)` :
-                                    isTranscribing ? '⚙️ Transcribing...' :
-                                        isListening ? '🔴 Stop' : '🎤 Speak'}
+                                {isListening ? '🔴 Stop' : '🎤 Speak'}
                             </button>
                         </div>
 
-                        {(isListening || isTranscribing) && (
+                        {isListening && (
                             <div className="listening-indicator">
                                 <span className="listening-dot"></span>
-                                {isTranscribing ? 'Transcribing your speech...' : 'Listening...'}
-                                {transcript && <span className="interim-text">"{transcript}"</span>}
+                                Listening... {transcript && <span className="interim-text">"{transcript}"</span>}
                             </div>
                         )}
 

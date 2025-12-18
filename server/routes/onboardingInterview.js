@@ -924,4 +924,88 @@ router.get('/status/:userId', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/onboarding-interview/log-violation
+ * Log proctoring violation and potentially ban user
+ */
+router.post('/log-violation', async (req, res) => {
+    try {
+        const { userId, reason, warnings, bannedUntil } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID required' });
+        }
+
+        console.log(`⚠️ Proctoring violation for user ${userId}: ${reason}`);
+
+        // Update user with violation and ban
+        await User.findByIdAndUpdate(userId, {
+            $set: {
+                'platformInterview.status': 'failed',
+                'platformInterview.failedReason': 'proctoring_violation',
+                'platformInterview.canRetry': true,
+                'platformInterview.retryAfter': bannedUntil || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                'platformInterview.lastViolation': {
+                    reason,
+                    timestamp: new Date(),
+                    warningCount: warnings?.length || 3
+                }
+            },
+            $push: {
+                'platformInterview.violations': {
+                    reason,
+                    warnings,
+                    timestamp: new Date()
+                }
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Violation logged. User banned for 7 days.',
+            retryAfter: bannedUntil
+        });
+    } catch (error) {
+        console.error('Log violation error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/onboarding-interview/check-ban/:userId
+ * Check if user is currently banned from interviews
+ */
+router.get('/check-ban/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId).select('platformInterview');
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const { platformInterview } = user;
+        const isBanned = platformInterview?.failedReason === 'proctoring_violation' &&
+            platformInterview?.retryAfter &&
+            new Date() < new Date(platformInterview.retryAfter);
+
+        res.json({
+            success: true,
+            data: {
+                isBanned,
+                retryAfter: platformInterview?.retryAfter,
+                reason: platformInterview?.lastViolation?.reason,
+                message: isBanned
+                    ? `You are banned until ${new Date(platformInterview.retryAfter).toLocaleDateString()}`
+                    : 'You can take the interview'
+            }
+        });
+    } catch (error) {
+        console.error('Check ban error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;
+
