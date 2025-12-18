@@ -76,6 +76,30 @@ const JobSeekerOnboarding = () => {
         profession: ''
     });
 
+    // Handle OAuth redirect - extract token and userId from URL
+    useEffect(() => {
+        const tokenFromUrl = searchParams.get('token');
+        const userIdFromUrl = searchParams.get('userId');
+
+        if (tokenFromUrl) {
+            // Store JWT token for API authentication
+            localStorage.setItem('token', tokenFromUrl);
+            console.log('OAuth token stored from URL');
+        }
+
+        if (userIdFromUrl) {
+            // Store userId for user identification
+            localStorage.setItem('userId', userIdFromUrl);
+            console.log('OAuth userId stored from URL:', userIdFromUrl);
+        }
+
+        // Clean up URL params after extracting (optional - for cleaner URL)
+        if (tokenFromUrl || userIdFromUrl) {
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, '', cleanUrl);
+        }
+    }, [searchParams]);
+
     // Handle step query parameter for direct interview access
     useEffect(() => {
         const stepParam = searchParams.get('step');

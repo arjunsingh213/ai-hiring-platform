@@ -709,7 +709,16 @@ const OnboardingInterview = ({
                     <span className={`timer ${timeLeft < 30 ? 'warning' : ''}`}>
                         ⏱️ {formatTime(timeLeft)}
                     </span>
-                    <button className="skip-interview-btn" onClick={onSkip}>
+                    <button className="skip-interview-btn" onClick={() => {
+                        if (onSkip && typeof onSkip === 'function') {
+                            onSkip();
+                        } else {
+                            // Fallback if onSkip not provided
+                            stopCamera();
+                            toast.info('Interview skipped. You can take it later from your dashboard.');
+                            window.location.href = '/jobseeker/home';
+                        }
+                    }}>
                         Skip Interview
                     </button>
                 </div>
