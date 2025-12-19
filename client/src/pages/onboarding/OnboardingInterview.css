@@ -1378,3 +1378,321 @@
     font-size: 0.95rem;
     flex: 1;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Tablet (768px) */
+@media (max-width: 768px) {
+    .onboarding-interview {
+        padding: 16px;
+    }
+
+    .interview-header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 20px;
+    }
+
+    .header-left {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .round-badge {
+        padding: 8px 14px;
+        font-size: 0.7rem;
+    }
+
+    .question-counter {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .timer {
+        padding: 8px 14px;
+        font-size: 0.875rem;
+    }
+
+    .skip-interview-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+
+    .interview-content {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .camera-section {
+        width: 100%;
+        height: 200px;
+        border-radius: 16px;
+        position: relative;
+    }
+
+    .camera-section.dragging {
+        position: relative;
+        cursor: default;
+    }
+
+    .question-section {
+        padding: 20px;
+    }
+
+    .question-text {
+        font-size: 1rem;
+    }
+
+    .answer-card {
+        padding: 16px;
+    }
+
+    .answer-input {
+        min-height: 100px;
+        font-size: 0.9rem;
+    }
+
+    .answer-footer {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .answer-footer .btn {
+        width: 100%;
+    }
+
+    .mic-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .score-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .analysis-section {
+        grid-template-columns: 1fr;
+    }
+
+    .results-card {
+        padding: 24px;
+        margin: 16px;
+    }
+
+    .results-card h2 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Mobile (480px) */
+@media (max-width: 480px) {
+    .onboarding-interview {
+        padding: 8px;
+    }
+
+    .interview-header {
+        padding: 12px 14px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    .header-left {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .round-badge {
+        padding: 6px 12px;
+        font-size: 0.625rem;
+    }
+
+    .question-counter {
+        font-size: 0.7rem;
+        padding: 5px 10px;
+    }
+
+    .header-right {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .timer {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .skip-interview-btn {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+
+    .progress-bar {
+        margin-bottom: 16px;
+    }
+
+    .camera-section {
+        height: 160px;
+        border-radius: 14px;
+    }
+
+    .camera-section::before {
+        font-size: 0.6rem;
+        padding: 3px 8px;
+        top: 8px;
+        left: 8px;
+    }
+
+    .camera-status {
+        bottom: 8px;
+        left: 8px;
+        font-size: 0.65rem;
+        padding: 4px 8px;
+    }
+
+    .question-section {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .question-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .question-header .question-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .question-label {
+        font-size: 0.6875rem;
+    }
+
+    .question-text {
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+
+    .answer-card {
+        padding: 14px;
+        border-radius: 14px;
+    }
+
+    .answer-input {
+        min-height: 80px;
+        padding: 12px;
+        font-size: 0.875rem;
+    }
+
+    .answer-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .mic-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .btn {
+        padding: 12px 20px;
+        font-size: 0.875rem;
+    }
+
+    /* Results on mobile */
+    .results-card {
+        padding: 16px;
+        margin: 8px;
+        border-radius: 16px;
+    }
+
+    .results-card h2 {
+        font-size: 1.125rem;
+    }
+
+    .score-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .score-item {
+        padding: 12px 8px;
+    }
+
+    .score-num {
+        font-size: 1.25rem;
+    }
+
+    .score-title {
+        font-size: 0.625rem;
+    }
+
+    .analysis-section {
+        gap: 12px;
+    }
+
+    .analysis-box {
+        padding: 12px;
+    }
+
+    .analysis-box h4 {
+        font-size: 0.8125rem;
+    }
+
+    .analysis-box li {
+        font-size: 0.8125rem;
+    }
+
+    .feedback-section {
+        padding: 14px;
+    }
+
+    .feedback-section h4 {
+        font-size: 0.875rem;
+    }
+
+    .feedback-label {
+        font-size: 0.75rem;
+    }
+
+    .feedback-item p {
+        font-size: 0.8125rem;
+    }
+
+    .loading-state {
+        padding: 40px 20px;
+    }
+
+    .loading-state h2 {
+        font-size: 1.125rem;
+    }
+
+    .loading-state p {
+        font-size: 0.875rem;
+    }
+
+    .skill-tags {
+        gap: 6px;
+    }
+
+    .skill-tag {
+        padding: 4px 10px;
+        font-size: 0.6875rem;
+    }
+
+    .listening-indicator {
+        font-size: 0.75rem;
+    }
+
+    .transcript-text {
+        font-size: 0.875rem;
+    }
+}

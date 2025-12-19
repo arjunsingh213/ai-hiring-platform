@@ -1614,3 +1614,313 @@
     max-height: 400px;
     border-radius: 12px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPREHENSIVE RESPONSIVE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Tablet (768px) */
+@media (max-width: 768px) {
+    .activity-feed {
+        padding: 16px 12px 0;
+    }
+
+    .activity-feed-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .post-achievement-btn {
+        padding: 10px 16px;
+        font-size: 0.875rem;
+    }
+
+    .post-achievement-btn span:not(.icon) {
+        display: none;
+    }
+
+    .activity-tabs {
+        margin-bottom: 20px;
+    }
+
+    .tab-btn {
+        padding: 10px 16px;
+        font-size: 0.875rem;
+    }
+
+    .activity-card {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    .activity-avatar {
+        width: 42px;
+        height: 42px;
+    }
+
+    .activity-title {
+        font-size: 1rem;
+    }
+
+    .atp-competencies-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .reliability-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .achievement-modal {
+        max-width: 95%;
+        border-radius: 20px;
+    }
+
+    .modal-header {
+        padding: 20px 20px 0;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+}
+
+/* Mobile (480px) */
+@media (max-width: 480px) {
+    .activity-feed {
+        padding: 12px 8px 0;
+    }
+
+    .activity-feed-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+        margin-bottom: 16px;
+    }
+
+    .activity-feed-header h1 {
+        font-size: 1.25rem;
+        text-align: center;
+    }
+
+    .post-achievement-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+    }
+
+    .post-achievement-btn span:not(.icon) {
+        display: inline;
+    }
+
+    .activity-tabs {
+        margin-bottom: 16px;
+        padding: 4px;
+        border-radius: 12px;
+    }
+
+    .tab-btn {
+        padding: 10px 8px;
+        font-size: 0.8125rem;
+        border-radius: 8px;
+    }
+
+    .tab-indicator {
+        border-radius: 8px;
+    }
+
+    .activities-list {
+        gap: 14px;
+    }
+
+    .activity-card {
+        padding: 14px;
+        border-radius: 16px;
+    }
+
+    .activity-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .activity-user {
+        width: 100%;
+    }
+
+    .activity-time {
+        align-self: flex-end;
+        margin-top: -24px;
+    }
+
+    .activity-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .activity-avatar .avatar-placeholder {
+        font-size: 1rem;
+    }
+
+    .activity-user-info a {
+        font-size: 0.9375rem;
+    }
+
+    .activity-type-badge {
+        font-size: 0.75rem;
+    }
+
+    .activity-title {
+        font-size: 0.9375rem;
+    }
+
+    .activity-text {
+        font-size: 0.875rem;
+    }
+
+    .score-display {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px;
+    }
+
+    .score-circle-container {
+        width: 50px;
+        height: 50px;
+    }
+
+    .score-value {
+        font-size: 1rem;
+    }
+
+    .activity-skills {
+        gap: 6px;
+    }
+
+    .skill-tag {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    .atp-preview {
+        padding: 14px;
+    }
+
+    .atp-header {
+        gap: 10px;
+    }
+
+    .atp-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .atp-header h4 {
+        font-size: 0.9375rem;
+    }
+
+    .atp-competencies-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .competency-item {
+        padding: 10px 4px;
+    }
+
+    .competency-item .comp-score {
+        font-size: 1rem;
+    }
+
+    .competency-item .comp-label {
+        font-size: 0.5625rem;
+    }
+
+    .reliability-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .reliability-item {
+        padding: 10px 6px;
+    }
+
+    .reliability-item .rel-value {
+        font-size: 0.9375rem;
+    }
+
+    .activity-actions {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .activity-actions .action-btn {
+        padding: 8px 12px;
+        font-size: 0.8125rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .empty-state {
+        padding: 40px 20px;
+        border-radius: 18px;
+    }
+
+    .empty-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .empty-state h3 {
+        font-size: 1.125rem;
+    }
+
+    .empty-state p {
+        font-size: 0.875rem;
+    }
+
+    /* Modal Mobile */
+    .modal-overlay {
+        padding: 10px;
+        align-items: flex-end;
+    }
+
+    .achievement-modal {
+        max-width: 100%;
+        max-height: 85vh;
+        border-radius: 20px 20px 0 0;
+        margin-bottom: 0;
+    }
+
+    .modal-header {
+        padding: 16px 16px 0;
+    }
+
+    .modal-header h2 {
+        font-size: 1.125rem;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .post-type-selector {
+        flex-wrap: wrap;
+    }
+
+    .type-btn {
+        flex: 1 1 45%;
+        padding: 12px;
+        font-size: 0.8125rem;
+    }
+
+    .form-group label {
+        font-size: 0.8125rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        padding: 10px 12px;
+        font-size: 0.875rem;
+    }
+
+    .loading-state {
+        padding: 40px 20px;
+    }
+}
