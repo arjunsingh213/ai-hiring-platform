@@ -1,0 +1,82 @@
+/* ═══════════════════════════════════════════════════════════════
+   SPARKLINE CHART - Mini Data Visualization
+   ═══════════════════════════════════════════════════════════════ */
+
+.sparkline-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 60px;
+}
+
+.sparkline-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    flex: 1;
+    height: 100%;
+}
+
+.sparkline-bar {
+    flex: 1;
+    min-width: 4px;
+    max-width: 8px;
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s ease, opacity 0.3s ease;
+    opacity: 0.6;
+}
+
+.sparkline-bar.current {
+    opacity: 1;
+}
+
+.sparkline-bar:hover {
+    opacity: 1;
+}
+
+/* Color Variants */
+.sparkline-primary .sparkline-bar {
+    background: linear-gradient(180deg, #0090FF 0%, rgba(0, 144, 255, 0.3) 100%);
+}
+
+.sparkline-success .sparkline-bar {
+    background: linear-gradient(180deg, #10B981 0%, rgba(16, 185, 129, 0.3) 100%);
+}
+
+.sparkline-warning .sparkline-bar {
+    background: linear-gradient(180deg, #F59E0B 0%, rgba(245, 158, 11, 0.3) 100%);
+}
+
+.sparkline-purple .sparkline-bar {
+    background: linear-gradient(180deg, #8B5CF6 0%, rgba(139, 92, 246, 0.3) 100%);
+}
+
+.sparkline-danger .sparkline-bar {
+    background: linear-gradient(180deg, #EF4444 0%, rgba(239, 68, 68, 0.3) 100%);
+}
+
+/* Trend Indicator */
+.sparkline-trend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    margin-left: 6px;
+}
+
+.sparkline-trend.up {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10B981;
+}
+
+.sparkline-trend.down {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+}
+
+.sparkline-trend.neutral {
+    background: rgba(100, 116, 139, 0.15);
+    color: #64748B;
+}

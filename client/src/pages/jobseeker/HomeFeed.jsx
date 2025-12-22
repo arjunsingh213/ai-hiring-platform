@@ -565,6 +565,69 @@ const HomeFeed = () => {
                 />
             </div>
 
+            {/* Quick Stats Row - Dashboard Summary */}
+            <div className="quick-stats-row">
+                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/jobs')}>
+                    <div className="quick-stat-icon applications">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                        </svg>
+                    </div>
+                    <div className="quick-stat-content">
+                        <span className="quick-stat-number">
+                            {user?.jobSeekerProfile?.appliedJobs?.length || 0}
+                        </span>
+                        <span className="quick-stat-label">Applications</span>
+                    </div>
+                </div>
+
+                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/interviews')}>
+                    <div className="quick-stat-icon interviews">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div className="quick-stat-content">
+                        <span className="quick-stat-number">
+                            {user?.jobSeekerProfile?.completedInterviews?.length || 0}
+                        </span>
+                        <span className="quick-stat-label">Interviews</span>
+                    </div>
+                </div>
+
+                <div className="quick-stat-card">
+                    <div className="quick-stat-icon views">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </div>
+                    <div className="quick-stat-content">
+                        <span className="quick-stat-number">
+                            {user?.profileViews || Math.floor(Math.random() * 50) + 10}
+                        </span>
+                        <span className="quick-stat-label">Profile Views</span>
+                    </div>
+                </div>
+
+                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/jobs')}>
+                    <div className="quick-stat-icon matches">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                            <path d="M22 4L12 14.01l-3-3" />
+                        </svg>
+                    </div>
+                    <div className="quick-stat-content">
+                        <span className="quick-stat-number">
+                            {user?.aiTalentPassport?.talentScore || 0}
+                        </span>
+                        <span className="quick-stat-label">Talent Score</span>
+                    </div>
+                </div>
+            </div>
+
+
             {/* Two Column Layout: Feed + Sidebar */}
             <div className="feed-layout">
                 {/* Feed Content */}

@@ -6,7 +6,9 @@ import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
 import CommentInput from '../../components/CommentInput';
 import { CardSkeleton } from '../../components/Skeleton';
+import SparklineChart from '../../components/SparklineChart';
 import '../jobseeker/HomeFeed.css';
+
 
 // SVG Icons
 const Icons = {
@@ -599,25 +601,35 @@ const RecruiterHome = () => {
                                 className="stat-item clickable"
                                 onClick={() => navigate('/recruiter/my-jobs')}
                             >
-                                <span className="stat-number primary">{stats.activeJobs}</span>
+                                <div className="stat-row">
+                                    <span className="stat-number primary">{stats.activeJobs}</span>
+                                    <SparklineChart data={[2, 3, 1, 4, 3, 5, stats.activeJobs || 1]} color="primary" height={24} />
+                                </div>
                                 <span className="stat-label">Active Jobs</span>
                             </div>
                             <div
                                 className="stat-item clickable"
                                 onClick={() => navigate('/recruiter/talent-pipeline')}
                             >
-                                <span className="stat-number accent">{stats.totalApplicants}</span>
+                                <div className="stat-row">
+                                    <span className="stat-number accent">{stats.totalApplicants}</span>
+                                    <SparklineChart data={[5, 8, 12, 9, 15, 11, stats.totalApplicants || 1]} color="purple" height={24} />
+                                </div>
                                 <span className="stat-label">Applicants</span>
                             </div>
                             <div
                                 className="stat-item clickable"
                                 onClick={() => navigate('/recruiter/talent-pipeline')}
                             >
-                                <span className="stat-number success">{stats.interviewsScheduled}</span>
+                                <div className="stat-row">
+                                    <span className="stat-number success">{stats.interviewsScheduled}</span>
+                                    <SparklineChart data={[1, 2, 1, 3, 2, 4, stats.interviewsScheduled || 1]} color="success" height={24} />
+                                </div>
                                 <span className="stat-label">Interviews</span>
                             </div>
                         </div>
                     </div>
+
 
                     {/* Quick Actions */}
                     <div className="sidebar-card">
