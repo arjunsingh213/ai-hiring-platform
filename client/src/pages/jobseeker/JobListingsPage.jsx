@@ -9,6 +9,7 @@ const JobListingsPage = () => {
     const toast = useToast();
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
+    const [categoryFilter, setCategoryFilter] = useState('all'); // all, applied, rejected
     const [filters, setFilters] = useState({
         type: '',
         experienceLevel: ''
@@ -193,9 +194,28 @@ const JobListingsPage = () => {
                 </div>
             )}
 
-            {/* Horizontal Filter Bar */}
-            <div className="filters-bar">
-                <span className="filters-label">Jobs ({jobs.length})</span>
+            {/* Category Tabs + Filters */}
+            <div className="jobs-header">
+                <div className="category-tabs">
+                    <button
+                        className={`category-tab ${categoryFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setCategoryFilter('all')}
+                    >
+                        All Jobs
+                    </button>
+                    <button
+                        className={`category-tab ${categoryFilter === 'applied' ? 'active' : ''}`}
+                        onClick={() => setCategoryFilter('applied')}
+                    >
+                        Applied
+                    </button>
+                    <button
+                        className={`category-tab ${categoryFilter === 'rejected' ? 'active' : ''}`}
+                        onClick={() => setCategoryFilter('rejected')}
+                    >
+                        Rejected
+                    </button>
+                </div>
                 <div className="filter-controls">
                     <select
                         className="filter-select"
@@ -219,30 +239,46 @@ const JobListingsPage = () => {
                         <option value="senior">Senior Level</option>
                         <option value="expert">Expert</option>
                     </select>
-                    {(filters.type || filters.experienceLevel) && (
-                        <button className="clear-filters-btn" onClick={() => setFilters({ type: '', experienceLevel: '' })}>
-                            Clear
-                        </button>
-                    )}
                 </div>
             </div>
 
             {/* Main Content Area - Two Columns: Jobs List (prominent) + Job Details */}
             <div className="jobs-content">
                 <div className="jobs-list">
-                    {jobs.map((job) => (
+                    <div className="jobs-count">Jobs ({jobs.filter(job => {
+                        if (categoryFilter === 'applied') return hasApplied(job);
+                        if (categoryFilter === 'rejected') return false; // Add rejected logic
+                        return true;
+                    }).length})</div>
+                    {jobs.filter(job => {
+                        if (categoryFilter === 'applied') return hasApplied(job);
+                        if (categoryFilter === 'rejected') return false;
+                        return true;
+                    }).map((job) => (
                         <div
                             key={job._id}
                             className={`job-card ${selectedJob?._id === job._id ? 'active' : ''}`}
                             onClick={() => setSelectedJob(job)}
                         >
-                            <div className="job-card-header">
-                                <h4>{job.title}</h4>
-                                {hasApplied(job) && (
-                                    <span className="applied-badge">Applied</span>
-                                )}
+                            <div className="job-card-main">
+                                <div className="company-avatar">
+                                    {job.company?.logo ? (
+                                        <img src={job.company.logo} alt={job.company.name} />
+                                    ) : (
+                                        <div className="avatar-placeholder">
+                                            {job.company?.name?.charAt(0) || 'C'}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="job-info">
+                                    <h4>{job.title}</h4>
+                                    <p className="company-name">{job.company?.name || 'Company'}</p>
+                                    <p className="job-type">• {job.jobDetails?.type}</p>
+                                </div>
                             </div>
-                            <p className="job-type">• {job.jobDetails?.type}</p>
+                            {hasApplied(job) && (
+                                <span className="applied-badge">Applied</span>
+                            )}
                         </div>
                     ))}
                     {jobs.length === 0 && (
