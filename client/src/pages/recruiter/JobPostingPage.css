@@ -311,4 +311,48 @@
     .pipeline-modal-footer .btn {
         width: 100%;
     }
+
+    /* Job form mobile styles */
+    .job-posting-page {
+        padding: 0 12px;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .job-form {
+        padding: 20px 16px;
+    }
+
+    .form-section {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+    }
+
+    /* Force single column on mobile */
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .job-form {
+        padding: 16px 12px;
+        border-radius: 16px;
+    }
+
+    .form-section h3 {
+        font-size: 1rem;
+    }
 }

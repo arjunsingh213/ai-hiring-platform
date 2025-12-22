@@ -290,7 +290,7 @@
 
     .top-nav-right {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         justify-content: flex-end;
     }
 

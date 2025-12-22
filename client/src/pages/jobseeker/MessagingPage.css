@@ -415,32 +415,50 @@
     .messaging-page {
         flex-direction: column;
         height: calc(100vh - 80px);
+        position: relative;
     }
 
     .mobile-header {
         display: flex;
+        position: fixed;
+        top: 76px;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: var(--bg-card);
+        backdrop-filter: var(--blur-lg);
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-bottom: 1px solid var(--glass-border);
     }
 
+    /* By default, sidebar is visible on mobile */
     .conversations-sidebar {
         position: fixed;
-        top: 0;
-        left: -100%;
-        width: 80%;
-        max-width: 300px;
-        height: 100vh;
-        z-index: 999;
-        transition: left var(--transition-normal);
-        border-radius: 0;
-        border-right: 1px solid var(--glass-border);
-    }
-
-    .conversations-sidebar.open {
+        top: 76px;
         left: 0;
+        width: 100%;
+        height: calc(100vh - 76px);
+        z-index: 40;
+        transition: transform var(--transition-normal);
+        border-radius: 0;
+        transform: translateX(0);
     }
 
+    /* When sidebar is closed (conversation selected), slide it out */
+    .conversations-sidebar:not(.open) {
+        transform: translateX(-100%);
+    }
+
+    /* Chat window takes full width on mobile */
     .chat-window {
+        position: fixed;
+        top: 76px;
+        left: 0;
+        right: 0;
+        bottom: 0;
         margin-left: 0;
-        border-radius: var(--radius-lg);
+        border-radius: 0;
+        z-index: 30;
     }
 
     .message-content {
@@ -450,6 +468,16 @@
     .modal-content {
         width: 95%;
         max-height: 90vh;
+    }
+
+    /* Better mobile header styling */
+    .mobile-header h3 {
+        flex: 1;
+        margin: 0;
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
