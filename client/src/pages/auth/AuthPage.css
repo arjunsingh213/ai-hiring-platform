@@ -554,20 +554,40 @@
     color: var(--primary, #007DFF);
 }
 
-/* ===== Responsive ===== */
+/* ===== Mobile Responsive ===== */
 @media (max-width: 768px) {
+    .auth-page-container {
+        padding: 1rem;
+        min-height: 100vh;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+
     .auth-box {
         width: 100%;
         min-height: auto;
-        border-radius: 16px;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
     }
 
     .form-container {
         width: 100%;
         position: relative;
         padding: 2rem 1.5rem;
+        order: 1;
     }
 
+    .form-container h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-container form {
+        max-width: 100%;
+    }
+
+    /* Show only active form */
     .sign-up-container,
     .sign-in-container {
         transform: none !important;
@@ -591,26 +611,41 @@
         opacity: 1;
     }
 
+    /* Mobile overlay styling */
     .overlay-container {
         position: relative;
         left: 0;
         width: 100%;
         height: auto;
-        padding: 2rem;
+        padding: 1rem;
         transform: none !important;
+        order: 2;
     }
 
     .overlay {
         width: 100%;
         left: 0;
         transform: none !important;
-        border-radius: 12px;
+        border-radius: 16px;
+        padding: 1.5rem;
     }
 
     .overlay-panel {
         position: relative;
         width: 100%;
-        padding: 1.5rem;
+        padding: 1.25rem;
+        min-height: auto;
+    }
+
+    .overlay-panel h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .overlay-panel p {
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+        max-width: 100%;
     }
 
     .overlay-left,
@@ -618,19 +653,112 @@
         transform: none !important;
     }
 
+    /* FIXED: Show correct overlay based on current mode */
+    /* In sign-up mode (default): Show "Welcome Back" with SIGN IN button */
     .auth-box .overlay-left {
-        display: none;
+        display: flex;
     }
 
     .auth-box .overlay-right {
-        display: flex;
+        display: none;
     }
 
+    /* In sign-in mode: Show "Hello Friend" with SIGN UP button */
     .auth-box.sign-in-mode .overlay-left {
-        display: flex;
+        display: none;
     }
 
     .auth-box.sign-in-mode .overlay-right {
-        display: none;
+        display: flex;
+    }
+
+    /* Button improvements for mobile */
+    .btn-solid {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-outline {
+        padding: 0.625rem 1.5rem;
+        font-size: 0.8125rem;
+    }
+
+    /* Input improvements */
+    .input-group input,
+    .input-group select {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Social buttons */
+    .social-login-row {
+        gap: 0.5rem;
+    }
+
+    .social-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* OR divider */
+    .or-divider span {
+        font-size: 0.6875rem;
+        padding: 0 0.5rem;
+    }
+
+    /* Verification panels */
+    .verify-overlay-panel,
+    .verify-content-panel {
+        width: 100%;
+        position: relative;
+        padding: 1.5rem;
+    }
+
+    .verify-overlay-panel {
+        border-radius: 16px 16px 0 0;
+    }
+
+    .verify-content-panel {
+        border-radius: 0 0 16px 16px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+    .auth-page-container {
+        padding: 0.5rem;
+        padding-top: 1rem;
+    }
+
+    .auth-box {
+        border-radius: 16px;
+    }
+
+    .form-container {
+        padding: 1.5rem 1rem;
+    }
+
+    .form-container h1 {
+        font-size: 1.25rem;
+    }
+
+    .overlay {
+        padding: 1rem;
+    }
+
+    .overlay-panel {
+        padding: 1rem;
+    }
+
+    .overlay-panel h2 {
+        font-size: 1.25rem;
+    }
+
+    .overlay-panel p {
+        font-size: 0.8125rem;
+    }
+
+    .btn-outline {
+        padding: 0.5rem 1.25rem;
     }
 }
