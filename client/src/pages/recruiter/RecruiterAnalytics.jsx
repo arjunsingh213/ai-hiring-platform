@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import Skeleton, { CardSkeleton } from '../../components/Skeleton';
 import './RecruiterAnalytics.css';
 
 const RecruiterAnalytics = () => {
@@ -60,9 +61,17 @@ const RecruiterAnalytics = () => {
     if (loading) {
         return (
             <div className="analytics-dashboard">
-                <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <p>Loading analytics...</p>
+                <div className="loading-container skeleton-loading">
+                    <Skeleton variant="title" width="200px" />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '24px' }}>
+                        <Skeleton variant="rect" height="100px" />
+                        <Skeleton variant="rect" height="100px" />
+                        <Skeleton variant="rect" height="100px" />
+                        <Skeleton variant="rect" height="100px" />
+                    </div>
+                    <div style={{ marginTop: '24px' }}>
+                        <Skeleton variant="rect" height="250px" />
+                    </div>
                 </div>
             </div>
         );

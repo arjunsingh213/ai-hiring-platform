@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import ProgressBar from '../../components/ProgressBar';
 import StatusBadge from '../../components/StatusBadge';
+import { CardSkeleton } from '../../components/Skeleton';
 import './HiringPipelinePage.css';
 
 const HiringPipelinePage = () => {
@@ -82,9 +83,13 @@ const HiringPipelinePage = () => {
 
     if (loading) {
         return (
-            <div className="hiring-pipeline loading-state">
-                <div className="loading-spinner-large"></div>
-                <p>Loading hiring pipeline...</p>
+            <div className="hiring-pipeline">
+                <div className="page-header"><h1>Hiring Pipeline</h1></div>
+                <div className="loading-state skeleton-loading">
+                    <CardSkeleton />
+                    <CardSkeleton />
+                    <CardSkeleton />
+                </div>
             </div>
         );
     }

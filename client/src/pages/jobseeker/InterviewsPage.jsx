@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
+import { CardSkeleton } from '../../components/Skeleton';
 import './InterviewsPage.css';
 
 const InterviewsPage = () => {
@@ -41,7 +42,7 @@ const InterviewsPage = () => {
     };
 
     const continueJobInterview = (interviewId) => {
-        navigate(`/interview/${interviewId}`);
+        navigate(`/interview/${interviewId}/ready`);
     };
 
     // Separate interviews by type
@@ -66,9 +67,10 @@ const InterviewsPage = () => {
     if (loading) {
         return (
             <div className="interviews-page">
-                <div className="loading-state">
-                    <div className="loading-spinner-large"></div>
-                    <p>Loading interviews...</p>
+                <div className="page-header"><h1>Interviews</h1></div>
+                <div className="loading-state skeleton-loading">
+                    <CardSkeleton />
+                    <CardSkeleton />
                 </div>
             </div>
         );

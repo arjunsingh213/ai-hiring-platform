@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
 import TopCandidatesSidebar from '../../components/TopCandidatesSidebar';
+import { CardSkeleton } from '../../components/Skeleton';
 import './HomeFeed.css';
 
 // SVG Icons Component
@@ -569,9 +570,10 @@ const HomeFeed = () => {
                 {/* Feed Content */}
                 <div className="activity-content-area">
                     {loading ? (
-                        <div className="loading-state">
-                            <div className="loading-spinner" />
-                            <p>Loading activities...</p>
+                        <div className="loading-state skeleton-loading">
+                            <CardSkeleton />
+                            <CardSkeleton />
+                            <CardSkeleton />
                         </div>
                     ) : activities.length === 0 ? (
                         <motion.div
@@ -646,8 +648,8 @@ const HomeFeed = () => {
                                         </div>
                                         <div className="profile-details">
                                             <span className={`level-badge ${user.aiTalentPassport.talentScore >= 90 ? 'expert' :
-                                                    user.aiTalentPassport.talentScore >= 70 ? 'advanced' :
-                                                        user.aiTalentPassport.talentScore >= 50 ? 'intermediate' : 'beginner'
+                                                user.aiTalentPassport.talentScore >= 70 ? 'advanced' :
+                                                    user.aiTalentPassport.talentScore >= 50 ? 'intermediate' : 'beginner'
                                                 }`}>
                                                 {user.aiTalentPassport.talentScore >= 90 ? '🏆 Expert' :
                                                     user.aiTalentPassport.talentScore >= 70 ? '⭐ Advanced' :

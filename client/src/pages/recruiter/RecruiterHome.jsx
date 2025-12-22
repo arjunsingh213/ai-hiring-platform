@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
 import CommentInput from '../../components/CommentInput';
+import { CardSkeleton } from '../../components/Skeleton';
 import '../jobseeker/HomeFeed.css';
 
 // SVG Icons
@@ -560,9 +561,10 @@ const RecruiterHome = () => {
 
                     {/* Posts Feed */}
                     {postsLoading ? (
-                        <div className="loading-state">
-                            <div className="loading-spinner" />
-                            <p>Loading posts...</p>
+                        <div className="loading-state skeleton-loading">
+                            <CardSkeleton />
+                            <CardSkeleton />
+                            <CardSkeleton />
                         </div>
                     ) : posts.length === 0 ? (
                         <motion.div

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { JOB_DOMAINS } from '../data/validationData';
+import { ListSkeleton } from './Skeleton';
 import './TopCandidatesSidebar.css';
 
 const TopCandidatesSidebar = ({ jobDomains = [] }) => {
@@ -126,9 +127,8 @@ const TopCandidatesSidebar = ({ jobDomains = [] }) => {
             </div>
 
             {loading ? (
-                <div className="sidebar-loading">
-                    <div className="loading-spinner"></div>
-                    <p>Loading...</p>
+                <div className="sidebar-loading skeleton-loading">
+                    <ListSkeleton items={3} />
                 </div>
             ) : candidates.length === 0 ? (
                 <div className="sidebar-empty">

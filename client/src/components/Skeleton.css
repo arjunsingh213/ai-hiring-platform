@@ -1,0 +1,138 @@
+/* Skeleton Loading Animation */
+.skeleton {
+    background: linear-gradient(90deg, #e0e7ef 25%, #edf2f7 50%, #e0e7ef 75%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+/* Variants */
+.skeleton-text {
+    height: 16px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-title {
+    height: 28px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skeleton-button {
+    height: 36px;
+    border-radius: 8px;
+}
+
+.skeleton-rect {
+    width: 100%;
+    border-radius: 12px;
+}
+
+/* Card Skeleton */
+.skeleton-card {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.skeleton-card-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.skeleton-card-meta {
+    flex: 1;
+}
+
+.skeleton-card-body {
+    margin-bottom: 16px;
+}
+
+.skeleton-card-footer {
+    display: flex;
+    gap: 12px;
+}
+
+/* List Skeleton */
+.skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-list-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+}
+
+.skeleton-list-content {
+    flex: 1;
+}
+
+/* Profile Skeleton */
+.skeleton-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+}
+
+/* Page Skeleton */
+.skeleton-page {
+    padding: 20px;
+}
+
+.skeleton-page-content {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.skeleton-page-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.skeleton-page-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .skeleton-page-content {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-page-sidebar {
+        display: none;
+    }
+}

@@ -97,8 +97,8 @@ const JobListingsPage = () => {
             }
 
             if (existingStatus.hasInterview && existingStatus.interview?.id) {
-                // Resume existing interview
-                navigate(`/interview/${existingStatus.interview.id}`);
+                // Resume existing interview - go to readiness screen first
+                navigate(`/interview/${existingStatus.interview.id}/ready`);
                 return;
             }
 
@@ -116,10 +116,10 @@ const JobListingsPage = () => {
                         jobId: response.jobId || jobId
                     });
 
-                    // Auto redirect to interview after showing modal
+                    // Auto redirect to readiness screen after showing modal
                     setTimeout(() => {
                         setShowApplyModal(false);
-                        navigate(`/interview/${interviewResponse.interview.id}`);
+                        navigate(`/interview/${interviewResponse.interview.id}/ready`);
                     }, 2500);
                 } catch (interviewError) {
                     console.error('Error starting job interview:', interviewError);

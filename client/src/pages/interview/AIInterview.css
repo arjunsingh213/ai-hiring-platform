@@ -115,6 +115,23 @@
     animation: pulse 2s infinite;
 }
 
+/* Violation Counter Badge */
+.violation-counter-badge {
+    position: absolute;
+    top: var(--spacing-lg);
+    left: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(100, 116, 139, 0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+}
+
 .proctoring-warnings {
     padding: var(--spacing-lg);
     background: rgba(239, 68, 68, 0.1);
@@ -199,6 +216,8 @@
     font-size: 1.25rem;
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
+    color: #0F172A !important;
+    font-weight: 500;
 }
 
 .question-category {
@@ -1165,5 +1184,99 @@
 
     .rounds-progress {
         flex-wrap: wrap;
+    }
+}
+
+/* Face Verification Modal */
+.face-warning-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.face-warning-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    max-width: 480px;
+    text-align: center;
+    border: 2px solid var(--warning);
+}
+
+.face-warning-content .warning-icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.face-warning-content h3 {
+    color: var(--warning);
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 1.5rem;
+}
+
+.face-warning-content p {
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.face-warning-content ul {
+    text-align: left;
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-lg) 0;
+    padding-left: var(--spacing-xl);
+}
+
+.face-warning-content ul li {
+    margin-bottom: var(--spacing-sm);
+}
+
+.face-warning-content .warning-count {
+    color: var(--danger);
+    font-weight: 600;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Face Status Bar */
+.face-status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 100;
+}
+
+.face-status-bar.warning {
+    background: rgba(245, 158, 11, 0.95);
+    color: #fff;
+}
+
+.face-status-bar .status-dot {
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
     }
 }

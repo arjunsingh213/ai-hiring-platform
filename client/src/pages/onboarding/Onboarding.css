@@ -6,6 +6,8 @@
     position: relative;
     padding: 2rem;
     background: var(--bg-gradient, linear-gradient(145deg, #E3EEFF 0%, #F5F7FA 50%, #FFFFFF 100%));
+    overflow-y: auto;
+    /* Enable scrolling */
 }
 
 .onboarding-background {
@@ -1094,4 +1096,16 @@
         width: 28px;
         height: 28px;
     }
+}
+
+/* Interview Readiness Wrapper (Platform Interview) */
+.interview-readiness-wrapper {
+    overflow-y: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: var(--bg-gradient, linear-gradient(145deg, #E3EEFF 0%, #F5F7FA 50%, #FFFFFF 100%));
 }

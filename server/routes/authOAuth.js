@@ -52,9 +52,10 @@ router.get('/google/callback',
                     redirectUrl = `${getFrontendUrl()}/onboarding/role-selection`;
                 }
             } else {
+                // User is onboarded - redirect to their dashboard
                 redirectUrl = req.user.role === 'recruiter'
-                    ? `${getFrontendUrl()}/recruiter/dashboard`
-                    : `${getFrontendUrl()}/`;
+                    ? `${getFrontendUrl()}/recruiter/home`
+                    : `${getFrontendUrl()}/jobseeker/home`;
             }
 
             // Redirect with token in query params (frontend will store it)

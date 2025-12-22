@@ -5,6 +5,7 @@ import { useToast } from '../../components/Toast';
 import ProgressBar from '../../components/ProgressBar';
 import StatusBadge from '../../components/StatusBadge';
 import StageTimeline from '../../components/StageTimeline';
+import { CardSkeleton, ListSkeleton } from '../../components/Skeleton';
 import './OnboardingPortal.css';
 
 const OnboardingPortal = () => {
@@ -142,9 +143,11 @@ const OnboardingPortal = () => {
 
     if (loading) {
         return (
-            <div className="onboarding-portal loading-state">
-                <div className="loading-spinner-large"></div>
-                <p>Loading onboarding portal...</p>
+            <div className="onboarding-portal">
+                <div className="loading-state skeleton-loading">
+                    <CardSkeleton />
+                    <ListSkeleton items={4} />
+                </div>
             </div>
         );
     }

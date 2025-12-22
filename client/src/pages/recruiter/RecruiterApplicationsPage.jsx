@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import OfferLetterModal from '../../components/OfferLetterModal';
+import { ListSkeleton, CardSkeleton } from '../../components/Skeleton';
 import './RecruiterApplicationsPage.css';
 
 const RecruiterApplicationsPage = () => {
@@ -228,9 +229,13 @@ const RecruiterApplicationsPage = () => {
     if (loading) {
         return (
             <div className="applications-page">
-                <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <p>Loading applicants...</p>
+                <div className="applications-sidebar">
+                    <div className="loading-container skeleton-loading">
+                        <ListSkeleton items={5} />
+                    </div>
+                </div>
+                <div className="applications-content">
+                    <CardSkeleton />
                 </div>
             </div>
         );

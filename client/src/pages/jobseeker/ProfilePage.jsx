@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import ImageCropModal from '../../components/ImageCropModal';
 import AITalentPassport from '../../components/AITalentPassport/AITalentPassport';
 import { JOB_DOMAINS } from '../../data/validationData';
+import { ProfileSkeleton } from '../../components/Skeleton';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -290,7 +291,13 @@ const ProfilePage = () => {
     };
 
     if (!user) {
-        return <div className="profile-page"><div className="loading-spinner">Loading...</div></div>;
+        return (
+            <div className="profile-page">
+                <div className="skeleton-loading">
+                    <ProfileSkeleton />
+                </div>
+            </div>
+        );
     }
 
     return (

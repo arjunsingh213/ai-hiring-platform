@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import CodeIDE from '../../components/CodeIDE';
+import InterviewProctor from '../../components/InterviewProctor';
+import Skeleton, { CardSkeleton } from '../../components/Skeleton';
 import './AIInterview.css';
 
 // Programming languages to detect
@@ -77,7 +79,181 @@ const AIInterview = () => {
     const [codingResults, setCodingResults] = useState(null);
     const [loadingProblem, setLoadingProblem] = useState(false);
 
+    // Face verification states
+    const [faceVerified, setFaceVerified] = useState(true);
+    const [faceWarnings, setFaceWarnings] = useState(0);
+    const [showFaceWarning, setShowFaceWarning] = useState(false);
+    const canvasRef = useRef(null);
+    const faceCheckIntervalRef = useRef(null);
+    const referenceImageDataRef = useRef(null);
 
+    // Proctoring states
+    const [proctoringViolations, setProctoringViolations] = useState([]);
+    const [violationReport, setViolationReport] = useState(null);
+
+    // Handle proctoring violations (log-only, no termination)
+    const handleViolationLog = (violations, getReport) => {
+        setProctoringViolations(violations);
+        if (getReport) {
+            setViolationReport(getReport());
+        }
+    };
+
+    // Face detection using brightness variance and edge detection
+    // Works for ALL skin tones and lighting conditions
+    const detectFaceInImage = (imageData, width, height) => {
+        const data = imageData.data;
+
+        const startX = Math.floor(width * 0.2);
+        const endX = Math.floor(width * 0.8);
+        const startY = Math.floor(height * 0.1);
+        const endY = Math.floor(height * 0.7);
+
+        let brightPixels = 0, darkPixels = 0, midPixels = 0, totalSampled = 0;
+
+        for (let y = startY; y < endY; y += 4) {
+            for (let x = startX; x < endX; x += 4) {
+                const idx = (y * width + x) * 4;
+                const brightness = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
+
+                if (brightness > 170) brightPixels++;
+                else if (brightness < 85) darkPixels++;
+                else midPixels++;
+                totalSampled++;
+            }
+        }
+
+        const midRatio = midPixels / totalSampled;
+        const brightRatio = brightPixels / totalSampled;
+        const darkRatio = darkPixels / totalSampled;
+        const hasVariance = midRatio > 0.15 && (brightRatio > 0.05 || darkRatio > 0.05);
+
+        // Edge detection
+        let edgeCount = 0;
+        for (let y = startY + 5; y < endY - 5; y += 6) {
+            for (let x = startX + 5; x < endX - 5; x += 6) {
+                const idx = (y * width + x) * 4;
+                const curr = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                const right = (data[(y * width + x + 5) * 4] + data[(y * width + x + 5) * 4 + 1] + data[(y * width + x + 5) * 4 + 2]) / 3;
+                if (Math.abs(curr - right) > 30) edgeCount++;
+            }
+        }
+
+        const edgeRatio = edgeCount / (((endX - startX) / 6) * ((endY - startY) / 6));
+        return hasVariance || edgeRatio > 0.05;
+    };
+
+
+    // Compare current frame with reference image
+    const compareFaces = (currentData, referenceData, width, height) => {
+        if (!currentData || !referenceData) return 0;
+
+        const bins = 16;
+        const hist1 = new Array(bins * 3).fill(0);
+        const hist2 = new Array(bins * 3).fill(0);
+
+        const startX = Math.floor(width * 0.25);
+        const endX = Math.floor(width * 0.75);
+        const startY = Math.floor(height * 0.15);
+        const endY = Math.floor(height * 0.65);
+
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const idx = (y * width + x) * 4;
+
+                hist1[Math.floor(currentData.data[idx] / 16)]++;
+                hist1[bins + Math.floor(currentData.data[idx + 1] / 16)]++;
+                hist1[bins * 2 + Math.floor(currentData.data[idx + 2] / 16)]++;
+
+                hist2[Math.floor(referenceData.data[idx] / 16)]++;
+                hist2[bins + Math.floor(referenceData.data[idx + 1] / 16)]++;
+                hist2[bins * 2 + Math.floor(referenceData.data[idx + 2] / 16)]++;
+            }
+        }
+
+        let intersection = 0, sum1 = 0, sum2 = 0;
+        for (let i = 0; i < hist1.length; i++) {
+            intersection += Math.min(hist1[i], hist2[i]);
+            sum1 += hist1[i];
+            sum2 += hist2[i];
+        }
+
+        return intersection / Math.max(sum1, sum2);
+    };
+
+    // Start face verification monitoring
+    const startFaceVerification = () => {
+        // Load reference image from localStorage
+        const storedData = localStorage.getItem(`interview_${interviewId}_imageData`);
+        if (storedData) {
+            try {
+                const parsed = JSON.parse(storedData);
+                const imageData = new ImageData(
+                    new Uint8ClampedArray(parsed.data),
+                    parsed.width,
+                    parsed.height
+                );
+                referenceImageDataRef.current = { imageData, width: parsed.width, height: parsed.height };
+            } catch (e) {
+                console.log('Could not load reference image');
+            }
+        }
+
+        // Start periodic face checking
+        faceCheckIntervalRef.current = setInterval(() => {
+            if (videoRef.current && canvasRef.current && referenceImageDataRef.current) {
+                const video = videoRef.current;
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+                const currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                // Check if face is present
+                const hasFace = detectFaceInImage(currentImageData, canvas.width, canvas.height);
+
+                if (!hasFace) {
+                    setFaceVerified(false);
+                    setFaceWarnings(prev => {
+                        const newCount = prev + 1;
+                        if (newCount >= 3) {
+                            setShowFaceWarning(true);
+                        }
+                        return newCount;
+                    });
+                } else {
+                    // Compare with reference
+                    const similarity = compareFaces(
+                        currentImageData,
+                        referenceImageDataRef.current.imageData,
+                        referenceImageDataRef.current.width,
+                        referenceImageDataRef.current.height
+                    );
+
+                    if (similarity < 0.4) {
+                        setFaceVerified(false);
+                        setFaceWarnings(prev => prev + 1);
+                    } else {
+                        setFaceVerified(true);
+                    }
+                }
+            }
+        }, 5000); // Check every 5 seconds
+    };
+
+    const stopFaceVerification = () => {
+        if (faceCheckIntervalRef.current) {
+            clearInterval(faceCheckIntervalRef.current);
+            faceCheckIntervalRef.current = null;
+        }
+    };
 
     // Init Speech Recognition
     useEffect(() => {
@@ -364,15 +540,19 @@ const AIInterview = () => {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             if (videoRef.current) videoRef.current.srcObject = stream;
             setIsRecording(true);
+            // Start face verification once camera is ready
+            setTimeout(() => startFaceVerification(), 1000);
         } catch (e) {
             setIsRecording(false);
         }
     };
 
+
     const stopCamera = () => {
         if (videoRef.current?.srcObject) {
             videoRef.current.srcObject.getTracks().forEach(t => t.stop());
         }
+        stopFaceVerification();
     };
 
     // Detect programming languages from job requirements and description
@@ -944,8 +1124,13 @@ const AIInterview = () => {
     if (!interview) {
         return (
             <div className="ai-interview loading-state">
-                <div className="loading-spinner-large"></div>
-                <p>Loading interview...</p>
+                <div className="skeleton-interview-loader">
+                    <Skeleton variant="title" width="200px" />
+                    <Skeleton variant="text" width="300px" />
+                    <div style={{ marginTop: '24px' }}>
+                        <CardSkeleton />
+                    </div>
+                </div>
             </div>
         );
     }
@@ -1058,6 +1243,37 @@ const AIInterview = () => {
 
     return (
         <div className="ai-interview">
+            {/* Hidden canvas for face verification */}
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+            {/* Face Warning Modal */}
+            {showFaceWarning && (
+                <div className="face-warning-modal">
+                    <div className="face-warning-content">
+                        <div className="warning-icon">⚠️</div>
+                        <h3>Identity Verification Failed</h3>
+                        <p>We could not verify your identity. Please ensure:</p>
+                        <ul>
+                            <li>Your face is clearly visible in the camera</li>
+                            <li>You are the same person who captured the reference photo</li>
+                            <li>Lighting is adequate</li>
+                        </ul>
+                        <p className="warning-count">Warnings: {faceWarnings}</p>
+                        <button className="btn btn-primary" onClick={() => setShowFaceWarning(false)}>
+                            I Understand - Continue
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Face Verification Status Indicator */}
+            {!faceVerified && !showFaceWarning && (
+                <div className="face-status-bar warning">
+                    <span className="status-dot"></span>
+                    Face not verified - Please stay in frame
+                </div>
+            )}
+
             {/* Header */}
             <div className="interview-header">
                 <div className="header-left">
@@ -1107,8 +1323,23 @@ const AIInterview = () => {
                     <div className="video-container">
                         <video ref={videoRef} autoPlay muted className="video-feed"></video>
                         {isRecording && <div className="recording-indicator"><span className="recording-dot"></span> Recording</div>}
+
+                        {/* Proctoring Component - detects tab switch, face, etc */}
+                        <InterviewProctor
+                            videoRef={videoRef}
+                            enabled={isRecording}
+                            onViolationLog={handleViolationLog}
+                        />
+
+                        {/* Violation Counter Badge */}
+                        {proctoringViolations.length > 0 && (
+                            <div className="violation-counter-badge">
+                                ⚠️ {proctoringViolations.length}
+                            </div>
+                        )}
                     </div>
                     <p className="camera-info text-muted">📹 {isRecording ? 'Camera active' : 'Camera off'}</p>
+
                 </div>
 
                 {/* Question & Answer */}

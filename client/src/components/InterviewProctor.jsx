@@ -5,7 +5,7 @@
  * Admin makes final decision after reviewing violations
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useFaceDetection from '../hooks/useFaceDetection';
 import useActivityMonitor from '../hooks/useActivityMonitor';
@@ -99,33 +99,46 @@ const InterviewProctor = ({
         }
     };
 
+    // Track previous face detection states to prevent duplicate logging
+    const prevFaceState = useRef({ shouldWarnNoFace: false, hasMultipleFaces: false, shouldWarnLookAway: false });
+
     // React to face detection issues (log, don't terminate)
+    // Using refs to prevent infinite loops
     useEffect(() => {
         if (!enabled) return;
 
-        // No face detected
-        if (faceDetection.shouldWarnNoFace && !faceDetection.faceDetected) {
+        // No face detected - only log if state changed
+        if (faceDetection.shouldWarnNoFace && !faceDetection.faceDetected &&
+            !prevFaceState.current.shouldWarnNoFace) {
+            prevFaceState.current.shouldWarnNoFace = true;
             logViolation('NO_FACE', 'Face not detected in camera');
+        } else if (faceDetection.faceDetected) {
+            prevFaceState.current.shouldWarnNoFace = false;
         }
 
-        // Multiple faces
-        if (faceDetection.hasMultipleFaces) {
+        // Multiple faces - only log if state changed
+        if (faceDetection.hasMultipleFaces && !prevFaceState.current.hasMultipleFaces) {
+            prevFaceState.current.hasMultipleFaces = true;
             logViolation('MULTIPLE_FACES', `${faceDetection.faceCount} faces detected`);
+        } else if (!faceDetection.hasMultipleFaces) {
+            prevFaceState.current.hasMultipleFaces = false;
         }
 
-        // Looking away
-        if (faceDetection.shouldWarnLookAway) {
+        // Looking away - only log if state changed
+        if (faceDetection.shouldWarnLookAway && !prevFaceState.current.shouldWarnLookAway) {
+            prevFaceState.current.shouldWarnLookAway = true;
             logViolation('LOOK_AWAY', 'Looking away from camera');
+        } else if (!faceDetection.shouldWarnLookAway) {
+            prevFaceState.current.shouldWarnLookAway = false;
         }
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         enabled,
         faceDetection.shouldWarnNoFace,
         faceDetection.faceDetected,
         faceDetection.hasMultipleFaces,
         faceDetection.faceCount,
-        faceDetection.shouldWarnLookAway,
-        logViolation
+        faceDetection.shouldWarnLookAway
     ]);
 
     // Get violations for parent component to include in evaluation
@@ -149,13 +162,8 @@ const InterviewProctor = ({
         };
     }, [violations]);
 
-    // Expose getViolationReport through ref or callback
-    useEffect(() => {
-        if (onViolationLog) {
-            // Pass the report getter function
-            onViolationLog(violations, getViolationReport);
-        }
-    }, [violations, getViolationReport, onViolationLog]);
+    // Removed duplicate useEffect that was causing infinite loops
+    // The callback is now called from logViolation directly
 
     if (!enabled) return null;
 

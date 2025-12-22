@@ -5,6 +5,7 @@ import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ImageCropModal from '../../components/ImageCropModal';
 import OnboardingInterview from './OnboardingInterview';
+import InterviewReadiness from '../interview/InterviewReadiness';
 import LiveCameraVerification from '../../components/LiveCameraVerification';
 import { validateProfilePhoto } from '../../services/faceValidationService';
 import AutocompleteInput from '../../components/AutocompleteInput';
@@ -62,6 +63,9 @@ const JobSeekerOnboarding = () => {
 
     // Interview state
     const [showInterview, setShowInterview] = useState(false);
+    const [showInterviewReadiness, setShowInterviewReadiness] = useState(false);
+    const [capturedFacePhoto, setCapturedFacePhoto] = useState(null);
+    const [interviewReadinessComplete, setInterviewReadinessComplete] = useState(false);
     const [parsedResume, setParsedResume] = useState(null);
     const [parsingResume, setParsingResume] = useState(false);
 
@@ -107,10 +111,10 @@ const JobSeekerOnboarding = () => {
             // Check if user has completed basic onboarding
             const userId = localStorage.getItem('userId');
             if (userId) {
-                // User might have already onboarded, just show interview
-                setStep(4); // Step 4 is the interview step
-                setShowInterview(true);
-                toast.info('Complete the platform interview to apply for jobs');
+                // User might have already onboarded, show readiness screen first
+                setStep(4);
+                setShowInterviewReadiness(true); // Show readiness screen FIRST
+                toast.info('Complete the interview preparation to start');
             }
         }
     }, [searchParams]);
@@ -759,8 +763,8 @@ const JobSeekerOnboarding = () => {
                 <div className="gradient-orb orb-2"></div>
             </div>
 
-            {/* Hide onboarding form when interview is active */}
-            {!showInterview && (
+            {/* Hide onboarding form when interview or readiness is active */}
+            {!showInterview && !showInterviewReadiness && (
                 <div className="onboarding-box">
                     {/* Left Panel - Purple Gradient */}
                     <div className="onboarding-sidebar">
@@ -871,8 +875,8 @@ const JobSeekerOnboarding = () => {
                     } else if (parsedResume) {
                         console.log('Using pre-parsed resume with skills:', parsedResume.skills);
                     }
-
-                    setShowInterview(true);
+                    // Show readiness screen first before interview
+                    setShowInterviewReadiness(true);
                 }}
                 onCancel={() => {
                     setShowInterviewPrompt(false);
@@ -905,6 +909,32 @@ const JobSeekerOnboarding = () => {
                         <div className="spinner"></div>
                         <p>Validating face in photo...</p>
                     </div>
+                </div>
+            )}
+
+            {/* Interview Readiness Check (Platform Interview) */}
+            {showInterviewReadiness && !showInterview && (
+                <div className="interview-readiness-wrapper">
+                    <InterviewReadiness
+                        inline={true}
+                        customInterviewId="platform-interview"
+                        onReady={(readinessData) => {
+                            // Store captured photo for identity verification
+                            setCapturedFacePhoto(readinessData.capturedPhoto);
+                            setInterviewReadinessComplete(true);
+                            setShowInterviewReadiness(false);
+                            setShowInterview(true);
+
+                            // Photo is already stored in localStorage by InterviewReadiness
+                            // No need to store large imageData again (causes quota errors)
+                            toast.success('Ready to start interview!');
+                        }}
+                        onCancel={() => {
+                            setShowInterviewReadiness(false);
+                            toast.info('Interview cancelled.');
+                            navigate('/jobseeker/home');
+                        }}
+                    />
                 </div>
             )}
 

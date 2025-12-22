@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
+import { CardSkeleton } from '../../components/Skeleton';
 import './OfferAcceptancePage.css';
 
 const OfferAcceptancePage = () => {
@@ -148,9 +149,10 @@ const OfferAcceptancePage = () => {
 
     if (loading) {
         return (
-            <div className="offer-acceptance loading-state">
-                <div className="loading-spinner-large"></div>
-                <p>Loading offer details...</p>
+            <div className="offer-acceptance">
+                <div className="loading-state skeleton-loading">
+                    <CardSkeleton />
+                </div>
             </div>
         );
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import Skeleton, { CardSkeleton } from '../../components/Skeleton';
 import './InterviewResults.css';
 
 const InterviewResults = () => {
@@ -69,9 +70,15 @@ const InterviewResults = () => {
     if (loading) {
         return (
             <div className="results-page">
-                <div className="loading-container">
-                    <div className="loading-spinner large"></div>
-                    <p>Loading your results...</p>
+                <div className="loading-container skeleton-loading">
+                    <Skeleton variant="title" width="250px" />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '24px' }}>
+                        <Skeleton variant="rect" height="100px" />
+                        <Skeleton variant="rect" height="100px" />
+                    </div>
+                    <div style={{ marginTop: '24px' }}>
+                        <CardSkeleton />
+                    </div>
                 </div>
             </div>
         );
