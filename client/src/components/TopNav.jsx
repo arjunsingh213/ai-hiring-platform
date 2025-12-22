@@ -33,18 +33,22 @@ const TopNav = () => {
     const profilePath = isRecruiter ? '/recruiter/profile' : '/jobseeker/profile';
     const userName = user?.profile?.name || 'User';
 
+    // Mobile menu items - MUST match sidebar navigation exactly
     const navItems = isRecruiter ? [
-        { path: '/recruiter/home', label: 'Home' },
-        { path: '/recruiter/jobs', label: 'Jobs' },
-        { path: '/recruiter/applications', label: 'Applications' },
-        { path: '/recruiter/profile', label: 'Profile' },
+        { path: '/recruiter/home', label: 'Home', icon: '🏠' },
+        { path: '/recruiter/my-jobs', label: 'My Jobs', icon: '📋' },
+        { path: '/recruiter/applications', label: 'Talent Pipeline', icon: '👥' },
+        { path: '/recruiter/post-job', label: 'Post Job', icon: '💼' },
+        { path: '/recruiter/analytics', label: 'Analytics', icon: '📊' },
+        { path: '/recruiter/messages', label: 'Messages', icon: '💬' },
+        { path: '/recruiter/settings', label: 'Settings', icon: '⚙️' },
     ] : [
-        { path: '/jobseeker/home', label: 'Home' },
-        { path: '/jobseeker/profile', label: 'Profile' },
-        { path: '/jobseeker/messages', label: 'Messages' },
-        { path: '/jobseeker/interviews', label: 'Interviews' },
-        { path: '/jobseeker/jobs', label: 'Jobs' },
-        { path: '/jobseeker/settings', label: 'Settings' },
+        { path: '/jobseeker/home', label: 'Home', icon: '🏠' },
+        { path: '/jobseeker/profile', label: 'Profile', icon: '👤' },
+        { path: '/jobseeker/jobs', label: 'Browse Jobs', icon: '🔍' },
+        { path: '/jobseeker/interviews', label: 'Interviews', icon: '🎥' },
+        { path: '/jobseeker/messages', label: 'Messages', icon: '💬' },
+        { path: '/jobseeker/settings', label: 'Settings', icon: '⚙️' },
     ];
 
     return (
@@ -98,7 +102,8 @@ const TopNav = () => {
                         <nav className="mobile-menu-nav">
                             {navItems.map((item) => (
                                 <NavLink key={item.path} to={item.path} onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? 'active' : ''}>
-                                    {item.label}
+                                    <span className="nav-icon">{item.icon}</span>
+                                    <span>{item.label}</span>
                                 </NavLink>
                             ))}
                         </nav>
