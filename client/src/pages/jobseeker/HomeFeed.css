@@ -1924,3 +1924,201 @@
         padding: 40px 20px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ENHANCED STAT CARDS - Industry-Ready Dashboard Widgets
+   ═══════════════════════════════════════════════════════════════ */
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #0090FF 0%, #4CC8FF 100%);
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.stat-item.clickable {
+    cursor: pointer;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    letter-spacing: -0.03em;
+}
+
+.stat-number.primary {
+    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-number.accent {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-number.success {
+    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-number.warning {
+    background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 6px;
+}
+
+/* Quick Actions */
+.quick-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0F172A;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.quick-action-btn:hover {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 125, 255, 0.2);
+}
+
+.quick-action-btn svg {
+    width: 18px;
+    height: 18px;
+    color: #6366F1;
+}
+
+.quick-action-btn svg:last-child {
+    margin-left: auto;
+    opacity: 0.5;
+    width: 14px;
+    height: 14px;
+}
+
+.quick-action-btn span {
+    flex: 1;
+}
+
+/* Company Info */
+.company-info {
+    margin-bottom: 14px;
+}
+
+.company-info .company-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0 0 4px 0;
+}
+
+.company-info .company-domain {
+    font-size: 0.8125rem;
+    color: #64748B;
+    margin: 0;
+}
+
+/* Sidebar Card Hover */
+.sidebar-card {
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* Post Media */
+.post-media {
+    margin-top: 16px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.post-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+.post-video {
+    width: 100%;
+    max-height: 400px;
+    border-radius: 16px;
+}
+
+/* Action Buttons Enhanced */
+.activity-actions .action-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+}
+
+.activity-actions .action-btn:hover svg {
+    transform: scale(1.15);
+}
+
+.activity-actions .action-btn.liked {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+    border-color: rgba(16, 185, 129, 0.2);
+}
