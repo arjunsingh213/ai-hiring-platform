@@ -273,12 +273,17 @@ const InterviewReadiness = ({
             const interviewData = response.data?.data || response.data;
             setInterview(interviewData);
 
-            if (interviewData?.jobId) {
+            // Extract jobId - handles both populated object and string ID
+            const jobId = typeof interviewData?.jobId === 'object'
+                ? interviewData?.jobId?._id
+                : interviewData?.jobId;
+
+            if (jobId) {
                 try {
-                    const jobResponse = await api.get(`/jobs/${interviewData.jobId}`);
+                    const jobResponse = await api.get(`/jobs/${jobId}`);
                     setJob(jobResponse.data?.data || jobResponse.data);
                 } catch (err) {
-                    console.log('Could not fetch job data');
+                    console.log('Could not fetch job data:', err.message);
                 }
             }
         } catch (error) {
