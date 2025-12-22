@@ -1,15 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-
+const { isValidObjectId, validateQueryObjectId, validateBodyObjectId, validateObjectId } = require('../utils/validateObjectId');
 // Get user's notifications (paginated)
-router.get('/', async (req, res) => {
+router.get('/', validateQueryObjectId('userId'), async (req, res) => {
     try {
         const { userId, page = 1, limit = 20, unreadOnly = false } = req.query;
-
-        if (!userId) {
-            return res.status(400).json({ error: 'User ID required' });
-        }
 
         const query = { userId };
         if (unreadOnly === 'true') {
@@ -37,13 +33,9 @@ router.get('/', async (req, res) => {
 });
 
 // Get unread count
-router.get('/unread-count', async (req, res) => {
+router.get('/unread-count', validateQueryObjectId('userId'), async (req, res) => {
     try {
         const { userId } = req.query;
-
-        if (!userId) {
-            return res.status(400).json({ error: 'User ID required' });
-        }
 
         const count = await Notification.countDocuments({
             userId,
@@ -53,12 +45,12 @@ router.get('/unread-count', async (req, res) => {
         res.json({ count });
     } catch (error) {
         console.error('Error fetching unread count:', error);
-        res.status(500).json({ error: 'Failed to fetch unread count' });
+        res.status(500).json({ error: 'Failed to fetch unread count', count: 0 });
     }
 });
 
 // Mark notification as read
-router.put('/:id/read', async (req, res) => {
+router.put('/:id/read', validateObjectId('id'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -83,13 +75,9 @@ router.put('/:id/read', async (req, res) => {
 });
 
 // Mark all notifications as read
-router.put('/mark-all-read', async (req, res) => {
+router.put('/mark-all-read', validateBodyObjectId('userId'), async (req, res) => {
     try {
         const { userId } = req.body;
-
-        if (!userId) {
-            return res.status(400).json({ error: 'User ID required' });
-        }
 
         await Notification.updateMany(
             { userId, read: false },
@@ -107,7 +95,7 @@ router.put('/mark-all-read', async (req, res) => {
 });
 
 // Delete notification
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', validateObjectId('id'), async (req, res) => {
     try {
         const { id } = req.params;
 

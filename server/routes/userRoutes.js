@@ -280,4 +280,63 @@ router.get('/top-candidates/:domainId', async (req, res) => {
     }
 });
 
+// Get user's job applications
+router.get('/:id/applications', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate ObjectId format
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid user ID format',
+                data: []
+            });
+        }
+
+        // Import Job model to find applications
+        const Job = require('../models/Job');
+
+        // Find all jobs where the user is in the applicants array
+        const appliedJobs = await Job.find({
+            'applicants.userId': id
+        })
+            .select('title company jobDetails applicants requirements status createdAt')
+            .populate('company', 'profile.name profile.photo')
+            .sort({ 'applicants.appliedAt': -1 });
+
+        // Map to include application-specific data
+        const applications = appliedJobs.map(job => {
+            const userApplication = job.applicants.find(
+                app => app.userId?.toString() === id
+            );
+            return {
+                jobId: job._id,
+                jobTitle: job.title,
+                company: job.company,
+                jobDetails: job.jobDetails,
+                requirements: job.requirements,
+                status: userApplication?.status || 'applied',
+                appliedAt: userApplication?.appliedAt,
+                jobStatus: job.status
+            };
+        });
+
+        res.json({
+            success: true,
+            data: applications,
+            count: applications.length
+        });
+    } catch (error) {
+        console.error('Error fetching user applications:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            data: []
+        });
+    }
+});
+
 module.exports = router;
+
