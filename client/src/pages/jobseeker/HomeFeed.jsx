@@ -96,6 +96,7 @@ const HomeFeed = () => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
+    const [quickStats, setQuickStats] = useState({ applications: 0, interviews: 0, profileViews: 0 });
     const [showAchievementModal, setShowAchievementModal] = useState(false);
     const [achievementForm, setAchievementForm] = useState({
         type: 'achievement',
@@ -113,6 +114,7 @@ const HomeFeed = () => {
     useEffect(() => {
         fetchUser();
         fetchActivities();
+        fetchQuickStats();
     }, [activeTab]);
 
     const fetchUser = async () => {
@@ -136,6 +138,29 @@ const HomeFeed = () => {
             setActivities([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Fetch real stats from API
+    const fetchQuickStats = async () => {
+        try {
+            if (!userId) return;
+
+            // Fetch applications (jobs where user has applied)
+            const applicationsRes = await api.get(`/users/${userId}/applications`);
+            const applicationsData = applicationsRes.data?.data || applicationsRes.data || [];
+
+            // Fetch interviews count
+            const interviewsRes = await api.get(`/interviews/user/${userId}`);
+            const interviewsData = interviewsRes.data || [];
+
+            setQuickStats({
+                applications: Array.isArray(applicationsData) ? applicationsData.length : 0,
+                interviews: Array.isArray(interviewsData) ? interviewsData.filter(i => i.status === 'completed').length : 0,
+                profileViews: user?.profileViews || 0
+            });
+        } catch (error) {
+            console.error('Error fetching quick stats:', error);
         }
     };
 
@@ -256,6 +281,14 @@ const HomeFeed = () => {
         const postType = activity.postType || 'text';
         const typeInfo = getPostTypeInfo(postType);
 
+        const handleCardClick = (e) => {
+            // Don't navigate if clicking on a button or link
+            if (e.target.closest('button') || e.target.closest('a')) {
+                return;
+            }
+            navigate(`/post/${activity._id}`);
+        };
+
         return (
             <motion.div
                 key={activity._id}
@@ -264,6 +297,7 @@ const HomeFeed = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -2 }}
+                onClick={handleCardClick}
             >
                 {/* Card Header */}
                 <div className="activity-header">
@@ -567,7 +601,7 @@ const HomeFeed = () => {
 
             {/* Quick Stats Row - Dashboard Summary */}
             <div className="quick-stats-row">
-                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/jobs')}>
+                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/jobs?tab=applied')}>
                     <div className="quick-stat-icon applications">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
@@ -576,7 +610,7 @@ const HomeFeed = () => {
                     </div>
                     <div className="quick-stat-content">
                         <span className="quick-stat-number">
-                            {user?.jobSeekerProfile?.appliedJobs?.length || 0}
+                            {quickStats.applications}
                         </span>
                         <span className="quick-stat-label">Applications</span>
                     </div>
@@ -590,7 +624,7 @@ const HomeFeed = () => {
                     </div>
                     <div className="quick-stat-content">
                         <span className="quick-stat-number">
-                            {user?.jobSeekerProfile?.completedInterviews?.length || 0}
+                            {quickStats.interviews}
                         </span>
                         <span className="quick-stat-label">Interviews</span>
                     </div>
@@ -605,13 +639,13 @@ const HomeFeed = () => {
                     </div>
                     <div className="quick-stat-content">
                         <span className="quick-stat-number">
-                            {user?.profileViews || Math.floor(Math.random() * 50) + 10}
+                            {quickStats.profileViews || user?.profileViews || 0}
                         </span>
                         <span className="quick-stat-label">Profile Views</span>
                     </div>
                 </div>
 
-                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/jobs')}>
+                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/profile?tab=atp')}>
                     <div className="quick-stat-icon matches">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
@@ -723,12 +757,15 @@ const HomeFeed = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    <a href={`/profile/${userId}`} className="profile-cta">
-                                        View Full Profile
+                                    <button
+                                        className="profile-cta"
+                                        onClick={() => navigate(`/jobseeker/profile?tab=atp`)}
+                                    >
+                                        View Full Report
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <path d="M5 12h14M12 5l7 7-7 7" />
                                         </svg>
-                                    </a>
+                                    </button>
                                 </>
                             ) : (
                                 <div className="no-score-state">
