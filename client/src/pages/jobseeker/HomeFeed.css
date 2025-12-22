@@ -7,7 +7,7 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 20px 24px 0;
+    padding: 16px 20px 0;
     height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
@@ -17,8 +17,8 @@
 /* Two Column Layout - Fixed height with independent scroll */
 .feed-layout {
     display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 24px;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -93,7 +93,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 28px;
+    margin-bottom: 14px;
     animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     position: relative;
     z-index: 1;
@@ -101,7 +101,7 @@
 }
 
 .activity-feed-header h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: #0F172A;
     letter-spacing: -0.03em;
@@ -111,14 +111,14 @@
 .post-achievement-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
+    gap: 6px;
+    padding: 10px 18px;
     background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
     color: white;
     border: none;
     border-radius: 100px;
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(0, 125, 255, 0.25);
 }
@@ -130,12 +130,12 @@
 .activity-tabs {
     display: flex;
     position: relative;
-    margin-bottom: 28px;
+    margin-bottom: 14px;
     background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.45);
-    border-radius: 14px;
-    padding: 6px;
+    border-radius: 10px;
+    padding: 4px;
     animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     animation-delay: 0.1s;
     opacity: 0;
@@ -183,7 +183,7 @@
 .activities-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 14px;
 }
 
 .activity-card {
@@ -191,9 +191,9 @@
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 22px;
-    padding: 24px;
-    max-width: 800px;
+    border-radius: 16px;
+    padding: 18px;
+    width: 100%;
     box-shadow:
         0 4px 24px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -212,7 +212,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .activity-user {
@@ -1057,21 +1057,21 @@
 /* Shared Sidebar Card Styles */
 .sidebar-card {
     background: white;
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 14px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .sidebar-card-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
 .sidebar-card-header h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: #0F172A;
 }
@@ -2142,8 +2142,8 @@
 .quick-stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 14px;
     animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     animation-delay: 0.15s;
     opacity: 0;
@@ -2152,12 +2152,12 @@
 .quick-stat-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px 18px;
+    gap: 10px;
+    padding: 12px 14px;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
@@ -2170,9 +2170,9 @@
 }
 
 .quick-stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
