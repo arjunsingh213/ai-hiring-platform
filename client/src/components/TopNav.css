@@ -1,19 +1,19 @@
-/* Floating Glass Top Navigation */
+/* Floating Glass Top Navigation - 90% Scale */
 .top-nav {
     position: fixed;
-    top: 20px;
-    left: 290px;
-    right: 20px;
-    height: 70px;
+    top: 16px;
+    left: 270px;
+    right: 16px;
+    height: 54px;
     background: var(--glass-white);
     backdrop-filter: var(--blur-lg);
     -webkit-backdrop-filter: var(--blur-lg);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-2xl);
+    border-radius: var(--radius-xl);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 var(--spacing-xl);
+    padding: 0 var(--spacing-lg);
     z-index: 100;
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-normal);
@@ -83,11 +83,11 @@
     gap: var(--spacing-md);
 }
 
-/* Glass Icon Buttons */
+/* Glass Icon Buttons - 90% Scale */
 .icon-btn {
     position: relative;
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     background: var(--glass-white);
     backdrop-filter: var(--blur-sm);
@@ -111,19 +111,19 @@
 
 .notification-badge {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 2px;
+    right: 2px;
     background: var(--gradient-primary);
     color: white;
-    font-size: 0.6875rem;
+    font-size: 0.55rem;
     font-weight: 700;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 9px;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 5px;
+    padding: 0 4px;
     box-shadow: var(--shadow-glow);
     border: 2px solid rgba(255, 255, 255, 0.3);
 }
@@ -151,16 +151,16 @@
 }
 
 .user-avatar-small {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid var(--glass-border);
+    border: 1.5px solid var(--glass-border);
     box-shadow: var(--shadow-sm);
 }
 
 .user-name {
-    font-size: 0.9375rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-primary);
 }
