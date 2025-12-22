@@ -779,3 +779,212 @@
         transform: rotate(360deg);
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .job-listings {
+    background-color: var(--bg-base);
+}
+
+/* Filters Bar Dark Mode */
+[data-theme="dark"] .filters-bar {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .filters-label {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .filter-select {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .filter-select:hover,
+[data-theme="dark"] .filter-select:focus {
+    border-color: var(--primary);
+}
+
+/* Jobs Header Dark Mode */
+[data-theme="dark"] .jobs-header {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .jobs-header h1 {
+    color: var(--text-primary);
+}
+
+/* Category Tabs Dark Mode */
+[data-theme="dark"] .category-tabs {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .category-tab {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .category-tab:hover {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .category-tab.active {
+    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
+    color: white;
+}
+
+/* Jobs Layout Dark Mode */
+[data-theme="dark"] .jobs-layout {
+    background: transparent;
+}
+
+/* Jobs List Dark Mode */
+[data-theme="dark"] .jobs-list {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .jobs-list-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .jobs-count {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+}
+
+/* Job Cards Dark Mode */
+[data-theme="dark"] .job-card {
+    background: rgba(51, 65, 85, 0.4);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .job-card:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .job-card.active {
+    background: rgba(0, 125, 255, 0.1);
+    border-color: rgba(0, 125, 255, 0.4);
+}
+
+[data-theme="dark"] .job-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .company-name {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .job-meta {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .job-meta span {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .salary-range {
+    color: var(--success);
+}
+
+/* Job Details Pane Dark Mode */
+[data-theme="dark"] .job-details {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .job-header {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .job-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .company-info h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .company-info p {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .job-body {
+    background: transparent;
+}
+
+[data-theme="dark"] .job-section-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .job-section-content {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .job-section-content ul li {
+    color: var(--text-secondary);
+}
+
+/* Tags Dark Mode */
+[data-theme="dark"] .job-tag,
+[data-theme="dark"] .skill-tag {
+    background: rgba(0, 125, 255, 0.15);
+    border-color: rgba(0, 125, 255, 0.3);
+    color: var(--primary);
+}
+
+/* Badges Dark Mode */
+[data-theme="dark"] .status-badge {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+}
+
+/* Empty State Dark Mode */
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .no-selection {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .empty-state h3,
+[data-theme="dark"] .no-selection h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .empty-state p,
+[data-theme="dark"] .no-selection p {
+    color: var(--text-secondary);
+}
+
+/* Button Dark Mode */
+[data-theme="dark"] .btn-withdraw {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-withdraw:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+/* Scrollbar Dark Mode */
+[data-theme="dark"] .jobs-list::-webkit-scrollbar-thumb,
+[data-theme="dark"] .job-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .jobs-list::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .job-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

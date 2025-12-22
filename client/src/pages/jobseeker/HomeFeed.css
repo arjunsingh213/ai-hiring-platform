@@ -2266,3 +2266,202 @@
         font-size: 0.65rem;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .activity-feed-header h1 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .activity-tabs {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .tab-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab-btn.active {
+    color: var(--primary);
+}
+
+[data-theme="dark"] .tab-btn:hover:not(.active) {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .tab-indicator {
+    background: rgba(51, 65, 85, 0.8);
+}
+
+[data-theme="dark"] .activity-card {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .activity-card:hover {
+    border-color: rgba(0, 125, 255, 0.3);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .activity-user-info a {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .activity-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .activity-text {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .activity-time {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .activity-actions {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .activity-actions .action-btn {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .activity-actions .action-btn:hover {
+    background: rgba(51, 65, 85, 0.7);
+    color: var(--primary);
+}
+
+/* Quick Stats Dark Mode */
+[data-theme="dark"] .quick-stats-row {
+    gap: 10px;
+}
+
+[data-theme="dark"] .quick-stat-card {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .quick-stat-card:hover {
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .quick-stat-number {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .quick-stat-label {
+    color: var(--text-muted);
+}
+
+/* Sidebar Cards Dark Mode */
+[data-theme="dark"] .sidebar-card {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .sidebar-card-header h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .header-icon {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--primary);
+}
+
+/* ATP Preview Dark Mode */
+[data-theme="dark"] .atp-preview {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .atp-header h4 {
+    color: var(--text-primary);
+}
+
+/* Empty State Dark Mode */
+[data-theme="dark"] .empty-state {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .empty-state h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .empty-state p {
+    color: var(--text-secondary);
+}
+
+/* Modal Dark Mode */
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+[data-theme="dark"] .achievement-modal {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .modal-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-close {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+}
+
+/* Skills Grid Dark Mode */
+[data-theme="dark"] .skill-tag {
+    background: rgba(0, 125, 255, 0.15);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .trending-skill-item {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .demand-bar {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .skill-name {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .demand-count {
+    color: var(--text-muted);
+}
+
+/* Profile Score Section */
+[data-theme="dark"] .profile-ring-bg {
+    stroke: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .profile-score-num {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .profile-score-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .level-badge {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .global-rank {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .profile-cta {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+}

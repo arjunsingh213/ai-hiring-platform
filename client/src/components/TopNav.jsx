@@ -3,6 +3,7 @@ import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import api from '../services/api';
 import NotificationCenter from './NotificationCenter';
 import MessageButton from './MessageButton';
+import ThemeToggle from './ThemeToggle';
 import './TopNav.css';
 
 const TopNav = () => {
@@ -72,6 +73,7 @@ const TopNav = () => {
                 </div>
 
                 <div className="top-nav-right">
+                    <ThemeToggle />
                     <NotificationCenter />
                     <MessageButton />
                     <div className="user-profile-btn" onClick={() => navigate(profilePath)}>

@@ -349,3 +349,93 @@
         height: 32px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .top-nav {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .top-nav::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+[data-theme="dark"] .search-bar {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .search-bar:focus-within {
+    background: rgba(51, 65, 85, 0.7);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .search-bar input {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .search-bar input::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .icon-btn {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+    background: rgba(51, 65, 85, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .user-profile-btn {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .user-profile-btn:hover {
+    background: rgba(51, 65, 85, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .user-name {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .menu-toggle {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .mobile-menu-overlay {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .mobile-menu {
+    background: #1E293B;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .mobile-menu-header {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .mobile-menu-header h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .mobile-menu-nav a {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .mobile-menu-nav a:hover,
+[data-theme="dark"] .mobile-menu-nav a.active {
+    background: rgba(0, 125, 255, 0.15);
+    color: var(--primary);
+}

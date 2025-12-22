@@ -247,3 +247,38 @@
         transform: translateX(0);
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .recruiter-sidebar {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .recruiter-sidebar::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+[data-theme="dark"] .sidebar-header {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .nav-item {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .nav-item:hover {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 768px) {
+    [data-theme="dark"] .recruiter-sidebar {
+        background: rgba(30, 41, 59, 0.95);
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+}
