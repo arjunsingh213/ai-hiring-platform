@@ -5,6 +5,18 @@ import './LandingPage.css';
 const LandingPage = () => {
     const [scrolled, setScrolled] = useState(false);
 
+    // Force light theme on landing page
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
+
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 50);

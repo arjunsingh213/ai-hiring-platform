@@ -90,6 +90,12 @@ app.use('/api/code', require('./routes/codeExecutionRoutes'));
 app.use('/api/job-interview', require('./routes/jobInterview'));
 app.use('/api/companies', require('./routes/companyRoutes'));
 
+// Admin Review System
+app.use('/api/admin', require('./routes/adminRoutes'));
+
+// AI Talent Passport
+app.use('/api/talent-passport', require('./routes/talentPassportRoutes'));
+
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({

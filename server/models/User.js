@@ -280,6 +280,26 @@ const userSchema = new mongoose.Schema({
         default: Date.now
     },
 
+    // ==================== ACCOUNT STATUS (ADMIN CONTROL) ====================
+    accountStatus: {
+        isSuspended: {
+            type: Boolean,
+            default: false
+        },
+        suspendedAt: Date,
+        suspendedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Admin'
+        },
+        suspensionReason: String,
+        isRepeatOffender: {
+            type: Boolean,
+            default: false
+        },
+        offenderMarkedAt: Date,
+        offenderNotes: String
+    },
+
     // ==================== AI TALENT PASSPORT (NEW ADDITIVE FEATURE) ====================
     // This is a PURE ADDITION - does not modify any existing fields or functionality
     aiTalentPassport: {

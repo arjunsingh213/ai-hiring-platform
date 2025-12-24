@@ -1,0 +1,343 @@
+/* SplineHero.module.css - 3D Spline Animation Container */
+
+.splineContainer {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    min-height: 400px;
+    max-height: 600px;
+    border-radius: 24px;
+    overflow: hidden;
+    /* Transparent background */
+    background: transparent;
+}
+
+.splineCanvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* Hide Spline watermark */
+.splineContainer canvas+div,
+.splineContainer :global(.spline-watermark),
+.splineContainer :global([class*="watermark"]),
+.splineContainer>div>div:last-child:not(:first-child) {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.loaded .splineCanvas {
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.gradientOverlay {
+    display: none;
+    /* Remove gradient overlay for transparent bg */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING ANIMATION
+   ═══════════════════════════════════════════════════════════════ */
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 24px;
+}
+
+.loadingOrb {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.orbCore {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #007DFF 0%, #8B5CF6 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 30px rgba(0, 125, 255, 0.6);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.orbRing {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border: 2px solid rgba(0, 125, 255, 0.3);
+    border-radius: 50%;
+    animation: expandRing 1.5s ease-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 0 30px rgba(0, 125, 255, 0.6);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        box-shadow: 0 0 50px rgba(0, 125, 255, 0.8);
+    }
+}
+
+@keyframes expandRing {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+.loadingText {
+    color: #94A3B8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CSS FALLBACK - NEURAL NETWORK ANIMATION
+   Shows when Spline fails or scene URL not set
+   ═══════════════════════════════════════════════════════════════ */
+
+.errorFallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px;
+}
+
+.neuralNetwork {
+    position: relative;
+    width: 300px;
+    height: 300px;
+}
+
+/* Central Brain Node */
+.brainNode {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg,
+            rgba(0, 125, 255, 0.3) 0%,
+            rgba(139, 92, 246, 0.3) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(0, 125, 255, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 0 40px rgba(0, 125, 255, 0.4),
+        inset 0 0 20px rgba(0, 125, 255, 0.2);
+    animation: brainPulse 3s ease-in-out infinite;
+    z-index: 10;
+}
+
+.brainIcon {
+    font-size: 36px;
+    animation: brainFloat 2s ease-in-out infinite;
+}
+
+@keyframes brainPulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 40px rgba(0, 125, 255, 0.4),
+            inset 0 0 20px rgba(0, 125, 255, 0.2);
+        border-color: rgba(0, 125, 255, 0.5);
+    }
+
+    50% {
+        box-shadow:
+            0 0 60px rgba(139, 92, 246, 0.5),
+            inset 0 0 30px rgba(139, 92, 246, 0.3);
+        border-color: rgba(139, 92, 246, 0.6);
+    }
+}
+
+@keyframes brainFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Orbiting Nodes */
+.orbitNode {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 45px;
+    height: 45px;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: orbit 8s linear infinite;
+    animation-delay: var(--orbit-delay, 0s);
+    transform-origin: center center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.orbitNode:nth-child(2) {
+    animation-duration: 10s;
+}
+
+.orbitNode:nth-child(3) {
+    animation-duration: 12s;
+    animation-direction: reverse;
+}
+
+.orbitNode:nth-child(4) {
+    animation-duration: 9s;
+}
+
+.orbitNode:nth-child(5) {
+    animation-duration: 11s;
+    animation-direction: reverse;
+}
+
+.orbitNode:nth-child(6) {
+    animation-duration: 7s;
+}
+
+.orbitNode:nth-child(7) {
+    animation-duration: 13s;
+    animation-direction: reverse;
+}
+
+.nodeIcon {
+    font-size: 20px;
+}
+
+@keyframes orbit {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg) translateX(var(--orbit-distance, 80px)) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg) translateX(var(--orbit-distance, 80px)) rotate(-360deg);
+    }
+}
+
+/* Connection Lines SVG */
+.connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.connectionRing {
+    fill: none;
+    stroke: rgba(0, 125, 255, 0.15);
+    stroke-width: 1;
+    stroke-dasharray: 8 4;
+    animation: rotateRing 20s linear infinite;
+}
+
+.connectionRing:nth-child(2) {
+    stroke: rgba(139, 92, 246, 0.12);
+    animation-direction: reverse;
+    animation-duration: 25s;
+}
+
+.connectionRing:nth-child(3) {
+    stroke: rgba(76, 200, 255, 0.1);
+    animation-duration: 30s;
+}
+
+@keyframes rotateRing {
+    from {
+        transform: rotate(0deg);
+        transform-origin: center;
+    }
+
+    to {
+        transform: rotate(360deg);
+        transform-origin: center;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .splineContainer {
+        height: 350px;
+        min-height: 300px;
+        border-radius: 16px;
+    }
+
+    .neuralNetwork {
+        width: 250px;
+        height: 250px;
+    }
+
+    .brainNode {
+        width: 60px;
+        height: 60px;
+    }
+
+    .brainIcon {
+        font-size: 28px;
+    }
+
+    .orbitNode {
+        width: 35px;
+        height: 35px;
+    }
+
+    .nodeIcon {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .splineContainer {
+        height: 280px;
+        min-height: 250px;
+    }
+
+    .neuralNetwork {
+        width: 200px;
+        height: 200px;
+    }
+}

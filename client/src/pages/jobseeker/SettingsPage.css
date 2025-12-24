@@ -7,6 +7,7 @@
     max-width: 1100px;
     margin: 0 auto;
     padding: 0 20px;
+    padding-top: var(--spacing-lg);
 }
 
 .settings-header {
@@ -46,7 +47,7 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     height: fit-content;
     position: sticky;
-    top: 130px;
+    top: 100px;
     animation: slideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
@@ -302,4 +303,70 @@
         opacity: 1;
         transform: translateX(0);
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .settings-sidebar {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .settings-tab {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .settings-tab:hover {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .settings-content {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .settings-content::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+[data-theme="dark"] .settings-section h2 {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .setting-item {
+    background: rgba(51, 65, 85, 0.4);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .setting-item:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .setting-item h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .setting-item p {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .toggle-slider {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .toggle-slider::before {
+    background: var(--text-secondary);
+}
+
+[data-theme="dark"] .settings-actions {
+    border-color: rgba(255, 255, 255, 0.1);
 }

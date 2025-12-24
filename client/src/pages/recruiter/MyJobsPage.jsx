@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
-import '../jobseeker/JobListingsPage.css';
+import './MyJobsPage.css';
 
 const MyJobsPage = () => {
     const navigate = useNavigate();
@@ -56,15 +56,30 @@ const MyJobsPage = () => {
         });
     };
 
-    const getStatusBadge = (status) => {
-        const badges = {
-            active: { class: 'badge-success', text: 'Active' },
-            closed: { class: 'badge-danger', text: 'Closed' },
-            draft: { class: 'badge-warning', text: 'Draft' },
-            paused: { class: 'badge-info', text: 'Paused' }
+    const getStatusClass = (status) => {
+        const statusMap = {
+            active: 'active',
+            closed: 'closed',
+            draft: 'draft',
+            paused: 'draft'
         };
-        return badges[status] || badges.active;
+        return statusMap[status] || 'active';
     };
+
+    const getStatusText = (status) => {
+        const statusMap = {
+            active: 'Active',
+            closed: 'Closed',
+            draft: 'Draft',
+            paused: 'Paused'
+        };
+        return statusMap[status] || 'Active';
+    };
+
+    // Calculate stats
+    const totalApplicants = jobs.reduce((sum, job) => sum + (job.applicants?.length || 0), 0);
+    const totalViews = jobs.reduce((sum, job) => sum + (job.views || 0), 0);
+    const activeJobs = jobs.filter(job => job.status === 'active').length;
 
     // Edit Job - navigate to post-job page with edit data
     const handleEditJob = () => {
@@ -107,16 +122,18 @@ const MyJobsPage = () => {
 
     if (loading) {
         return (
-            <div className="job-listings">
-                <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-                    <p>Loading your jobs...</p>
+            <div className="my-jobs-page">
+                <div className="bento-grid">
+                    <div className="bento-card header-card">
+                        <h1>Loading...</h1>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="job-listings">
+        <div className="my-jobs-page">
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
                 <div className="modal-overlay" style={{
@@ -125,41 +142,36 @@ const MyJobsPage = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    backdropFilter: 'blur(4px)',
+                    background: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 9999
                 }} onClick={() => !deleting && setShowDeleteModal(false)}>
-                    <div className="delete-modal card" style={{
-                        background: 'var(--bg-card)',
-                        borderRadius: 'var(--radius-xl)',
-                        padding: 'var(--spacing-xl)',
+                    <div className="bento-card" style={{
                         maxWidth: '420px',
                         width: '90%',
-                        boxShadow: 'var(--shadow-xl)',
-                        border: '1px solid var(--border-color)',
                         animation: 'fadeInUp 0.2s ease-out'
                     }} onClick={e => e.stopPropagation()}>
-                        <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-lg)' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                             <div style={{
                                 width: '64px',
                                 height: '64px',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1))',
+                                background: 'rgba(239, 68, 68, 0.2)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                margin: '0 auto var(--spacing-md)',
+                                margin: '0 auto 16px',
                                 fontSize: '28px'
                             }}>
                                 🗑️
                             </div>
-                            <h2 style={{ margin: '0 0 var(--spacing-sm)', color: 'var(--text-primary)' }}>
+                            <h2 style={{ margin: '0 0 8px', color: '#fff' }}>
                                 Delete Job?
                             </h2>
-                            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0 }}>
                                 Are you sure you want to delete <strong>"{selectedJob?.title}"</strong>?
                             </p>
                         </div>
@@ -167,18 +179,18 @@ const MyJobsPage = () => {
                         <div style={{
                             background: 'rgba(239, 68, 68, 0.1)',
                             border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: 'var(--radius-md)',
-                            padding: 'var(--spacing-md)',
-                            marginBottom: 'var(--spacing-lg)'
+                            borderRadius: '12px',
+                            padding: '16px',
+                            marginBottom: '24px'
                         }}>
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--danger)' }}>
-                                ⚠️ This will permanently remove the job from all listings. This action cannot be undone.
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#EF4444' }}>
+                                ⚠️ This will permanently remove the job from all listings.
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
                             <button
-                                className="btn btn-secondary"
+                                className="btn-action secondary"
                                 style={{ flex: 1 }}
                                 onClick={() => setShowDeleteModal(false)}
                                 disabled={deleting}
@@ -186,7 +198,7 @@ const MyJobsPage = () => {
                                 Cancel
                             </button>
                             <button
-                                className="btn btn-danger"
+                                className="btn-action danger"
                                 style={{ flex: 1 }}
                                 onClick={confirmDelete}
                                 disabled={deleting}
@@ -198,42 +210,48 @@ const MyJobsPage = () => {
                 </div>
             )}
 
-            <div className="jobs-sidebar">
-                <div className="filters-section">
-                    <h3>My Posted Jobs</h3>
-                    <button
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: 'var(--spacing-md)' }}
-                        onClick={() => navigate('/recruiter/post-job')}
-                    >
-                        + Post New Job
-                    </button>
-                </div>
-
-                <div className="jobs-list">
-                    <h3>Jobs ({jobs.length})</h3>
+            <div className="bento-grid">
+                {/* Jobs List Card */}
+                <div className="bento-card jobs-list-card">
+                    <div className="jobs-list-header">
+                        <h3>All Jobs</h3>
+                        <button
+                            className="btn-post-new-small"
+                            onClick={() => navigate('/recruiter/post-job')}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Job
+                        </button>
+                    </div>
                     {jobs.map((job) => (
                         <div
                             key={job._id}
-                            className={`job-item ${selectedJob?._id === job._id ? 'active' : ''}`}
+                            className={`job-list-item ${selectedJob?._id === job._id ? 'active' : ''}`}
                             onClick={() => setSelectedJob(job)}
                         >
                             <h4>{job.title}</h4>
-                            <p className="company-name">{job.jobDetails?.location || 'Remote'}</p>
+                            <p className="job-location">{job.jobDetails?.location || 'Remote'}</p>
                             <p className="job-meta">
                                 {job.applicants?.length || 0} applicants • {formatDate(job.createdAt)}
                             </p>
-                            <span className={`badge ${getStatusBadge(job.status).class}`} style={{ marginTop: 'var(--spacing-sm)' }}>
-                                {getStatusBadge(job.status).text}
+                            <span className={`status-badge ${getStatusClass(job.status)}`}>
+                                {getStatusText(job.status)}
                             </span>
                         </div>
                     ))}
                     {jobs.length === 0 && (
-                        <div className="empty-state">
-                            <p>You haven't posted any jobs yet</p>
+                        <div className="empty-state-card">
+                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                                <path d="M16 21V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V21"></path>
+                            </svg>
+                            <h3>No jobs posted yet</h3>
                             <button
-                                className="btn btn-primary"
-                                style={{ marginTop: 'var(--spacing-md)' }}
+                                className="btn-post-new"
+                                style={{ marginTop: '16px' }}
                                 onClick={() => navigate('/recruiter/post-job')}
                             >
                                 Post Your First Job
@@ -241,113 +259,129 @@ const MyJobsPage = () => {
                         </div>
                     )}
                 </div>
-            </div>
 
-            <div className="job-details">
-                {selectedJob ? (
-                    <>
-                        <div className="job-header">
-                            <div className="company-logo">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                                    <rect x="2" y="7" width="20" height="14" rx="3" fill="var(--primary)" />
-                                    <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="white" strokeWidth="2" />
-                                </svg>
-                            </div>
-                            <div className="job-title-section">
-                                <h1>{selectedJob.title}</h1>
-                                <p className="company-info">
-                                    {selectedJob.jobDetails?.location || 'Remote'} • {selectedJob.jobDetails?.type || 'Full-time'}
-                                </p>
-                                <div className="job-badges">
-                                    <span className={`badge ${getStatusBadge(selectedJob.status).class}`}>
-                                        {getStatusBadge(selectedJob.status).text}
-                                    </span>
-                                    <span className="badge">{selectedJob.applicants?.length || 0} Applicants</span>
-                                    <span className="badge">{selectedJob.views || 0} Views</span>
+                {/* Job Details Card */}
+                <div className="bento-card job-details-card">
+                    {selectedJob ? (
+                        <>
+                            {/* Job Info Header */}
+                            <div className="job-info-header">
+                                <div className="job-icon">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                                        <path d="M16 21V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V21"></path>
+                                    </svg>
+                                </div>
+                                <div className="job-info-content">
+                                    <h2>{selectedJob.title}</h2>
+                                    <p className="location-type">
+                                        {selectedJob.jobDetails?.location || 'Remote'} • {selectedJob.jobDetails?.type || 'Full-time'}
+                                    </p>
+                                    <div className="job-badges-row">
+                                        <span className={`job-badge primary`}>
+                                            {getStatusText(selectedJob.status)}
+                                        </span>
+                                        <span className="job-badge">{selectedJob.applicants?.length || 0} Applicants</span>
+                                        <span className="job-badge">{selectedJob.views || 0} Views</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="job-actions">
+
+                            {/* Action Buttons */}
+                            <div className="job-actions-row">
                                 <button
-                                    className="btn btn-primary"
+                                    className="btn-action primary"
                                     onClick={() => navigate('/recruiter/applications', {
                                         state: { filterJobId: selectedJob._id, filterJobTitle: selectedJob.title }
                                     })}
                                 >
-                                    View Applicants ({selectedJob.applicants?.length || 0})
+                                    👥 View Applicants ({selectedJob.applicants?.length || 0})
                                 </button>
                                 <button
-                                    className="btn btn-secondary"
+                                    className="btn-action secondary"
                                     onClick={handleEditJob}
                                 >
                                     ✏️ Edit Job
                                 </button>
                                 <button
-                                    className="btn btn-danger"
+                                    className="btn-action danger"
                                     onClick={handleDeleteClick}
                                 >
                                     🗑️ Delete
                                 </button>
                             </div>
-                        </div>
 
-                        <div className="job-content card">
-                            <section>
-                                <h3>Job Description</h3>
-                                <p>{selectedJob.description || 'No description provided.'}</p>
-                            </section>
+                            {/* Content Sections */}
+                            <div className="content-sections">
+                                {/* Description */}
+                                <div className="content-section full-width">
+                                    <h3>Description</h3>
+                                    <p>{selectedJob.description || 'No description provided.'}</p>
+                                </div>
 
-                            <section>
-                                <h3>Requirements</h3>
-                                <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                                    <strong>Skills:</strong>
-                                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap', marginTop: 'var(--spacing-sm)' }}>
+                                {/* Skills */}
+                                <div className="content-section">
+                                    <h3>Required Skills</h3>
+                                    <div className="skills-list">
                                         {selectedJob.requirements?.skills?.map((skill, i) => (
-                                            <span key={i} className="badge">{skill}</span>
+                                            <span key={i} className="skill-tag">{skill}</span>
                                         ))}
                                         {(!selectedJob.requirements?.skills || selectedJob.requirements.skills.length === 0) && (
-                                            <span className="text-muted">No skills specified</span>
+                                            <span style={{ color: 'rgba(255,255,255,0.4)' }}>No skills specified</span>
                                         )}
                                     </div>
                                 </div>
-                                <p><strong>Experience:</strong> {selectedJob.requirements?.minExperience || 0} - {selectedJob.requirements?.maxExperience || 10} years</p>
-                                <p><strong>Education:</strong> {selectedJob.requirements?.education?.join(', ') || 'Not specified'}</p>
-                            </section>
 
-                            <section>
-                                <h3>Compensation</h3>
-                                <p>
-                                    {selectedJob.jobDetails?.salary?.currency || 'USD'} {selectedJob.jobDetails?.salary?.min?.toLocaleString() || 0} - {selectedJob.jobDetails?.salary?.max?.toLocaleString() || 0} / year
-                                </p>
-                            </section>
+                                {/* Experience */}
+                                <div className="content-section">
+                                    <h3>Experience Required</h3>
+                                    <p>{selectedJob.requirements?.minExperience || 0} - {selectedJob.requirements?.maxExperience || 10} years</p>
+                                </div>
 
-                            <section>
-                                <h3>Statistics</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-lg)' }}>
-                                    <div>
-                                        <p className="text-muted" style={{ margin: 0 }}>Total Applicants</p>
-                                        <h2 style={{ margin: 0, color: 'var(--primary)' }}>{selectedJob.applicants?.length || 0}</h2>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted" style={{ margin: 0 }}>Total Views</p>
-                                        <h2 style={{ margin: 0, color: 'var(--accent)' }}>{selectedJob.views || 0}</h2>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted" style={{ margin: 0 }}>Posted On</p>
-                                        <h3 style={{ margin: 0, color: 'var(--secondary)' }}>{formatDate(selectedJob.createdAt)}</h3>
+                                {/* Salary */}
+                                <div className="content-section">
+                                    <h3>Compensation</h3>
+                                    <p>
+                                        {selectedJob.jobDetails?.salary?.currency || 'USD'} {selectedJob.jobDetails?.salary?.min?.toLocaleString() || 0} - {selectedJob.jobDetails?.salary?.max?.toLocaleString() || 0} / year
+                                    </p>
+                                </div>
+
+                                {/* Education */}
+                                <div className="content-section">
+                                    <h3>Education</h3>
+                                    <p>{selectedJob.requirements?.education?.join(', ') || 'Not specified'}</p>
+                                </div>
+
+                                {/* Statistics */}
+                                <div className="content-section full-width">
+                                    <h3>Statistics</h3>
+                                    <div className="stats-mini-grid">
+                                        <div className="mini-stat">
+                                            <div className="value">{selectedJob.applicants?.length || 0}</div>
+                                            <div className="label">Applicants</div>
+                                        </div>
+                                        <div className="mini-stat">
+                                            <div className="value">{selectedJob.views || 0}</div>
+                                            <div className="label">Views</div>
+                                        </div>
+                                        <div className="mini-stat">
+                                            <div className="value">{formatDate(selectedJob.createdAt)}</div>
+                                            <div className="label">Posted</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </section>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="empty-state-card">
+                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                                <path d="M16 21V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V21"></path>
+                            </svg>
+                            <h3>Select a job to view details</h3>
                         </div>
-                    </>
-                ) : (
-                    <div className="empty-state">
-                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
-                            <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-                            <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="currentColor" strokeWidth="2" />
-                        </svg>
-                        <h3>Select a job to view details</h3>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

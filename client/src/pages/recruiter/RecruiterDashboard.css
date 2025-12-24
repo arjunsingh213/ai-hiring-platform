@@ -11,9 +11,9 @@
 
 .recruiter-main {
     flex: 1;
-    padding: 32px;
-    margin-left: 300px;
-    margin-top: 110px;
+    padding: 0px;
+    margin-left: 260px;
+    margin-top: 90px;
     animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
@@ -50,4 +50,16 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .recruiter-dashboard {
+    background: transparent;
+}
+
+[data-theme="dark"] .recruiter-main {
+    background: transparent;
 }

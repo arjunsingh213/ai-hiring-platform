@@ -11,6 +11,21 @@ const deepseekService = require('../services/ai/deepseekService');
 const geminiService = require('../services/ai/geminiService'); // Keep as fallback
 const User = require('../models/User');
 const Interview = require('../models/Interview');
+const cloudinary = require('../config/cloudinary');
+const multer = require('multer');
+
+// Configure multer for video uploads (in memory)
+const videoUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for videos
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('video/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only video files are allowed'), false);
+        }
+    }
+});
 
 /**
  * POST /api/onboarding-interview/validate-answer
@@ -314,41 +329,54 @@ router.post('/submit', async (req, res) => {
             }))
         };
 
-        // Save interview results to user profile AND update platform interview status
+        // Save interview results and create Interview document for admin review
         try {
-            // Determine pass/fail based on strict criteria
-            const passed = (
-                (evaluation.overallScore ?? 0) >= 60 &&
-                (evaluation.technicalScore ?? 0) >= 50 &&
-                (evaluation.hrScore ?? 0) >= 50
-            );
-
-            // Calculate retry date (2 days from now if failed)
-            const retryAfterDate = passed ? null : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+            // ==================== ADMIN REVIEW INTEGRATION ====================
+            // Interview goes to "pending_review" - admin must approve before candidate sees results
+            // DO NOT set platformInterview.status to passed/failed yet - wait for admin review
 
             await User.findByIdAndUpdate(userId, {
                 $set: {
                     'jobSeekerProfile.onboardingInterview': interviewResults,
                     'jobSeekerProfile.interviewScore': evaluation.overallScore || 10,
-                    // Update platform interview status
-                    'platformInterview.status': passed ? 'passed' : 'failed',
-                    'platformInterview.score': evaluation.overallScore || 10,
-                    'platformInterview.completedAt': new Date(),
-                    'platformInterview.lastAttemptAt': new Date(),
-                    'platformInterview.canRetry': !passed,
-                    'platformInterview.retryAfter': retryAfterDate
+                    // Set status to pending_review instead of passed/failed
+                    'platformInterview.status': 'in_progress', // Will be updated after admin review
+                    'platformInterview.lastAttemptAt': new Date()
                 },
                 $inc: { 'platformInterview.attempts': 1 }
             });
-            console.log(`Interview results saved. Platform interview ${passed ? 'PASSED' : 'FAILED'}`);
+            console.log('Interview submitted. Pending admin review.');
 
-            // Create Interview document for Completed Interviews tab (both passed & failed)
+            // Create Interview document with adminReview fields for admin dashboard
             try {
+                // Calculate high severity flags count for auto-escalation
+                const proctoringFlags = req.body.proctoringFlags || [];
+                const highSeverityCount = proctoringFlags.filter(f => f.severity === 'high').length;
+                const totalFlags = proctoringFlags.length;
+
+                // Determine priority level based on flags
+                let priorityLevel = 'normal';
+                let autoEscalated = false;
+                let escalationReason = null;
+
+                if (highSeverityCount > 3) {
+                    priorityLevel = 'critical';
+                    autoEscalated = true;
+                    escalationReason = `Auto-escalated: ${highSeverityCount} high-severity cheating flags detected`;
+                } else if (highSeverityCount > 1 || totalFlags > 5) {
+                    priorityLevel = 'high';
+                    autoEscalated = true;
+                    escalationReason = 'Auto-escalated: Multiple cheating flags detected';
+                }
+
                 await Interview.create({
                     userId,
                     interviewType: 'combined',
-                    status: 'completed',
-                    passed,
+                    status: 'pending_review', // Changed from 'completed'
+                    passed: false, // Will be set after admin approval
+                    resultVisibleToCandidate: false, // Hidden until admin approves
+
+                    // Scoring from AI
                     scoring: {
                         overallScore: evaluation.overallScore || 10,
                         technicalAccuracy: evaluation.technicalScore || 10,
@@ -359,10 +387,70 @@ router.post('/submit', async (req, res) => {
                         weaknesses: evaluation.weaknesses || [],
                         detailedFeedback: evaluation.feedback || 'Platform interview completed'
                     },
+
+                    // Questions and Responses
+                    questions: questionsAndAnswers.map((qa, idx) => ({
+                        question: qa.question,
+                        category: qa.category || (idx < 5 ? 'technical' : 'behavioral'),
+                        difficulty: 'medium',
+                        generatedBy: 'ai'
+                    })),
+                    responses: questionsAndAnswers.map((qa, idx) => ({
+                        questionIndex: idx,
+                        answer: qa.answer,
+                        evaluation: {
+                            score: evaluation.questionAnalysis?.[idx]?.score || 50,
+                            feedback: evaluation.questionAnalysis?.[idx]?.feedback || ''
+                        }
+                    })),
+
+                    // Proctoring data with timestamps
+                    proctoring: {
+                        flags: proctoringFlags.map(f => ({
+                            type: f.type,
+                            timestamp: f.timestamp ? new Date(f.timestamp) : new Date(),
+                            severity: f.severity || 'medium',
+                            description: f.description || ''
+                        })),
+                        totalFlags: totalFlags,
+                        riskLevel: highSeverityCount > 2 ? 'high' : totalFlags > 3 ? 'medium' : 'low'
+                    },
+
+                    // Video recording with cheating markers (if provided)
+                    videoRecording: req.body.videoRecording ? {
+                        publicId: req.body.videoRecording.publicId,
+                        url: req.body.videoRecording.url,
+                        secureUrl: req.body.videoRecording.secureUrl,
+                        duration: req.body.videoRecording.duration,
+                        format: req.body.videoRecording.format || 'webm',
+                        uploadedAt: new Date(),
+                        fileSize: req.body.videoRecording.fileSize,
+                        // Cheating markers with timestamps for video seeking
+                        cheatingMarkers: proctoringFlags.map(f => ({
+                            flagType: f.type,
+                            timestamp: f.videoTimestamp || 0, // Seconds from video start
+                            duration: f.duration || 5,
+                            severity: f.severity || 'medium',
+                            description: f.description || '',
+                            aiConfidence: f.confidence || 80
+                        })),
+                        totalFlagsInVideo: totalFlags,
+                        highSeverityFlagsCount: highSeverityCount
+                    } : null,
+
+                    // Admin Review Fields
+                    adminReview: {
+                        status: 'pending_review',
+                        aiScore: evaluation.overallScore || 10, // Store original AI score
+                        priorityLevel: priorityLevel,
+                        autoEscalated: autoEscalated,
+                        escalationReason: escalationReason
+                    },
+
                     completedAt: new Date(),
-                    startedAt: new Date(Date.now() - 20 * 60 * 1000) // Assume 20 min duration
+                    startedAt: new Date(Date.now() - 20 * 60 * 1000)
                 });
-                console.log('Interview document created for scorecard display');
+                console.log(`Interview document created for admin review. Priority: ${priorityLevel}`);
             } catch (interviewError) {
                 console.error('Failed to create Interview document:', interviewError);
             }
@@ -1007,5 +1095,97 @@ router.get('/check-ban/:userId', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/onboarding-interview/upload-video
+ * Upload interview video recording to Cloudinary
+ */
+router.post('/upload-video', videoUpload.single('video'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No video file provided' });
+        }
+
+        const { interviewId, userId, cheatingMarkers } = req.body;
+
+        console.log(`Uploading interview video for user ${userId}, size: ${req.file.size} bytes`);
+
+        // Upload to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    resource_type: 'video',
+                    folder: 'interview-recordings',
+                    public_id: `interview_${interviewId || userId}_${Date.now()}`,
+                    chunk_size: 6000000, // 6MB chunks for large videos
+                    eager: [
+                        { format: 'mp4', video_codec: 'h264' } // Ensure compatibility
+                    ]
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
+        });
+
+        console.log('Video uploaded successfully:', uploadResult.public_id);
+
+        // Parse cheating markers if provided
+        let parsedMarkers = [];
+        try {
+            if (cheatingMarkers) {
+                parsedMarkers = typeof cheatingMarkers === 'string'
+                    ? JSON.parse(cheatingMarkers)
+                    : cheatingMarkers;
+            }
+        } catch (e) {
+            console.error('Failed to parse cheating markers:', e);
+        }
+
+        // Update Interview document with video details (if interviewId provided)
+        if (interviewId) {
+            await Interview.findByIdAndUpdate(interviewId, {
+                $set: {
+                    'videoRecording.publicId': uploadResult.public_id,
+                    'videoRecording.url': uploadResult.url,
+                    'videoRecording.secureUrl': uploadResult.secure_url,
+                    'videoRecording.duration': uploadResult.duration,
+                    'videoRecording.format': uploadResult.format,
+                    'videoRecording.uploadedAt': new Date(),
+                    'videoRecording.fileSize': req.file.size,
+                    'videoRecording.cheatingMarkers': parsedMarkers.map(m => ({
+                        flagType: m.type || m.flagType,
+                        timestamp: m.videoTimestamp || m.timestamp || 0,
+                        duration: m.duration || 5,
+                        severity: m.severity || 'medium',
+                        description: m.description || '',
+                        aiConfidence: m.confidence || 80
+                    })),
+                    'videoRecording.totalFlagsInVideo': parsedMarkers.length,
+                    'videoRecording.highSeverityFlagsCount': parsedMarkers.filter(m => m.severity === 'high').length
+                }
+            });
+            console.log('Interview document updated with video');
+        }
+
+        res.json({
+            success: true,
+            data: {
+                publicId: uploadResult.public_id,
+                url: uploadResult.url,
+                secureUrl: uploadResult.secure_url,
+                duration: uploadResult.duration,
+                format: uploadResult.format,
+                fileSize: req.file.size
+            }
+        });
+    } catch (error) {
+        console.error('Video upload error:', error);
+        res.status(500).json({ success: false, error: 'Failed to upload video' });
+    }
+});
+
 module.exports = router;
+
 

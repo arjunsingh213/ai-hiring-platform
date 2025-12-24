@@ -1,9 +1,10 @@
 /* Premium Glass Messaging */
 .messaging-page {
     display: flex;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 140px);
     gap: 0;
     position: relative;
+    margin-top: var(--spacing-lg);
 }
 
 /* Mobile Header */

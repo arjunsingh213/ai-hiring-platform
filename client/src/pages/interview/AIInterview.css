@@ -1,3 +1,115 @@
+/* ═══════════════════════════════════════════════════════════════
+   AI INTERVIEW PAGE - Professional Redesign
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Icon Base Styles */
+.ai-interview .icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    stroke: currentColor;
+}
+
+.ai-interview .icon.lg {
+    width: 24px;
+    height: 24px;
+}
+
+.ai-interview .icon.xl {
+    width: 32px;
+    height: 32px;
+}
+
+/* Timer Icon */
+.timer .icon {
+    width: 16px;
+    height: 16px;
+    stroke: var(--primary-light);
+}
+
+/* Round dots with icons */
+.round-dot .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Question type badge icons */
+.question-type-badge .icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+}
+
+/* Strength/weakness tag icons */
+.strength-tag .icon,
+.weakness-tag .icon {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+}
+
+/* Warning icon in modal */
+.warning-icon .icon {
+    width: 48px;
+    height: 48px;
+    stroke: #f59e0b;
+}
+
+/* Completion icon */
+.completion-icon .icon {
+    width: 48px;
+    height: 48px;
+    stroke: white;
+}
+
+/* TTS Button and Speech Button Icons */
+.tts-btn .icon,
+.speech-btn .icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}
+
+/* Question badge icons */
+.question-badge .icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    stroke: white;
+}
+
+/* Camera info icon */
+.camera-info .icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+/* Violation counter icon */
+.violation-counter-badge .icon {
+    width: 14px;
+    height: 14px;
+    stroke: #fbbf24;
+}
+
+/* Tips section icon */
+.interview-tips h4 .icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    vertical-align: middle;
+    stroke: var(--primary-light);
+}
+
+/* Tips list icon */
+.interview-tips li .icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
 .ai-interview {
     min-height: 100vh;
     background: var(--bg-primary);
@@ -216,7 +328,7 @@
     font-size: 1.25rem;
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
-    color: #0F172A !important;
+    color: var(--text-primary);
     font-weight: 500;
 }
 

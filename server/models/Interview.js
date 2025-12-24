@@ -233,7 +233,7 @@ const interviewSchema = new mongoose.Schema({
     // Status
     status: {
         type: String,
-        enum: ['scheduled', 'in_progress', 'completed', 'abandoned'],
+        enum: ['scheduled', 'in_progress', 'completed', 'pending_review', 'approved', 'abandoned'],
         default: 'scheduled'
     },
 
@@ -245,13 +245,119 @@ const interviewSchema = new mongoose.Schema({
     passed: {
         type: Boolean,
         default: false
+    },
+
+    // ==================== ADMIN REVIEW SYSTEM ====================
+    adminReview: {
+        status: {
+            type: String,
+            enum: ['pending_review', 'approved', 'cheating_confirmed', 'reattempt_allowed', 'rejected'],
+            default: 'pending_review'
+        },
+        reviewedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Admin'
+        },
+        reviewedAt: Date,
+        aiScore: Number,        // Original AI-calculated score (immutable)
+        finalScore: Number,     // Admin-adjusted score (if any)
+        scoreAdjusted: {
+            type: Boolean,
+            default: false
+        },
+        scoreAdjustmentReason: String,
+        cheatingConfirmed: {
+            type: Boolean,
+            default: false
+        },
+        cheatingDetails: String,
+        adminNotes: String,
+        // Auto-escalation tracking
+        autoEscalated: {
+            type: Boolean,
+            default: false
+        },
+        escalationReason: String,
+        priorityLevel: {
+            type: String,
+            enum: ['normal', 'high', 'critical'],
+            default: 'normal'
+        }
+    },
+
+    // ==================== VIDEO RECORDING ====================
+    videoRecording: {
+        // Cloudinary video details
+        publicId: String,
+        url: String,
+        secureUrl: String,
+        duration: Number, // seconds
+        format: String,
+        uploadedAt: Date,
+        fileSize: Number, // bytes
+        // Cheating flag timestamps within video
+        cheatingMarkers: [{
+            flagType: {
+                type: String,
+                enum: [
+                    'multiple_voices',
+                    'eye_movement',
+                    'phone_detected',
+                    'multiple_faces',
+                    'tab_switch',
+                    'window_focus_loss',
+                    'suspicious_background'
+                ]
+            },
+            timestamp: Number, // seconds from video start
+            duration: Number,  // how long the flag persisted (seconds)
+            severity: {
+                type: String,
+                enum: ['low', 'medium', 'high']
+            },
+            description: String,
+            aiConfidence: Number // 0-100
+        }],
+        // Video analysis summary
+        totalFlagsInVideo: {
+            type: Number,
+            default: 0
+        },
+        highSeverityFlagsCount: {
+            type: Number,
+            default: 0
+        }
+    },
+
+    // Candidate visibility control
+    resultVisibleToCandidate: {
+        type: Boolean,
+        default: false // Only true after admin approval
     }
 }, {
     timestamps: true
 });
 
+// Pre-save hook to auto-escalate based on cheating flags
+interviewSchema.pre('save', function (next) {
+    // Auto-escalate if more than 3 high-severity flags
+    if (this.videoRecording && this.videoRecording.highSeverityFlagsCount > 3) {
+        this.adminReview.autoEscalated = true;
+        this.adminReview.escalationReason = `Auto-escalated: ${this.videoRecording.highSeverityFlagsCount} high-severity cheating flags detected`;
+        this.adminReview.priorityLevel = 'critical';
+    } else if (this.proctoring && this.proctoring.riskLevel === 'high') {
+        this.adminReview.autoEscalated = true;
+        this.adminReview.escalationReason = 'Auto-escalated: High risk level from proctoring';
+        this.adminReview.priorityLevel = 'high';
+    }
+    next();
+});
+
 interviewSchema.index({ userId: 1, interviewType: 1 });
 interviewSchema.index({ jobId: 1 });
 interviewSchema.index({ status: 1 });
+interviewSchema.index({ 'adminReview.status': 1 });
+interviewSchema.index({ 'adminReview.priorityLevel': 1 });
 
 module.exports = mongoose.model('Interview', interviewSchema);
+

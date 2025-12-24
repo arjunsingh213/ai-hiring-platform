@@ -732,3 +732,160 @@
         grid-template-columns: 100px 1fr 40px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .atp-section {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .atp-section-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-section-title svg {
+    color: #60a5fa;
+}
+
+/* Competency Cards */
+[data-theme="dark"] .atp-competency-card {
+    background: rgba(51, 65, 85, 0.3);
+}
+
+[data-theme="dark"] .atp-competency-card:hover {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .atp-competency-title {
+    color: var(--text-muted);
+}
+
+/* Achievement Cards */
+[data-theme="dark"] .atp-achievement-card {
+    background: rgba(51, 65, 85, 0.3);
+}
+
+[data-theme="dark"] .atp-achievement-value {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-achievement-label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .atp-achievement-avg {
+    color: var(--text-muted);
+}
+
+/* Behavioral Grid */
+[data-theme="dark"] .atp-behavioral-header {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .atp-behavioral-header span:last-child {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-behavioral-track {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .atp-trait {
+    background: rgba(51, 65, 85, 0.3);
+}
+
+[data-theme="dark"] .atp-trait-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .atp-trait-value {
+    color: var(--text-primary);
+}
+
+/* Reliability Grid */
+[data-theme="dark"] .atp-reliability-card {
+    background: rgba(51, 65, 85, 0.3);
+}
+
+[data-theme="dark"] .atp-reliability-label {
+    color: var(--text-muted);
+}
+
+/* Career Insights / Readiness */
+[data-theme="dark"] .atp-readiness-bar {
+    background: rgba(51, 65, 85, 0.3);
+}
+
+[data-theme="dark"] .atp-readiness-header {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-progress-track {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+/* Skill Bars */
+[data-theme="dark"] .atp-skill-name {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .atp-skill-bar-container {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .atp-skill-value {
+    color: var(--text-primary);
+}
+
+/* Roles and Roadmap */
+[data-theme="dark"] .atp-role-card,
+[data-theme="dark"] .atp-roadmap-item {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .atp-role-title,
+[data-theme="dark"] .atp-roadmap-skill {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-role-salary,
+[data-theme="dark"] .atp-roadmap-levels,
+[data-theme="dark"] .atp-roadmap-time {
+    color: var(--text-muted);
+}
+
+/* Empty State */
+[data-theme="dark"] .atp-empty-state {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .atp-empty-state h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-empty-state p {
+    color: var(--text-muted);
+}
+
+/* Header */
+[data-theme="dark"] .atp-header {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .atp-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .atp-meta {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .atp-version {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}

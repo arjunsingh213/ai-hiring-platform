@@ -305,12 +305,14 @@ const JobListingsPage = () => {
                                 </div>
                                 <div className="job-title-section">
                                     <h1>{selectedJob.title}</h1>
-                                    <p className="company-info">
-                                        {selectedJob.company?.name} • {selectedJob.company?.location}
-                                    </p>
+                                    {(selectedJob.company?.name || selectedJob.company?.location) && (
+                                        <p className="company-info">
+                                            {selectedJob.company?.name}{selectedJob.company?.name && selectedJob.company?.location && ' • '}{selectedJob.company?.location}
+                                        </p>
+                                    )}
                                     <div className="job-badges">
-                                        <span className="badge">{selectedJob.jobDetails?.type}</span>
-                                        <span className="badge badge-primary">{selectedJob.requirements?.experienceLevel}</span>
+                                        {selectedJob.jobDetails?.type && <span className="badge">{selectedJob.jobDetails.type}</span>}
+                                        {selectedJob.requirements?.experienceLevel && <span className="badge badge-primary">{selectedJob.requirements.experienceLevel}</span>}
                                         {selectedJob.jobDetails?.remote && <span className="badge badge-success">Remote</span>}
                                     </div>
                                 </div>

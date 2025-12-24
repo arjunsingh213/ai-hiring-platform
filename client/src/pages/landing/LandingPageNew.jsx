@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -21,6 +21,19 @@ import styles from './LandingPageNew.module.css';
  * <Route path="/landing" element={<LandingPageNew />} />
  */
 const LandingPageNew = () => {
+    // Force light theme on landing page
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            // Restore previous theme when leaving landing page
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
+
     return (
         <div className={styles.landing}>
             <Header />

@@ -812,6 +812,27 @@ function performStrictLocalEvaluation(questionsAndAnswers, interview) {
     };
 }
 
+// Platform interview - returns mock data for onboarding flow
+// MUST be placed BEFORE the /:id route to avoid ObjectId cast error
+router.get('/platform-interview', async (req, res) => {
+    try {
+        // Return mock interview data for platform interviews (onboarding)
+        res.json({
+            success: true,
+            data: {
+                _id: 'platform-interview',
+                interviewType: 'platform',
+                status: 'scheduled',
+                questions: [],
+                isPlatformInterview: true,
+                createdAt: new Date()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Get interview by ID
 router.get('/:id', async (req, res) => {
     try {

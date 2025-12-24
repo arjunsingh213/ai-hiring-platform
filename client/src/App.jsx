@@ -15,6 +15,9 @@ import AIInterview from './pages/interview/AIInterview';
 import InterviewReadiness from './pages/interview/InterviewReadiness';
 import InterviewResults from './pages/interview/InterviewResults';
 import PublicProfilePage from './pages/shared/PublicProfilePage';
+// Admin Portal
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import './index.css';
 
 // OAuth Token Handler - extracts and stores auth data from URL params after OAuth redirect
@@ -96,6 +99,10 @@ function App() {
             {/* Dashboards */}
             <Route path="/jobseeker/*" element={<JobSeekerDashboard />} />
             <Route path="/recruiter/*" element={<RecruiterDashboard />} />
+
+            {/* Admin Portal */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/*" element={<AdminDashboard />} />
           </Routes>
         </OAuthTokenHandler>
       </Router>

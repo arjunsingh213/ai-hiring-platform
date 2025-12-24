@@ -80,6 +80,18 @@ const JobSeekerOnboarding = () => {
         profession: ''
     });
 
+    // Force light theme on onboarding page
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
+
     // Handle OAuth redirect - extract token and userId from URL
     useEffect(() => {
         const tokenFromUrl = searchParams.get('token');

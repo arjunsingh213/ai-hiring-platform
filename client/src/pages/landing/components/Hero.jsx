@@ -1,11 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { heroCopy, heroVisual, buttonMicro, useHeroParallax } from '../animations/animations';
 import styles from './Hero.module.css';
+import SplineHero from './SplineHero';
 
 // Import assets from existing landing assets folder
 import heroDashboardImg from '../../landing/assets/hero-dashboard-1600x900.webp';
+
+/**
+ * Hero Section with Spline 3D Animation
+ * 
+ * To use Spline animation:
+ * 1. Set useSpline to true (below)
+ * 2. Update splineSceneUrl with your Spline scene URL
+ * 
+ * The scene URL should be from: spline.design → Export → Web Content
+ */
+
+// CONFIGURATION
+const USE_SPLINE_ANIMATION = true; // Set to false to use static image instead
+// Using locally hosted splinecode file for potential watermark bypass
+const SPLINE_SCENE_URL = '/scene.splinecode';
 
 const Hero = () => {
     const { y, opacity } = useHeroParallax();
@@ -63,41 +79,50 @@ const Hero = () => {
                     </div>
                 </motion.div>
 
-                {/* Hero Visual */}
+                {/* Hero Visual - Spline 3D or Static Image */}
                 <motion.div
                     className={styles.heroVisual}
                     variants={heroVisual}
                     initial="hidden"
                     whileInView="show"
-                    whileHover="hover"
                     viewport={{ once: true }}
                 >
-                    <motion.div
-                        className={styles.imageWrapper}
-                        style={{ y, opacity }}
-                    >
-                        <img
-                            src={heroDashboardImg}
-                            alt="AI Interview platform dashboard showing candidate evaluations and talent passports"
-                            className={styles.heroImage}
-                            loading="eager"
+                    {USE_SPLINE_ANIMATION ? (
+                        // 3D Spline Animation
+                        <SplineHero
+                            sceneUrl={SPLINE_SCENE_URL}
+                            className={styles.splineWrapper}
                         />
-                        {/* Floating cards */}
-                        <div className={styles.floatingCard + ' ' + styles.card1}>
-                            <div className={styles.cardIcon}>✓</div>
-                            <div className={styles.cardText}>
-                                <span className={styles.cardTitle}>Interview Complete</span>
-                                <span className={styles.cardSubtitle}>Score: 92/100</span>
+                    ) : (
+                        // Static Dashboard Image (fallback)
+                        <motion.div
+                            className={styles.imageWrapper}
+                            style={{ y, opacity }}
+                            whileHover="hover"
+                        >
+                            <img
+                                src={heroDashboardImg}
+                                alt="AI Interview platform dashboard showing candidate evaluations and talent passports"
+                                className={styles.heroImage}
+                                loading="eager"
+                            />
+                            {/* Floating cards */}
+                            <div className={styles.floatingCard + ' ' + styles.card1}>
+                                <div className={styles.cardIcon}>✓</div>
+                                <div className={styles.cardText}>
+                                    <span className={styles.cardTitle}>Interview Complete</span>
+                                    <span className={styles.cardSubtitle}>Score: 92/100</span>
+                                </div>
                             </div>
-                        </div>
-                        <div className={styles.floatingCard + ' ' + styles.card2}>
-                            <div className={styles.cardIcon}>⚡</div>
-                            <div className={styles.cardText}>
-                                <span className={styles.cardTitle}>AI Talent Passport</span>
-                                <span className={styles.cardSubtitle}>Level 5 - Expert</span>
+                            <div className={styles.floatingCard + ' ' + styles.card2}>
+                                <div className={styles.cardIcon}>⚡</div>
+                                <div className={styles.cardText}>
+                                    <span className={styles.cardTitle}>AI Talent Passport</span>
+                                    <span className={styles.cardSubtitle}>Level 5 - Expert</span>
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    )}
                 </motion.div>
             </div>
 
@@ -109,3 +134,4 @@ const Hero = () => {
 };
 
 export default Hero;
+

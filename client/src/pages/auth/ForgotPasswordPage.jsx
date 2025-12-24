@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
@@ -8,6 +8,18 @@ import './ForgotPasswordPage.css'; // Additional OTP-specific styles
 const ForgotPasswordPage = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
+
+    // Force light theme on forgot password page
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
 
     // Step: 1 = Email, 2 = OTP, 3 = New Password
     const [step, setStep] = useState(1);

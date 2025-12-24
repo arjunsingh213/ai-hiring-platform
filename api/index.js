@@ -75,6 +75,9 @@ app.use('/api/onboarding-interview', require('../server/routes/onboardingIntervi
 // AI Talent Passport (NEW ADDITIVE FEATURE)
 app.use('/api/talent-passport', require('../server/routes/talentPassportRoutes'));
 
+// Admin Review System (ISOLATED MODULE)
+app.use('/api/admin', require('../server/routes/adminRoutes'));
+
 // Health endpoints
 app.get('/api', (req, res) => {
     res.json({ success: true, message: 'API Running', time: new Date().toISOString() });

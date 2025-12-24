@@ -136,3 +136,21 @@
         display: none;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .skeleton {
+    background: linear-gradient(90deg, rgba(51, 65, 85, 0.5) 25%, rgba(71, 85, 105, 0.5) 50%, rgba(51, 65, 85, 0.5) 75%);
+    background-size: 400% 100%;
+}
+
+[data-theme="dark"] .skeleton-card {
+    background: transparent;
+    border: none;
+}
+
+[data-theme="dark"] .skeleton-list-item {
+    background: transparent;
+}

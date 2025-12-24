@@ -342,3 +342,85 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .page-subtitle {
+    color: var(--text-muted);
+}
+
+/* Stat Cards Dark Mode */
+[data-theme="dark"] .stat-card {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .stat-label {
+    color: var(--text-muted);
+}
+
+/* Filters Bar Dark Mode */
+[data-theme="dark"] .filters-bar {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .search-box {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .search-box svg {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .search-input {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Hiring Cards Dark Mode */
+[data-theme="dark"] .hiring-card {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .hiring-card:hover {
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .candidate-info h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .position-title {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .hiring-card-details {
+    background: rgba(51, 65, 85, 0.4);
+}
+
+[data-theme="dark"] .detail-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .detail-value {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .loading-state {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .loading-spinner-large {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary);
+}

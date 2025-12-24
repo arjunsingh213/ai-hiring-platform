@@ -356,3 +356,36 @@
         font-size: 1rem;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .job-form {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .form-section {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .form-section h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .checkbox-label {
+    background: rgba(51, 65, 85, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .checkbox-label:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .form-actions {
+    border-color: rgba(255, 255, 255, 0.1);
+}

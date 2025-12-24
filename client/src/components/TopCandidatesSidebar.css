@@ -228,3 +228,67 @@
 .view-all-link:hover {
     background: rgba(99, 102, 241, 0.08);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .top-candidates-sidebar {
+    background: rgba(30, 41, 59, 0.85);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .sidebar-header h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .domain-tab {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .domain-tab:hover {
+    background: rgba(51, 65, 85, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .domain-tab.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    border-color: #6366F1;
+}
+
+[data-theme="dark"] .candidate-card {
+    background: rgba(51, 65, 85, 0.4);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .candidate-card:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .candidate-info h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .candidate-info p {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .candidate-score {
+    background: rgba(30, 41, 59, 0.8);
+}
+
+[data-theme="dark"] .sidebar-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .sidebar-loading,
+[data-theme="dark"] .sidebar-empty {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .sidebar-empty svg {
+    color: var(--text-muted);
+}

@@ -1,9 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './RoleSelection.css';
 
 const RoleSelection = () => {
     const navigate = useNavigate();
+
+    // Force light theme on role selection page
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
 
     const selectRole = (role) => {
         navigate(`/signup?role=${role}`);

@@ -794,3 +794,165 @@
         grid-template-columns: 1fr 1fr 50px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .header-subtitle {
+    color: var(--text-muted);
+}
+
+/* Main Stats Cards Dark Mode */
+[data-theme="dark"] .main-stat-card {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .main-stat-card:hover {
+    border-color: rgba(0, 125, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .stat-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .stat-value {
+    color: var(--text-primary);
+}
+
+/* Chart Section Dark Mode */
+[data-theme="dark"] .chart-section {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .section-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .time-select {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .legend-item {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .bar-chart {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .chart-label {
+    color: var(--text-muted);
+}
+
+/* Quick Actions Dark Mode */
+[data-theme="dark"] .action-card {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .action-card:hover {
+    background: rgba(51, 65, 85, 0.8);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .action-icon {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .action-card:hover .action-icon {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .action-card span {
+    color: var(--text-primary);
+}
+
+/* Skills Section Dark Mode */
+[data-theme="dark"] .skills-section,
+[data-theme="dark"] .pipeline-section {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .section-count {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .table-header {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .table-row {
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .skill-name {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .mini-bar-container {
+    background: rgba(51, 65, 85, 0.5);
+}
+
+[data-theme="dark"] .skill-count {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .no-data-row {
+    color: var(--text-muted);
+}
+
+/* Pipeline Cards Dark Mode */
+[data-theme="dark"] .pipeline-card {
+    background: rgba(51, 65, 85, 0.4);
+}
+
+[data-theme="dark"] .pipeline-card:hover {
+    background: rgba(51, 65, 85, 0.6);
+}
+
+[data-theme="dark"] .pipeline-count {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .pipeline-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .see-all-btn {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .see-all-btn:hover {
+    color: var(--text-primary);
+}
+
+/* Loading State Dark Mode */
+[data-theme="dark"] .loading-container p {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .loading-spinner {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary);
+}

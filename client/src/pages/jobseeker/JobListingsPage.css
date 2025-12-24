@@ -6,9 +6,10 @@
 .job-listings {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 90px);
     padding: 1rem;
     gap: 1rem;
+    margin-top: var(--spacing-lg);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -785,7 +786,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .job-listings {
-    background-color: var(--bg-base);
+    background: transparent;
 }
 
 /* Filters Bar Dark Mode */
@@ -987,4 +988,119 @@
 [data-theme="dark"] .jobs-list::-webkit-scrollbar-thumb:hover,
 [data-theme="dark"] .job-body::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* Job Tabs Dark Mode */
+[data-theme="dark"] .job-tabs {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .tab-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab-btn:hover {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-primary);
+}
+
+/* Job Content Dark Mode */
+[data-theme="dark"] .job-content {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+/* My Jobs Page / Filters Section Dark Mode */
+[data-theme="dark"] .filters-section {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+[data-theme="dark"] .filters-section h3 {
+    color: var(--text-primary);
+}
+
+/* Jobs List Sidebar Dark Mode */
+[data-theme="dark"] .jobs-list {
+    background: transparent;
+}
+
+[data-theme="dark"] .jobs-list h3 {
+    color: var(--text-primary);
+}
+
+/* Job Item Dark Mode - Bento Box Style */
+[data-theme="dark"] .job-item {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .job-item:hover {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .job-item.active {
+    background: rgba(0, 125, 255, 0.15);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .job-item h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .job-item .company-name {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .job-item .job-meta {
+    color: var(--text-muted);
+}
+
+/* Job Content Sections Dark Mode */
+[data-theme="dark"] .job-content section {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .job-content section h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+[data-theme="dark"] .job-content section p {
+    color: var(--text-secondary);
+}
+
+/* Job Header Dark Mode */
+[data-theme="dark"] .job-header {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .job-title-section h1 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .company-info {
+    color: var(--text-secondary);
+}
+
+/* Job Actions Buttons Dark Mode */
+[data-theme="dark"] .job-actions {
+    gap: var(--spacing-sm);
+}
+
+[data-theme="dark"] .job-actions .btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
 }

@@ -4,6 +4,7 @@
     max-width: 900px;
     margin: 0 auto;
     padding: 0 var(--spacing-lg) var(--spacing-2xl);
+    padding-top: var(--spacing-lg);
     min-height: 100vh;
 }
 
@@ -1150,4 +1151,197 @@
     font-size: 0.75rem;
     color: #6366F1;
     font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .profile-page {
+    background: transparent;
+}
+
+[data-theme="dark"] .profile-header-card {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .profile-header-card::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+[data-theme="dark"] .profile-photo {
+    border-color: rgba(30, 41, 59, 0.9);
+}
+
+[data-theme="dark"] .profile-section {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .profile-section::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+[data-theme="dark"] .section-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .about-text {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .detail-item {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .detail-item:hover {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .experience-item,
+[data-theme="dark"] .education-item {
+    background: rgba(51, 65, 85, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .experience-item:hover,
+[data-theme="dark"] .education-item:hover {
+    background: rgba(51, 65, 85, 0.6);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .exp-content h3,
+[data-theme="dark"] .edu-content h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .exp-content .company,
+[data-theme="dark"] .edu-content .degree {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .exp-content .dates,
+[data-theme="dark"] .edu-content .years {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .exp-content .description {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .link-item {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .link-item:hover {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .interview-badge {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(22, 163, 74, 0.4);
+}
+
+/* Modal Dark Mode */
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .modal {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .modal-header {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .modal-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-footer {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Form Dark Mode */
+[data-theme="dark"] .form-group label {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group textarea {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group textarea:focus {
+    background: rgba(51, 65, 85, 0.7);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .btn-icon {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-icon:hover {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .banner-edit-btn,
+[data-theme="dark"] .photo-edit-btn {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .domain-chip-edit {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .domain-chip-edit:hover:not(.disabled) {
+    background: rgba(51, 65, 85, 0.7);
+}
+
+[data-theme="dark"] .domain-chip-edit.selected {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
+    border-color: #6366F1;
+    color: #A78BFA;
+}
+
+[data-theme="dark"] .exp-actions button,
+[data-theme="dark"] .edu-actions button {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .exp-actions button:hover,
+[data-theme="dark"] .edu-actions button:hover {
+    background: rgba(51, 65, 85, 0.8);
 }

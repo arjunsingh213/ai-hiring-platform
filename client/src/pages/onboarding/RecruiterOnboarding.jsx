@@ -36,6 +36,18 @@ const RecruiterOnboarding = () => {
         };
     };
 
+    // Force light theme on onboarding page
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
+
     const searchCompanies = async (query) => {
         if (!query || query.length < 2) {
             setCompanySuggestions([]);

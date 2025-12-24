@@ -12,8 +12,10 @@
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
     "@monaco-editor/react": "^4.7.0",
+    "@splinetool/react-spline": "^4.1.0",
     "@tensorflow-models/face-landmarks-detection": "^1.0.6",
     "@tensorflow/tfjs": "^4.22.0",
+    "@xyflow/react": "^12.10.0",
     "aishe-institutions-list": "^1.0.6",
     "axios": "^1.13.2",
     "face-api.js": "^0.22.2",

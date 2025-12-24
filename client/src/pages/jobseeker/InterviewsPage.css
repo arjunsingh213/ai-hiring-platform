@@ -1,6 +1,7 @@
 .interviews-page {
     max-width: 1200px;
     margin: 0 auto;
+    padding-top: var(--spacing-lg);
 }
 
 .page-header {
@@ -8,6 +9,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-2xl);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
 }
 
 .page-header h1 {
@@ -448,4 +451,125 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .interviews-page {
+    background: transparent;
+}
+
+[data-theme="dark"] .page-header h1 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .interview-tabs {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .interview-tabs .tab-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .interview-tabs .tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(51, 65, 85, 0.4);
+}
+
+[data-theme="dark"] .interview-card,
+[data-theme="dark"] .assessment-card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .interview-card h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .interview-type {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .interview-details,
+[data-theme="dark"] .assessment-details {
+    background: transparent !important;
+    border: none;
+    padding: var(--spacing-md) 0;
+}
+
+[data-theme="dark"] .interview-details p {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .detail-item .label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .detail-item .value {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .strengths h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .strengths li {
+    color: var(--text-secondary);
+}
+
+/* Platform Interview Banner Dark Mode */
+[data-theme="dark"] .platform-interview-banner {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .platform-interview-banner.banner-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .banner-icon {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] .banner-content h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .banner-content p {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .platform-status-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.15) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .platform-status-success .status-content h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .platform-status-success .status-content p {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .interview-info {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .interview-info li {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .loading-state {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .loading-spinner-large {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary);
 }

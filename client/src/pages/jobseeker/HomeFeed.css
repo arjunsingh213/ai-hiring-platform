@@ -1307,7 +1307,7 @@
     gap: 6px;
     padding: 10px 16px;
     background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-    color: white;
+    color: white !important;
     border: none;
     border-radius: 10px;
     font-size: 0.8125rem;
@@ -1319,6 +1319,7 @@
 .take-interview-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    color: white !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1416,15 +1417,28 @@
 
 .creator-actions {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-start !important;
     align-items: center;
-    padding-top: 16px;
+    gap: 8px;
+    padding: 16px 0 0 0 !important;
     border-top: 1px solid #E8EDF4;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    text-align: left;
+    margin: 0 !important;
 }
 
 .action-buttons {
-    display: flex;
+    display: flex !important;
+    flex-wrap: wrap;
     gap: 4px;
+    align-items: center;
+    justify-content: flex-start !important;
+    margin: 0 auto 0 0 !important;
+    padding: 0 !important;
+    max-width: calc(100% - 80px);
 }
 
 .creator-action {
@@ -2425,7 +2439,12 @@
 }
 
 [data-theme="dark"] .trending-skill-item {
+    background: transparent;
     color: var(--text-primary);
+}
+
+[data-theme="dark"] .trending-skill-item:hover {
+    background: rgba(99, 102, 241, 0.1);
 }
 
 [data-theme="dark"] .demand-bar {
@@ -2464,4 +2483,193 @@
 
 [data-theme="dark"] .profile-cta {
     background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+}
+
+/* Post Creator Card Dark Mode */
+[data-theme="dark"] .post-creator-card {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .creator-input {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .creator-input::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .creator-input:focus {
+    background: rgba(51, 65, 85, 0.7);
+    border-color: #6366F1;
+}
+
+[data-theme="dark"] .creator-actions {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .creator-action {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .creator-action:hover {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .document-preview {
+    background: rgba(51, 65, 85, 0.5);
+    color: var(--text-secondary);
+}
+
+/* Sidebar Card Dark Mode */
+[data-theme="dark"] .sidebar-card {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .sidebar-card-header h3 {
+    color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE - Action Buttons Visibility on Small Screens
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .creator-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        overflow: hidden !important;
+        width: 100% !important;
+    }
+
+    .action-buttons {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 auto 0 0 !important;
+        max-width: none !important;
+    }
+
+    /* Hide text, show only icons */
+    .creator-action {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        font-size: 0 !important;
+        padding: 4px !important;
+        min-width: auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    .creator-action svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .btn-post,
+    .creator-actions>.btn {
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .creator-actions {
+        gap: 3px !important;
+    }
+
+    .action-buttons {
+        gap: 1px !important;
+    }
+
+    .creator-action {
+        padding: 2px !important;
+    }
+
+    .creator-action svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .btn-post,
+    .creator-actions>.btn {
+        padding: 4px 8px !important;
+        font-size: 0.65rem !important;
+    }
+}
+
+/* Activity Card Dark Mode */
+[data-theme="dark"] .activity-card {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .activity-card:hover {
+    border-color: rgba(0, 125, 255, 0.3);
+    background: rgba(51, 65, 85, 0.3);
+}
+
+[data-theme="dark"] .activity-user-info a {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .activity-type-badge {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .activity-time {
+    color: var(--text-muted);
+}
+
+/* Stat Item Dark Mode */
+[data-theme="dark"] .stat-item {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .stat-item:hover,
+[data-theme="dark"] .stat-item.clickable:hover {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(0, 125, 255, 0.3);
+}
+
+[data-theme="dark"] .stat-number {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .stat-label {
+    color: var(--text-muted);
+}
+
+/* Quick Action Button Dark Mode */
+[data-theme="dark"] .quick-action-btn {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .quick-action-btn:hover {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgba(0, 125, 255, 0.3);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .quick-action-btn span {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .quick-action-btn svg {
+    color: var(--text-muted);
 }

@@ -61,7 +61,7 @@
   --bg-gradient: linear-gradient(145deg, #E3EEFF 0%, #F5F7FA 50%, #FFFFFF 100%);
   --bg-gradient-soft: linear-gradient(180deg, #EEF3FF 0%, #FFFFFF 100%);
   --bg-gradient-hero: linear-gradient(135deg, #E9F2FF 0%, #F0F4FF 50%, #FFFFFF 100%);
-
+  --bg-tertiary: #E2E8F0;
   /* ═══════════════════════════════════════════════════════════════
      FROSTED GLASS SYSTEM
      ═══════════════════════════════════════════════════════════════ */
@@ -165,6 +165,9 @@
   --bg-gradient: linear-gradient(145deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
   --bg-gradient-soft: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
   --bg-gradient-hero: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+
+  /* Dark Background Tertiary - CRITICAL for inner containers */
+  --bg-tertiary: rgba(51, 65, 85, 0.6);
 
   /* Dark Frosted Glass System */
   --glass-bg: rgba(30, 41, 59, 0.65);
@@ -867,4 +870,134 @@ textarea.input {
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL DARK MODE - Component Overrides
+   Comprehensive dark mode for all reusable components
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Card Dark Mode */
+[data-theme="dark"] .card {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: rgba(0, 125, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Badge Dark Mode */
+[data-theme="dark"] .badge {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Form Elements Dark Mode - CRITICAL */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: rgba(51, 65, 85, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  background: rgba(51, 65, 85, 0.8) !important;
+  border-color: var(--primary) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] select option {
+  background: #1E293B;
+  color: var(--text-primary);
+}
+
+/* Button Secondary Dark Mode */
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .btn-outline {
+  background: rgba(51, 65, 85, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn-secondary:hover,
+[data-theme="dark"] .btn-outline:hover {
+  background: rgba(51, 65, 85, 0.7);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Scrollbar Dark Mode */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Headings Dark Mode */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+  color: var(--text-primary);
+}
+
+/* Paragraphs and Text Dark Mode */
+[data-theme="dark"] p {
+  color: var(--text-secondary);
+}
+
+/* Links Dark Mode */
+[data-theme="dark"] a:not(.btn):not(.nav-item) {
+  color: var(--primary);
+}
+
+/* Labels Dark Mode */
+[data-theme="dark"] label {
+  color: var(--text-primary);
+}
+
+/* HR Dark Mode */
+[data-theme="dark"] hr {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Table Dark Mode */
+[data-theme="dark"] table {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] th {
+  background: rgba(51, 65, 85, 0.5);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] td {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] tr:hover td {
+  background: rgba(51, 65, 85, 0.3);
 }

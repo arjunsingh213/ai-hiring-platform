@@ -7,6 +7,19 @@ const AuthPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Force light theme on auth pages
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        return () => {
+            // Restore previous theme when leaving auth page
+            if (previousTheme) {
+                document.documentElement.setAttribute('data-theme', previousTheme);
+            }
+        };
+    }, []);
+
     // Detect initial mode from URL path - /login starts in sign-in mode
     const isLoginPath = location.pathname === '/login';
 

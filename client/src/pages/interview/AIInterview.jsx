@@ -22,15 +22,140 @@ const PROGRAMMING_LANGUAGES = [
     { name: 'C#', aliases: ['c#', 'csharp', '.net', 'dotnet'], judge0Id: 51 }
 ];
 
-// Round type display names and icons
+// SVG Icon Components for professional UI
+const Icons = {
+    technical: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+    ),
+    hr: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+    ),
+    behavioral: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+    ),
+    dsa: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+    ),
+    coding: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+    ),
+    assessment: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+    ),
+    screening: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+    ),
+    clock: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+    ),
+    mic: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+    ),
+    speaker: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+    ),
+    camera: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+    ),
+    warning: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+    ),
+    check: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+    ),
+    skip: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polygon points="5 4 15 12 5 20 5 4"></polygon>
+            <line x1="19" y1="5" x2="19" y2="19"></line>
+        </svg>
+    ),
+    play: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+    ),
+    stop: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        </svg>
+    ),
+    repeat: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+    ),
+    brain: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.54"></path>
+            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.54"></path>
+        </svg>
+    ),
+    chat: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    )
+};
+
+// Round type display names and icons as components
 const ROUND_TYPE_INFO = {
-    technical: { icon: '💻', label: 'Technical Interview' },
-    hr: { icon: '👔', label: 'HR Interview' },
-    behavioral: { icon: '🤝', label: 'Behavioral Interview' },
-    dsa: { icon: '#️⃣', label: 'DSA Challenge' },
-    coding: { icon: '👨‍💻', label: 'Coding Challenge' },
-    assessment: { icon: '📝', label: 'Assessment' },
-    screening: { icon: '📋', label: 'Screening' }
+    technical: { icon: <Icons.technical />, label: 'Technical Interview' },
+    hr: { icon: <Icons.hr />, label: 'HR Interview' },
+    behavioral: { icon: <Icons.behavioral />, label: 'Behavioral Interview' },
+    dsa: { icon: <Icons.dsa />, label: 'DSA Challenge' },
+    coding: { icon: <Icons.coding />, label: 'Coding Challenge' },
+    assessment: { icon: <Icons.assessment />, label: 'Assessment' },
+    screening: { icon: <Icons.screening />, label: 'Screening' }
 };
 
 const AIInterview = () => {
@@ -1040,14 +1165,14 @@ const AIInterview = () => {
                                         className={`round-dot ${i === currentRoundIndex ? 'active' : i < currentRoundIndex ? 'done' : ''}`}
                                         title={r.title}
                                     >
-                                        {ROUND_TYPE_INFO[r.roundType]?.icon || '○'}
+                        {ROUND_TYPE_INFO[r.roundType]?.icon || <Icons.screening />}
                                     </span>
                                 ))}
                             </div>
                         )}
                     </div>
                     <div className="header-right">
-                        <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+                        <div className="timer"><Icons.clock /> {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/jobseeker/interviews')}>Exit</button>
                     </div>
                 </div>
@@ -1063,9 +1188,9 @@ const AIInterview = () => {
                         <div className="assessment-header">
                             <span className="question-number">Question {currentAssessmentIndex + 1} of {assessmentQuestions.length}</span>
                             <span className={`question-type-badge ${currentQ?.type}`}>
-                                {currentQ?.type === 'technical' ? '💻 Technical' :
-                                    currentQ?.type === 'communication' ? '💬 Communication' :
-                                        currentQ?.type === 'aptitude' ? '🧠 Aptitude' : '📝 Assessment'}
+                                {currentQ?.type === 'technical' ? <><Icons.technical /> Technical</> :
+                                    currentQ?.type === 'communication' ? <><Icons.chat /> Communication</> :
+                                        currentQ?.type === 'aptitude' ? <><Icons.brain /> Aptitude</> : <><Icons.assessment /> Assessment</>}
                             </span>
                         </div>
 
@@ -1145,7 +1270,7 @@ const AIInterview = () => {
                 <div className="completion-screen">
                     <div className="completion-card card-glass">
                         <div className={`completion-icon ${score >= 60 ? 'success' : 'warning'}`}>
-                            {score >= 60 ? '✓' : '!'}
+                            {score >= 60 ? <Icons.check /> : <Icons.warning />}
                         </div>
                         <h1>Interview Completed!</h1>
                         <div className="score-display">
@@ -1176,7 +1301,7 @@ const AIInterview = () => {
                                 <h3>Strengths</h3>
                                 <div className="strength-tags">
                                     {finalResults.scoring.strengths.map((s, i) => (
-                                        <span key={i} className="strength-tag">✓ {s}</span>
+                                        <span key={i} className="strength-tag"><Icons.check /> {s}</span>
                                     ))}
                                 </div>
                             </div>
@@ -1186,7 +1311,7 @@ const AIInterview = () => {
                                 <h3>Areas to Improve</h3>
                                 <div className="strength-tags">
                                     {finalResults.scoring.weaknesses.map((w, i) => (
-                                        <span key={i} className="weakness-tag">⚠ {w}</span>
+                                        <span key={i} className="weakness-tag"><Icons.warning /> {w}</span>
                                     ))}
                                 </div>
                             </div>
@@ -1250,7 +1375,7 @@ const AIInterview = () => {
             {showFaceWarning && (
                 <div className="face-warning-modal">
                     <div className="face-warning-content">
-                        <div className="warning-icon">⚠️</div>
+                        <div className="warning-icon"><Icons.warning /></div>
                         <h3>Identity Verification Failed</h3>
                         <p>We could not verify your identity. Please ensure:</p>
                         <ul>
@@ -1289,7 +1414,7 @@ const AIInterview = () => {
                                     className={`round-dot ${i === currentRoundIndex ? 'active' : i < currentRoundIndex ? 'done' : ''}`}
                                     title={r.title || ROUND_TYPE_INFO[r.roundType]?.label}
                                 >
-                                    {ROUND_TYPE_INFO[r.roundType]?.icon || '○'}
+                                    {ROUND_TYPE_INFO[r.roundType]?.icon || <Icons.screening />}
                                 </span>
                             ))}
                         </div>
@@ -1334,11 +1459,11 @@ const AIInterview = () => {
                         {/* Violation Counter Badge */}
                         {proctoringViolations.length > 0 && (
                             <div className="violation-counter-badge">
-                                ⚠️ {proctoringViolations.length}
+                                <Icons.warning /> {proctoringViolations.length}
                             </div>
                         )}
                     </div>
-                    <p className="camera-info text-muted">📹 {isRecording ? 'Camera active' : 'Camera off'}</p>
+                    <p className="camera-info text-muted"><Icons.camera /> {isRecording ? 'Camera active' : 'Camera off'}</p>
 
                 </div>
 
@@ -1347,7 +1472,7 @@ const AIInterview = () => {
                     <div className="question-card card">
                         <div className="question-header">
                             <span className="question-badge">
-                                {ROUND_TYPE_INFO[currentRoundType]?.icon || '💻'} {currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Technical'}
+                                {ROUND_TYPE_INFO[currentRoundType]?.icon || <Icons.technical />} {currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Technical'}
                             </span>
                             <span className={`difficulty-badge ${currentQuestion.difficulty || 'medium'}`}>
                                 {currentQuestion.difficulty || 'Medium'}
@@ -1364,7 +1489,7 @@ const AIInterview = () => {
                             disabled={!ttsSupported}
                             title={isSpeaking ? 'Stop reading' : 'Read question aloud'}
                         >
-                            {isSpeaking ? '🔊 Stop Reading' : '🔈 Read Question'}
+                            {isSpeaking ? <><Icons.speaker /> Stop Reading</> : <><Icons.play /> Read Question</>}
                         </button>
                     </div>
 
@@ -1376,7 +1501,7 @@ const AIInterview = () => {
                                 onClick={toggleListening}
                                 disabled={!speechSupported || submitting}
                             >
-                                {isListening ? '🔴 Stop' : '🎤 Speak'}
+                                {isListening ? <><Icons.stop /> Stop</> : <><Icons.mic /> Speak</>}
                             </button>
                         </div>
 
@@ -1409,7 +1534,7 @@ const AIInterview = () => {
                     </div>
 
                     <div className="interview-tips card-glass">
-                        <h4>💡 {currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Interview'} Tips</h4>
+                        <h4><Icons.brain /> {currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Interview'} Tips</h4>
                         <ul>
                             {(currentRoundType === 'technical' || currentRoundType === 'coding' || currentRoundType === 'dsa') ? (
                                 <>
@@ -1427,7 +1552,7 @@ const AIInterview = () => {
                                     <li>Provide specific examples</li>
                                 </>
                             )}
-                            <li>🎤 Click Speak to use voice!</li>
+                            <li><Icons.mic /> Click Speak to use voice!</li>
                         </ul>
                     </div>
                 </div>
