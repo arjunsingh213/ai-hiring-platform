@@ -25,9 +25,21 @@ import './Onboarding.css';
 
 const JobSeekerOnboarding = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const toast = useToast();
-    const [step, setStep] = useState(1);
+
+    // Initialize step from URL params or default to 1
+    const getInitialStep = () => {
+        const stepParam = searchParams.get('step');
+        if (stepParam === 'interview') return 4;
+        if (stepParam && !isNaN(parseInt(stepParam))) {
+            const parsedStep = parseInt(stepParam);
+            if (parsedStep >= 1 && parsedStep <= 4) return parsedStep;
+        }
+        return 1;
+    };
+
+    const [step, setStep] = useState(getInitialStep);
     const [showInterviewPrompt, setShowInterviewPrompt] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -116,6 +128,17 @@ const JobSeekerOnboarding = () => {
         }
     }, [searchParams]);
 
+    // Persist step to URL when it changes (for refresh persistence)
+    useEffect(() => {
+        const currentStepParam = searchParams.get('step');
+        const newStepValue = step === 4 ? 'interview' : step.toString();
+
+        // Only update if different to avoid infinite loops
+        if (currentStepParam !== newStepValue) {
+            setSearchParams({ step: newStepValue }, { replace: true });
+        }
+    }, [step]);
+
     // Handle step query parameter for direct interview access
     useEffect(() => {
         const stepParam = searchParams.get('step');
@@ -129,7 +152,7 @@ const JobSeekerOnboarding = () => {
                 toast.info('Complete the interview preparation to start');
             }
         }
-    }, [searchParams]);
+    }, []);
 
     // College search wrapper for AISHE
     const searchCollegeWrapper = (query, limit = 10) => {

@@ -51,9 +51,10 @@ const InterviewProctor = ({
         // Add to violations list
         setViolations(prev => {
             const updated = [...prev, violation];
-            // Notify parent component for final evaluation
+            // Defer callback to avoid setState during render
+            // Parent component (OnboardingInterview) needs this update async
             if (onViolationLog) {
-                onViolationLog(updated);
+                setTimeout(() => onViolationLog(updated), 0);
             }
             return updated;
         });

@@ -206,8 +206,9 @@ const InterviewReadiness = ({
         if (faceCheckIntervalRef.current) {
             clearInterval(faceCheckIntervalRef.current);
         }
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
+        // Only close AudioContext if it exists and isn't already closed
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            audioContextRef.current.close().catch(() => { });
         }
     };
 
@@ -487,7 +488,8 @@ const InterviewReadiness = ({
 
         if (!hasFace) {
             setFaceStatus('no-face');
-            toast.error('No face detected in photo. Please try again.');
+            // Defer toast to avoid setState during render cycle
+            setTimeout(() => toast.error('No face detected in photo. Please try again.'), 0);
             return;
         }
 
@@ -509,7 +511,8 @@ const InterviewReadiness = ({
             console.warn('LocalStorage quota issue, photo kept in memory only:', storageError);
         }
 
-        toast.success('Face captured successfully! Your identity will be verified during the interview.');
+        // Defer toast to avoid setState during render cycle
+        setTimeout(() => toast.success('Face captured successfully! Your identity will be verified during the interview.'), 0);
     };
 
     const retakePhoto = () => {

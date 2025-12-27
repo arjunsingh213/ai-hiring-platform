@@ -431,24 +431,55 @@ const InterviewDetail = () => {
 
                             {interview.proctoring?.flags?.length > 0 ? (
                                 <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-                                    {interview.proctoring.flags.map((flag, idx) => (
-                                        <div key={idx} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '10px',
-                                            padding: '8px',
-                                            background: 'rgba(239,68,68,0.1)',
-                                            borderRadius: '6px',
-                                            marginBottom: '6px'
-                                        }}>
-                                            <span className={`priority-badge ${flag.severity || 'medium'}`}>
-                                                {flag.severity || 'medium'}
-                                            </span>
-                                            <span style={{ color: '#e2e8f0', fontSize: '0.85rem', flex: 1 }}>
-                                                {flag.type?.replace(/_/g, ' ')}
-                                            </span>
-                                        </div>
-                                    ))}
+                                    {interview.proctoring.flags.map((flag, idx) => {
+                                        // Try to find corresponding video marker with timestamp
+                                        const videoMarker = interview.videoRecording?.cheatingMarkers?.find(
+                                            m => m.flagType === flag.type
+                                        );
+                                        const hasTimestamp = videoMarker?.timestamp !== undefined || flag.videoTimestamp !== undefined;
+                                        const timestamp = videoMarker?.timestamp || flag.videoTimestamp || 0;
+
+                                        return (
+                                            <div key={idx} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '10px',
+                                                padding: '8px',
+                                                background: 'rgba(239,68,68,0.1)',
+                                                borderRadius: '6px',
+                                                marginBottom: '6px'
+                                            }}>
+                                                <span className={`priority-badge ${flag.severity || 'medium'}`}>
+                                                    {flag.severity || 'medium'}
+                                                </span>
+                                                <span style={{ color: '#e2e8f0', fontSize: '0.85rem', flex: 1 }}>
+                                                    {flag.type?.replace(/_/g, ' ')}
+                                                </span>
+                                                {hasTimestamp && interview.videoRecording?.secureUrl && (
+                                                    <button
+                                                        onClick={() => seekToTimestamp(timestamp)}
+                                                        style={{
+                                                            background: 'rgba(59,130,246,0.2)',
+                                                            border: '1px solid rgba(59,130,246,0.3)',
+                                                            borderRadius: '4px',
+                                                            padding: '4px 8px',
+                                                            color: '#60a5fa',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.75rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px'
+                                                        }}
+                                                    >
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M8 5v14l11-7z" />
+                                                        </svg>
+                                                        {formatTime(timestamp)}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <p style={{ color: '#64748b', textAlign: 'center' }}>No flags detected</p>
@@ -549,6 +580,28 @@ const InterviewDetail = () => {
                                         {interview.adminReview.adminNotes}
                                     </p>
                                 )}
+
+                                {/* Undo Decision Button */}
+                                <button
+                                    className="admin-action-btn"
+                                    style={{
+                                        marginTop: '16px',
+                                        background: 'rgba(251, 191, 36, 0.15)',
+                                        color: '#fbbf24',
+                                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                                        padding: '10px 20px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}
+                                    onClick={() => setShowModal('undo')}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" />
+                                        <path d="M3 3v5h5" />
+                                    </svg>
+                                    Undo Decision
+                                </button>
                             </div>
                         </div>
                     )}
@@ -566,6 +619,7 @@ const InterviewDetail = () => {
                                 {showModal === 'adjust' && 'Adjust Score'}
                                 {showModal === 'reattempt' && 'Allow Reattempt'}
                                 {showModal === 'cheating' && 'Confirm Cheating'}
+                                {showModal === 'undo' && 'Undo Decision'}
                             </h2>
                             <button className="admin-modal-close" onClick={() => setShowModal(null)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -636,18 +690,20 @@ const InterviewDetail = () => {
                                 Cancel
                             </button>
                             <button
-                                className={`admin-action-btn ${showModal === 'approve' ? 'success' : showModal === 'reject' || showModal === 'cheating' ? 'danger' : 'primary'}`}
+                                className={`admin-action-btn ${showModal === 'approve' ? 'success' : showModal === 'reject' || showModal === 'cheating' ? 'danger' : showModal === 'undo' ? 'warning' : 'primary'}`}
+                                style={showModal === 'undo' ? { background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24' } : {}}
                                 onClick={() => {
                                     const endpoints = {
                                         approve: 'approve',
                                         reject: 'reject',
                                         adjust: 'adjust-score',
                                         reattempt: 'allow-reattempt',
-                                        cheating: 'confirm-cheating'
+                                        cheating: 'confirm-cheating',
+                                        undo: 'undo-decision'
                                     };
                                     handleAction(showModal, endpoints[showModal]);
                                 }}
-                                disabled={actionLoading || (showModal !== 'approve' && !formData.reason && !formData.details && showModal !== 'adjust') || (showModal === 'adjust' && !formData.newScore)}
+                                disabled={actionLoading || (showModal !== 'approve' && showModal !== 'undo' && !formData.reason && !formData.details && showModal !== 'adjust') || (showModal === 'adjust' && !formData.newScore)}
                             >
                                 {actionLoading ? 'Processing...' : 'Confirm'}
                             </button>

@@ -17,6 +17,19 @@ const OnboardingInterview = ({
     const videoRef = useRef(null);
     const streamRef = useRef(null); // Track camera stream for proper cleanup
 
+    // Video recording refs for admin review
+    const mediaRecorderRef = useRef(null);
+    const recordedChunksRef = useRef([]);
+    const interviewStartTimeRef = useRef(null);
+    const videoUrlRef = useRef(null); // Store uploaded video URL
+
+    // Guards to prevent duplicate API calls
+    const isSubmittingRef = useRef(false);
+    const isLoadingCodingRef = useRef(false);
+
+    const [isRecording, setIsRecording] = useState(false);
+    const [uploadingVideo, setUploadingVideo] = useState(false);
+
     // Interview state
     const [questions, setQuestions] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -254,6 +267,112 @@ const OnboardingInterview = ({
         }
     };
 
+    // Start video recording when camera is enabled
+    const startRecording = () => {
+        if (!streamRef.current || mediaRecorderRef.current) return;
+
+        try {
+            recordedChunksRef.current = [];
+
+            // Try to get supported mime type
+            const mimeTypes = [
+                'video/webm;codecs=vp9',
+                'video/webm;codecs=vp8',
+                'video/webm',
+                'video/mp4'
+            ];
+
+            let mimeType = '';
+            for (const type of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    mimeType = type;
+                    break;
+                }
+            }
+
+            const options = mimeType ? { mimeType } : {};
+            const mediaRecorder = new MediaRecorder(streamRef.current, options);
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onerror = (error) => {
+                console.error('MediaRecorder error:', error);
+            };
+
+            mediaRecorder.start(1000); // Record in 1-second chunks
+            mediaRecorderRef.current = mediaRecorder;
+            setIsRecording(true);
+            console.log('📹 Video recording started');
+        } catch (error) {
+            console.error('Failed to start recording:', error);
+        }
+    };
+
+    // Stop recording and return video blob
+    const stopRecording = () => {
+        return new Promise((resolve) => {
+            if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
+                resolve(null);
+                return;
+            }
+
+            mediaRecorderRef.current.onstop = () => {
+                const blob = new Blob(recordedChunksRef.current, {
+                    type: 'video/webm'
+                });
+                console.log('📹 Video recording stopped, size:', blob.size);
+                resolve(blob);
+            };
+
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current = null;
+            setIsRecording(false);
+        });
+    };
+
+    // Upload video to Cloudinary via backend
+    const uploadVideoToCloudinary = async (videoBlob, cheatingMarkers) => {
+        if (!videoBlob || videoBlob.size === 0) {
+            console.log('No video to upload');
+            return null;
+        }
+
+        try {
+            setUploadingVideo(true);
+            console.log('📤 Uploading video to Cloudinary...');
+
+            const formData = new FormData();
+            formData.append('video', videoBlob, 'interview-recording.webm');
+            formData.append('userId', userId);
+            formData.append('cheatingMarkers', JSON.stringify(cheatingMarkers || []));
+
+            // Use same base URL pattern as the api service - VITE_API_URL already contains /api
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${baseUrl}/onboarding-interview/upload-video`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Upload failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Video uploaded successfully:', result.data?.url);
+            return result.data;
+        } catch (error) {
+            console.error('Video upload error:', error);
+            return null;
+        } finally {
+            setUploadingVideo(false);
+        }
+    };
+
     const [loadingNext, setLoadingNext] = useState(false);
 
     // Handle camera drag events
@@ -282,6 +401,33 @@ const OnboardingInterview = ({
         };
     }, [isDragging, dragOffset]);
 
+    // Start video recording when camera becomes enabled
+    useEffect(() => {
+        if (cameraEnabled && streamRef.current && !isRecording && !completed) {
+            // Small delay to ensure stream is stable
+            const timer = setTimeout(() => {
+                startRecording();
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [cameraEnabled, completed]);
+
+    // Re-attach video stream when switching views (interview/coding test)
+    // This ensures the camera stays visible when transitioning to coding mode
+    useEffect(() => {
+        if (showCodingTest && cameraEnabled && streamRef.current && videoRef.current) {
+            // Small delay to ensure video element is mounted after view switch
+            const timer = setTimeout(() => {
+                if (videoRef.current && streamRef.current) {
+                    videoRef.current.srcObject = streamRef.current;
+                    videoRef.current.play().catch(() => { });
+                    console.log('Camera stream re-attached for coding test');
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [showCodingTest, cameraEnabled]);
+
     // Start dynamic interview on mount
     useEffect(() => {
         startInterview();
@@ -298,6 +444,8 @@ const OnboardingInterview = ({
 
             if (response.success && response.question) {
                 setQuestions([response.question]);
+                // Set interview start time for violation timestamps
+                interviewStartTimeRef.current = Date.now();
                 // Timer already set to 2700 (45 min) in initial state - no reset needed
             } else {
                 throw new Error('Failed to start interview');
@@ -390,16 +538,82 @@ const OnboardingInterview = ({
     };
 
     const submitInterview = async (allAnswers) => {
+        // Guard against duplicate submissions
+        if (isSubmittingRef.current) {
+            console.log('[INTERVIEW] Submission already in progress, skipping duplicate');
+            return;
+        }
+        isSubmittingRef.current = true;
+
         setSubmitting(true);
         try {
+            // Calculate video timestamps for proctoring violations
+            const interviewDuration = interviewStartTimeRef.current
+                ? (Date.now() - interviewStartTimeRef.current) / 1000
+                : 0;
+
+            // Format proctoring violations with video timestamps
+            const formattedViolations = proctoringViolations.map(v => {
+                // Calculate video timestamp (seconds from start)
+                const violationTime = new Date(v.timestamp).getTime();
+                const startTime = interviewStartTimeRef.current || Date.now();
+                const videoTimestamp = Math.max(0, (violationTime - startTime) / 1000);
+
+                return {
+                    type: v.type,
+                    severity: v.severity,
+                    timestamp: v.timestamp,
+                    videoTimestamp: Math.round(videoTimestamp), // Seconds from video start
+                    description: v.message || `${v.type} detected`,
+                    duration: 5 // Default flag duration in seconds
+                };
+            });
+
+            console.log('Submitting interview with violations:', formattedViolations.length);
+
+            // Stop video recording and get the blob
+            console.log('📹 Stopping video recording...');
+            const videoBlob = await stopRecording();
+
+            // Upload video to Cloudinary if we have a recording
+            let videoData = null;
+            if (videoBlob && videoBlob.size > 0) {
+                console.log('📤 Uploading video, size:', videoBlob.size);
+                toast.info('Uploading interview recording...');
+                videoData = await uploadVideoToCloudinary(videoBlob, formattedViolations);
+                if (videoData) {
+                    videoUrlRef.current = videoData.url;
+                    console.log('✅ Video uploaded:', videoData.url);
+                }
+            }
+
             const response = await api.post('/onboarding-interview/submit', {
                 userId,
                 questionsAndAnswers: allAnswers,
                 parsedResume,
-                desiredRole
+                desiredRole,
+                // Include proctoring data for admin review
+                proctoringFlags: formattedViolations,
+                // Include video recording data
+                videoRecording: videoData ? {
+                    url: videoData.url,
+                    secureUrl: videoData.secureUrl || videoData.url, // Admin page needs secureUrl
+                    publicId: videoData.publicId,
+                    duration: Math.round(interviewDuration),
+                    format: videoData.format || 'webm',
+                    fileSize: videoData.fileSize,
+                    cheatingMarkers: formattedViolations.map(v => ({
+                        timestamp: v.videoTimestamp,
+                        type: v.type,
+                        description: v.description,
+                        duration: v.duration,
+                        severity: v.severity
+                    }))
+                } : null
             });
 
             if (response.success) {
+                // DON'T show actual results to candidate - just store internally
                 setResults(response.data);
 
                 // ALWAYS show coding test after interview
@@ -411,7 +625,7 @@ const OnboardingInterview = ({
         } catch (error) {
             console.error('Interview submission error:', error);
             toast.error('Failed to submit interview. Proceeding to coding test.');
-            setResults({ score: 0, passed: false, feedback: 'Interview submission had issues.' });
+            setResults({ pendingReview: true, feedback: 'Interview submission had issues.' });
 
             // Still proceed to coding test
             loadCodingProblem();
@@ -422,6 +636,13 @@ const OnboardingInterview = ({
 
     // Load coding problem for the candidate
     const loadCodingProblem = async () => {
+        // Guard against duplicate loads
+        if (isLoadingCodingRef.current) {
+            console.log('[CODING TEST] Problem loading already in progress, skipping duplicate');
+            return;
+        }
+        isLoadingCodingRef.current = true;
+
         console.log('[CODING TEST] Starting loadCodingProblem...');
         console.log('[CODING TEST] Detected languages:', detectedLanguages);
 
@@ -479,6 +700,9 @@ const OnboardingInterview = ({
             codingLanguage: codingResult.language
         }));
 
+        // Stop camera when interview is complete
+        stopCamera();
+
         toast.success(`Coding test completed! Score: ${codingResult.score}/100`);
         setCompleted(true);
     };
@@ -487,6 +711,10 @@ const OnboardingInterview = ({
     const handleSkipCoding = () => {
         setShowCodingTest(false);
         setCodingResults({ skipped: true });
+
+        // Stop camera when interview is complete
+        stopCamera();
+
         toast.info('Coding test skipped.');
         setCompleted(true);
     };
@@ -565,129 +793,127 @@ const OnboardingInterview = ({
     // Show coding IDE if coding test is active
     if (showCodingTest && codingProblem) {
         return (
-            <CodeIDE
-                language={codingProblem.language || detectedLanguages[0]?.name || 'JavaScript'}
-                languageId={codingProblem.languageId || detectedLanguages[0]?.judge0Id || 63}
-                problem={codingProblem}
-                onComplete={handleCodingComplete}
-                onSkip={handleSkipCoding}
-                timeLimit={codingProblem.timeLimit || 15}
-            />
+            <div className="onboarding-interview coding-mode">
+                {/* Floating Camera during Coding Challenge - positioned at corner */}
+                <div
+                    ref={cameraRef}
+                    className={`camera-section draggable coding-camera ${isDragging ? 'dragging' : ''}`}
+                    style={{
+                        position: 'fixed',
+                        right: '20px',
+                        bottom: '20px',
+                        zIndex: 1000,
+                        ...(cameraPosition.x !== null && {
+                            right: 'auto',
+                            left: cameraPosition.x,
+                            top: cameraPosition.y,
+                            bottom: 'auto'
+                        })
+                    }}
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        const rect = cameraRef.current.getBoundingClientRect();
+                        setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                        setIsDragging(true);
+                    }}
+                >
+                    <div className="camera-drag-handle">
+                        <span className="drag-icon">⋮⋮</span>
+                    </div>
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        muted
+                        playsInline
+                        className={cameraEnabled ? 'active' : 'disabled'}
+                    />
+                    {isRecording && (
+                        <span className="recording-indicator" title="Recording in progress">
+                            ● REC
+                        </span>
+                    )}
+                    {/* Proctoring during coding */}
+                    <InterviewProctor
+                        videoRef={videoRef}
+                        enabled={proctoringEnabled && cameraEnabled && !completed}
+                        onViolationLog={handleViolationLog}
+                    />
+                </div>
+
+                {/* CodeIDE Component - Full Screen */}
+                <CodeIDE
+                    language={codingProblem.language || detectedLanguages[0]?.name || 'JavaScript'}
+                    languageId={codingProblem.languageId || detectedLanguages[0]?.judge0Id || 63}
+                    problem={codingProblem}
+                    onComplete={handleCodingComplete}
+                    onSkip={handleSkipCoding}
+                    timeLimit={codingProblem.timeLimit || 15}
+                />
+            </div>
         );
     }
 
     if (completed && results) {
+        // Show "Pending Review" message instead of actual scores
+        // Candidate should NOT see their results until admin approves
         return (
             <div className="onboarding-interview results-state">
-                <div className="results-card comprehensive">
-                    {/* Main Score Circle */}
-                    <div className={`score-circle ${results.score >= 70 ? 'high' : results.score >= 50 ? 'medium' : 'low'}`}>
-                        <span className="score-value">{results.score}</span>
-                        <span className="score-label">Overall Score</span>
+                <div className="results-card pending-review">
+                    {/* Pending Review Icon */}
+                    <div className="pending-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
                     </div>
 
-                    <h2>
-                        {results.passed
-                            ? '🎉 Great Performance!'
-                            : results.score >= 50
-                                ? '⚠️ Needs Improvement'
-                                : '❌ Did Not Pass'}
-                    </h2>
-                    <p className="feedback">{results.feedback}</p>
+                    <h2>🎯 Interview Submitted Successfully!</h2>
+                    <p className="pending-message">
+                        Your interview has been submitted and is now being reviewed by our team.
+                    </p>
 
-                    {/* Score Breakdown Grid */}
-                    <div className="score-grid">
-                        <div className="score-item">
-                            <span className="score-icon">💻</span>
-                            <span className="score-num">{results.technicalScore || '-'}</span>
-                            <span className="score-title">Technical</span>
-                        </div>
-                        <div className="score-item">
-                            <span className="score-icon">👥</span>
-                            <span className="score-num">{results.hrScore || '-'}</span>
-                            <span className="score-title">HR/Behavioral</span>
-                        </div>
-                        {results.codingScore !== undefined && (
-                            <div className="score-item coding">
-                                <span className="score-icon">🧑‍💻</span>
-                                <span className="score-num">{results.codingScore}</span>
-                                <span className="score-title">Coding ({results.codingLanguage || 'Code'})</span>
-                            </div>
-                        )}
-                        <div className="score-item">
-                            <span className="score-icon">💬</span>
-                            <span className="score-num">{results.communication || '-'}</span>
-                            <span className="score-title">Communication</span>
-                        </div>
-                        <div className="score-item">
-                            <span className="score-icon">🎯</span>
-                            <span className="score-num">{results.relevance || '-'}</span>
-                            <span className="score-title">Relevance</span>
-                        </div>
+                    {/* What happens next */}
+                    <div className="next-steps-card">
+                        <h4>📋 What Happens Next?</h4>
+                        <ul className="next-steps-list">
+                            <li>
+                                <span className="step-icon">👀</span>
+                                <span>Our team will review your responses within 24-48 hours</span>
+                            </li>
+                            <li>
+                                <span className="step-icon">📧</span>
+                                <span>You'll receive an email notification with your results</span>
+                            </li>
+                            <li>
+                                <span className="step-icon">✅</span>
+                                <span>Once approved, you'll be able to apply to jobs on our platform</span>
+                            </li>
+                        </ul>
                     </div>
 
-                    {/* Strengths & Weaknesses */}
-                    <div className="analysis-section">
-                        {results.strengths?.length > 0 && (
-                            <div className="analysis-box strengths">
-                                <h4>✅ Strengths</h4>
-                                <ul>
-                                    {results.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                                </ul>
-                            </div>
-                        )}
-
-                        {results.weaknesses?.length > 0 && (
-                            <div className="analysis-box weaknesses">
-                                <h4>⚠️ Areas for Improvement</h4>
-                                <ul>
-                                    {results.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Detailed Feedback */}
-                    <div className="feedback-section">
-                        <h4>📊 Detailed Feedback</h4>
-                        <div className="feedback-item">
-                            <span className="feedback-label">Technical Skills:</span>
-                            <p>{results.technicalFeedback || 'Review your technical fundamentals.'}</p>
-                        </div>
-                        <div className="feedback-item">
-                            <span className="feedback-label">Communication:</span>
-                            <p>{results.communicationFeedback || 'Practice structuring your answers.'}</p>
-                        </div>
-                    </div>
-
-                    {/* Improvement Areas */}
-                    {results.areasToImprove?.length > 0 && (
-                        <div className="improvement-section">
-                            <h4>🚀 How to Improve</h4>
-                            {results.areasToImprove.map((area, i) => (
-                                <div key={i} className={`improvement-item priority-${area.priority}`}>
-                                    <span className="improvement-area">{area.area}</span>
-                                    <p className="improvement-suggestion">{area.suggestion}</p>
-                                </div>
-                            ))}
+                    {/* Coding test completion note if applicable */}
+                    {codingResults && !codingResults.skipped && (
+                        <div className="coding-submitted-note">
+                            <span className="note-icon">💻</span>
+                            <span>Coding challenge also submitted for review</span>
                         </div>
                     )}
 
-                    {/* Recommendations */}
-                    {results.recommendations?.length > 0 && (
-                        <div className="recommendations-section">
-                            <h4>💡 Recommendations</h4>
-                            <ul>
-                                {results.recommendations.map((rec, i) => (
-                                    <li key={i}>{rec}</li>
-                                ))}
-                            </ul>
+                    {/* Proctoring note if violations were detected */}
+                    {proctoringViolations.length > 0 && (
+                        <div className="proctoring-note">
+                            <span className="note-icon">📝</span>
+                            <span>Your session included {proctoringViolations.length} activity flag(s) which will be reviewed</span>
                         </div>
                     )}
 
                     <button className="btn-primary finish-btn" onClick={handleFinish}>
                         Continue to Dashboard →
                     </button>
+
+                    <p className="support-text">
+                        Questions? Contact <a href="mailto:support@aihiring.com">support@aihiring.com</a>
+                    </p>
                 </div>
             </div>
         );
@@ -909,7 +1135,11 @@ const OnboardingInterview = ({
             {submitting && (
                 <div className="submitting-overlay">
                     <div className="loading-spinner"></div>
-                    <p>Evaluating your responses...</p>
+                    <p>
+                        {uploadingVideo
+                            ? '📤 Uploading interview recording...'
+                            : '🔍 Evaluating your responses...'}
+                    </p>
                 </div>
             )}
         </div>

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { Routes, Route, NavLink, useNavigate, Link } from 'react-router-dom';
+import {
+    LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import InterviewQueue from './InterviewQueue';
 import InterviewDetail from './InterviewDetail';
 import AuditLogs from './AuditLogs';
 import UserControl from './UserControl';
+import ManageAdmins from './ManageAdmins';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -11,7 +16,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [adminInfo, setAdminInfo] = useState(null);
-    const [stats, setStats] = useState({ pending: 0, approved: 0, flagged: 0, users: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,37 +30,8 @@ const AdminDashboard = () => {
         if (info) {
             setAdminInfo(JSON.parse(info));
         }
-
-        fetchStats();
+        setLoading(false);
     }, [navigate]);
-
-    const fetchStats = async () => {
-        try {
-            const token = localStorage.getItem('adminToken');
-            const response = await fetch(`${API_URL}/admin/interviews/stats`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.status === 401) {
-                handleLogout();
-                return;
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                const statusStats = data.data.byStatus || [];
-                const pending = statusStats.find(s => s._id === 'pending_review')?.count || 0;
-                const approved = statusStats.find(s => s._id === 'approved')?.count || 0;
-                const flagged = data.data.byPriority?.find(p => p._id === 'critical')?.count || 0;
-
-                setStats({ pending, approved, flagged, users: 0 });
-            }
-        } catch (error) {
-            console.error('Failed to fetch stats:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleLogout = async () => {
         try {
@@ -106,7 +81,7 @@ const AdminDashboard = () => {
                 </div>
 
                 <nav className="admin-nav">
-                    <NavLink to="/admin/dashboard" end className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
+                    <NavLink to="/admin" end className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="3" width="7" height="7" />
                             <rect x="14" y="3" width="7" height="7" />
@@ -121,7 +96,6 @@ const AdminDashboard = () => {
                             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
                         <span>Interview Queue</span>
-                        {stats.pending > 0 && <span className="badge">{stats.pending}</span>}
                     </NavLink>
 
                     <NavLink to="/admin/flagged" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
@@ -130,7 +104,6 @@ const AdminDashboard = () => {
                             <line x1="4" y1="22" x2="4" y2="15" />
                         </svg>
                         <span>Flagged Reviews</span>
-                        {stats.flagged > 0 && <span className="badge">{stats.flagged}</span>}
                     </NavLink>
 
                     <NavLink to="/admin/users" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
@@ -188,28 +161,136 @@ const AdminDashboard = () => {
             {/* Main Content */}
             <main className="admin-main">
                 <Routes>
-                    <Route index element={<DashboardHome stats={stats} onRefresh={fetchStats} />} />
+                    <Route index element={<DashboardHome />} />
                     <Route path="interviews" element={<InterviewQueue />} />
                     <Route path="interviews/:id" element={<InterviewDetail />} />
                     <Route path="flagged" element={<InterviewQueue flaggedOnly />} />
                     <Route path="users" element={<UserControl />} />
                     <Route path="audit-logs" element={<AuditLogs />} />
+                    <Route path="admins" element={<ManageAdmins />} />
                 </Routes>
             </main>
         </div>
     );
 };
 
-// Dashboard Home Component
-const DashboardHome = ({ stats, onRefresh }) => {
+// Enhanced Dashboard Home Component
+const DashboardHome = () => {
+    const [stats, setStats] = useState(null);
+    const [trends, setTrends] = useState(null);
+    const [activity, setActivity] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
+    const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        setError(null);
+        try {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setError('No auth token found');
+                setLoading(false);
+                return;
+            }
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            console.log('Fetching dashboard data from:', API_URL);
+
+            const [statsRes, trendsRes, activityRes] = await Promise.all([
+                fetch(`${API_URL}/admin/dashboard/stats`, { headers }),
+                fetch(`${API_URL}/admin/dashboard/trends`, { headers }),
+                fetch(`${API_URL}/admin/dashboard/activity`, { headers })
+            ]);
+
+            console.log('Response statuses:', statsRes.status, trendsRes.status, activityRes.status);
+
+            const [statsData, trendsData, activityData] = await Promise.all([
+                statsRes.json(),
+                trendsRes.json(),
+                activityRes.json()
+            ]);
+
+            console.log('Dashboard data received:', { stats: statsData, trends: trendsData, activity: activityData });
+
+            if (statsData.success) setStats(statsData.data);
+            if (trendsData.success) setTrends(trendsData.data);
+            if (activityData.success) setActivity(activityData.data);
+
+            if (!statsData.success && !trendsData.success && !activityData.success) {
+                setError('Failed to load dashboard data');
+            }
+        } catch (err) {
+            console.error('Failed to fetch dashboard data:', err);
+            setError(err.message || 'Failed to fetch dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    const formatTimeAgo = (timestamp) => {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        return `${diffDays}d ago`;
+    };
+
+    if (loading) {
+        return (
+            <div className="admin-loading">
+                <div className="admin-loading-spinner"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                <h3>Error Loading Dashboard</h3>
+                <p>{error}</p>
+                <button className="admin-refresh-btn" onClick={fetchDashboardData} style={{ marginTop: '16px' }}>
+                    Try Again
+                </button>
+            </div>
+        );
+    }
+
+    const pieData = stats?.interviews ? [
+        { name: 'Approved', value: stats.interviews.approved || 0, color: '#10b981' },
+        { name: 'Pending', value: stats.interviews.pending || 0, color: '#f59e0b' },
+        { name: 'Rejected', value: stats.interviews.rejected || 0, color: '#ef4444' }
+    ].filter(d => d.value > 0) : [];
+
     return (
         <>
             <div className="admin-page-header">
                 <div>
                     <h1>Dashboard</h1>
-                    <p>Overview of interview reviews and platform activity</p>
+                    <p>Real-time overview of platform metrics and activity</p>
                 </div>
-                <button className="admin-refresh-btn" onClick={onRefresh}>
+                <button className="admin-refresh-btn" onClick={fetchDashboardData}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="23 4 23 10 17 10" />
                         <polyline points="1 20 1 14 7 14" />
@@ -219,7 +300,26 @@ const DashboardHome = ({ stats, onRefresh }) => {
                 </button>
             </div>
 
+            {/* Stats Grid */}
             <div className="admin-stats-grid">
+                <div className="admin-stat-card">
+                    <div className="admin-stat-icon users">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                            <path d="M16 3.13a4 4 0 010 7.75" />
+                        </svg>
+                    </div>
+                    <div className="admin-stat-content">
+                        <h3>{stats?.users?.total || 0}</h3>
+                        <p>Total Users</p>
+                        <span className={`stat-trend ${stats?.users?.growthPercent >= 0 ? 'positive' : 'negative'}`}>
+                            {stats?.users?.growthPercent >= 0 ? '↑' : '↓'} {Math.abs(stats?.users?.growthPercent || 0)}% this week
+                        </span>
+                    </div>
+                </div>
+
                 <div className="admin-stat-card">
                     <div className="admin-stat-icon pending">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -228,8 +328,9 @@ const DashboardHome = ({ stats, onRefresh }) => {
                         </svg>
                     </div>
                     <div className="admin-stat-content">
-                        <h3>{stats.pending}</h3>
+                        <h3>{stats?.interviews?.pending || 0}</h3>
                         <p>Pending Reviews</p>
+                        <span className="stat-detail">{stats?.interviews?.todayCount || 0} submitted today</span>
                     </div>
                 </div>
 
@@ -241,8 +342,9 @@ const DashboardHome = ({ stats, onRefresh }) => {
                         </svg>
                     </div>
                     <div className="admin-stat-content">
-                        <h3>{stats.approved}</h3>
-                        <p>Approved Today</p>
+                        <h3>{stats?.interviews?.approvalRate || 0}%</h3>
+                        <p>Approval Rate</p>
+                        <span className="stat-detail">{stats?.interviews?.approved || 0} approved total</span>
                     </div>
                 </div>
 
@@ -255,35 +357,214 @@ const DashboardHome = ({ stats, onRefresh }) => {
                         </svg>
                     </div>
                     <div className="admin-stat-content">
-                        <h3>{stats.flagged}</h3>
+                        <h3>{stats?.flags?.critical || 0}</h3>
                         <p>Critical Flags</p>
+                        <span className="stat-detail">{stats?.flags?.high || 0} high severity</span>
                     </div>
                 </div>
 
                 <div className="admin-stat-card">
-                    <div className="admin-stat-icon users">
+                    <div className="admin-stat-icon score">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                            <path d="M16 3.13a4 4 0 010 7.75" />
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
                     </div>
                     <div className="admin-stat-content">
-                        <h3>{stats.users}</h3>
-                        <p>Active Users</p>
+                        <h3>{stats?.interviews?.avgScore || 0}</h3>
+                        <p>Avg Interview Score</p>
+                        <span className="stat-detail">Out of 100</span>
+                    </div>
+                </div>
+
+                <div className="admin-stat-card">
+                    <div className="admin-stat-icon active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
+                    </div>
+                    <div className="admin-stat-content">
+                        <h3>{stats?.users?.activeThisWeek || 0}</h3>
+                        <p>Active This Week</p>
+                        <span className="stat-detail">{stats?.users?.jobseekers || 0} jobseekers, {stats?.users?.recruiters || 0} recruiters</span>
                     </div>
                 </div>
             </div>
 
-            <div className="admin-table-container">
-                <div className="admin-table-header">
-                    <h2>Quick Actions</h2>
+            {/* Charts Section */}
+            <div className="admin-charts-grid">
+                <div className="admin-chart-card">
+                    <h3>Interview Submissions (30 Days)</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <AreaChart data={trends?.interviews?.slice(-14) || []}>
+                            <defs>
+                                <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                            <XAxis dataKey="date" tickFormatter={formatDate} stroke="#94a3b8" fontSize={12} />
+                            <YAxis stroke="#94a3b8" fontSize={12} />
+                            <Tooltip
+                                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                                labelStyle={{ color: '#f1f5f9' }}
+                            />
+                            <Area type="monotone" dataKey="total" stroke="#6366f1" fill="url(#colorTotal)" strokeWidth={2} />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </div>
-                <div style={{ padding: '40px', textAlign: 'center' }}>
-                    <p style={{ color: '#94a3b8', marginBottom: '20px' }}>
-                        Select a section from the sidebar to begin reviewing interviews, managing users, or viewing audit logs.
-                    </p>
+
+                <div className="admin-chart-card">
+                    <h3>Review Status Distribution</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                            <Pie
+                                data={pieData}
+                                innerRadius={60}
+                                outerRadius={90}
+                                paddingAngle={5}
+                                dataKey="value"
+                            >
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                            />
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div className="admin-chart-card full-width">
+                    <h3>User Signups (30 Days)</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={trends?.users?.slice(-14) || []}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                            <XAxis dataKey="date" tickFormatter={formatDate} stroke="#94a3b8" fontSize={12} />
+                            <YAxis stroke="#94a3b8" fontSize={12} />
+                            <Tooltip
+                                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                                labelStyle={{ color: '#f1f5f9' }}
+                            />
+                            <Legend />
+                            <Bar dataKey="jobseekers" name="Jobseekers" fill="#10b981" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="recruiters" name="Recruiters" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* Quick Actions & Activity */}
+            <div className="admin-activity-grid">
+                <div className="admin-quick-actions">
+                    <h3>Quick Actions</h3>
+                    <div className="quick-actions-grid">
+                        <Link to="/admin/interviews" className="quick-action-card">
+                            <div className="quick-action-icon pending">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                                    <rect x="9" y="3" width="6" height="4" rx="2" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4>Review Interviews</h4>
+                                <span>{stats?.interviews?.pending || 0} pending</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/admin/flagged" className="quick-action-card">
+                            <div className="quick-action-icon flagged">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                                    <line x1="4" y1="22" x2="4" y2="15" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4>Critical Flags</h4>
+                                <span>{stats?.flags?.critical || 0} urgent</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/admin/users" className="quick-action-card">
+                            <div className="quick-action-icon users">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4>Manage Users</h4>
+                                <span>{stats?.users?.total || 0} total</span>
+                            </div>
+                        </Link>
+
+                        <Link to="/admin/audit-logs" className="quick-action-card">
+                            <div className="quick-action-icon logs">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4>View Audit Logs</h4>
+                                <span>All activity</span>
+                            </div>
+                        </Link>
+                    </div>
+                </div>
+
+                <div className="admin-activity-feed">
+                    <h3>Recent Activity</h3>
+                    <div className="activity-list">
+                        {activity?.recentActions?.slice(0, 8).map((action, idx) => (
+                            <div key={idx} className="activity-item">
+                                <div className={`activity-icon ${action.action.includes('approve') ? 'success' : action.action.includes('reject') ? 'danger' : 'info'}`}>
+                                    {action.action.includes('login') ? '🔑' :
+                                        action.action.includes('approve') ? '✓' :
+                                            action.action.includes('reject') ? '✗' :
+                                                action.action.includes('review') ? '👁' : '📋'}
+                                </div>
+                                <div className="activity-content">
+                                    <p><strong>{action.admin}</strong> {action.action.replace(/_/g, ' ')}</p>
+                                    <span>{formatTimeAgo(action.timestamp)}</span>
+                                </div>
+                            </div>
+                        ))}
+                        {(!activity?.recentActions || activity.recentActions.length === 0) && (
+                            <div className="activity-empty">
+                                <p>No recent activity</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="admin-pending-interviews">
+                    <h3>Awaiting Review</h3>
+                    <div className="pending-list">
+                        {activity?.recentInterviews?.slice(0, 5).map((interview, idx) => (
+                            <div
+                                key={idx}
+                                className="pending-item"
+                                onClick={() => navigate(`/admin/interviews/${interview.id}`)}
+                            >
+                                <div className={`priority-badge ${interview.priority}`}>
+                                    {interview.priority}
+                                </div>
+                                <div className="pending-content">
+                                    <h4>{interview.candidate}</h4>
+                                    <span>{interview.type} interview • Score: {interview.score || 'N/A'}</span>
+                                </div>
+                                <span className="pending-time">{formatTimeAgo(interview.submittedAt)}</span>
+                            </div>
+                        ))}
+                        {(!activity?.recentInterviews || activity.recentInterviews.length === 0) && (
+                            <div className="activity-empty">
+                                <p>No pending interviews</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </>

@@ -957,9 +957,52 @@ router.get('/status/:userId', async (req, res) => {
         const platformInterview = user.platformInterview || {};
         let status = platformInterview.status || 'pending';
 
+        // CHECK THE ACTUAL INTERVIEW DOCUMENTS FOR ADMIN REVIEW STATUS
+        // This takes precedence over the user's platformInterview.status
+        const pendingReviewInterview = await Interview.findOne({
+            userId,
+            'adminReview.status': 'pending_review'
+        }).sort({ createdAt: -1 }).select('adminReview createdAt');
+
+        const rejectedInterview = await Interview.findOne({
+            userId,
+            'adminReview.status': { $in: ['rejected', 'cheating_confirmed'] }
+        }).sort({ createdAt: -1 }).select('adminReview createdAt');
+
+        const approvedInterview = await Interview.findOne({
+            userId,
+            'adminReview.status': 'approved'
+        }).sort({ createdAt: -1 }).select('adminReview scoring createdAt');
+
+        // Determine actual status based on Interview documents
+        let rejectionReason = null;
+        let rejectedAt = null;
+
+        if (pendingReviewInterview) {
+            // Interview is waiting for admin review - BLOCK ACCESS
+            status = 'pending_review';
+        } else if (approvedInterview) {
+            // Admin approved - allow job applications
+            status = 'passed';
+            // Update User's platformInterview status if not already set
+            if (platformInterview.status !== 'passed') {
+                await User.findByIdAndUpdate(userId, {
+                    $set: {
+                        'platformInterview.status': 'passed',
+                        'platformInterview.score': approvedInterview.adminReview?.finalScore || approvedInterview.scoring?.overallScore,
+                        'platformInterview.completedAt': new Date()
+                    }
+                });
+            }
+        } else if (rejectedInterview) {
+            // Admin rejected or confirmed cheating
+            status = rejectedInterview.adminReview.status === 'cheating_confirmed' ? 'cheating' : 'rejected';
+            rejectionReason = rejectedInterview.adminReview.adminNotes || rejectedInterview.adminReview.cheatingDetails || 'Your interview did not meet our requirements.';
+            rejectedAt = rejectedInterview.adminReview.reviewedAt;
+        }
+
         // BACKWARD COMPATIBILITY: If user completed onboarding before platformInterview feature,
         // only treat them as passed if they ACTUALLY have a passing interview score
-        // DO NOT auto-pass users who just completed onboarding but skipped the interview
         if (status === 'pending' || !status) {
             const actualInterviewScore = user.jobSeekerProfile?.interviewScore;
             const hasActuallyCompletedInterview = user.interviewStatus?.completed === true;
@@ -978,14 +1021,21 @@ router.get('/status/:userId', async (req, res) => {
                 });
                 console.log(`[BACKWARD COMPAT] User ${userId} auto-marked as passed with score ${actualInterviewScore}`);
             }
-            // If user only completed onboarding but didn't pass interview, keep status as 'pending'
         }
 
         const canApplyForJobs = status === 'passed';
 
         // Check if can retry
         let canRetry = false;
-        if (status === 'failed' && platformInterview.retryAfter) {
+        let retryAfter = platformInterview.retryAfter;
+
+        if (status === 'rejected' || status === 'cheating') {
+            // Calculate retry date: 7 days for rejection, 30 days for cheating
+            const waitDays = status === 'cheating' ? 30 : 7;
+            const reviewDate = rejectedAt || new Date();
+            retryAfter = new Date(reviewDate.getTime() + waitDays * 24 * 60 * 60 * 1000);
+            canRetry = new Date() >= retryAfter;
+        } else if (status === 'failed' && platformInterview.retryAfter) {
             canRetry = new Date() >= new Date(platformInterview.retryAfter);
         } else if (status === 'skipped' || status === 'pending') {
             canRetry = true;
@@ -1000,10 +1050,15 @@ router.get('/status/:userId', async (req, res) => {
                 completedAt: platformInterview.completedAt,
                 canApplyForJobs,
                 canRetry,
-                retryAfter: platformInterview.retryAfter,
+                retryAfter,
+                rejectionReason,
                 message: canApplyForJobs
                     ? 'You can apply for jobs!'
-                    : 'Complete the platform interview to apply for jobs.'
+                    : status === 'pending_review'
+                        ? 'Your interview is under review. Please wait for admin approval.'
+                        : status === 'rejected' || status === 'cheating'
+                            ? `Your interview was not approved. ${canRetry ? 'You can retry now.' : `Retry available after ${new Date(retryAfter).toLocaleDateString()}.`}`
+                            : 'Complete the platform interview to apply for jobs.'
             }
         });
     } catch (error) {

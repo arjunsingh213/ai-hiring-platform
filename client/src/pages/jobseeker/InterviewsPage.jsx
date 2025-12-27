@@ -53,6 +53,7 @@ const InterviewsPage = () => {
 
     const canApplyForJobs = platformInterviewStatus?.canApplyForJobs;
     const interviewStatus = platformInterviewStatus?.status || 'pending';
+    const isPendingReview = interviewStatus === 'pending_review';
 
     // Get interview display name based on job info
     const getInterviewDisplayName = (interview) => {
@@ -82,45 +83,110 @@ const InterviewsPage = () => {
                 <h1>Interviews</h1>
             </div>
 
-            {/* Platform Interview Status Banner */}
+            {/* Platform Interview Status Banner - Handle all states */}
             {!canApplyForJobs && (
-                <div className="platform-interview-banner card-highlight">
+                <div className={`platform-interview-banner card-highlight ${isPendingReview ? 'pending-review' : ''}`}>
                     <div className="banner-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 11l3 3L22 4" />
-                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                        </svg>
+                        {isPendingReview ? (
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        ) : (
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 11l3 3L22 4" />
+                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                            </svg>
+                        )}
                     </div>
                     <div className="banner-content">
-                        <h2>Platform Interview Required</h2>
-                        <p>
-                            You must complete and pass the Platform Interview to unlock job applications.
-                            This is a domain-specific interview based on your resume and skills.
-                        </p>
-                        {interviewStatus === 'failed' && platformInterviewStatus?.canRetry && (
-                            <p className="retry-message">
-                                You can now retry the interview!
-                            </p>
-                        )}
-                        {interviewStatus === 'failed' && !platformInterviewStatus?.canRetry && (
-                            <p className="retry-message retry-locked">
-                                Retry available after {new Date(platformInterviewStatus?.retryAfter).toLocaleDateString()}
-                            </p>
+                        {isPendingReview ? (
+                            <>
+                                <h2>🕐 Interview Under Review</h2>
+                                <p>
+                                    Your interview has been submitted and is being reviewed by our team.
+                                    You will be notified via email within <strong>24-48 hours</strong> with the results.
+                                </p>
+                                <p className="review-note">
+                                    Once approved, you'll be able to apply for jobs on the platform.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <h2>Platform Interview Required</h2>
+                                <p>
+                                    You must complete and pass the Platform Interview to unlock job applications.
+                                    This is a domain-specific interview based on your resume and skills.
+                                </p>
+
+                                {/* Rejected State */}
+                                {(interviewStatus === 'rejected' || interviewStatus === 'cheating') && (
+                                    <div className="rejection-notice">
+                                        <div className="rejection-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <line x1="15" y1="9" x2="9" y2="15" />
+                                                <line x1="9" y1="9" x2="15" y2="15" />
+                                            </svg>
+                                        </div>
+                                        <div className="rejection-content">
+                                            <strong>
+                                                {interviewStatus === 'cheating'
+                                                    ? '⚠️ Interview Flagged for Policy Violation'
+                                                    : '❌ Interview Not Approved'}
+                                            </strong>
+                                            {platformInterviewStatus?.rejectionReason && (
+                                                <p className="rejection-reason">{platformInterviewStatus.rejectionReason}</p>
+                                            )}
+                                            {platformInterviewStatus?.canRetry ? (
+                                                <p className="retry-message">✅ You can now retry the interview!</p>
+                                            ) : (
+                                                <p className="retry-message retry-locked">
+                                                    🔒 Retry available after {new Date(platformInterviewStatus?.retryAfter).toLocaleDateString()}
+                                                    {interviewStatus === 'cheating' && ' (30-day wait period)'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Failed State */}
+                                {interviewStatus === 'failed' && platformInterviewStatus?.canRetry && (
+                                    <p className="retry-message">
+                                        You can now retry the interview!
+                                    </p>
+                                )}
+                                {interviewStatus === 'failed' && !platformInterviewStatus?.canRetry && (
+                                    <p className="retry-message retry-locked">
+                                        Retry available after {new Date(platformInterviewStatus?.retryAfter).toLocaleDateString()}
+                                    </p>
+                                )}
+                            </>
                         )}
                     </div>
-                    <button
-                        className="btn btn-primary btn-large"
-                        onClick={startPlatformInterview}
-                        disabled={interviewStatus === 'failed' && !platformInterviewStatus?.canRetry}
-                    >
-                        {interviewStatus === 'pending' || interviewStatus === 'skipped'
-                            ? 'Start Platform Interview'
-                            : interviewStatus === 'in_progress'
-                                ? 'Continue Platform Interview'
-                                : platformInterviewStatus?.canRetry
-                                    ? 'Retry Platform Interview'
-                                    : 'Retry Locked'}
-                    </button>
+                    {!isPendingReview && interviewStatus !== 'rejected' && interviewStatus !== 'cheating' && (
+                        <button
+                            className="btn btn-primary btn-large"
+                            onClick={startPlatformInterview}
+                            disabled={interviewStatus === 'failed' && !platformInterviewStatus?.canRetry}
+                        >
+                            {interviewStatus === 'pending' || interviewStatus === 'skipped'
+                                ? 'Start Platform Interview'
+                                : interviewStatus === 'in_progress'
+                                    ? 'Continue Platform Interview'
+                                    : platformInterviewStatus?.canRetry
+                                        ? 'Retry Platform Interview'
+                                        : 'Retry Locked'}
+                        </button>
+                    )}
+                    {(interviewStatus === 'rejected' || interviewStatus === 'cheating') && platformInterviewStatus?.canRetry && (
+                        <button
+                            className="btn btn-primary btn-large"
+                            onClick={startPlatformInterview}
+                        >
+                            Retry Platform Interview
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -168,40 +234,71 @@ const InterviewsPage = () => {
                     <div className="interviews-grid">
                         {!canApplyForJobs ? (
                             /* Show Platform Interview for users who haven't passed */
-                            <div className="interview-card card card-platform">
+                            <div className={`interview-card card card-platform ${isPendingReview ? 'under-review' : ''}`}>
                                 <div className="card-header">
                                     <div className="company-logo platform-logo">
-                                        <span>🎯</span>
+                                        <span>{isPendingReview ? '🕐' : '🎯'}</span>
                                     </div>
                                     <div>
                                         <h3>Domain-Specific Platform Interview</h3>
-                                        <p className="interview-type">Required to apply for jobs</p>
+                                        <p className="interview-type">
+                                            {isPendingReview ? 'Awaiting admin review' : 'Required to apply for jobs'}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="interview-details">
                                     <p><strong>Type:</strong> Technical + HR (10 questions)</p>
                                     <p><strong>Duration:</strong> ~20 minutes</p>
-                                    <p><strong>Status:</strong> <span className={`badge badge-${interviewStatus}`}>{interviewStatus}</span></p>
+                                    <p>
+                                        <strong>Status:</strong>{' '}
+                                        <span className={`badge badge-${interviewStatus}`}>
+                                            {isPendingReview ? 'Under Review' : interviewStatus}
+                                        </span>
+                                    </p>
                                     {platformInterviewStatus?.attempts > 0 && (
                                         <p><strong>Attempts:</strong> {platformInterviewStatus.attempts}</p>
                                     )}
                                 </div>
-                                <div className="interview-info">
-                                    <h4>What to expect:</h4>
-                                    <ul>
-                                        <li>5 Technical questions based on your skills</li>
-                                        <li>5 HR/Behavioral questions</li>
-                                        <li>Coding challenge (if applicable)</li>
-                                        <li>AI-powered evaluation</li>
-                                    </ul>
-                                </div>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={startPlatformInterview}
-                                    disabled={interviewStatus === 'failed' && !platformInterviewStatus?.canRetry}
-                                >
-                                    {interviewStatus === 'in_progress' ? 'Continue Interview' : 'Start Interview'}
-                                </button>
+                                {isPendingReview ? (
+                                    <div className="review-timeline">
+                                        <h4>⏳ Review Timeline</h4>
+                                        <ul>
+                                            <li>Your responses are being evaluated by our team</li>
+                                            <li>Proctoring footage is being reviewed</li>
+                                            <li>Expected notification: 24-48 hours</li>
+                                            <li>You'll receive an email with the results</li>
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <div className="interview-info">
+                                        <h4>What to expect:</h4>
+                                        <ul>
+                                            <li>5 Technical questions based on your skills</li>
+                                            <li>5 HR/Behavioral questions</li>
+                                            <li>Coding challenge (if applicable)</li>
+                                            <li>AI-powered evaluation</li>
+                                        </ul>
+                                    </div>
+                                )}
+                                {/* Only show Start Interview button if:
+                                    - Not pending review
+                                    - Not cheating/rejected without canRetry
+                                    - Not failed without canRetry */}
+                                {!isPendingReview &&
+                                    !(interviewStatus === 'cheating' && !platformInterviewStatus?.canRetry) &&
+                                    !(interviewStatus === 'rejected' && !platformInterviewStatus?.canRetry) &&
+                                    !(interviewStatus === 'failed' && !platformInterviewStatus?.canRetry) && (
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={startPlatformInterview}
+                                        >
+                                            {interviewStatus === 'in_progress'
+                                                ? 'Continue Interview'
+                                                : platformInterviewStatus?.canRetry
+                                                    ? 'Retry Interview'
+                                                    : 'Start Interview'}
+                                        </button>
+                                    )}
                             </div>
                         ) : upcomingInterviews.filter(i => i.jobId).length === 0 ? (
                             /* No job interviews available */

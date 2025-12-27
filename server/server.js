@@ -93,6 +93,9 @@ app.use('/api/companies', require('./routes/companyRoutes'));
 // Admin Review System
 app.use('/api/admin', require('./routes/adminRoutes'));
 
+// Admin Setup (for Vercel deployments - protected by secret)
+app.use('/api/admin-setup', require('./routes/adminSetup'));
+
 // AI Talent Passport
 app.use('/api/talent-passport', require('./routes/talentPassportRoutes'));
 

@@ -203,13 +203,24 @@ const interviewSchema = new mongoose.Schema({
             type: {
                 type: String,
                 enum: [
+                    // Original lowercase values
                     'multiple_voices',
                     'eye_movement',
                     'phone_detected',
                     'multiple_faces',
                     'tab_switch',
                     'window_focus_loss',
-                    'suspicious_background'
+                    'suspicious_background',
+                    // Frontend InterviewProctor values (uppercase)
+                    'NO_FACE',
+                    'MULTIPLE_FACES',
+                    'LOOK_AWAY',
+                    'TAB_SWITCH',
+                    'WINDOW_BLUR',
+                    'COPY_ATTEMPT',
+                    'PASTE_ATTEMPT',
+                    'DEV_TOOLS',
+                    'OTHER'
                 ]
             },
             timestamp: Date,
@@ -300,13 +311,24 @@ const interviewSchema = new mongoose.Schema({
             flagType: {
                 type: String,
                 enum: [
+                    // Original lowercase values
                     'multiple_voices',
                     'eye_movement',
                     'phone_detected',
                     'multiple_faces',
                     'tab_switch',
                     'window_focus_loss',
-                    'suspicious_background'
+                    'suspicious_background',
+                    // Frontend InterviewProctor values (uppercase)
+                    'NO_FACE',
+                    'MULTIPLE_FACES',
+                    'LOOK_AWAY',
+                    'TAB_SWITCH',
+                    'WINDOW_BLUR',
+                    'COPY_ATTEMPT',
+                    'PASTE_ATTEMPT',
+                    'DEV_TOOLS',
+                    'OTHER'
                 ]
             },
             timestamp: Number, // seconds from video start
@@ -339,7 +361,13 @@ const interviewSchema = new mongoose.Schema({
 });
 
 // Pre-save hook to auto-escalate based on cheating flags
-interviewSchema.pre('save', function (next) {
+// Note: For Mongoose 6+, using synchronous pre-save hook (no next callback needed)
+interviewSchema.pre('save', function () {
+    // Ensure adminReview object exists
+    if (!this.adminReview) {
+        this.adminReview = {};
+    }
+
     // Auto-escalate if more than 3 high-severity flags
     if (this.videoRecording && this.videoRecording.highSeverityFlagsCount > 3) {
         this.adminReview.autoEscalated = true;
@@ -350,7 +378,7 @@ interviewSchema.pre('save', function (next) {
         this.adminReview.escalationReason = 'Auto-escalated: High risk level from proctoring';
         this.adminReview.priorityLevel = 'high';
     }
-    next();
+    // No next() needed - Mongoose 6+ handles it automatically
 });
 
 interviewSchema.index({ userId: 1, interviewType: 1 });

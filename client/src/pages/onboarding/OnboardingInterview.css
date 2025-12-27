@@ -1696,3 +1696,213 @@
         font-size: 0.875rem;
     }
 }
+
+/* ============================================
+   PENDING REVIEW STATE - NEW UI
+   ============================================ */
+
+.results-card.pending-review {
+    max-width: 600px;
+    text-align: center;
+    padding: 40px 32px;
+}
+
+.pending-icon {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+    animation: pendingPulse 2s ease-in-out infinite;
+}
+
+.pending-icon svg {
+    width: 50px;
+    height: 50px;
+    stroke: white;
+}
+
+@keyframes pendingPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 12px 40px rgba(99, 102, 241, 0.6);
+    }
+}
+
+.results-card.pending-review h2 {
+    color: #f1f5f9;
+    font-size: 1.75rem;
+    margin-bottom: 16px;
+}
+
+.pending-message {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 32px;
+}
+
+.next-steps-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.next-steps-card h4 {
+    color: #e2e8f0;
+    font-size: 1rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.next-steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.next-steps-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+.next-steps-list li:last-child {
+    border-bottom: none;
+}
+
+.step-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.coding-submitted-note,
+.proctoring-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.coding-submitted-note {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+}
+
+.proctoring-note {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fcd34d;
+}
+
+.note-icon {
+    font-size: 1.1rem;
+}
+
+.support-text {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-top: 20px;
+}
+
+.support-text a {
+    color: #818cf8;
+    text-decoration: none;
+}
+
+.support-text a:hover {
+    text-decoration: underline;
+}
+
+/* ==================== CODING MODE CAMERA ==================== */
+/* Floating camera overlay during coding challenge */
+
+.onboarding-interview.coding-mode {
+    position: relative;
+    min-height: 100vh;
+    padding: 0;
+}
+
+.coding-camera {
+    width: 180px !important;
+    height: 135px !important;
+    border-radius: 12px !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        0 0 0 2px rgba(99, 102, 241, 0.4) !important;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+.coding-camera .camera-drag-handle {
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 4px 8px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+    cursor: move;
+    z-index: 10;
+}
+
+.coding-camera .drag-icon {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.7rem;
+}
+
+.coding-camera .drag-hint {
+    display: none;
+}
+
+.coding-camera video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.coding-camera .recording-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    animation: recBlink 1.5s ease-in-out infinite;
+    z-index: 15;
+}
+
+/* Hide the default ::before REC indicator on coding camera */
+.coding-camera::before {
+    display: none !important;
+}

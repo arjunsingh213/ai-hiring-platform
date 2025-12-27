@@ -199,7 +199,302 @@ router.get('/me', adminAuth, async (req, res) => {
     });
 });
 
-// ==================== INTERVIEW REVIEW QUEUE ====================
+// ==================== DASHBOARD METRICS ====================
+
+/**
+ * GET /api/admin/dashboard/stats
+ * Comprehensive dashboard statistics
+ */
+router.get('/dashboard/stats', adminAuth, async (req, res) => {
+    try {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        // User statistics
+        const [totalUsers, usersByRole, usersThisWeek, activeUsers] = await Promise.all([
+            User.countDocuments(),
+            User.aggregate([
+                { $group: { _id: '$role', count: { $sum: 1 } } }
+            ]),
+            User.countDocuments({ createdAt: { $gte: startOfWeek } }),
+            User.countDocuments({ lastActive: { $gte: startOfWeek } })
+        ]);
+
+        // Interview statistics
+        const [interviewStats, interviewsToday, avgScore, flaggedCount] = await Promise.all([
+            Interview.aggregate([
+                {
+                    $group: {
+                        _id: '$adminReview.status',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Interview.countDocuments({ createdAt: { $gte: startOfToday } }),
+            Interview.aggregate([
+                { $match: { 'scoring.overall': { $exists: true } } },
+                { $group: { _id: null, avgScore: { $avg: '$scoring.overall' } } }
+            ]),
+            Interview.countDocuments({
+                'proctoring.flags': { $elemMatch: { severity: 'high' } }
+            })
+        ]);
+
+        // Priority distribution
+        const priorityStats = await Interview.aggregate([
+            { $match: { 'adminReview.status': 'pending_review' } },
+            {
+                $group: {
+                    _id: '$adminReview.priorityLevel',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Approval rate calculation
+        const approvedCount = interviewStats.find(s => s._id === 'approved')?.count || 0;
+        const rejectedCount = interviewStats.find(s => s._id === 'rejected')?.count || 0;
+        const pendingCount = interviewStats.find(s => s._id === 'pending_review')?.count || 0;
+        const totalReviewed = approvedCount + rejectedCount;
+        const approvalRate = totalReviewed > 0 ? Math.round((approvedCount / totalReviewed) * 100) : 0;
+
+        // User growth comparison (this week vs last week)
+        const lastWeekStart = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const usersLastWeek = await User.countDocuments({
+            createdAt: { $gte: lastWeekStart, $lt: startOfWeek }
+        });
+        const userGrowth = usersLastWeek > 0
+            ? Math.round(((usersThisWeek - usersLastWeek) / usersLastWeek) * 100)
+            : (usersThisWeek > 0 ? 100 : 0);
+
+        const jobseekers = usersByRole.find(r => r._id === 'jobseeker')?.count || 0;
+        const recruiters = usersByRole.find(r => r._id === 'recruiter')?.count || 0;
+
+        res.json({
+            success: true,
+            data: {
+                users: {
+                    total: totalUsers,
+                    jobseekers,
+                    recruiters,
+                    newThisWeek: usersThisWeek,
+                    activeThisWeek: activeUsers,
+                    growthPercent: userGrowth
+                },
+                interviews: {
+                    pending: pendingCount,
+                    approved: approvedCount,
+                    rejected: rejectedCount,
+                    todayCount: interviewsToday,
+                    avgScore: avgScore[0]?.avgScore ? Math.round(avgScore[0].avgScore) : 0,
+                    approvalRate,
+                    byPriority: priorityStats
+                },
+                flags: {
+                    critical: priorityStats.find(p => p._id === 'critical')?.count || 0,
+                    high: flaggedCount,
+                    total: priorityStats.reduce((sum, p) => sum + (p.count || 0), 0)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch dashboard statistics'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/dashboard/activity
+ * Recent activity feed
+ */
+router.get('/dashboard/activity', adminAuth, async (req, res) => {
+    try {
+        const { limit = 30 } = req.query;
+
+        // Recent admin actions
+        const recentActions = await AuditLog.find()
+            .sort({ timestamp: -1 })
+            .limit(parseInt(limit))
+            .populate('adminId', 'name email')
+            .lean();
+
+        // Recent interviews submitted (pending review)
+        const recentInterviews = await Interview.find({
+            'adminReview.status': 'pending_review'
+        })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate('userId', 'profile.name email')
+            .select('userId interviewType createdAt adminReview.priorityLevel scoring.overall')
+            .lean();
+
+        // Recent user signups
+        const recentUsers = await User.find()
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .select('profile.name email role createdAt')
+            .lean();
+
+        // Flagged interviews needing attention
+        const flaggedInterviews = await Interview.find({
+            'adminReview.status': 'pending_review',
+            $or: [
+                { 'adminReview.priorityLevel': 'critical' },
+                { 'proctoring.flags': { $elemMatch: { severity: 'high' } } }
+            ]
+        })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .populate('userId', 'profile.name email')
+            .select('userId interviewType createdAt adminReview proctoring.flags')
+            .lean();
+
+        res.json({
+            success: true,
+            data: {
+                recentActions: recentActions.map(action => ({
+                    id: action._id,
+                    action: action.action,
+                    admin: action.adminId?.name || 'System',
+                    target: action.targetType,
+                    timestamp: action.timestamp,
+                    details: action.reason || action.metadata
+                })),
+                recentInterviews: recentInterviews.map(interview => ({
+                    id: interview._id,
+                    candidate: interview.userId?.profile?.name || interview.userId?.email || 'Unknown',
+                    type: interview.interviewType,
+                    priority: interview.adminReview?.priorityLevel || 'normal',
+                    score: interview.scoring?.overall,
+                    submittedAt: interview.createdAt
+                })),
+                recentUsers: recentUsers.map(user => ({
+                    id: user._id,
+                    name: user.profile?.name || 'Not set',
+                    email: user.email,
+                    role: user.role,
+                    joinedAt: user.createdAt
+                })),
+                flaggedInterviews: flaggedInterviews.map(interview => ({
+                    id: interview._id,
+                    candidate: interview.userId?.profile?.name || interview.userId?.email,
+                    flagCount: interview.proctoring?.flags?.length || 0,
+                    priority: interview.adminReview?.priorityLevel,
+                    submittedAt: interview.createdAt
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard activity error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch activity feed'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/dashboard/trends
+ * Analytics trends for charts (last 30 days)
+ */
+router.get('/dashboard/trends', adminAuth, async (req, res) => {
+    try {
+        const daysAgo = 30;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysAgo);
+
+        // Daily interview submissions
+        const interviewTrends = await Interview.aggregate([
+            { $match: { createdAt: { $gte: startDate } } },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                    },
+                    total: { $sum: 1 },
+                    approved: {
+                        $sum: { $cond: [{ $eq: ['$adminReview.status', 'approved'] }, 1, 0] }
+                    },
+                    rejected: {
+                        $sum: { $cond: [{ $eq: ['$adminReview.status', 'rejected'] }, 1, 0] }
+                    },
+                    pending: {
+                        $sum: { $cond: [{ $eq: ['$adminReview.status', 'pending_review'] }, 1, 0] }
+                    }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Daily user signups
+        const userTrends = await User.aggregate([
+            { $match: { createdAt: { $gte: startDate } } },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                    },
+                    count: { $sum: 1 },
+                    jobseekers: {
+                        $sum: { $cond: [{ $eq: ['$role', 'jobseeker'] }, 1, 0] }
+                    },
+                    recruiters: {
+                        $sum: { $cond: [{ $eq: ['$role', 'recruiter'] }, 1, 0] }
+                    }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Fill in missing dates with zeros
+        const dateRange = [];
+        for (let i = daysAgo; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            dateRange.push(date.toISOString().split('T')[0]);
+        }
+
+        const interviewData = dateRange.map(date => {
+            const found = interviewTrends.find(t => t._id === date);
+            return {
+                date,
+                total: found?.total || 0,
+                approved: found?.approved || 0,
+                rejected: found?.rejected || 0,
+                pending: found?.pending || 0
+            };
+        });
+
+        const userData = dateRange.map(date => {
+            const found = userTrends.find(t => t._id === date);
+            return {
+                date,
+                total: found?.count || 0,
+                jobseekers: found?.jobseekers || 0,
+                recruiters: found?.recruiters || 0
+            };
+        });
+
+        res.json({
+            success: true,
+            data: {
+                interviews: interviewData,
+                users: userData
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard trends error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch trends'
+        });
+    }
+})
 
 /**
  * GET /api/admin/interviews/pending
@@ -214,7 +509,18 @@ router.get('/interviews/pending', adminAuth, requirePermission('view_interviews'
             'adminReview.status': 'pending_review'
         };
 
-        if (priority) {
+        // When filtering for critical/flagged, also include high proctoring risk
+        if (priority === 'critical') {
+            // Show interviews that are either:
+            // 1. Marked as critical priority
+            // 2. Have high proctoring risk level
+            // 3. Have multiple proctoring flags
+            query.$or = [
+                { 'adminReview.priorityLevel': 'critical' },
+                { 'proctoring.riskLevel': 'high' },
+                { 'proctoring.totalFlags': { $gte: 3 } }
+            ];
+        } else if (priority) {
             query['adminReview.priorityLevel'] = priority;
         }
 
@@ -425,6 +731,66 @@ router.post('/interviews/:id/confirm-cheating', adminAuth, requirePermission('ap
         res.status(500).json({
             success: false,
             error: 'Failed to confirm cheating'
+        });
+    }
+});
+
+/**
+ * POST /api/admin/interviews/:id/undo-decision
+ * Undo/reset a previous admin decision and return to pending_review
+ */
+router.post('/interviews/:id/undo-decision', adminAuth, requirePermission('approve_interviews'), async (req, res) => {
+    try {
+        const { reason } = req.body;
+
+        const interview = await Interview.findById(req.params.id);
+
+        if (!interview) {
+            return res.status(404).json({
+                success: false,
+                error: 'Interview not found'
+            });
+        }
+
+        // Store previous value for audit log
+        const previousValue = {
+            status: interview.adminReview?.status,
+            finalScore: interview.adminReview?.finalScore,
+            cheatingConfirmed: interview.adminReview?.cheatingConfirmed
+        };
+
+        // Reset to pending review
+        interview.adminReview.status = 'pending_review';
+        interview.adminReview.reviewedBy = null;
+        interview.adminReview.reviewedAt = null;
+        interview.adminReview.cheatingConfirmed = false;
+        interview.adminReview.cheatingDetails = null;
+        interview.adminReview.scoreAdjusted = false;
+        interview.adminReview.adminNotes = reason ? `[Decision undone] ${reason}` : '[Decision undone by admin]';
+        interview.status = 'pending_review';
+        interview.passed = false;
+        interview.resultVisibleToCandidate = false;
+
+        await interview.save();
+
+        await auditLog(req, 'undo_decision', 'interview', interview._id, {
+            previousValue,
+            newValue: { status: 'pending_review' },
+            reason: reason || 'Decision reset by admin',
+            metadata: {
+                undoneBy: req.admin.name || req.admin.email
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Decision undone - interview returned to pending review'
+        });
+    } catch (error) {
+        console.error('Undo decision error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to undo decision'
         });
     }
 });
@@ -1088,6 +1454,235 @@ router.get('/list', adminAuth, requirePermission('manage_admins'), async (req, r
         res.status(500).json({
             success: false,
             error: 'Failed to fetch admins'
+        });
+    }
+});
+
+/**
+ * PUT /api/admin/:id
+ * Update admin details (super_admin only)
+ */
+router.put('/:id', adminAuth, requirePermission('manage_admins'), async (req, res) => {
+    try {
+        const { name, role, permissions } = req.body;
+        const targetAdmin = await Admin.findById(req.params.id);
+
+        if (!targetAdmin) {
+            return res.status(404).json({
+                success: false,
+                error: 'Admin not found'
+            });
+        }
+
+        // Prevent modifying own role
+        if (req.admin._id.toString() === req.params.id && role && role !== targetAdmin.role) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot modify your own role'
+            });
+        }
+
+        const updates = {};
+        if (name) updates.name = name;
+        if (role) {
+            updates.role = role;
+            updates.permissions = permissions || Admin.getDefaultPermissions(role);
+        } else if (permissions) {
+            updates.permissions = permissions;
+        }
+
+        const updatedAdmin = await Admin.findByIdAndUpdate(
+            req.params.id,
+            { $set: updates },
+            { new: true }
+        ).select('email name role isActive lastLogin createdAt');
+
+        await auditLog(req, 'update_admin', 'admin', targetAdmin._id, {
+            previousValue: { name: targetAdmin.name, role: targetAdmin.role },
+            newValue: updates,
+            metadata: { targetEmail: targetAdmin.email }
+        });
+
+        res.json({
+            success: true,
+            message: 'Admin updated',
+            data: updatedAdmin
+        });
+    } catch (error) {
+        console.error('Update admin error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update admin'
+        });
+    }
+});
+
+/**
+ * POST /api/admin/:id/toggle-status
+ * Activate or deactivate admin (super_admin only)
+ */
+router.post('/:id/toggle-status', adminAuth, requirePermission('manage_admins'), async (req, res) => {
+    try {
+        const targetAdmin = await Admin.findById(req.params.id);
+
+        if (!targetAdmin) {
+            return res.status(404).json({
+                success: false,
+                error: 'Admin not found'
+            });
+        }
+
+        // Prevent deactivating yourself
+        if (req.admin._id.toString() === req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot deactivate your own account'
+            });
+        }
+
+        targetAdmin.isActive = !targetAdmin.isActive;
+        await targetAdmin.save();
+
+        await auditLog(req, targetAdmin.isActive ? 'activate_admin' : 'deactivate_admin', 'admin', targetAdmin._id, {
+            newValue: { isActive: targetAdmin.isActive },
+            metadata: { targetEmail: targetAdmin.email }
+        });
+
+        res.json({
+            success: true,
+            message: `Admin ${targetAdmin.isActive ? 'activated' : 'deactivated'}`,
+            data: { isActive: targetAdmin.isActive }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to toggle admin status'
+        });
+    }
+});
+
+/**
+ * POST /api/admin/:id/force-reset-password
+ * Force password reset for admin (super_admin only)
+ */
+router.post('/:id/force-reset-password', adminAuth, requirePermission('manage_admins'), async (req, res) => {
+    try {
+        const targetAdmin = await Admin.findById(req.params.id);
+
+        if (!targetAdmin) {
+            return res.status(404).json({
+                success: false,
+                error: 'Admin not found'
+            });
+        }
+
+        // Generate temporary password
+        const tempPassword = `Reset${Date.now()}!`;
+        targetAdmin.password = tempPassword;
+        targetAdmin.mustResetPassword = true;
+        await targetAdmin.save();
+
+        await auditLog(req, 'force_reset_password', 'admin', targetAdmin._id, {
+            metadata: { targetEmail: targetAdmin.email }
+        });
+
+        res.json({
+            success: true,
+            message: 'Password reset initiated',
+            data: { tempPassword } // In production, send via secure channel
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reset password'
+        });
+    }
+});
+
+/**
+ * DELETE /api/admin/:id
+ * Delete admin account (super_admin only)
+ */
+router.delete('/:id', adminAuth, requirePermission('manage_admins'), async (req, res) => {
+    try {
+        const targetAdmin = await Admin.findById(req.params.id);
+
+        if (!targetAdmin) {
+            return res.status(404).json({
+                success: false,
+                error: 'Admin not found'
+            });
+        }
+
+        // Prevent deleting yourself
+        if (req.admin._id.toString() === req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot delete your own account'
+            });
+        }
+
+        // Prevent deleting last super_admin
+        if (targetAdmin.role === 'super_admin') {
+            const superAdminCount = await Admin.countDocuments({ role: 'super_admin' });
+            if (superAdminCount <= 1) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Cannot delete the last super admin'
+                });
+            }
+        }
+
+        await Admin.findByIdAndDelete(req.params.id);
+
+        await auditLog(req, 'delete_admin', 'admin', targetAdmin._id, {
+            metadata: { targetEmail: targetAdmin.email, deletedRole: targetAdmin.role }
+        });
+
+        res.json({
+            success: true,
+            message: 'Admin deleted'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete admin'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/:id/activity
+ * Get specific admin's activity log
+ */
+router.get('/:id/activity', adminAuth, requirePermission('manage_admins'), async (req, res) => {
+    try {
+        const { page = 1, limit = 20 } = req.query;
+
+        const logs = await AuditLog.find({ adminId: req.params.id })
+            .sort({ timestamp: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .lean();
+
+        const total = await AuditLog.countDocuments({ adminId: req.params.id });
+
+        res.json({
+            success: true,
+            data: {
+                logs,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch admin activity'
         });
     }
 });

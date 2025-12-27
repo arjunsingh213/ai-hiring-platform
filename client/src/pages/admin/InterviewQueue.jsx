@@ -116,11 +116,25 @@ const InterviewQueue = ({ flaggedOnly = false }) => {
                 {interviews.length === 0 ? (
                     <div className="admin-empty-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                            <polyline points="22 4 12 14.01 9 11.01" />
+                            {flaggedOnly ? (
+                                <>
+                                    <path d="M9 12l2 2 4-4" />
+                                    <circle cx="12" cy="12" r="10" />
+                                </>
+                            ) : (
+                                <>
+                                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </>
+                            )}
                         </svg>
-                        <h3>No Pending Reviews</h3>
-                        <p>All interviews have been reviewed</p>
+                        <h3>{flaggedOnly ? 'No Flagged Interviews' : 'No Pending Reviews'}</h3>
+                        <p>
+                            {flaggedOnly
+                                ? 'No interviews with suspicious activity or high proctoring flags detected'
+                                : 'All interviews have been reviewed'
+                            }
+                        </p>
                     </div>
                 ) : (
                     <>

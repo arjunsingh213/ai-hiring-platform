@@ -36,14 +36,23 @@ const useFaceDetection = (videoRef, enabled = true) => {
     const loadModels = useCallback(async () => {
         try {
             setLoading(true);
+            setError(null);
 
             // Dynamic import face-api.js
             const faceapi = await import('face-api.js');
             faceApiRef.current = faceapi;
 
+            // Models are served from public/models folder
             const MODEL_URL = '/models';
 
-            // Load required models
+            // Verify models exist before loading
+            const manifestResponse = await fetch(`${MODEL_URL}/tiny_face_detector_model-weights_manifest.json`);
+            if (!manifestResponse.ok) {
+                throw new Error(`Model manifest not found (${manifestResponse.status})`);
+            }
+
+            // Load the face detection models
+            console.log('🔄 Loading face detection models...');
             await Promise.all([
                 faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                 faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL)
@@ -51,11 +60,12 @@ const useFaceDetection = (videoRef, enabled = true) => {
 
             setModelsLoaded(true);
             setLoading(false);
-            console.log('✅ Face detection models loaded');
+            console.log('✅ Face detection models loaded successfully');
         } catch (err) {
             console.error('❌ Failed to load face detection models:', err);
-            setError('Face detection models failed to load');
+            setError('Face detection models failed to load: ' + err.message);
             setLoading(false);
+            // Don't set faceDetected to true on error - let the proctoring component handle this
         }
     }, []);
 
