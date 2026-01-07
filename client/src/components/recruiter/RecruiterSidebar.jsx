@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import '../jobseeker/Sidebar.css';
+import froscelLogo from '../../assets/froscel-logo.png';
 
 const RecruiterSidebar = () => {
     const navItems = [
@@ -31,8 +32,7 @@ const RecruiterSidebar = () => {
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
-                <h2 className="logo-gradient">AI Interview</h2>
-                <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>Recruiter</p>
+                <img src={froscelLogo} alt="Froscel" className="sidebar-logo" />
             </div>
             <nav className="sidebar-nav">
                 {navItems.map((item) => (

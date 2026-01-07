@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import { fadeIn, TIMINGS, EASE_OUT } from '../animations/animations';
 import styles from './Footer.module.css';
 
+// Import Froscel logo
+import froscelLogo from '../../../assets/froscel-logo.png';
+
 const Footer = () => {
     const currentYear = new Date().getFullYear();
 
@@ -44,19 +47,12 @@ const Footer = () => {
                     {/* Brand Column */}
                     <div className={styles.brand}>
                         <Link to="/" className={styles.logo}>
-                            <div className={styles.logoIcon}>
-                                <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                                    <rect width="32" height="32" rx="8" fill="url(#footerLogoGradient)" />
-                                    <path d="M9 16L14 21L23 11" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <defs>
-                                        <linearGradient id="footerLogoGradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                                            <stop stopColor="#0090FF" />
-                                            <stop offset="1" stopColor="#4CC8FF" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                            <span className={styles.logoText}>AI Interview</span>
+                            <img
+                                src={froscelLogo}
+                                alt="Froscel Logo"
+                                className={styles.logoIcon}
+                            />
+                            <span className={styles.logoText}>Froscel</span>
                         </Link>
                         <p className={styles.description}>
                             AI-powered hiring platform that helps companies find the best talent through
@@ -129,7 +125,7 @@ const Footer = () => {
 
                 <div className={styles.bottom}>
                     <p className={styles.copyright}>
-                        © {currentYear} AI Interview. All rights reserved.
+                        © {currentYear} Froscel. All rights reserved.
                     </p>
                 </div>
             </div>

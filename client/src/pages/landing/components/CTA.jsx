@@ -27,15 +27,15 @@ const CTA = () => {
                             className={styles.title}
                             variants={item}
                         >
-                            Ready to transform<br />
-                            your hiring process?
+                            Join the beta and help<br />
+                            shape the future of hiring
                         </motion.h2>
                         <motion.p
                             className={styles.subtitle}
                             variants={item}
                         >
-                            Join thousands of companies using AI Interview to find
-                            the best talent. Start your free trial today.
+                            Get early access to AI-powered interviews, verified skill assessments,
+                            and advanced proctoring. Limited beta spots available.
                         </motion.p>
                         <motion.div
                             className={styles.buttons}
@@ -56,7 +56,7 @@ const CTA = () => {
                             </motion.div>
                         </motion.div>
                         <p className={styles.note}>
-                            No credit card required • Free 14-day trial • Cancel anytime
+                            Free beta access • Early adopter benefits • No credit card required
                         </p>
                     </motion.div>
 

@@ -1906,3 +1906,405 @@
 .coding-camera::before {
     display: none !important;
 }
+
+/* Round Indicator Badge */
+.round-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: #a78bfa;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+/* Blueprint Info in Loading State */
+.blueprint-info {
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+.blueprint-info strong {
+    color: #60a5fa;
+}
+
+/* Interview Header with Round Info */
+.interview-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Question Counter Style */
+.question-counter {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENHANCED MOBILE-FIRST RESPONSIVE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Tablet (768px - 1024px) - Side by side but smaller */
+@media (max-width: 1024px) {
+    .onboarding-interview {
+        padding: 16px 20px;
+    }
+
+    .interview-content {
+        grid-template-columns: 200px 1fr;
+        gap: 16px;
+    }
+
+    .camera-section {
+        height: 180px;
+    }
+
+    .question-section {
+        padding: 20px;
+    }
+
+    .question-text {
+        font-size: 1.1rem;
+    }
+
+    .round-badge {
+        padding: 8px 16px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile (< 768px) - Stack vertically */
+@media (max-width: 768px) {
+    .onboarding-interview {
+        padding: 12px;
+        min-height: 100vh;
+    }
+
+    /* Stack layout vertically */
+    .interview-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Compact Header */
+    .interview-header {
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        border-radius: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .header-left {
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .header-right {
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .round-badge {
+        padding: 6px 12px;
+        font-size: 0.7rem;
+    }
+
+    .question-counter {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+    }
+
+    .timer {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .skip-interview-btn {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+
+    /* Mobile Camera - Compact */
+    .camera-section {
+        width: 100%;
+        height: 140px;
+        border-radius: 14px;
+        position: relative;
+        order: 1;
+    }
+
+    .camera-section::before {
+        font-size: 0.55rem;
+        padding: 3px 6px;
+        top: 6px;
+        left: 6px;
+    }
+
+    .camera-status {
+        font-size: 0.55rem;
+        padding: 3px 6px;
+        bottom: 6px;
+        left: 6px;
+    }
+
+    /* Question Section - Mobile Optimized */
+    .question-section {
+        padding: 16px;
+        border-radius: 14px;
+        order: 2;
+    }
+
+    .question-header {
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .question-header .question-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .question-label {
+        font-size: 0.65rem;
+        padding: 5px 10px;
+    }
+
+    .skill-badge {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+    }
+
+    /* Smaller, readable question text */
+    .question-text {
+        font-size: 0.95rem !important;
+        line-height: 1.5;
+        margin: 12px 0;
+    }
+
+    /* Compact Answer Card */
+    .answer-card {
+        padding: 12px !important;
+        border-radius: 12px !important;
+        grid-column: 1 !important;
+    }
+
+    .answer-input {
+        min-height: 60px !important;
+        padding: 10px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .answer-footer {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin-top: 10px !important;
+        justify-content: space-between !important;
+    }
+
+    .answer-footer .btn {
+        flex: 1 !important;
+        min-width: 100px !important;
+        padding: 8px 12px !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* Speak Button - Compact */
+    .mic-btn {
+        padding: 8px 14px !important;
+        font-size: 0.75rem !important;
+        border-radius: 20px !important;
+        gap: 6px !important;
+    }
+
+    /* Transcript Mobile */
+    .speech-transcript {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .listening-indicator {
+        font-size: 0.7rem;
+    }
+
+    .transcript-text {
+        font-size: 0.8rem;
+    }
+
+    /* Progress Bar Compact */
+    .progress-bar {
+        height: 4px;
+        margin-bottom: 12px;
+    }
+
+    /* Results Mobile */
+    .results-card {
+        margin: 8px;
+        padding: 16px;
+        max-width: 100%;
+    }
+
+    .results-card.pending-review {
+        padding: 24px 16px;
+    }
+
+    .pending-icon {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 16px;
+    }
+
+    .pending-icon svg {
+        width: 35px;
+        height: 35px;
+    }
+
+    .results-card.pending-review h2 {
+        font-size: 1.25rem;
+    }
+
+    .pending-message {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .next-steps-card {
+        padding: 16px;
+    }
+
+    .next-steps-list li {
+        font-size: 0.85rem;
+        padding: 10px 0;
+    }
+}
+
+/* Small Mobile (< 480px) - Ultra Compact */
+@media (max-width: 480px) {
+    .onboarding-interview {
+        padding: 8px;
+    }
+
+    .interview-header {
+        padding: 10px 12px;
+        margin-bottom: 10px;
+    }
+
+    .round-badge {
+        padding: 5px 10px;
+        font-size: 0.6rem;
+    }
+
+    .question-counter {
+        font-size: 0.65rem;
+        padding: 4px 8px;
+    }
+
+    .timer {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+
+    .skip-interview-btn {
+        padding: 5px 10px;
+        font-size: 0.65rem;
+    }
+
+    /* Ultra compact camera */
+    .camera-section {
+        height: 120px;
+        border-radius: 12px;
+    }
+
+    .camera-section::before {
+        font-size: 0.5rem;
+        padding: 2px 5px;
+    }
+
+    /* Compact question section */
+    .question-section {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .question-header .question-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .question-text {
+        font-size: 0.875rem !important;
+    }
+
+    .answer-card {
+        padding: 8px !important;
+    }
+
+    .answer-input {
+        min-height: 50px !important;
+        font-size: 0.75rem !important;
+        padding: 8px !important;
+    }
+
+    .answer-footer .btn {
+        padding: 6px 10px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .mic-btn {
+        padding: 6px 12px !important;
+        font-size: 0.7rem !important;
+    }
+
+    /* Results ultra compact */
+    .results-card {
+        padding: 12px;
+        margin: 6px;
+    }
+
+    .score-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .score-item {
+        padding: 10px 6px;
+    }
+
+    .score-num {
+        font-size: 1.1rem;
+    }
+
+    .score-title {
+        font-size: 0.55rem;
+    }
+
+    .pending-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .results-card.pending-review h2 {
+        font-size: 1.1rem;
+    }
+
+    .pending-message {
+        font-size: 0.85rem;
+    }
+}

@@ -1,33 +1,55 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { heroCopy, heroVisual, buttonMicro, useHeroParallax } from '../animations/animations';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { heroCopy, buttonMicro } from '../animations/animations';
 import styles from './Hero.module.css';
-import SplineHero from './SplineHero';
 
 // Import assets from existing landing assets folder
 import heroDashboardImg from '../../landing/assets/hero-dashboard-1600x900.webp';
 
-/**
- * Hero Section with Spline 3D Animation
- * 
- * To use Spline animation:
- * 1. Set useSpline to true (below)
- * 2. Update splineSceneUrl with your Spline scene URL
- * 
- * The scene URL should be from: spline.design → Export → Web Content
- */
-
-// CONFIGURATION
-const USE_SPLINE_ANIMATION = true; // Set to false to use static image instead
-// Using locally hosted splinecode file for potential watermark bypass
-const SPLINE_SCENE_URL = '/scene.splinecode';
+// Register GSAP plugin
+gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
-    const { y, opacity } = useHeroParallax();
+    const heroRef = useRef(null);
+    const dashboardRef = useRef(null);
+
+    // GSAP Pixaai-style animation
+    useEffect(() => {
+        if (dashboardRef.current && heroRef.current) {
+            // Set initial state - tilted perspective like Pixaai
+            gsap.set(dashboardRef.current, {
+                transformPerspective: 1200,
+                rotateX: 70,
+                scale: 0.8,
+                y: 50,
+                transformOrigin: 'bottom center',
+            });
+
+            // Animate on scroll - straightens the tilted dashboard
+            gsap.to(dashboardRef.current, {
+                rotateX: 0,
+                scale: 1,
+                y: 0,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: heroRef.current,
+                    start: window.innerWidth > 1024 ? 'top 95%' : 'top 70%',
+                    end: 'bottom bottom',
+                    scrub: 1,
+                }
+            });
+        }
+
+        return () => {
+            ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+        };
+    }, []);
 
     return (
-        <section className={styles.hero} aria-labelledby="hero-heading">
+        <section className={styles.hero} ref={heroRef} aria-labelledby="hero-heading">
             <div className={styles.container}>
                 {/* Hero Copy */}
                 <motion.div
@@ -37,14 +59,14 @@ const Hero = () => {
                     whileInView="show"
                     viewport={{ once: true, amount: 0.15 }}
                 >
-                    <span className={styles.badge}>AI-Powered Hiring Platform</span>
+                    <span className={styles.badge}>AI-Powered Talent Platform</span>
                     <h1 id="hero-heading" className={styles.title}>
-                        Hire on skills,<br />
-                        <span className={styles.gradient}>not just CVs</span>
+                        Skills meet<br />
+                        <span className={styles.gradient}>opportunity</span>
                     </h1>
                     <p className={styles.subtitle}>
-                        AI Talent Passport, adaptive interviews, and live code evaluations —
-                        all in one platform. Find the best talent in minutes, not months.
+                        Build your AI Talent Passport, ace adaptive interviews, or find verified talent.
+                        The platform that connects skills with opportunity — fairly and efficiently.
                     </p>
                     <div className={styles.cta}>
                         <motion.div {...buttonMicro}>
@@ -63,67 +85,39 @@ const Hero = () => {
                     </div>
                     <div className={styles.stats}>
                         <div className={styles.stat}>
-                            <span className={styles.statNumber}>10,000+</span>
-                            <span className={styles.statLabel}>Interviews Completed</span>
+                            <span className={styles.statNumber}>Beta Launch</span>
+                            <span className={styles.statLabel}>Early Access Available</span>
                         </div>
                         <div className={styles.statDivider} />
                         <div className={styles.stat}>
-                            <span className={styles.statNumber}>85%</span>
-                            <span className={styles.statLabel}>Time Saved</span>
+                            <span className={styles.statNumber}>9+ Languages</span>
+                            <span className={styles.statLabel}>Live Code Evaluation</span>
                         </div>
                         <div className={styles.statDivider} />
                         <div className={styles.stat}>
-                            <span className={styles.statNumber}>500+</span>
-                            <span className={styles.statLabel}>Companies Trust Us</span>
+                            <span className={styles.statNumber}>AI-Powered</span>
+                            <span className={styles.statLabel}>Cheating Detection</span>
                         </div>
                     </div>
                 </motion.div>
+            </div>
 
-                {/* Hero Visual - Spline 3D or Static Image */}
-                <motion.div
-                    className={styles.heroVisual}
-                    variants={heroVisual}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true }}
+            {/* Dashboard Preview - Pixaai Style with 3D Perspective Animation */}
+            <div className={styles.dashboardContainer}>
+                <div className={styles.dashboardGradient} aria-hidden="true" />
+                <div
+                    className={styles.dashboardWrapper}
+                    ref={dashboardRef}
                 >
-                    {USE_SPLINE_ANIMATION ? (
-                        // 3D Spline Animation
-                        <SplineHero
-                            sceneUrl={SPLINE_SCENE_URL}
-                            className={styles.splineWrapper}
+                    <div className={styles.animatedBorder}>
+                        <img
+                            src={heroDashboardImg}
+                            alt="AI Interview platform dashboard showing candidate evaluations and talent passports"
+                            className={styles.dashboardImage}
+                            loading="eager"
                         />
-                    ) : (
-                        // Static Dashboard Image (fallback)
-                        <motion.div
-                            className={styles.imageWrapper}
-                            style={{ y, opacity }}
-                            whileHover="hover"
-                        >
-                            <img
-                                src={heroDashboardImg}
-                                alt="AI Interview platform dashboard showing candidate evaluations and talent passports"
-                                className={styles.heroImage}
-                                loading="eager"
-                            />
-                            {/* Floating cards */}
-                            <div className={styles.floatingCard + ' ' + styles.card1}>
-                                <div className={styles.cardIcon}>✓</div>
-                                <div className={styles.cardText}>
-                                    <span className={styles.cardTitle}>Interview Complete</span>
-                                    <span className={styles.cardSubtitle}>Score: 92/100</span>
-                                </div>
-                            </div>
-                            <div className={styles.floatingCard + ' ' + styles.card2}>
-                                <div className={styles.cardIcon}>⚡</div>
-                                <div className={styles.cardText}>
-                                    <span className={styles.cardTitle}>AI Talent Passport</span>
-                                    <span className={styles.cardSubtitle}>Level 5 - Expert</span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </motion.div>
+                    </div>
+                </div>
             </div>
 
             {/* Background gradient orbs */}
@@ -134,4 +128,3 @@ const Hero = () => {
 };
 
 export default Hero;
-

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
-import './AuthPages.css';
+import './AuthPage.css';
+import froscelLogo from '../../assets/froscel-logo.png';
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -87,6 +88,7 @@ const LoginPage = () => {
             <div className="auth-container">
                 <div className="auth-card">
                     <div className="auth-header">
+                        <img src={froscelLogo} alt="Froscel" className="auth-logo" />
                         <h1>Login</h1>
                         <p>Welcome back! Sign in to continue</p>
                     </div>

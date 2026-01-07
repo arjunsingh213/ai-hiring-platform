@@ -339,9 +339,20 @@
 
 /* Default Structure */
 .default-structure {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.struct-intro {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.struct-items-row {
+    display: flex;
     gap: 14px;
+    flex-wrap: wrap;
 }
 
 .struct-item {
@@ -353,6 +364,8 @@
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
+    flex: 1;
+    min-width: 200px;
 }
 
 .struct-icon {

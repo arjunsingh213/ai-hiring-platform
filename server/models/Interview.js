@@ -24,6 +24,46 @@ const interviewSchema = new mongoose.Schema({
         required: true
     },
 
+    // Domain-Specific Interview Blueprint
+    blueprint: {
+        domain: String, // Technical, Semi-Technical, Non-Technical, etc.
+        secondaryDomain: String,
+        roleCategory: String, // backend_developer, marketing_manager, etc.
+        totalRounds: Number,
+        totalQuestions: Number,
+        hasCodingRound: Boolean,
+        programmingLanguages: [String],
+        keySkills: [String],
+        experienceLevel: String, // entry, mid, senior
+        rounds: [{
+            roundNumber: Number,
+            type: String, // technical_fundamentals, deep_dive, behavioral_hr, etc.
+            displayName: String,
+            icon: String, // Emoji for UI
+            difficulty: String, // easy, medium, medium-hard, hard
+            questionCount: Number,
+            startQuestionNumber: Number,
+            endQuestionNumber: Number,
+            description: String,
+            tips: [String],
+            focus: [String], // Skills being assessed
+            isCodingRound: Boolean,
+            // Round results
+            score: Number,
+            completed: Boolean,
+            completedAt: Date
+        }],
+        generatedAt: Date
+    },
+    currentRoundNumber: {
+        type: Number,
+        default: 1
+    },
+    currentQuestionInRound: {
+        type: Number,
+        default: 0
+    },
+
     // NEW: Match score from JD-resume matching (Gemma 2 9B)
     matchScore: {
         overall: Number,

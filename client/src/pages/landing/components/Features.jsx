@@ -13,28 +13,28 @@ const features = [
     {
         icon: '🎯',
         title: 'AI Talent Passport',
-        description: 'Unique skill verification system that creates a portable credential for candidates, showcasing their verified abilities across domains.',
+        description: 'Candidates build verified skill portfolios through AI assessments. Recruiters access portable credentials with confidence.',
         image: passportImg,
         color: '#0090FF'
     },
     {
-        icon: '🎤',
-        title: 'Adaptive AI Interviews',
-        description: 'Real-time AI-powered interviews that adapt to candidate responses, ensuring fair and comprehensive skill assessment.',
+        icon: '🛡️',
+        title: 'Advanced Proctoring',
+        description: 'AI monitors face presence, detects multiple people, tracks tab switching, and records violations with timestamps for review.',
         image: workSampleImg,
         color: '#10B981'
     },
     {
         icon: '💻',
         title: 'Live Code Evaluation',
-        description: 'Integrated coding IDE with AI analysis for technical role evaluations. Real execution in 50+ programming languages.',
+        description: 'In-browser Monaco Editor with real execution in 9+ languages including Python, Java, C++, Go, and TypeScript.',
         image: codeIdeImg,
         color: '#6366F1'
     },
     {
-        icon: '📊',
-        title: 'Recruiter Dashboard',
-        description: 'Comprehensive analytics and pipeline management. View candidate scores, track progress, and make data-driven hiring decisions.',
+        icon: '🤖',
+        title: 'Adaptive AI Interviews',
+        description: 'Dynamic questions that adapt to candidate responses. Fair assessments with detailed performance insights for recruiters.',
         image: recruiterReportImg,
         color: '#F59E0B'
     }
@@ -54,12 +54,12 @@ const Features = () => {
                 >
                     <span className={styles.label}>Features</span>
                     <h2 id="features-heading" className={styles.title}>
-                        Everything you need to<br />
-                        <span className={styles.gradient}>hire smarter</span>
+                        AI-powered platform to<br />
+                        <span className={styles.gradient}>match talent with opportunity</span>
                     </h2>
                     <p className={styles.subtitle}>
-                        A complete hiring solution powered by AI. From initial screening to final evaluation,
-                        we help you find the best talent efficiently.
+                        Whether you're finding your next role or building your dream team,
+                        our AI-driven platform creates fair, efficient, and verified connections.
                     </p>
                 </motion.div>
 

@@ -4,80 +4,169 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import './InterviewReadiness.css';
 
-// More reliable face detection using brightness variance and motion
-// Works for ALL skin tones and lighting conditions
+// STRICT face detection - requires proper face posture, centering, and full visibility
+// Will NOT pass if face is tilted, partial, or not properly positioned
 const detectFaceInImage = (imageData, width, height) => {
     const data = imageData.data;
 
-    // Using face detection region (center 60% of image)
-    const startX = Math.floor(width * 0.2);
-    const endX = Math.floor(width * 0.8);
-    const startY = Math.floor(height * 0.1);
-    const endY = Math.floor(height * 0.7);
+    // Define oval face region (center area where face should be positioned)
+    const centerX = Math.floor(width * 0.5);
+    const centerY = Math.floor(height * 0.4); // Slightly above center for typical face position
+    const ovalWidth = Math.floor(width * 0.35);
+    const ovalHeight = Math.floor(height * 0.45);
 
-    // Method 1: Check for brightness variance (faces have varied brightness due to features)
+    // Detection regions: top (forehead), middle (eyes/nose), bottom (mouth/chin)
+    const regions = {
+        forehead: { startY: centerY - ovalHeight * 0.45, endY: centerY - ovalHeight * 0.15 },
+        eyes: { startY: centerY - ovalHeight * 0.15, endY: centerY + ovalHeight * 0.05 },
+        nose: { startY: centerY + ovalHeight * 0.05, endY: centerY + ovalHeight * 0.25 },
+        mouth: { startY: centerY + ovalHeight * 0.25, endY: centerY + ovalHeight * 0.45 }
+    };
+
+    const startX = centerX - ovalWidth;
+    const endX = centerX + ovalWidth;
+
+    // 1. CHECK BRIGHTNESS DISTRIBUTION - face should have proper lighting
     let brightPixels = 0;
     let darkPixels = 0;
     let midPixels = 0;
     let totalSampled = 0;
 
-    // Sample every 4th pixel for speed
-    for (let y = startY; y < endY; y += 4) {
+    for (let y = regions.forehead.startY; y < regions.mouth.endY; y += 4) {
         for (let x = startX; x < endX; x += 4) {
-            const idx = (y * width + x) * 4;
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
             const r = data[idx];
             const g = data[idx + 1];
             const b = data[idx + 2];
-
-            // Calculate brightness (luminance)
             const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
 
-            if (brightness > 170) brightPixels++;
-            else if (brightness < 85) darkPixels++;
+            if (brightness > 180) brightPixels++;
+            else if (brightness < 70) darkPixels++;
             else midPixels++;
-
             totalSampled++;
         }
     }
 
-    // A face region should have a mix of brightnesses (not uniform like a wall or empty space)
+    if (totalSampled < 100) return false; // Not enough pixels sampled
+
     const brightRatio = brightPixels / totalSampled;
     const darkRatio = darkPixels / totalSampled;
     const midRatio = midPixels / totalSampled;
 
-    // Check for reasonable variance - face has mix of bright/mid/dark areas
-    const hasVariance = midRatio > 0.15 && (brightRatio > 0.05 || darkRatio > 0.05);
+    // Face should have good mid-range brightness (not too dark, not too bright)
+    const hasProperLighting = midRatio > 0.25 && brightRatio < 0.7 && darkRatio < 0.7;
+    if (!hasProperLighting) return false;
 
-    // Method 2: Edge detection - faces have more edges than blank backgrounds
-    let edgeCount = 0;
-    const threshold = 30;
+    // 2. CHECK FOR EDGES IN SPECIFIC FACE REGIONS
+    // Eyes region should have significant horizontal edges
+    // Mouth region should have edges too
+    const edgeThreshold = 25;
+    let eyeEdges = 0, noseEdges = 0, mouthEdges = 0;
+    let eyeSamples = 0, noseSamples = 0, mouthSamples = 0;
 
-    for (let y = startY + 5; y < endY - 5; y += 6) {
-        for (let x = startX + 5; x < endX - 5; x += 6) {
-            const idx = (y * width + x) * 4;
-            const idxRight = (y * width + (x + 5)) * 4;
-            const idxDown = ((y + 5) * width + x) * 4;
+    const checkEdges = (startY, endY) => {
+        let edges = 0, samples = 0;
+        for (let y = startY; y < endY; y += 5) {
+            for (let x = startX + 10; x < endX - 10; x += 5) {
+                if (x < 0 || x >= width || y < 0 || y >= height) continue;
+                const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
+                const idxRight = (Math.floor(y) * width + Math.floor(x + 5)) * 4;
+                const idxDown = (Math.floor(y + 5) * width + Math.floor(x)) * 4;
 
-            const curr = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-            const right = (data[idxRight] + data[idxRight + 1] + data[idxRight + 2]) / 3;
-            const down = (data[idxDown] + data[idxDown + 1] + data[idxDown + 2]) / 3;
+                if (idxRight >= data.length || idxDown >= data.length) continue;
 
-            if (Math.abs(curr - right) > threshold || Math.abs(curr - down) > threshold) {
-                edgeCount++;
+                const curr = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                const right = (data[idxRight] + data[idxRight + 1] + data[idxRight + 2]) / 3;
+                const down = (data[idxDown] + data[idxDown + 1] + data[idxDown + 2]) / 3;
+
+                if (Math.abs(curr - right) > edgeThreshold || Math.abs(curr - down) > edgeThreshold) {
+                    edges++;
+                }
+                samples++;
+            }
+        }
+        return { edges, samples };
+    };
+
+    const eyeResult = checkEdges(regions.eyes.startY, regions.eyes.endY);
+    const noseResult = checkEdges(regions.nose.startY, regions.nose.endY);
+    const mouthResult = checkEdges(regions.mouth.startY, regions.mouth.endY);
+
+    eyeEdges = eyeResult.edges;
+    eyeSamples = eyeResult.samples;
+    noseEdges = noseResult.edges;
+    noseSamples = noseResult.samples;
+    mouthEdges = mouthResult.edges;
+    mouthSamples = mouthResult.samples;
+
+    // Eyes should have significant edges (eyebrows, eyes themselves)
+    const eyeEdgeRatio = eyeSamples > 0 ? eyeEdges / eyeSamples : 0;
+    const noseEdgeRatio = noseSamples > 0 ? noseEdges / noseSamples : 0;
+    const mouthEdgeRatio = mouthSamples > 0 ? mouthEdges / mouthSamples : 0;
+
+    // STRICT: Require edges in MULTIPLE facial feature regions
+    // Eye region must have edges (>8%), and at least one of nose/mouth must have edges (>5%)
+    const hasEyeFeatures = eyeEdgeRatio > 0.08;
+    const hasNoseOrMouth = noseEdgeRatio > 0.05 || mouthEdgeRatio > 0.05;
+
+    if (!hasEyeFeatures) return false;
+    if (!hasNoseOrMouth) return false;
+
+    // 3. CHECK FOR FACE SYMMETRY (left vs right side should be similar)
+    const leftHalf = { brightness: 0, count: 0 };
+    const rightHalf = { brightness: 0, count: 0 };
+
+    for (let y = regions.eyes.startY; y < regions.mouth.endY; y += 6) {
+        for (let x = startX; x < centerX; x += 6) {
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
+            leftHalf.brightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+            leftHalf.count++;
+        }
+        for (let x = centerX; x < endX; x += 6) {
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
+            rightHalf.brightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+            rightHalf.count++;
+        }
+    }
+
+    const leftAvg = leftHalf.count > 0 ? leftHalf.brightness / leftHalf.count : 0;
+    const rightAvg = rightHalf.count > 0 ? rightHalf.brightness / rightHalf.count : 0;
+    const symmetryDiff = Math.abs(leftAvg - rightAvg);
+
+    // Face should be relatively symmetric (not too tilted) - allow up to 40 brightness difference
+    const isSymmetric = symmetryDiff < 40;
+
+    // 4. CHECK CENTER MASS - the "face" content should be centered
+    let centerMassX = 0, centerMassY = 0, massCount = 0;
+
+    for (let y = regions.forehead.startY; y < regions.mouth.endY; y += 4) {
+        for (let x = startX; x < endX; x += 4) {
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
+            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+            // Count medium brightness pixels as "face content"
+            if (brightness > 50 && brightness < 220) {
+                centerMassX += x;
+                centerMassY += y;
+                massCount++;
             }
         }
     }
 
-    const regionWidth = (endX - startX) / 6;
-    const regionHeight = (endY - startY) / 6;
-    const maxEdges = regionWidth * regionHeight;
-    const edgeRatio = edgeCount / maxEdges;
+    if (massCount < 50) return false; // Not enough face content
 
-    // Face has edges (from eyes, nose, mouth, etc.) - ratio should be > 5%
-    const hasEdges = edgeRatio > 0.05;
+    const avgMassX = centerMassX / massCount;
+    const avgMassY = centerMassY / massCount;
 
-    // Return true if EITHER method detects a face-like region
-    return hasVariance || hasEdges;
+    // Center of mass should be within 20% of the expected center
+    const isCentered = Math.abs(avgMassX - centerX) < width * 0.15 &&
+        Math.abs(avgMassY - centerY) < height * 0.15;
+
+    // FINAL VERDICT: All checks must pass
+    return hasProperLighting && hasEyeFeatures && hasNoseOrMouth && isSymmetric && isCentered;
 };
 
 
@@ -681,26 +770,37 @@ const InterviewReadiness = ({
                             </div>
                         ) : (
                             <div className="default-structure">
-                                <div className="struct-item">
-                                    <div className="struct-icon tech">T</div>
-                                    <div className="struct-info">
-                                        <strong>Technical</strong>
-                                        <span>Skills & problem-solving</span>
+                                <div className="struct-intro">
+                                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '0', textAlign: 'left' }}>
+                                        Your interview rounds will be customized based on your resume and domain
+                                    </p>
+                                </div>
+                                <div className="struct-items-row">
+                                    <div className="struct-item">
+                                        <div className="struct-icon tech">1</div>
+                                        <div className="struct-info">
+                                            <strong>Core Skills Assessment</strong>
+                                            <span>Based on your domain expertise</span>
+                                        </div>
+                                    </div>
+                                    <div className="struct-item">
+                                        <div className="struct-icon behav">2</div>
+                                        <div className="struct-info">
+                                            <strong>Deep Dive / Scenario</strong>
+                                            <span>Applied problem solving</span>
+                                        </div>
+                                    </div>
+                                    <div className="struct-item">
+                                        <div className="struct-icon situ">3</div>
+                                        <div className="struct-info">
+                                            <strong>HR & Communication</strong>
+                                            <span>Soft skills & collaboration</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="struct-item">
-                                    <div className="struct-icon behav">B</div>
-                                    <div className="struct-info">
-                                        <strong>Behavioral</strong>
-                                        <span>Work style & teamwork</span>
-                                    </div>
-                                </div>
-                                <div className="struct-item">
-                                    <div className="struct-icon situ">S</div>
-                                    <div className="struct-info">
-                                        <strong>Situational</strong>
-                                        <span>Real-world scenarios</span>
-                                    </div>
+                                <div className="coding-note" style={{ marginTop: '8px', padding: '12px 16px', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '8px', fontSize: '0.85rem', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>💻</span>
+                                    <span>Coding round will be added only if programming languages are detected in your resume</span>
                                 </div>
                             </div>
                         )}

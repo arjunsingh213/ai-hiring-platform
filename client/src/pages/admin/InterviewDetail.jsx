@@ -160,7 +160,8 @@ const InterviewDetail = () => {
                                     />
                                 </div>
 
-                                {interview.videoRecording.cheatingMarkers?.length > 0 && (
+                                {/* Proctoring Flags from videoRecording.cheatingMarkers */}
+                                {interview.videoRecording?.cheatingMarkers?.length > 0 && (
                                     <div className="admin-video-markers">
                                         <span style={{ color: '#94a3b8', fontSize: '0.85rem', marginRight: '8px' }}>
                                             Jump to flags:
@@ -179,6 +180,44 @@ const InterviewDetail = () => {
                                                 {formatTime(marker.timestamp)} - {marker.flagType?.replace(/_/g, ' ')}
                                             </button>
                                         ))}
+                                    </div>
+                                )}
+
+                                {/* Proctoring Flags from proctoring.flags */}
+                                {interview.proctoring?.flags?.length > 0 && (
+                                    <div className="admin-video-markers" style={{ marginTop: '12px' }}>
+                                        <span style={{ color: '#f59e0b', fontSize: '0.85rem', marginRight: '8px' }}>
+                                            ⚠️ Proctoring Violations ({interview.proctoring.flags.length}):
+                                        </span>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                                            {interview.proctoring.flags.map((flag, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    className={`admin-video-marker ${flag.severity || 'medium'}`}
+                                                    onClick={() => {
+                                                        // Use videoTimestamp if available (seconds from video start)
+                                                        if (flag.videoTimestamp !== undefined) {
+                                                            seekToTimestamp(flag.videoTimestamp);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        cursor: flag.videoTimestamp !== undefined ? 'pointer' : 'default',
+                                                        opacity: flag.videoTimestamp !== undefined ? 1 : 0.7
+                                                    }}
+                                                    title={flag.description || flag.type}
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                                    </svg>
+                                                    {flag.videoTimestamp !== undefined
+                                                        ? formatTime(flag.videoTimestamp)
+                                                        : new Date(flag.timestamp).toLocaleTimeString()
+                                                    } - {(flag.type || 'Unknown').replace(/_/g, ' ')}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>

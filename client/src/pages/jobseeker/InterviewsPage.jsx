@@ -247,8 +247,8 @@ const InterviewsPage = () => {
                                     </div>
                                 </div>
                                 <div className="interview-details">
-                                    <p><strong>Type:</strong> Technical + HR (10 questions)</p>
-                                    <p><strong>Duration:</strong> ~20 minutes</p>
+                                    <p><strong>Type:</strong> Domain-Specific Interview (Dynamic rounds based on your profile)</p>
+                                    <p><strong>Duration:</strong> ~15-25 minutes</p>
                                     <p>
                                         <strong>Status:</strong>{' '}
                                         <span className={`badge badge-${interviewStatus}`}>
@@ -273,10 +273,10 @@ const InterviewsPage = () => {
                                     <div className="interview-info">
                                         <h4>What to expect:</h4>
                                         <ul>
-                                            <li>5 Technical questions based on your skills</li>
-                                            <li>5 HR/Behavioral questions</li>
-                                            <li>Coding challenge (if applicable)</li>
-                                            <li>AI-powered evaluation</li>
+                                            <li>Questions tailored to your domain & skills from your resume</li>
+                                            <li>Dynamic rounds: Technical, HR, and domain-specific</li>
+                                            <li>Coding challenge (if applicable to your domain)</li>
+                                            <li>AI-powered evaluation with human review</li>
                                         </ul>
                                     </div>
                                 )}

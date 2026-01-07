@@ -1,9 +1,40 @@
-/* LandingPageNew.module.css */
+/* LandingPageNew.module.css - Enhanced with Creative Elements */
 .landing {
     min-height: 100vh;
     background: #FFFFFF;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     overflow-x: hidden;
+    position: relative;
+}
+
+/* Subtle mesh grid pattern overlay */
+.landing::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.03) 1px, transparent 0);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Softer gradient vignette on edges */
+.landing::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse 80% 50% at 50% 50%,
+            transparent 60%,
+            rgba(99, 102, 241, 0.03) 100%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* Reset for landing page */
@@ -51,4 +82,9 @@
 .landing main {
     position: relative;
     z-index: 1;
+}
+
+/* Section transitions - apply consistent spacing */
+.landing main>section {
+    position: relative;
 }

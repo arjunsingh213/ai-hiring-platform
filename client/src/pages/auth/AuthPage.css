@@ -71,6 +71,14 @@
     font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
 }
 
+.auth-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+}
+
 /* Sign Up Container - Starts on LEFT, hidden */
 .sign-up-container {
     left: 0;
