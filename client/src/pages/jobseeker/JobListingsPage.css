@@ -673,31 +673,367 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE - TABLET & MOBILE
    ═══════════════════════════════════════════════════════════════ */
 
+/* Tablet (768px - 1024px) */
 @media (max-width: 1024px) {
     .job-listings {
-        grid-template-columns: 1fr;
+        padding: 12px;
     }
 
-    .jobs-sidebar {
-        max-height: 400px;
+    .jobs-content {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .jobs-list {
+        max-height: 350px;
+    }
+
+    .job-details {
+        display: none;
+    }
+
+    .job-details.mobile-visible {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+        max-height: 100vh;
+        overflow-y: auto;
+        border-radius: 0;
+        margin: 0;
+        background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+        padding: 16px;
+    }
+
+    /* Mobile Close Button */
+    .mobile-close-btn {
+        position: sticky;
+        top: 12px;
+        left: calc(100% - 56px);
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 101;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        margin-bottom: 12px;
+    }
+
+    .mobile-close-btn:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: scale(1.05);
+    }
+
+    .mobile-close-btn svg {
+        stroke: #475569;
+    }
+
+    .category-tabs {
+        flex-wrap: wrap;
+    }
+
+    .filters-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .filter-controls {
+        flex-wrap: wrap;
+        gap: 6px;
     }
 }
 
+/* Mobile (480px - 768px) */
 @media (max-width: 768px) {
-    .job-header {
+    .job-listings {
+        padding: 10px;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .jobs-header {
+        padding: 12px;
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .jobs-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .filters-bar {
+        padding: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters-label {
+        font-size: 0.95rem;
+        text-align: center;
+    }
+
+    .filter-controls {
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .filter-select {
+        min-width: 100px;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+
+    .category-tabs-wrapper {
+        padding: 8px;
+    }
+
+    .category-tabs {
+        gap: 4px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .category-tab {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .jobs-content {
         grid-template-columns: 1fr;
-        padding: 20px;
+    }
+
+    .jobs-list {
+        padding: 8px;
+        max-height: none;
+        border-radius: 12px;
+    }
+
+    .jobs-list-header {
+        padding: 8px;
+    }
+
+    .jobs-list-header h2 {
+        font-size: 0.9rem;
+    }
+
+    .jobs-count {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+
+    .job-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .job-card-main {
+        gap: 10px;
+    }
+
+    .company-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .job-title {
+        font-size: 0.85rem;
+    }
+
+    .company-name {
+        font-size: 0.75rem;
+    }
+
+    .job-meta {
+        font-size: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .job-meta span {
+        font-size: 0.7rem;
+    }
+
+    /* Job Details Modal for Mobile */
+    .job-details.mobile-visible {
+        padding: 16px;
+    }
+
+    .job-header {
+        padding: 16px;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .job-title-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .job-title-section h1 {
+        font-size: 1.1rem;
+    }
+
+    .company-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .job-badges {
+        justify-content: center;
     }
 
     .job-actions {
-        flex-direction: row;
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .job-actions .btn {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+
+    .job-tabs {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 0.75rem;
+        text-align: center;
     }
 
     .job-content {
-        padding: 20px;
+        padding: 12px;
+    }
+
+    .job-content h3 {
+        font-size: 0.85rem;
+    }
+
+    .job-content p,
+    .job-content li {
+        font-size: 0.8rem;
+    }
+
+    .skills-list {
+        gap: 4px;
+    }
+
+    .skill-tag {
+        padding: 4px 10px;
+        font-size: 0.7rem;
+    }
+
+    /* Apply Modal Mobile */
+    .apply-modal {
+        padding: 24px 20px;
+        margin: 16px;
+        max-width: calc(100vw - 32px);
+        border-radius: 20px;
+    }
+
+    .apply-modal h2 {
+        font-size: 1.25rem;
+    }
+
+    .apply-modal p {
+        font-size: 0.9rem;
+    }
+
+    .interview-notice {
+        padding: 16px;
+        margin-top: 20px;
+    }
+
+    /* Applied indicator */
+    .applied-indicator {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+
+    .btn-withdraw {
+        padding: 8px 14px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Small Mobile (< 480px) */
+@media (max-width: 480px) {
+    .job-listings {
+        padding: 8px;
+    }
+
+    .jobs-header h1 {
+        font-size: 1.1rem;
+    }
+
+    .filter-select {
+        min-width: 80px;
+        font-size: 0.75rem;
+        padding: 6px 8px;
+    }
+
+    .category-tab {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
+
+    .job-card {
+        padding: 10px;
+    }
+
+    .company-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .job-title {
+        font-size: 0.8rem;
+    }
+
+    .job-meta span {
+        font-size: 0.65rem;
+    }
+
+    .job-actions .btn {
+        padding: 10px 14px;
+        font-size: 0.8rem;
+    }
+
+    .tab-btn {
+        padding: 8px 10px;
+        font-size: 0.7rem;
+    }
+
+    .apply-modal {
+        padding: 20px 16px;
+    }
+
+    .success-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.75rem;
     }
 }
 

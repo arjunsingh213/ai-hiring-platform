@@ -9,6 +9,7 @@ const JobListingsPage = () => {
     const toast = useToast();
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
+    const [showMobileDetails, setShowMobileDetails] = useState(false); // NEW: For mobile job details modal
     const [categoryFilter, setCategoryFilter] = useState('all'); // all, applied, rejected
     const [filters, setFilters] = useState({
         type: '',
@@ -258,7 +259,10 @@ const JobListingsPage = () => {
                         <div
                             key={job._id}
                             className={`job-card ${selectedJob?._id === job._id ? 'active' : ''}`}
-                            onClick={() => setSelectedJob(job)}
+                            onClick={() => {
+                                setSelectedJob(job);
+                                setShowMobileDetails(true); // Show modal on mobile
+                            }}
                         >
                             <div className="job-card-main">
                                 <div className="company-avatar">
@@ -289,9 +293,22 @@ const JobListingsPage = () => {
                 </div>
 
 
-                <div className="job-details">
+                <div className={`job-details ${showMobileDetails ? 'mobile-visible' : ''}`}>
                     {selectedJob ? (
                         <>
+                            {/* Mobile Close Button */}
+                            {showMobileDetails && (
+                                <button
+                                    className="mobile-close-btn"
+                                    onClick={() => setShowMobileDetails(false)}
+                                    aria-label="Close job details"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            )}
                             <div className="job-header">
                                 <div className="company-logo">
                                     {selectedJob.company?.logo ? (
