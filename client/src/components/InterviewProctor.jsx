@@ -14,12 +14,19 @@ import './InterviewProctor.css';
 const InterviewProctor = ({
     videoRef,
     enabled = true,
+    initialViolations = [],  // NEW: Accept initial violations from parent to maintain cumulative count
     onViolationLog = null  // Callback to log violations for final evaluation
 }) => {
     // Violation log (all violations recorded for admin review)
-    const [violations, setViolations] = useState([]);
+    // Initialize with parent's cumulative violations to maintain count across remounts
+    const [violations, setViolations] = useState(initialViolations);
     const [currentNotice, setCurrentNotice] = useState(null);
     const [showNotice, setShowNotice] = useState(false);
+
+    // Update violations if initialViolations changes (when parent updates cumulative count)
+    useEffect(() => {
+        setViolations(initialViolations);
+    }, [initialViolations]);
 
     // Use our custom hooks
     const faceDetection = useFaceDetection(videoRef, enabled);

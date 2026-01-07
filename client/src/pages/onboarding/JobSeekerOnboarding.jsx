@@ -50,6 +50,7 @@ const JobSeekerOnboarding = () => {
         domain: '',
         mobile: '',
         experienceLevel: 'fresher',
+        yearsOfExperience: '', // NEW: Years of professional experience in desired role
         desiredRole: '',
         jobDomains: [], // Array of selected job domains (max 3)
         linkedin: '',
@@ -80,6 +81,16 @@ const JobSeekerOnboarding = () => {
     const [interviewReadinessComplete, setInterviewReadinessComplete] = useState(false);
     const [parsedResume, setParsedResume] = useState(null);
     const [parsingResume, setParsingResume] = useState(false);
+
+    // Interview access control state
+    const [interviewStatus, setInterviewStatus] = useState({
+        loading: true,
+        canTakeInterview: false,
+        status: 'none',
+        message: '',
+        rejectionReason: null,
+        cooldownEndsAt: null
+    });
 
     // Validation errors state
     const [errors, setErrors] = useState({});
@@ -146,10 +157,78 @@ const JobSeekerOnboarding = () => {
             // Check if user has completed basic onboarding
             const userId = localStorage.getItem('userId');
             if (userId) {
-                // User might have already onboarded, show readiness screen first
-                setStep(4);
-                setShowInterviewReadiness(true); // Show readiness screen FIRST
-                toast.info('Complete the interview preparation to start');
+                // Fetch user's existing profile data including parsed resume
+                const fetchUserProfile = async () => {
+                    try {
+                        const userResponse = await api.get(`/users/${userId}`);
+                        const userData = userResponse.data || userResponse;
+
+                        // Set form data from existing profile
+                        if (userData.jobSeekerProfile) {
+                            const profile = userData.jobSeekerProfile;
+                            setFormData(prev => ({
+                                ...prev,
+                                domain: profile.domain || '',
+                                desiredRole: profile.desiredRole || '',
+                                experience: profile.experienceLevel || '',
+                                skills: profile.skills || []
+                            }));
+
+                            // Use the existing parsed resume if available
+                            if (profile.parsedResume) {
+                                console.log('Using pre-parsed resume with skills:', profile.parsedResume.skills?.slice(0, 5));
+                                setParsedResume(profile.parsedResume);
+                            }
+                        }
+
+                        // Set basic profile info
+                        if (userData.profile) {
+                            setFormData(prev => ({
+                                ...prev,
+                                name: userData.profile.name || ''
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch user profile:', error);
+                    }
+                };
+
+                // Check interview status before showing interview
+                const checkInterviewStatus = async () => {
+                    try {
+                        // First fetch user profile to get resume data
+                        await fetchUserProfile();
+
+                        const response = await api.get(`/onboarding-interview/check-status/${userId}`);
+                        if (response.success) {
+                            setInterviewStatus({
+                                loading: false,
+                                canTakeInterview: response.canTakeInterview,
+                                status: response.status,
+                                message: response.message,
+                                rejectionReason: response.rejectionReason || null,
+                                cooldownEndsAt: response.cooldownEndsAt || null
+                            });
+
+                            if (response.canTakeInterview) {
+                                setStep(4);
+                                setShowInterviewReadiness(true);
+                                toast.info('Complete the interview preparation to start');
+                            } else {
+                                setStep(4);
+                                // Don't show readiness, show status message instead
+                                toast.warning(response.message);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Failed to check interview status:', error);
+                        // Default to allowing interview if check fails
+                        setInterviewStatus(prev => ({ ...prev, loading: false, canTakeInterview: true }));
+                        setStep(4);
+                        setShowInterviewReadiness(true);
+                    }
+                };
+                checkInterviewStatus();
             }
         }
     }, []);
@@ -307,6 +386,16 @@ const JobSeekerOnboarding = () => {
             if (formData.jobDomains.length === 0) {
                 newErrors.jobDomains = 'Please select at least 1 job domain';
             }
+
+            // NEW: Validate years of experience if experienced is selected
+            if (formData.experienceLevel === 'experienced') {
+                if (!formData.yearsOfExperience || formData.yearsOfExperience === '') {
+                    newErrors.yearsOfExperience = 'Years of experience is required for experienced candidates';
+                } else if (formData.yearsOfExperience < 0 || formData.yearsOfExperience > 50) {
+                    newErrors.yearsOfExperience = 'Please enter a valid number of years (0-50)';
+                }
+            }
+
             // profession, college, domain are OPTIONAL for onboarding
             // but will be required when applying for jobs
         }
@@ -389,6 +478,9 @@ const JobSeekerOnboarding = () => {
                     college: formData.college.trim(),
                     domain: formData.domain.trim(),
                     experienceLevel: formData.experienceLevel,
+                    yearsOfExperience: formData.experienceLevel === 'experienced'
+                        ? parseInt(formData.yearsOfExperience)
+                        : 0,
                     desiredRole: formData.desiredRole.trim(),
                     jobDomains: formData.jobDomains,
                     portfolioLinks: {
@@ -622,6 +714,30 @@ const JobSeekerOnboarding = () => {
                             </select>
                         </div>
 
+                        {/* Conditional Years of Experience Input */}
+                        {formData.experienceLevel === 'experienced' && (
+                            <div className="form-group">
+                                <label className="form-label">
+                                    Years of Experience in {formData.desiredRole || 'desired role'} *
+                                </label>
+                                <input
+                                    type="number"
+                                    name="yearsOfExperience"
+                                    value={formData.yearsOfExperience}
+                                    onChange={handleChange}
+                                    className={`input ${errors.yearsOfExperience ? 'input-error' : ''}`}
+                                    placeholder="e.g., 2"
+                                    min="0"
+                                    max="50"
+                                    required
+                                />
+                                <span className="label-hint">
+                                    Total years of professional experience specifically in this role
+                                </span>
+                                {errors.yearsOfExperience && <span className="error-message">{errors.yearsOfExperience}</span>}
+                            </div>
+                        )}
+
                         <div className="form-group">
                             <AutocompleteInput
                                 name="desiredRole"
@@ -799,7 +915,82 @@ const JobSeekerOnboarding = () => {
             </div>
 
             {/* Hide onboarding form when interview or readiness is active */}
-            {!showInterview && !showInterviewReadiness && (
+            {/* Show pending review status instead of interview if blocked */}
+            {step === 4 && !interviewStatus.canTakeInterview && !interviewStatus.loading && (
+                <div className="onboarding-box" style={{ maxWidth: '600px' }}>
+                    <div style={{ padding: '60px 40px', textAlign: 'center' }}>
+                        {interviewStatus.status === 'pending_review' && (
+                            <>
+                                <div style={{
+                                    fontSize: '64px',
+                                    marginBottom: '24px'
+                                }}>⏳</div>
+                                <h2 style={{
+                                    color: '#1e293b',
+                                    marginBottom: '16px',
+                                    fontSize: '1.75rem'
+                                }}>Interview Under Review</h2>
+                                <p style={{
+                                    color: '#64748b',
+                                    marginBottom: '32px',
+                                    fontSize: '1rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    {interviewStatus.message}
+                                </p>
+                                <div style={{
+                                    background: '#f0f9ff',
+                                    border: '1px solid #bae6fd',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    marginBottom: '24px'
+                                }}>
+                                    <p style={{ color: '#0369a1', margin: 0, fontWeight: 500 }}>
+                                        📧 You'll receive an email notification once your interview has been reviewed.
+                                    </p>
+                                </div>
+                                <button
+                                    className="onboarding-btn"
+                                    onClick={() => navigate('/jobseeker/home')}
+                                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                                >
+                                    Go to Dashboard
+                                </button>
+                            </>
+                        )}
+
+                        {interviewStatus.status === 'rejected' && (
+                            <>
+                                <div style={{ fontSize: '64px', marginBottom: '24px' }}>📋</div>
+                                <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Interview Feedback</h2>
+                                <p style={{ color: '#64748b', marginBottom: '24px', lineHeight: '1.6' }}>
+                                    {interviewStatus.message}
+                                </p>
+                                {interviewStatus.rejectionReason && (
+                                    <div style={{
+                                        background: '#fef3c7',
+                                        border: '1px solid #fcd34d',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        marginBottom: '24px',
+                                        textAlign: 'left'
+                                    }}>
+                                        <strong style={{ color: '#92400e' }}>Feedback:</strong>
+                                        <p style={{ color: '#78350f', margin: '8px 0 0' }}>{interviewStatus.rejectionReason}</p>
+                                    </div>
+                                )}
+                                {interviewStatus.cooldownEndsAt && (
+                                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                                        You can retake the interview after: <strong>{new Date(interviewStatus.cooldownEndsAt).toLocaleDateString()}</strong>
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {!showInterview && !showInterviewReadiness && (step !== 4 || interviewStatus.canTakeInterview || interviewStatus.loading) && (
                 <div className="onboarding-box">
                     {/* Left Panel - Purple Gradient */}
                     <div className="onboarding-sidebar">
@@ -979,6 +1170,9 @@ const JobSeekerOnboarding = () => {
                     parsedResume={parsedResume}
                     userId={localStorage.getItem('userId')}
                     desiredRole={formData.desiredRole}
+                    experienceLevel={formData.experienceLevel}
+                    yearsOfExperience={formData.yearsOfExperience}
+                    jobDomains={formData.jobDomains}
                     onComplete={(results) => {
                         toast.success(`Interview completed! Score: ${results?.score || 'N/A'}`);
                         navigate('/jobseeker/home');

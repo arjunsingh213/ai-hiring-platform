@@ -6,9 +6,10 @@
 
 const express = require('express');
 const router = express.Router();
-// Switch from Gemini to DeepSeek
+// AI Services
 const deepseekService = require('../services/ai/deepseekService');
 const geminiService = require('../services/ai/geminiService'); // Keep as fallback
+const interviewOrchestrator = require('../services/ai/interviewOrchestrator');
 const User = require('../models/User');
 const Interview = require('../models/Interview');
 const cloudinary = require('../config/cloudinary');
@@ -24,6 +25,91 @@ const videoUpload = multer({
         } else {
             cb(new Error('Only video files are allowed'), false);
         }
+    }
+});
+
+/**
+ * GET /api/onboarding-interview/check-status/:userId
+ * Check if user can take interview based on admin review status
+ */
+router.get('/check-status/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Find user's most recent interview
+        const latestInterview = await Interview.findOne({
+            userId,
+            interviewType: { $in: ['combined', 'platform'] }
+        }).sort({ createdAt: -1 });
+
+        // No previous interview - user can take domain interview
+        if (!latestInterview) {
+            return res.json({
+                success: true,
+                canTakeInterview: true,
+                status: 'none',
+                message: 'Welcome! Please complete your domain interview.'
+            });
+        }
+
+        const adminStatus = latestInterview.adminReview?.status || 'pending_review';
+
+        // Check various states
+        if (adminStatus === 'pending_review') {
+            return res.json({
+                success: true,
+                canTakeInterview: false,
+                status: 'pending_review',
+                message: 'Your interview is under review by our admin team. You will be notified once a decision is made.',
+                submittedAt: latestInterview.createdAt
+            });
+        }
+
+        if (adminStatus === 'approved') {
+            return res.json({
+                success: true,
+                canTakeInterview: true,
+                status: 'approved',
+                message: 'Congratulations! You are approved for job-specific interviews.',
+                canApplyToJobs: true
+            });
+        }
+
+        if (adminStatus === 'rejected') {
+            // 7-day cooldown before retry
+            const rejectedAt = latestInterview.adminReview?.reviewedAt || latestInterview.updatedAt;
+            const cooldownDays = 7;
+            const cooldownEndsAt = new Date(rejectedAt.getTime() + cooldownDays * 24 * 60 * 60 * 1000);
+            const canRetry = new Date() > cooldownEndsAt;
+
+            return res.json({
+                success: true,
+                canTakeInterview: canRetry,
+                status: 'rejected',
+                message: canRetry
+                    ? 'Your cooldown period has ended. You can retake the interview.'
+                    : `Your interview was not approved. You can retry after ${cooldownEndsAt.toLocaleDateString()}.`,
+                rejectionReason: latestInterview.adminReview?.notes || 'Please review your interview feedback and improve.',
+                cooldownEndsAt: cooldownEndsAt,
+                canRetry
+            });
+        }
+
+        // Default - allow interview
+        return res.json({
+            success: true,
+            canTakeInterview: true,
+            status: 'unknown',
+            message: 'You can take the interview.'
+        });
+
+    } catch (error) {
+        console.error('Check status error:', error);
+        res.status(500).json({
+            success: false,
+            canTakeInterview: false,
+            error: 'Failed to check interview status'
+        });
     }
 });
 
@@ -50,47 +136,254 @@ router.post('/validate-answer', async (req, res) => {
 });
 
 /**
- * POST /api/onboarding-interview/start
- * Start a new dynamic interview session
+ * POST /api/onboarding-interview/generate-blueprint
+ * Generate interview blueprint based on resume
  */
-router.post('/start', async (req, res) => {
+router.post('/generate-blueprint', async (req, res) => {
     try {
         const { parsedResume, desiredRole, experienceLevel } = req.body;
-        console.log('Starting dynamic interview for:', desiredRole);
+        console.log('[BLUEPRINT] Generating blueprint for:', desiredRole);
 
-        // Prepare resume text
-        const resumeSummary = `Skills: ${parsedResume?.skills?.join(', ') || 'None'}`;
-
-        // Generates just the first question
-        const firstQuestion = await deepseekService.generateNextQuestion(
-            resumeSummary,
-            desiredRole || 'Software Engineer',
-            experienceLevel || 'Entry Level',
-            [] // No history
-        );
+        // Generate domain-adaptive blueprint
+        const blueprint = await interviewOrchestrator.generateBlueprint(parsedResume);
 
         res.json({
             success: true,
-            question: {
-                ...firstQuestion,
-                round: 'technical', // First one is tech
-                questionNumber: 1
-            },
-            totalQuestions: 10
+            blueprint: blueprint
         });
     } catch (error) {
-        console.error('Start interview failed:', error);
+        console.error('[BLUEPRINT] Generation failed:', error);
+        res.status(500).json({ success: false, error: 'Failed to generate blueprint' });
+    }
+});
+
+/**
+ * POST /api/onboarding-interview/start
+ * Start a new adaptive interview session with role-specific blueprint
+ */
+router.post('/start', async (req, res) => {
+    try {
+        const {
+            parsedResume,
+            desiredRole,
+            experienceLevel,
+            yearsOfExperience,
+            jobDomains,
+            blueprint: existingBlueprint
+        } = req.body;
+
+        console.log('[INTERVIEW] Starting adaptive interview');
+        console.log('[INTERVIEW] Role:', desiredRole);
+        console.log('[INTERVIEW] Experience:', experienceLevel, yearsOfExperience ? `(${yearsOfExperience} years)` : '');
+        console.log('[INTERVIEW] Domains:', jobDomains);
+
+        // Import role template utilities
+        const { getRoleCategory, getExperienceTier, getQuestionTemplate } = require('../utils/roleQuestionTemplates');
+
+        // Determine role category and experience tier
+        const roleCategory = getRoleCategory(desiredRole);
+        const expTier = getExperienceTier(experienceLevel, yearsOfExperience);
+        const questionTemplate = getQuestionTemplate(roleCategory, expTier);
+
+        console.log('[INTERVIEW] Role Category:', roleCategory);
+        console.log('[INTERVIEW] Experience Tier:', expTier);
+
+        // Build adaptive blueprint
+        const blueprint = {
+            desiredRole,
+            experienceLevel,
+            yearsOfExperience: parseInt(yearsOfExperience) || 0,
+            roleCategory,
+            jobDomains: jobDomains || [],
+            totalRounds: 3,
+            totalQuestions: 15,
+            rounds: []
+        };
+
+        // Create rounds from template
+        const rounds = [
+            { ...questionTemplate.round1, roundNumber: 1 },
+            { ...questionTemplate.round2, roundNumber: 2 },
+            { ...questionTemplate.round3, roundNumber: 3 }
+        ];
+
+        // Calculate question ranges
+        let startQuestion = 1;
+        rounds.forEach((round, idx) => {
+            blueprint.rounds.push({
+                roundNumber: round.roundNumber,
+                type: round.name.toLowerCase().replace(/\s+/g, '_'),
+                displayName: round.name,
+                icon: idx === 0 ? '🎯' : idx === 1 ? '💻' : '🚀',
+                description: `Round ${round.roundNumber}: ${round.name}`,
+                tips: [`Focus on: ${round.focus.join(', ')}`],
+                questionCount: round.questionCount,
+                startQuestionNumber: startQuestion,
+                endQuestionNumber: startQuestion + round.questionCount - 1,
+                difficulty: round.difficulty,
+                focus: round.focus,
+                competencies: round.competencies,
+                isCodingRound: false
+            });
+            startQuestion += round.questionCount;
+        });
+
+        // Get first round info
+        const firstRound = blueprint.rounds[0];
+
+        // Prepare context for AI question generation
+        const resumeSkills = parsedResume?.skills?.slice(0, 10) || [];
+        const resumeProjects = parsedResume?.projects?.slice(0, 2) || [];
+
+        const questionContext = buildQuestionPrompt({
+            desiredRole,
+            experienceLevel,
+            yearsOfExperience: yearsOfExperience || 0,
+            roleCategory,
+            resumeSkills,
+            resumeProjects,
+            jobDomains: jobDomains || [],
+            round: 1,
+            roundFocus: firstRound.focus,
+            difficulty: firstRound.difficulty,
+            competencies: firstRound.competencies
+        });
+
+        // Generate first question using AI with rich context
+        const firstQuestion = await deepseekService.generateContextualQuestion(questionContext);
+
+        // Add round context to the question
+        const questionWithContext = {
+            question: firstQuestion,
+            roundNumber: 1,
+            roundType: firstRound.type,
+            roundName: firstRound.displayName,
+            questionNumber: 1,
+            questionInRound: 1,
+            totalQuestionsInRound: firstRound.questionCount,
+            difficulty: firstRound.difficulty,
+            category: firstRound.focus[0]
+        };
+
+        res.json({
+            success: true,
+            question: questionWithContext,
+            blueprint: blueprint,
+            currentRound: {
+                number: 1,
+                type: firstRound.type,
+                displayName: firstRound.displayName,
+                icon: firstRound.icon,
+                questionCount: firstRound.questionCount,
+                difficulty: firstRound.difficulty
+            },
+            progress: {
+                currentQuestion: 1,
+                totalQuestions: blueprint.totalQuestions,
+                currentRound: 1,
+                totalRounds: blueprint.totalRounds
+            }
+        });
+    } catch (error) {
+        console.error('[INTERVIEW] Start failed:', error);
         res.status(500).json({ success: false, error: 'Failed to start interview' });
     }
 });
 
 /**
+ * Helper function to build question generation prompt
+ */
+function buildQuestionPrompt(context) {
+    const { desiredRole, experienceLevel, yearsOfExperience, roleCategory, resumeSkills, resumeProjects, jobDomains, round, roundFocus, difficulty, competencies } = context;
+
+    let experienceContext = '';
+    let questionRules = '';
+
+    if (experienceLevel === 'fresher') {
+        experienceContext = `The candidate is a FRESHER - fresh graduate/entry-level applying for ${desiredRole}. 
+This is their FIRST JOB INTERVIEW. They have NO professional work experience.
+Focus on: learning ability, basic fundamentals, college projects, and potential.`;
+
+        questionRules = `
+⚠️ CRITICAL FRESHER RULES - DO NOT VIOLATE:
+
+✅ DO ASK:
+- "What is [concept]?" or "Explain [basic concept]"
+- "Tell me about a college project"
+- "How do you approach learning?"
+- "What is the difference between X and Y?" (basic concepts only)
+
+❌ DO NOT ASK:
+- Code implementation ("write code", "implement")
+- Design patterns (Singleton, Factory, etc.)
+- Multithreading, async, or concurrency
+- System design or architecture
+- Production topics
+- Advanced frameworks
+
+KEEP IT SIMPLE - College assignment level, NOT industry level!`;
+    } else {
+        experienceContext = `The candidate has ${yearsOfExperience} years of professional experience as a ${desiredRole}.
+Focus on: real-world experience, specific accomplishments, technical depth, and leadership.
+Expect detailed, experience-based answers with concrete examples.`;
+
+        questionRules = '';
+    }
+
+    const skillsContext = resumeSkills.length > 0
+        ? `\nCandidate's Skills: ${resumeSkills.join(', ')}`
+        : '';
+
+    const projectsContext = resumeProjects.length > 0
+        ? `\nCandidate's Projects: ${resumeProjects.map(p => p.name || p.title).join(', ')}`
+        : '';
+
+    const domainsContext = jobDomains.length > 0
+        ? `\nInterested Domains: ${jobDomains.join(', ')}`
+        : '';
+
+    return `
+You are conducting a ${experienceLevel === 'fresher' ? 'FRESHER-LEVEL' : 'PROFESSIONAL'} interview for a ${desiredRole} position.
+
+CANDIDATE PROFILE:
+${experienceContext}${skillsContext}${projectsContext}${domainsContext}
+
+${questionRules}
+
+INTERVIEW ROUND ${round} - ${roundFocus[0]}:
+Focus Areas: ${roundFocus.join(', ')}
+Difficulty Level: ${difficulty}
+Competencies to Assess: ${competencies.join(', ')}
+
+TASK:
+Generate ONE specific, relevant interview question that:
+1. Matches the candidate's EXACT experience level (${experienceLevel}${yearsOfExperience ? `, ${yearsOfExperience} years` : ''})
+2. Is appropriate for ${desiredRole} at ${experienceLevel} level
+3. ${resumeSkills.length > 0 ? 'Optionally references basic skills they know' : ''}
+4. Assesses: ${roundFocus[0]}
+5. Difficulty: ${difficulty}
+
+${experienceLevel === 'fresher' ? '⚠️ REMINDER: FRESHER = SIMPLE CONCEPTUAL QUESTIONS ONLY!' : ''}
+
+Return ONLY the question text, no explanations or preamble.
+`;
+}
+
+/**
  * POST /api/onboarding-interview/next
- * Validate previous answer and generate next question
+ * Validate previous answer and generate next question with round awareness
  */
 router.post('/next', async (req, res) => {
     try {
-        const { currentQuestion, answer, history, parsedResume, desiredRole, experienceLevel } = req.body;
+        const {
+            currentQuestion,
+            answer,
+            history,
+            parsedResume,
+            desiredRole,
+            experienceLevel,
+            blueprint
+        } = req.body;
 
         // 1. Strict Validation
         const validation = await deepseekService.validateAnswer(currentQuestion.question, answer);
@@ -102,9 +395,13 @@ router.post('/next', async (req, res) => {
             });
         }
 
-        // 2. Check if interview is done (10 questions)
-        const currentCount = (history?.length || 0) + 1;
-        if (currentCount >= 10) {
+        // 2. Calculate current progress
+        const currentQuestionNum = (history?.length || 0) + 1;
+        const nextQuestionNum = currentQuestionNum + 1;
+        const totalQuestions = blueprint?.totalQuestions || 10;
+
+        // 3. Check if interview is done
+        if (currentQuestionNum >= totalQuestions) {
             return res.json({
                 success: true,
                 valid: true,
@@ -112,33 +409,118 @@ router.post('/next', async (req, res) => {
             });
         }
 
-        // 3. Generate Next Question based on History + New Answer
+        // 4. Determine current and next round using blueprint
+        let currentRound = null;
+        let nextRound = null;
+        let showRoundInfo = false;
+
+        if (blueprint && blueprint.rounds) {
+            // Find current round
+            for (const round of blueprint.rounds) {
+                if (nextQuestionNum >= round.startQuestionNumber &&
+                    nextQuestionNum <= round.endQuestionNumber) {
+                    nextRound = round;
+                    break;
+                }
+            }
+
+            // Find previous round (where current question was)
+            for (const round of blueprint.rounds) {
+                if (currentQuestionNum >= round.startQuestionNumber &&
+                    currentQuestionNum <= round.endQuestionNumber) {
+                    currentRound = round;
+                    break;
+                }
+            }
+
+            // Check if we're transitioning to a new round
+            if (currentRound && nextRound && currentRound.roundNumber !== nextRound.roundNumber) {
+                showRoundInfo = true;
+                console.log(`[INTERVIEW] Round transition: ${currentRound.displayName} -> ${nextRound.displayName}`);
+            }
+        }
+
+        // 5. Generate Next Question using adaptive prompt based on round context
         const updatedHistory = [...(history || []), { question: currentQuestion.question, answer }];
-        const resumeSummary = `Skills: ${parsedResume?.skills?.join(', ') || 'None'}`;
 
-        const nextQ = await deepseekService.generateNextQuestion(
-            resumeSummary,
-            desiredRole || 'Software Engineer',
-            experienceLevel || 'Entry Level',
-            updatedHistory
-        );
+        // Get experience data from request or blueprint
+        const { yearsOfExperience, jobDomains } = req.body;
+        const resumeSkills = parsedResume?.skills?.slice(0, 10) || [];
+        const resumeProjects = parsedResume?.projects?.slice(0, 2) || [];
 
-        res.json({
+        // Build context-aware prompt for next question
+        const questionInRound = nextRound
+            ? (nextQuestionNum - nextRound.startQuestionNumber + 1)
+            : (nextQuestionNum <= 5 ? nextQuestionNum : nextQuestionNum - 5);
+
+        const questionContext = buildQuestionPrompt({
+            desiredRole: desiredRole || 'Software Developer',
+            experienceLevel: experienceLevel || 'fresher',
+            yearsOfExperience: yearsOfExperience || 0,
+            roleCategory: blueprint?.roleCategory || 'development',
+            resumeSkills,
+            resumeProjects,
+            jobDomains: jobDomains || [],
+            round: nextRound?.roundNumber || 1,
+            roundFocus: nextRound?.focus || ['general discussion'],
+            difficulty: nextRound?.difficulty || 'medium',
+            competencies: nextRound?.competencies || ['problem solving']
+        });
+
+        // Generate question using AI with rich context
+        const nextQuestion = await deepseekService.generateContextualQuestion(questionContext);
+
+        // 6. Add round context to the question
+        const questionWithContext = {
+            question: nextQuestion,
+            questionNumber: nextQuestionNum,
+            roundNumber: nextRound?.roundNumber || (nextQuestionNum <= 5 ? 1 : 2),
+            roundType: nextRound?.type || (nextQuestionNum <= 5 ? 'technical' : 'hr'),
+            roundName: nextRound?.displayName || (nextQuestionNum <= 5 ? 'Technical' : 'HR'),
+            questionInRound: questionInRound,
+            totalQuestionsInRound: nextRound?.questionCount || 5,
+            difficulty: nextRound?.difficulty || 'medium',
+            category: nextRound?.focus?.[0] || 'general'
+        };
+
+        // 7. Build response
+        const response = {
             success: true,
             valid: true,
             completed: false,
-            question: {
-                ...nextQ,
-                questionNumber: currentCount + 1,
-                round: currentCount + 1 <= 5 ? 'technical' : 'hr'
+            question: questionWithContext,
+            progress: {
+                currentQuestion: nextQuestionNum,
+                totalQuestions: totalQuestions,
+                currentRound: nextRound?.roundNumber || (nextQuestionNum <= 5 ? 1 : 2),
+                totalRounds: blueprint?.totalRounds || 2
             }
-        });
+        };
+
+        // 8. Include round info if transitioning
+        if (showRoundInfo && nextRound) {
+            response.showRoundInfo = true;
+            response.roundInfo = {
+                roundNumber: nextRound.roundNumber,
+                displayName: nextRound.displayName,
+                icon: nextRound.icon,
+                description: nextRound.description,
+                tips: nextRound.tips,
+                difficulty: nextRound.difficulty,
+                questionCount: nextRound.questionCount,
+                focus: nextRound.focus,
+                isCodingRound: nextRound.isCodingRound
+            };
+        }
+
+        res.json(response);
 
     } catch (error) {
-        console.error('Next question failed:', error);
+        console.error('[INTERVIEW] Next question failed:', error);
         res.status(500).json({ success: false, error: 'Failed to generate next question' });
     }
 });
+
 
 /**
  * POST /api/onboarding-interview/generate-questions
@@ -238,11 +620,11 @@ router.post('/generate-questions', async (req, res) => {
 
 /**
  * POST /api/onboarding-interview/submit
- * Submit interview answers for evaluation
+ * Submit interview answers for evaluation using multi-dimensional engine
  */
 router.post('/submit', async (req, res) => {
     try {
-        const { userId, questionsAndAnswers, parsedResume, desiredRole } = req.body;
+        const { userId, questionsAndAnswers, parsedResume, desiredRole, blueprint } = req.body;
 
         if (!userId || !questionsAndAnswers || questionsAndAnswers.length === 0) {
             return res.status(400).json({
@@ -251,8 +633,9 @@ router.post('/submit', async (req, res) => {
             });
         }
 
-        console.log('Evaluating interview for user:', userId);
-        console.log('Total answers:', questionsAndAnswers.length);
+        console.log('[SUBMIT] Evaluating interview for user:', userId);
+        console.log('[SUBMIT] Total answers:', questionsAndAnswers.length);
+        console.log('[SUBMIT] Blueprint domain:', blueprint?.domain || 'Not provided');
 
         // Pre-validation: Check for empty/skipped answers
         const validationResult = validateAnswers(questionsAndAnswers);
@@ -286,14 +669,14 @@ router.post('/submit', async (req, res) => {
             });
         }
 
-        // Use DeepSeek R1 Chimera for proper AI evaluation
+        // Use DeepSeek with new multi-dimensional evaluation engine
         let evaluation;
         try {
             evaluation = await deepseekService.evaluateAllAnswers(questionsAndAnswers, {
                 jobTitle: desiredRole || 'Software Developer',
                 jobDescription: 'General position',
                 requiredSkills: parsedResume?.skills || []
-            });
+            }, blueprint); // Pass blueprint for domain-aware evaluation
 
             // Apply penalty for empty/skipped answers
             if (validationResult.emptyCount > 0) {
@@ -301,12 +684,12 @@ router.post('/submit', async (req, res) => {
                 evaluation.overallScore = Math.max(0, (evaluation.overallScore || 70) - penalty);
                 evaluation.technicalScore = Math.max(0, (evaluation.technicalScore || 70) - penalty);
                 evaluation.hrScore = Math.max(0, (evaluation.hrScore || 70) - penalty);
-                console.log(`Applied ${penalty}% penalty for ${validationResult.emptyCount} empty answers`);
+                console.log(`[SUBMIT] Applied ${penalty}% penalty for ${validationResult.emptyCount} empty answers`);
             }
 
-            console.log('OpenRouter Qwen3 evaluation completed, score:', evaluation.overallScore);
+            console.log('[SUBMIT] Evaluation completed, score:', evaluation.overallScore);
         } catch (evalError) {
-            console.error('AI evaluation failed, using strict rule-based:', evalError);
+            console.error('[SUBMIT] AI evaluation failed, using strict rule-based:', evalError);
             // Fallback to strict rule-based evaluation
             evaluation = calculateStrictScore(questionsAndAnswers, validationResult);
         }
@@ -455,17 +838,11 @@ router.post('/submit', async (req, res) => {
                 console.error('Failed to create Interview document:', interviewError);
             }
 
-            // ==================== AI TALENT PASSPORT UPDATE (NEW) ====================
-            // Auto-update AI Talent Passport after interview completion
-            // This is a PURE ADDITION - doesn't affect existing flow
-            try {
-                const aiTalentPassportService = require('../services/aiTalentPassportService');
-                await aiTalentPassportService.updateTalentPassport(userId);
-                console.log('✅ AI Talent Passport updated after interview completion');
-            } catch (atpError) {
-                console.error('Failed to update AI Talent Passport (non-critical):', atpError);
-                // Don't throw - this is a non-critical feature
-            }
+            // ==================== AI TALENT PASSPORT UPDATE - DISABLED ====================
+            // NOTE: ATP update is INTENTIONALLY DISABLED for onboarding/domain interviews.
+            // The ATP score should ONLY be updated when completing JOB-SPECIFIC interviews,
+            // not during the initial onboarding interview. Job interviews will update ATP
+            // through the talentPassportRoutes.js endpoints.
             // ==================== END ATP UPDATE ====================
         } catch (dbError) {
             console.error('Failed to save to DB (continuing anyway):', dbError);

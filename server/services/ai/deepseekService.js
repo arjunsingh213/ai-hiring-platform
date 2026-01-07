@@ -102,13 +102,7 @@ async function callWithFallback(messages, models, options = {}) {
 }
 
 
-/**
- * Main AI call function - Uses Llama 3.1 as primary (free tier)
- */
-async function callDeepSeek(messages, options = {}) {
-    // Use free-tier models in order: Llama -> Mistral -> Gemma
-    return callWithFallback(messages, [MODELS.LLAMA, MODELS.MISTRAL, MODELS.GEMMA], options);
-}
+
 
 /**
  * Detect programming languages from parsed resume skills
@@ -142,18 +136,34 @@ function detectProgrammingLanguages(skills) {
     const detected = [];
     const skillsLower = skills.map(s => s.toLowerCase().trim());
 
+    // Short language names that need exact matching (to avoid false positives)
+    const shortLanguages = ['c', 'r', 'go'];
+
     for (const [key, value] of Object.entries(PROGRAMMING_LANGUAGES)) {
-        if (skillsLower.some(skill =>
-            skill === key ||
-            skill.includes(key) ||
-            (key.length > 2 && skill.startsWith(key))
-        )) {
-            if (!detected.find(d => d.name === value.name)) {
-                detected.push(value);
+        const isShortName = shortLanguages.includes(key) || key.length <= 2;
+
+        const matched = skillsLower.some(skill => {
+            if (isShortName) {
+                // For short names (c, r, go), require exact match or explicit mention
+                // e.g., "c" should match "c" or "c programming" but NOT "communication"
+                return skill === key ||
+                    skill === `${key} programming` ||
+                    skill === `${key} language` ||
+                    skill.match(new RegExp(`\\b${key}\\b`, 'i')); // Word boundary match
+            } else {
+                // For longer names, allow partial matches
+                return skill === key ||
+                    skill.includes(key) ||
+                    (key.length > 2 && skill.startsWith(key));
             }
+        });
+
+        if (matched && !detected.find(d => d.name === value.name)) {
+            detected.push(value);
         }
     }
 
+    console.log('[DETECT] Skills:', skills.slice(0, 5), '-> Languages:', detected.map(d => d.name));
     return detected;
 }
 
@@ -590,6 +600,34 @@ function extractJson(text) {
 
 
 /**
+ * Main AI call function - Uses Llama 3.1 as primary (free tier)
+ */
+async function callDeepSeek(messages, options = {}) {
+    // Use free-tier models in order: Llama -> Mistral -> Gemma
+    return callWithFallback(messages, [MODELS.LLAMA, MODELS.MISTRAL, MODELS.GEMMA], options);
+}
+
+/**
+ * Generate contextual question using rich prompt (for adaptive interviews)
+ */
+async function generateContextualQuestion(contextPrompt) {
+    try {
+        console.log('[AI] Generating contextual question with adaptive prompt');
+        const response = await callDeepSeek([
+            { role: 'system', content: 'You are an expert technical interviewer. Generate specific, personalized interview questions. Return ONLY the question text, no preamble.' },
+            { role: 'user', content: contextPrompt }
+        ]);
+
+        // Return just the question text (trimmed)
+        return response.trim();
+    } catch (error) {
+        console.error('[AI] Contextual question generation failed:', error.message);
+        // Fallback to generic question
+        return "Tell me about your experience and what motivated you to pursue this role.";
+    }
+}
+
+/**
  * Validates answer - ONLY blocks gibberish and completely off-topic responses
  * Wrong technical answers are ALLOWED - the final evaluation will score them appropriately
  */
@@ -706,9 +744,64 @@ async function parseResume(resumeText) {
 }
 
 /**
- * Evaluate ALL answers HOLISTICALLY using DeepSeek-R1 (Chimera)
+ * Evaluate ALL answers using the NEW multi-dimensional evaluation engine
+ * Results go to admin for review - AI only scores, doesn't decide
  */
-async function evaluateAllAnswers(questionsAndAnswers, jobContext) {
+async function evaluateAllAnswers(questionsAndAnswers, jobContext, blueprint = null) {
+    const { jobTitle, jobDescription, requiredSkills } = jobContext;
+
+    // Import evaluation engine
+    const evaluationEngine = require('./evaluationEngine');
+
+    console.log('[EVALUATION] Using new multi-dimensional evaluation engine');
+
+    try {
+        // Build context for evaluation engine
+        const context = {
+            role: jobTitle || 'Not specified',
+            domain: blueprint?.domain || 'General',
+            keySkills: requiredSkills || blueprint?.keySkills || [],
+            experienceLevel: blueprint?.experienceLevel || 'mid'
+        };
+
+        // Call the new evaluation engine
+        const result = await evaluationEngine.evaluateInterview(
+            questionsAndAnswers,
+            context,
+            null // Coding submission handled separately
+        );
+
+        // Add legacy compatibility fields
+        result.areasToImprove = result.summary?.weaknesses?.map(w => ({
+            area: w,
+            suggestion: `Focus on improving ${w.toLowerCase()}`,
+            priority: 'medium'
+        })) || [];
+
+        result.recommendations = [];
+        if (result.overallScore >= 75) {
+            result.recommendations.push('Strong candidate - ready for next steps');
+        } else if (result.overallScore >= 55) {
+            result.recommendations.push('Borderline candidate - admin review recommended');
+        } else {
+            result.recommendations.push('Needs significant improvement');
+        }
+
+        console.log(`[EVALUATION] Complete. Score: ${result.overallScore}, Grade: ${result.potentialIndex?.grade}`);
+        return result;
+
+    } catch (error) {
+        console.error('[EVALUATION] Evaluation engine failed, using legacy method:', error.message);
+
+        // Fallback to legacy evaluation
+        return await legacyEvaluateAllAnswers(questionsAndAnswers, jobContext);
+    }
+}
+
+/**
+ * Legacy evaluation fallback (old method)
+ */
+async function legacyEvaluateAllAnswers(questionsAndAnswers, jobContext) {
     const { jobTitle, jobDescription, requiredSkills } = jobContext;
 
     // PRE-EVALUATION: Check for non-answers
@@ -736,11 +829,9 @@ async function evaluateAllAnswers(questionsAndAnswers, jobContext) {
     const totalQuestions = questionsAndAnswers.length;
     const nonAnswerPercentage = (nonAnswerCount / totalQuestions) * 100;
 
-    console.log(`[EVALUATION] Non-answer percentage: ${nonAnswerPercentage.toFixed(0)}% (${nonAnswerCount}/${totalQuestions})`);
+    console.log(`[EVALUATION-LEGACY] Non-answer percentage: ${nonAnswerPercentage.toFixed(0)}%`);
 
-    // If more than 60% are non-answers, skip AI and give very low score
     if (nonAnswerPercentage >= 60) {
-        console.log('[EVALUATION] Majority non-answers detected, returning low score');
         return {
             overallScore: Math.max(5, 30 - nonAnswerPercentage * 0.3),
             technicalScore: 10,
@@ -749,16 +840,9 @@ async function evaluateAllAnswers(questionsAndAnswers, jobContext) {
             relevance: 5,
             communication: 10,
             strengths: [],
-            weaknesses: ['Provided no substantive answers', 'Failed to demonstrate any knowledge or skills'],
-            feedback: 'The candidate did not provide meaningful answers to the interview questions. All or most responses were "I don\'t know" or similar non-answers.',
-            areasToImprove: [
-                { area: 'Preparation', suggestion: 'Research the role and prepare answers before the interview', priority: 'high' },
-                { area: 'Knowledge', suggestion: 'Study the fundamental concepts required for this position', priority: 'high' }
-            ],
-            recommendations: [
-                'This candidate is not ready for this position',
-                'Recommend gaining more experience before reapplying'
-            ]
+            weaknesses: ['Provided no substantive answers'],
+            feedback: 'Candidate did not provide meaningful answers.',
+            requiresAdminReview: true
         };
     }
 
@@ -766,59 +850,37 @@ async function evaluateAllAnswers(questionsAndAnswers, jobContext) {
         `Q${i + 1} [${qa.category || qa.type}]: ${qa.question}\nA${i + 1}: ${qa.answer}`
     ).join('\n\n');
 
-    const prompt = `You are a STRICT and CRITICAL interview evaluator. Your job is to evaluate interview answers HONESTLY.
+    const prompt = `Evaluate this interview strictly. Return JSON with overallScore (0-100), technicalScore, hrScore, confidence, communication, strengths [], weaknesses [], feedback.
 
-=== JOB CONTEXT ===
-Job Title: ${jobTitle}
-Required Skills: ${requiredSkills?.join(', ') || 'Not specified'}
-Job Description: ${jobDescription?.substring(0, 500) || 'Not provided'}
+Job: ${jobTitle}
+Skills: ${requiredSkills?.join(', ') || 'Not specified'}
 
-=== INTERVIEW Q&A ===
+Q&A:
 ${qaFormatted}
 
-=== STRICT EVALUATION RULES ===
-1. GIBBERISH/NONSENSE answers (random text, "asdf", single words, unrelated content) = 0-15 points
-2. VERY SHORT answers (less than 20 words) = 15-30 points
-3. IRRELEVANT answers (doesn't address the question) = 20-40 points
-4. GENERIC answers (no specific examples, very vague) = 40-55 points
-5. BASIC answers (addresses question but lacks depth) = 55-70 points
-6. GOOD answers (clear, relevant, some examples) = 70-85 points
-7. EXCELLENT answers (detailed, specific examples, demonstrates expertise) = 85-100 points
-
-BE HARSH. If the answers don't demonstrate real knowledge or provide specific examples, the score should be LOW.
-
-Return JSON:
-{
-    "overallScore": 0-100,
-    "technicalScore": 0-100,
-    "hrScore": 0-100,
-    "confidence": 0-100,
-    "relevance": 0-100,
-    "communication": 0-100,
-    "strengths": ["specific strength 1", "specific strength 2"],
-    "weaknesses": ["specific weakness 1", "specific weakness 2"],
-    "feedback": "Overall assessment of the candidate's performance",
-    "areasToImprove": [
-        { "area": "Topic", "suggestion": "Specific suggestion", "priority": "high/medium" }
-    ],
-    "recommendations": ["Recommendation 1", "Recommendation 2"]
-}
-
-BE STRICT AND HONEST. Return ONLY valid JSON.`;
+BE STRICT. Return ONLY valid JSON.`;
 
     try {
         const response = await callWithFallback(
             [
-                { role: 'system', content: 'You are a strict technical interviewer. Return only valid JSON.' },
+                { role: 'system', content: 'Strict interview evaluator. Return valid JSON only.' },
                 { role: 'user', content: prompt }
             ],
-            [MODELS.CHIMERA, MODELS.LLAMA, MODELS.MISTRAL]
+            [MODELS.LLAMA, MODELS.MISTRAL]
         );
 
-        return extractJson(response);
+        const result = extractJson(response);
+        result.requiresAdminReview = true;
+        return result;
     } catch (error) {
-        console.error('DeepSeek evaluation failed:', error);
-        throw error;
+        console.error('[EVALUATION-LEGACY] Failed:', error);
+        return {
+            overallScore: 50,
+            technicalScore: 50,
+            hrScore: 50,
+            feedback: 'Evaluation failed - manual review required',
+            requiresAdminReview: true
+        };
     }
 }
 
@@ -830,6 +892,7 @@ module.exports = {
     getFallbackProblem,
     generateInterviewQuestions,
     generateNextQuestion,
+    generateContextualQuestion,  // NEW: For adaptive interviews
     validateAnswer,
     parseResume,
     evaluateAllAnswers,

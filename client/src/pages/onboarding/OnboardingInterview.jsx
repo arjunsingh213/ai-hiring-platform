@@ -4,12 +4,16 @@ import { useToast } from '../../components/Toast';
 import api from '../../services/api';
 import CodeIDE from '../../components/CodeIDE';
 import InterviewProctor from '../../components/InterviewProctor';
+import RoundInfoPage from '../../components/interview/RoundInfoPage';
 import './OnboardingInterview.css';
 
 const OnboardingInterview = ({
     parsedResume,
     userId,
     desiredRole,
+    experienceLevel,     // NEW: fresher or experienced
+    yearsOfExperience,   // NEW: years in role
+    jobDomains,          // NEW: selected domains
     onComplete,
     onSkip
 }) => {
@@ -26,6 +30,7 @@ const OnboardingInterview = ({
     // Guards to prevent duplicate API calls
     const isSubmittingRef = useRef(false);
     const isLoadingCodingRef = useRef(false);
+    const isStartingRef = useRef(false); // Guard against duplicate startInterview calls
 
     const [isRecording, setIsRecording] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -41,6 +46,17 @@ const OnboardingInterview = ({
     const [results, setResults] = useState(null);
     const [timeLeft, setTimeLeft] = useState(2700); // 45 minutes total interview timer
     const [cameraEnabled, setCameraEnabled] = useState(false);
+
+    // Blueprint and progress state for domain-adaptive interviews
+    const [blueprint, setBlueprint] = useState(null);
+    const [progress, setProgress] = useState({
+        currentQuestion: 1,
+        totalQuestions: 15,
+        currentRound: 1,
+        totalRounds: 3
+    });
+    const [showRoundInfo, setShowRoundInfo] = useState(false);
+    const [currentRoundInfo, setCurrentRoundInfo] = useState(null);
 
     // Speech recognition
     const [isListening, setIsListening] = useState(false);
@@ -66,9 +82,26 @@ const OnboardingInterview = ({
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const cameraRef = useRef(null);
 
-    // Proctoring state
+    // Proctoring state - CUMULATIVE across entire interview
     const [proctoringEnabled, setProctoringEnabled] = useState(true);
     const [isAutoFailed, setIsAutoFailed] = useState(false);
+    const [proctoringViolations, setProctoringViolations] = useState([]);
+    const proctoringViolationsRef = useRef([]);
+
+    // Handle violations from InterviewProctor - accumulate for entire interview
+    const handleViolationLog = (violations) => {
+        // Violations already have timestamps from InterviewProctor
+        // We add videoTimestamp for admin video seeking
+        const violationsWithVideoTime = violations.map(v => ({
+            ...v,
+            videoTimestamp: interviewStartTimeRef.current
+                ? Math.max(0, Math.round((new Date(v.timestamp).getTime() - interviewStartTimeRef.current) / 1000))
+                : 0
+        }));
+        proctoringViolationsRef.current = violationsWithVideoTime;
+        setProctoringViolations(violationsWithVideoTime);
+        console.log(`[PROCTORING] Total violations: ${violations.length}`);
+    };
 
     // Initialize speech recognition
     useEffect(() => {
@@ -193,12 +226,12 @@ const OnboardingInterview = ({
         window.speechSynthesis.speak(utterance);
     };
 
-    // Speak question when it changes
+    // Speak question when it changes (but NOT on round info page)
     useEffect(() => {
-        if (questions[currentIndex] && ttsSupported && !completed) {
+        if (questions[currentIndex] && ttsSupported && !completed && !showRoundInfo) {
             speakQuestion(questions[currentIndex].question);
         }
-    }, [currentIndex, questions, completed]);
+    }, [currentIndex, questions, completed, showRoundInfo]);
 
     // Stop camera function - reusable for cleanup
     const stopCamera = () => {
@@ -219,17 +252,26 @@ const OnboardingInterview = ({
         setCameraEnabled(false);
     };
 
-    // Initialize camera
+    // Initialize camera only when not showing RoundInfoPage (so video element is mounted)
     useEffect(() => {
+        // Don't init camera while RoundInfoPage is showing (video element not mounted)
+        if (showRoundInfo) {
+            console.log('[CAMERA] Waiting for RoundInfoPage to dismiss...');
+            return;
+        }
+
         // Small delay to ensure video element is mounted
         const timer = setTimeout(() => {
             initCamera();
         }, 500);
         return () => {
             clearTimeout(timer);
-            stopCamera(); // Use robust cleanup function
+            // Only stop camera if we're showing RoundInfoPage (cleanup during unmount)
+            if (showRoundInfo) {
+                stopCamera();
+            }
         };
-    }, []);
+    }, [showRoundInfo]);
 
     const initCamera = async () => {
         try {
@@ -434,19 +476,49 @@ const OnboardingInterview = ({
     }, []);
 
     const startInterview = async () => {
+        // Guard against duplicate calls (React StrictMode double-mounts in dev)
+        if (isStartingRef.current) {
+            console.log('[INTERVIEW] startInterview already in progress, skipping duplicate');
+            return;
+        }
+        isStartingRef.current = true;
+
         try {
             setLoading(true);
             const response = await api.post('/onboarding-interview/start', {
                 parsedResume,
                 desiredRole,
-                experienceLevel: parsedResume?.experience?.length > 2 ? 'experienced' : 'fresher'
+                experienceLevel,
+                yearsOfExperience: yearsOfExperience || 0,
+                jobDomains: jobDomains || []
             });
 
             if (response.success && response.question) {
                 setQuestions([response.question]);
                 // Set interview start time for violation timestamps
                 interviewStartTimeRef.current = Date.now();
-                // Timer already set to 2700 (45 min) in initial state - no reset needed
+
+                // Store blueprint if provided
+                if (response.blueprint) {
+                    setBlueprint(response.blueprint);
+                    setProgress({
+                        currentQuestion: 1,
+                        totalQuestions: response.blueprint.totalQuestions || 15,
+                        currentRound: 1,
+                        totalRounds: response.blueprint.totalRounds || 3
+                    });
+
+                    // Show first round info page
+                    const firstRound = response.blueprint.rounds?.[0];
+                    if (firstRound) {
+                        setCurrentRoundInfo({
+                            roundNumber: 1,
+                            ...firstRound,
+                            totalRounds: response.blueprint.totalRounds
+                        });
+                        setShowRoundInfo(true);
+                    }
+                }
             } else {
                 throw new Error('Failed to start interview');
             }
@@ -456,6 +528,19 @@ const OnboardingInterview = ({
             setQuestions(getDefaultQuestions());
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Handle round info page dismiss
+    const handleStartRound = () => {
+        setShowRoundInfo(false);
+        setCurrentRoundInfo(null);
+
+        // Speak the current question after dismissing round info
+        if (questions[currentIndex] && ttsSupported) {
+            setTimeout(() => {
+                speakQuestion(questions[currentIndex].question);
+            }, 300);
         }
     };
 
@@ -470,6 +555,9 @@ const OnboardingInterview = ({
         const currentQ = questions[currentIndex];
         setLoadingNext(true); // Show analyzing state
 
+        // Use blueprint's total questions or fallback to 15
+        const totalQuestionsLimit = blueprint?.totalQuestions || progress.totalQuestions || 15;
+
         try {
             // Call next endpoint which handles validation AND generation
             const response = await api.post('/onboarding-interview/next', {
@@ -478,7 +566,10 @@ const OnboardingInterview = ({
                 history: answers, // Send previous answers for context
                 parsedResume,
                 desiredRole,
-                experienceLevel: parsedResume?.experience?.length > 2 ? 'experienced' : 'fresher'
+                experienceLevel,
+                yearsOfExperience: yearsOfExperience || 0,
+                jobDomains: jobDomains || [],
+                blueprint // Send blueprint for proper round tracking
             });
 
             if (response.success) {
@@ -502,22 +593,35 @@ const OnboardingInterview = ({
                 setAnswers(updatedAnswers);
                 setAnswer('');
 
-                // HARD LIMIT: Stop at 10 questions (5 tech + 5 HR)
-                // Check both answer count AND currentIndex to be safe
-                // HARD LIMIT: Stop at question 10
+                // Check if interview is completed based on blueprint
                 const nextIndex = currentIndex + 1;
 
-                if (response.completed || updatedAnswers.length >= 10 || nextIndex >= 10) {
+                // Handle round transition - show RoundInfoPage between rounds
+                if (response.showRoundInfo && response.roundInfo) {
+                    setCurrentRoundInfo({
+                        ...response.roundInfo,
+                        totalRounds: blueprint?.totalRounds || progress.totalRounds
+                    });
+                    setShowRoundInfo(true);
+                    // Add the next question but we'll show round info first
+                    if (response.question) {
+                        setQuestions(prev => [...prev, response.question]);
+                    }
+                    setCurrentIndex(nextIndex);
+                } else if (response.completed || updatedAnswers.length >= totalQuestionsLimit || nextIndex >= totalQuestionsLimit) {
                     // Interview done - move to coding test or final evaluation
                     submitInterview(updatedAnswers);
-                } else if (response.question && questions.length < 10) {
-                    // Add next question and proceed (only if under limit)
+                } else if (response.question && questions.length < totalQuestionsLimit) {
+                    // Add next question and proceed
                     setQuestions(prev => {
-                        if (prev.length >= 10) return prev; // Safety check
+                        if (prev.length >= totalQuestionsLimit) return prev; // Safety check
                         return [...prev, response.question];
                     });
                     setCurrentIndex(nextIndex);
-                    // DON'T reset timer - it's a total interview timer now
+                    // Update progress
+                    if (response.progress) {
+                        setProgress(response.progress);
+                    }
                 } else {
                     // Safety fallback - submit if somehow we're at limit
                     submitInterview(updatedAnswers);
@@ -738,22 +842,39 @@ const OnboardingInterview = ({
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Proctoring state - store violations for final evaluation
-    const [proctoringViolations, setProctoringViolations] = useState([]);
-    const [violationReport, setViolationReport] = useState(null);
+    const currentQ = questions[currentIndex];
+    const progressPercent = questions.length > 0 ? ((currentIndex + 1) / progress.totalQuestions) * 100 : 0;
 
-    // Handle proctoring violations (log-only, no termination)
-    const handleViolationLog = (violations, getReport) => {
-        setProctoringViolations(violations);
-        if (getReport) {
-            setViolationReport(getReport());
+    // Get current round info from blueprint
+    const getCurrentRoundFromBlueprint = () => {
+        if (!blueprint || !blueprint.rounds) {
+            // Fallback for legacy behavior
+            return {
+                displayName: currentIndex >= 5 ? 'HR Round' : 'Technical Round',
+                roundNumber: currentIndex >= 5 ? 2 : 1,
+                isCodingRound: false
+            };
         }
+
+        // Calculate which round based on question index
+        let questionCount = 0;
+        for (let i = 0; i < blueprint.rounds.length; i++) {
+            questionCount += blueprint.rounds[i].questionCount || 5;
+            if (currentIndex < questionCount) {
+                return {
+                    ...blueprint.rounds[i],
+                    roundNumber: i + 1
+                };
+            }
+        }
+        // Return last round if beyond expected
+        const lastRound = blueprint.rounds[blueprint.rounds.length - 1];
+        return { ...lastRound, roundNumber: blueprint.rounds.length };
     };
 
-    const currentQ = questions[currentIndex];
-    const progress = questions.length > 0 ? ((currentIndex + 1) / 10) * 100 : 0; // Fixed to 10 max
-    // Questions 1-5 (index 0-4) are Technical, Questions 6-10 (index 5-9) are HR
-    const isHRRound = currentIndex >= 5;
+    const currentRound = getCurrentRoundFromBlueprint();
+    const isHRRound = currentRound.displayName?.toLowerCase().includes('hr') ||
+        currentRound.displayName?.toLowerCase().includes('behavioral');
 
     if (loading) {
         return (
@@ -761,7 +882,32 @@ const OnboardingInterview = ({
                 <div className="loading-spinner"></div>
                 <h2>Generating Your Personalized Interview...</h2>
                 <p>Based on your resume, we're creating tailored questions just for you.</p>
+                {blueprint && (
+                    <div className="blueprint-info" style={{ marginTop: '16px', color: '#94a3b8', fontSize: '0.9rem' }}>
+                        <p>Domain: <strong>{blueprint.domain}</strong></p>
+                        <p>Rounds: {blueprint.totalRounds} • Questions: {blueprint.totalQuestions}</p>
+                    </div>
+                )}
             </div>
+        );
+    }
+
+    // Show round info page between rounds
+    if (showRoundInfo && currentRoundInfo) {
+        return (
+            <RoundInfoPage
+                roundNumber={currentRoundInfo.roundNumber}
+                totalRounds={currentRoundInfo.totalRounds || progress.totalRounds}
+                displayName={currentRoundInfo.displayName}
+                icon={currentRoundInfo.icon}
+                description={currentRoundInfo.description}
+                tips={currentRoundInfo.tips}
+                difficulty={currentRoundInfo.difficulty}
+                questionCount={currentRoundInfo.questionCount}
+                focus={currentRoundInfo.focus}
+                isCodingRound={currentRoundInfo.isCodingRound}
+                onStartRound={handleStartRound}
+            />
         );
     }
 
@@ -925,11 +1071,16 @@ const OnboardingInterview = ({
             <div className="interview-header">
                 <div className="header-left">
                     <span className={`round-badge ${isHRRound ? 'hr' : 'tech'}`}>
-                        {isHRRound ? 'HR Round' : 'Technical Round'}
+                        {currentRound.displayName || (isHRRound ? 'HR Round' : 'Technical Round')}
                     </span>
                     <span className="question-counter">
-                        Question {Math.min(currentIndex + 1, 10)} of 10
+                        Question {currentIndex + 1} of {progress.totalQuestions}
                     </span>
+                    {blueprint && (
+                        <span className="round-counter">
+                            Round {currentRound.roundNumber} of {blueprint.totalRounds || progress.totalRounds}
+                        </span>
+                    )}
                 </div>
                 <div className="header-right">
                     <span className={`timer ${timeLeft < 30 ? 'warning' : ''}`}>
@@ -999,10 +1150,12 @@ const OnboardingInterview = ({
                         </div>
                     )}
 
-                    {/* Proctoring Component - Log Only Mode */}
+
+                    {/* Proctoring Component - Maintains cumulative violations across all rounds */}
                     <InterviewProctor
                         videoRef={videoRef}
                         enabled={proctoringEnabled && cameraEnabled && !completed}
+                        initialViolations={proctoringViolations}
                         onViolationLog={handleViolationLog}
                     />
                 </div>
