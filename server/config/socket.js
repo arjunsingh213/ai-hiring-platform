@@ -20,17 +20,20 @@ const initializeSocket = (server) => {
 
         // Join user-specific room
         socket.on('join', (userId) => {
-            console.log(`[Socket Debug] socket.on('join') received for userId: ${userId}`);
+            console.log(`[Socket] User ${userId} joined with socket ${socket.id}`);
             if (!userId) {
-                console.log('[Socket Debug] join failed: userId is null/undefined');
+                console.log('[Socket] join failed: userId is null/undefined');
                 return;
             }
             socket.join(userId);
-            console.log(`[Socket Debug] Socket ${socket.id} successfully joined room: ${userId}`);
+            socket.userId = userId; // Store userId on socket for disconnect handling
 
-            // Inspect rooms
+            // Broadcast that user is now online
+            socket.broadcast.emit('user_online', { userId });
+
+            // Log rooms
             const rooms = Array.from(socket.rooms);
-            console.log(`[Socket Debug] Socket ${socket.id} is now in rooms:`, rooms);
+            console.log(`[Socket] Socket ${socket.id} is now in rooms:`, rooms);
         });
 
         // Handle messaging
@@ -40,7 +43,21 @@ const initializeSocket = (server) => {
 
         // Handle typing indicators
         socket.on('typing', (data) => {
-            socket.to(data.recipientId).emit('user_typing', data);
+            if (data.recipientId) {
+                socket.to(data.recipientId).emit('user_typing', {
+                    userId: data.userId,
+                    conversationId: `${data.userId}-${data.recipientId}`
+                });
+            }
+        });
+
+        socket.on('stop_typing', (data) => {
+            if (data.recipientId) {
+                socket.to(data.recipientId).emit('user_stopped_typing', {
+                    userId: data.userId,
+                    conversationId: `${data.userId}-${data.recipientId}`
+                });
+            }
         });
 
         // Handle notifications
@@ -50,6 +67,11 @@ const initializeSocket = (server) => {
 
         socket.on('disconnect', () => {
             console.log('❌ Client disconnected:', socket.id);
+
+            // Broadcast that user is now offline
+            if (socket.userId) {
+                socket.broadcast.emit('user_offline', { userId: socket.userId });
+            }
         });
     });
 

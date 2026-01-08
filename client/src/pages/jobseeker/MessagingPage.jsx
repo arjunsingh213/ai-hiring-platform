@@ -18,6 +18,8 @@ const MessagingPage = () => {
     const [userSearchQuery, setUserSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [typingUsers, setTypingUsers] = useState({}); // Track who is typing
+    const [onlineUsers, setOnlineUsers] = useState({}); // Track online status
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
@@ -31,6 +33,24 @@ const MessagingPage = () => {
         newSocket.on('receive_message', (message) => {
             setMessages(prev => [...prev, message]);
             fetchConversations(); // Refresh conversations
+        });
+
+        // Typing indicator listeners
+        newSocket.on('user_typing', ({ userId: typingUserId }) => {
+            setTypingUsers(prev => ({ ...prev, [typingUserId]: true }));
+        });
+
+        newSocket.on('user_stopped_typing', ({ userId: typingUserId }) => {
+            setTypingUsers(prev => ({ ...prev, [typingUserId]: false }));
+        });
+
+        // Online status listeners
+        newSocket.on('user_online', ({ userId: onlineUserId }) => {
+            setOnlineUsers(prev => ({ ...prev, [onlineUserId]: true }));
+        });
+
+        newSocket.on('user_offline', ({ userId: offlineUserId }) => {
+            setOnlineUsers(prev => ({ ...prev, [offlineUserId]: false }));
         });
 
         fetchConversations();
@@ -121,12 +141,56 @@ const MessagingPage = () => {
         };
 
         try {
+            // Stop typing indicator
+            if (socket) {
+                socket.emit('stop_typing', {
+                    userId,
+                    recipientId: selectedConversation.otherUser._id
+                });
+            }
+
             await api.post('/messages', messageData);
             setNewMessage('');
             fetchMessages(selectedConversation.otherUser._id);
         } catch (error) {
             console.error('Error sending message:', error);
         }
+    };
+
+    // Handle typing indicator
+    const handleTyping = (value) => {
+        setNewMessage(value);
+
+        if (socket && selectedConversation) {
+            if (value.trim()) {
+                socket.emit('typing', {
+                    userId,
+                    recipientId: selectedConversation.otherUser._id
+                });
+            } else {
+                socket.emit('stop_typing', {
+                    userId,
+                    recipientId: selectedConversation.otherUser._id
+                });
+            }
+        }
+    };
+
+    // Format message timestamp
+    const getMessageTimestamp = (date) => {
+        const now = new Date();
+        const msgDate = new Date(date);
+        const diffMs = now - msgDate;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return msgDate.toLocaleDateString([], { weekday: 'short' });
+        return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
     };
 
     const selectConversation = async (conversation) => {
@@ -248,12 +312,15 @@ const MessagingPage = () => {
                                 className={`conversation-item ${selectedConversation?.otherUser?._id === conv.otherUser?._id ? 'active' : ''}`}
                                 onClick={() => selectConversation(conv)}
                             >
-                                <div className="user-avatar">
+                                <div className="user-avatar" style={{ position: 'relative' }}>
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
                                         <circle cx="12" cy="12" r="10" fill="var(--primary)" />
                                         <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
                                         <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
                                     </svg>
+                                    {onlineUsers[conv.otherUser?._id] && (
+                                        <div className="online-indicator"></div>
+                                    )}
                                 </div>
                                 <div className="conversation-info">
                                     <h4>{conv.otherUser?.profile?.name || 'User'}</h4>
@@ -273,16 +340,26 @@ const MessagingPage = () => {
                     <>
                         <div className="chat-header">
                             <div className="user-info">
-                                <div className="user-avatar">
+                                <div className="user-avatar" style={{ position: 'relative' }}>
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
                                         <circle cx="12" cy="12" r="10" fill="var(--primary)" />
                                         <path d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z" fill="white" />
                                         <path d="M6 18C6 15.7909 7.79086 14 10 14H14C16.2091 14 18 15.7909 18 18V19H6V18Z" fill="white" />
                                     </svg>
+                                    {onlineUsers[selectedConversation.otherUser?._id] && (
+                                        <div className="online-indicator"></div>
+                                    )}
                                 </div>
                                 <div>
                                     <h3>{selectedConversation.otherUser?.profile?.name || 'User'}</h3>
-                                    <p className="text-muted">{selectedConversation.otherUser?.profile?.company || 'Online'}</p>
+                                    <p className="text-muted">
+                                        {typingUsers[selectedConversation.otherUser?._id]
+                                            ? 'typing...'
+                                            : onlineUsers[selectedConversation.otherUser?._id]
+                                                ? 'Online'
+                                                : selectedConversation.otherUser?.profile?.company || 'Offline'
+                                        }
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -301,11 +378,20 @@ const MessagingPage = () => {
                                         <div className="message-content">
                                             <p>{msg.content}</p>
                                             <span className="message-time">
-                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {getMessageTimestamp(msg.createdAt)}
                                             </span>
                                         </div>
                                     </div>
                                 ))
+                            )}
+                            {typingUsers[selectedConversation.otherUser?._id] && (
+                                <div className="message received">
+                                    <div className="typing-indicator">
+                                        <span className="typing-dot"></span>
+                                        <span className="typing-dot"></span>
+                                        <span className="typing-dot"></span>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
@@ -315,7 +401,7 @@ const MessagingPage = () => {
                                 className="input"
                                 placeholder="Type a message..."
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                                onChange={(e) => handleTyping(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                             />
                             <button className="btn btn-primary" onClick={sendMessage}>

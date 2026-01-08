@@ -1,219 +1,216 @@
+/**
+ * Seed Messages Script
+ * Populates the database with realistic conversations between recruiters and job seekers
+ */
+
 const mongoose = require('mongoose');
-const Message = require('../models/Message');
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 require('dotenv').config();
+
+const User = require('../models/User');
+const Message = require('../models/Message');
 
 const seedMessages = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log('📡 Connected to MongoDB');
+        console.log('✅ Connected to MongoDB');
 
-        // Find or create a test job seeker user
-        let currentUser = await User.findOne({ email: 'test@jobseeker.com' });
+        // Get existing users
+        const jobSeekers = await User.find({ role: 'jobseeker' }).limit(5);
+        const recruiters = await User.find({ role: 'recruiter' }).limit(3);
 
-        if (!currentUser) {
-            console.log('Creating test job seeker user...');
-            const hashedPassword = await bcrypt.hash('password123', 10);
-            currentUser = await User.create({
-                email: 'test@jobseeker.com',
-                password: hashedPassword,
-                role: 'jobseeker',
-                profile: {
-                    name: 'John Doe',
-                    title: 'Full Stack Developer',
-                    location: 'San Francisco, CA',
-                    bio: 'Experienced developer looking for new opportunities'
-                }
-            });
-            console.log('✅ Created test user: test@jobseeker.com / password123');
-        } else {
-            console.log(`✅ Found existing user: ${currentUser.profile?.name || currentUser.email}`);
+        if (jobSeekers.length === 0 || recruiters.length === 0) {
+            console.log('⚠️  No users found. Please ensure users exist first.');
+            return;
         }
 
-        console.log(`\n🔑 USER ID: ${currentUser._id}`);
-        console.log('\n📋 IMPORTANT: Use these credentials to login:');
-        console.log('   Email: test@jobseeker.com');
-        console.log('   Password: password123\n');
+        console.log(`Found ${jobSeekers.length} job seekers and ${recruiters.length} recruiters`);
 
-        // Create or find test recruiters
-        const recruiter1 = await User.findOneAndUpdate(
-            { email: 'recruiter1@techcorp.com' },
-            {
-                email: 'recruiter1@techcorp.com',
-                password: await bcrypt.hash('password123', 10),
-                role: 'recruiter',
-                profile: {
-                    name: 'Sarah Johnson',
-                    company: 'TechCorp Inc.',
-                    title: 'Senior Technical Recruiter',
-                    location: 'San Francisco, CA'
-                }
-            },
-            { upsert: true, new: true }
-        );
-
-        const recruiter2 = await User.findOneAndUpdate(
-            { email: 'recruiter2@startupxyz.com' },
-            {
-                email: 'recruiter2@startupxyz.com',
-                password: await bcrypt.hash('password123', 10),
-                role: 'recruiter',
-                profile: {
-                    name: 'Michael Chen',
-                    company: 'StartupXYZ',
-                    title: 'Talent Acquisition Manager',
-                    location: 'New York, NY'
-                }
-            },
-            { upsert: true, new: true }
-        );
-
-        const recruiter3 = await User.findOneAndUpdate(
-            { email: 'hr@innovatetech.com' },
-            {
-                email: 'hr@innovatetech.com',
-                password: await bcrypt.hash('password123', 10),
-                role: 'recruiter',
-                profile: {
-                    name: 'Emily Rodriguez',
-                    company: 'InnovateTech',
-                    title: 'HR Manager',
-                    location: 'Austin, TX'
-                }
-            },
-            { upsert: true, new: true }
-        );
-
-        console.log('✅ Created/found test recruiters');
-
-        // Clear existing messages for this user
-        await Message.deleteMany({
-            $or: [
-                { senderId: currentUser._id },
-                { recipientId: currentUser._id }
-            ]
-        });
-
+        // Clear existing messages (optional - comment out to keep existing)
+        await Message.deleteMany({});
         console.log('🗑️  Cleared existing messages');
 
-        // Conversation 1: TechCorp - Recent, active conversation
-        const conv1Messages = [
-            {
-                senderId: recruiter1._id,
-                recipientId: currentUser._id,
-                content: "Hi! I came across your profile and I'm impressed with your experience. We have an exciting Senior Developer position at TechCorp that might interest you.",
-                read: true,
-                readAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: currentUser._id,
-                recipientId: recruiter1._id,
-                content: "Thank you for reaching out! I'd love to learn more about the position. Could you share more details?",
-                read: true,
-                readAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: recruiter1._id,
-                recipientId: currentUser._id,
-                content: "Absolutely! It's a full-stack role working with React, Node.js, and AWS. Salary range is $120k-$150k with excellent benefits. The team is building a cutting-edge AI platform.",
-                read: true,
-                readAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: currentUser._id,
-                recipientId: recruiter1._id,
-                content: "That sounds perfect! I have 5 years of experience with that exact stack. What are the next steps?",
-                read: true,
-                readAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: recruiter1._id,
-                recipientId: currentUser._id,
-                content: "Great! I'd like to schedule a call this week. Are you available Tuesday or Wednesday afternoon?",
-                read: false,
-                createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-            }
-        ];
+        const now = new Date();
+        const messages = [];
 
-        // Conversation 2: StartupXYZ - Unread messages
-        const conv2Messages = [
-            {
-                senderId: recruiter2._id,
-                recipientId: currentUser._id,
-                content: "Hello! We're looking for a talented developer to join our startup. Would you be interested in a quick chat?",
-                read: true,
-                readAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: currentUser._id,
-                recipientId: recruiter2._id,
-                content: "Sure! What's the role about?",
-                read: true,
-                readAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: recruiter2._id,
-                recipientId: currentUser._id,
-                content: "We're building a fintech platform and need a frontend specialist. Equity + competitive salary. Interested?",
-                read: false,
-                createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000)
-            }
-        ];
+        // Helper to create timestamp offsets
+        const daysAgo = (days) => new Date(now - days * 24 * 60 * 60 * 1000);
+        const hoursAgo = (hours) => new Date(now - hours * 60 * 60 * 1000);
+        const minutesAgo = (minutes) => new Date(now - minutes * 60 * 1000);
 
-        // Conversation 3: InnovateTech - Older conversation
-        const conv3Messages = [
-            {
-                senderId: recruiter3._id,
-                recipientId: currentUser._id,
-                content: "Hi, thank you for applying to our Backend Engineer position. We'd like to move forward with your application.",
-                read: true,
-                readAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: currentUser._id,
-                recipientId: recruiter3._id,
-                content: "That's wonderful news! What's the next step in the process?",
-                read: true,
-                readAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
-            },
-            {
-                senderId: recruiter3._id,
-                recipientId: currentUser._id,
-                content: "We'll send you a technical assessment by email. Please complete it within 48 hours. Good luck!",
-                read: true,
-                readAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-                createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-            }
-        ];
+        // Conversation 1: Recruiter 1 → Job Seeker 1 (Recent, about job opportunity)
+        if (recruiters[0] && jobSeekers[0]) {
+            messages.push(
+                {
+                    senderId: recruiters[0]._id,
+                    recipientId: jobSeekers[0]._id,
+                    content: `Hi ${jobSeekers[0].profile?.name || 'there'}! I came across your profile and I'm impressed by your background. We have an exciting opportunity for a Senior Full Stack Developer role. Would you be interested in learning more?`,
+                    read: true,
+                    readAt: hoursAgo(2),
+                    createdAt: daysAgo(2)
+                },
+                {
+                    senderId: jobSeekers[0]._id,
+                    recipientId: recruiters[0]._id,
+                    content: `Hello! Thank you for reaching out. Yes, I'd definitely be interested in hearing more about the position. What are the key requirements?`,
+                    read: true,
+                    readAt: hoursAgo(1),
+                    createdAt: daysAgo(1) + 1000
+                },
+                {
+                    senderId: recruiters[0]._id,
+                    recipientId: jobSeekers[0]._id,
+                    content: `Great! We're looking for someone with 5+ years of experience in React, Node.js, and MongoDB. The role is fully remote with a competitive salary range of $120k-$180k. The team is working on cutting-edge AI-powered applications.`,
+                    read: true,
+                    readAt: minutesAgo(45),
+                    createdAt: daysAgo(1) + 2000
+                },
+                {
+                    senderId: jobSeekers[0]._id,
+                    recipientId: recruiters[0]._id,
+                    content: `That sounds perfect! I have 6 years of experience with the MERN stack and I've been working on AI/ML integration in my current role. When would be a good time to discuss this further?`,
+                    read: true,
+                    readAt: minutesAgo(30),
+                    createdAt: minutesAgo(120)
+                },
+                {
+                    senderId: recruiters[0]._id,
+                    recipientId: jobSeekers[0]._id,
+                    content: `Excellent! How about tomorrow at 2 PM for a quick call? I can send you a calendar invite. Also, I'd love to see your portfolio or any recent projects you've worked on.`,
+                    read: false,
+                    createdAt: minutesAgo(5)
+                }
+            );
+        }
+
+        // Conversation 2: Recruiter 2 → Job Seeker 2 (Older conversation)
+        if (recruiters[1] && jobSeekers[1]) {
+            messages.push(
+                {
+                    senderId: recruiters[1]._id,
+                    recipientId: jobSeekers[1]._id,
+                    content: `Hi! Your interview results were impressive - 85/100! We'd like to move forward with your application for the Frontend Developer position.`,
+                    read: true,
+                    readAt: daysAgo(5),
+                    createdAt: daysAgo(7)
+                },
+                {
+                    senderId: jobSeekers[1]._id,
+                    recipientId: recruiters[1]._id,
+                    content: `Thank you so much! I'm really excited about this opportunity. What are the next steps?`,
+                    read: true,
+                    readAt: daysAgo(4),
+                    createdAt: daysAgo(6)
+                },
+                {
+                    senderId: recruiters[1]._id,
+                    recipientId: jobSeekers[1]._id,
+                    content: `The next step would be a technical interview with our engineering team. Are you available next week?`,
+                    read: true,
+                    readAt: daysAgo(3),
+                    createdAt: daysAgo(5)
+                }
+            );
+        }
+
+        // Conversation 3: Job Seeker 3 → Recruiter 1 (Initiated by job seeker)
+        if (jobSeekers[2] && recruiters[0]) {
+            messages.push(
+                {
+                    senderId: jobSeekers[2]._id,
+                    recipientId: recruiters[0]._id,
+                    content: `Hello! I applied for the UI/UX Designer position last week. I wanted to follow up on my application status.`,
+                    read: true,
+                    readAt: daysAgo(3),
+                    createdAt: daysAgo(4)
+                },
+                {
+                    senderId: recruiters[0]._id,
+                    recipientId: jobSeekers[2]._id,
+                    content: `Hi! Thanks for following up. We're currently reviewing applications and will get back to you by the end of this week. Your portfolio looks great!`,
+                    read: true,
+                    readAt: daysAgo(2),
+                    createdAt: daysAgo(3)
+                },
+                {
+                    senderId: jobSeekers[2]._id,
+                    recipientId: recruiters[0]._id,
+                    content: `Thank you for the update! Looking forward to hearing from you.`,
+                    read: true,
+                    readAt: hoursAgo(48),
+                    createdAt: daysAgo(2) + 1000
+                }
+            );
+        }
+
+        // Conversation 4: Recruiter 3 → Job Seeker 4 (Very recent, unread)
+        if (recruiters[2] && jobSeekers[3]) {
+            messages.push(
+                {
+                    senderId: recruiters[2]._id,
+                    recipientId: jobSeekers[3]._id,
+                    content: `Hi! We have an urgent opening for a Backend Engineer (Node.js). Based on your profile, you seem like a perfect fit. Are you currently open to new opportunities?`,
+                    read: false,
+                    createdAt: minutesAgo(30)
+                }
+            );
+        }
+
+        // Conversation 5: Job Seeker 5 → Recruiter 2 (Question about company)
+        if (jobSeekers[4] && recruiters[1]) {
+            messages.push(
+                {
+                    senderId: jobSeekers[4]._id,
+                    recipientId: recruiters[1]._id,
+                    content: `Hi! I saw the DevOps Engineer position. Could you tell me more about the team structure and the tech stack you're using?`,
+                    read: true,
+                    readAt: hoursAgo(12),
+                    createdAt: daysAgo(1)
+                },
+                {
+                    senderId: recruiters[1]._id,
+                    recipientId: jobSeekers[4]._id,
+                    content: `Absolutely! Our DevOps team consists of 5 engineers. We primarily use AWS, Docker, Kubernetes, and Terraform. The team follows agile methodology and you'd be working on improving our CI/CD pipelines and infrastructure automation.`,
+                    read: true,
+                    readAt: hoursAgo(6),
+                    createdAt: hoursAgo(18)
+                },
+                {
+                    senderId: jobSeekers[4]._id,
+                    recipientId: recruiters[1]._id,
+                    content: `That sounds great! I have extensive experience with all of those tools. What's the interview process like?`,
+                    read: false,
+                    createdAt: hoursAgo(4)
+                }
+            );
+        }
 
         // Insert all messages
-        await Message.insertMany([...conv1Messages, ...conv2Messages, ...conv3Messages]);
+        const insertedMessages = await Message.insertMany(messages);
+        console.log(`✅ Created ${insertedMessages.length} messages`);
 
-        console.log('\n✅ Created test conversations:');
-        console.log(`   - ${recruiter1.profile.name} (TechCorp): 5 messages, 1 unread`);
-        console.log(`   - ${recruiter2.profile.name} (StartupXYZ): 3 messages, 1 unread`);
-        console.log(`   - ${recruiter3.profile.name} (InnovateTech): 3 messages, all read`);
+        // Display conversation summary
+        console.log('\n📊 Conversation Summary:');
+        const conversationGroups = {};
+        insertedMessages.forEach(msg => {
+            const key = `${msg.senderId}-${msg.recipientId}`;
+            conversationGroups[key] = (conversationGroups[key] || 0) + 1;
+        });
 
-        console.log('\n🎉 Seed completed successfully!');
-        console.log('\n📝 TO SEE CONVERSATIONS:');
-        console.log('   1. Login with: test@jobseeker.com / password123');
-        console.log('   2. Navigate to Messages page');
-        console.log('   3. You should see 3 conversations!\n');
+        let convNum = 1;
+        for (const [key, count] of Object.entries(conversationGroups)) {
+            console.log(`   Conversation ${convNum++}: ${count} messages`);
+        }
 
-        process.exit(0);
+        console.log('\n🎉 Message seeding completed successfully!');
+        console.log('\n💡 Tip: Navigate to /jobseeker/messages to see the conversations');
+
     } catch (error) {
         console.error('❌ Error seeding messages:', error);
-        process.exit(1);
+    } finally {
+        await mongoose.connection.close();
+        console.log('\n✅ Database connection closed');
     }
 };
 
+// Run the seeder
 seedMessages();
