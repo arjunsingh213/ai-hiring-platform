@@ -178,7 +178,21 @@ const JobSeekerOnboarding = () => {
                             if (profile.parsedResume) {
                                 console.log('Using pre-parsed resume with skills:', profile.parsedResume.skills?.slice(0, 5));
                                 setParsedResume(profile.parsedResume);
+                            } else {
+                                // No resume found - redirect to resume upload step
+                                console.log('[INTERVIEW] No resume found - redirecting to resume upload');
+                                toast.warning('Please upload your resume first');
+                                setSearchParams({ step: '3' }, { replace: true });
+                                setStep(3);
+                                return; // Stop further processing
                             }
+                        } else {
+                            // No job seeker profile - redirect to resume upload
+                            console.log('[INTERVIEW] No profile found - redirecting to resume upload');
+                            toast.warning('Please complete your profile first');
+                            setSearchParams({ step: '3' }, { replace: true });
+                            setStep(3);
+                            return; // Stop further processing
                         }
 
                         // Set basic profile info
@@ -190,6 +204,11 @@ const JobSeekerOnboarding = () => {
                         }
                     } catch (error) {
                         console.error('Failed to fetch user profile:', error);
+                        // On error, redirect to resume upload to be safe
+                        toast.error('Failed to load profile. Please start from resume upload.');
+                        setSearchParams({ step: '3' }, { replace: true });
+                        setStep(3);
+                        return;
                     }
                 };
 
@@ -229,6 +248,12 @@ const JobSeekerOnboarding = () => {
                     }
                 };
                 checkInterviewStatus();
+            } else {
+                // No userId - redirect to step 1
+                console.log('[INTERVIEW] No userId found - redirecting to step 1');
+                toast.warning('Please complete your profile first');
+                setSearchParams({ step: '1' }, { replace: true });
+                setStep(1);
             }
         }
     }, []);
