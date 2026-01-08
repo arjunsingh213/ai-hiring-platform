@@ -770,3 +770,17 @@
         padding: 0.5rem 1.25rem;
     }
 }
+
+/* ===== Terms & Conditions Link ===== */
+.terms-link {
+    color: #007DFF !important;
+    font-weight: 600;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+    transition: color 0.2s ease;
+}
+
+.terms-link:hover {
+    color: #0056b3 !important;
+    text-decoration: underline !important;
+}

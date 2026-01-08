@@ -49,11 +49,11 @@ const QUESTION_TEMPLATES = {
     development: {
         fresher: {
             round1: {
-                name: "Foundation & Motivation",
+                name: "Introduction & Background",
                 questionCount: 5,
-                focus: ["motivation", "basic programming concepts", "learning approach"],
+                focus: ["role introduction", "resume experience", "background overview"],
                 difficulty: "easy",
-                competencies: ["fundamentals", "problem-solving mindset", "passion for tech"]
+                competencies: ["communication", "relevant experience", "role understanding"]
             },
             round2: {
                 name: "Technical Fundamentals",
@@ -179,7 +179,7 @@ const QUESTION_TEMPLATES = {
                 round3: { name: "Leadership", questionCount: 5, focus: ["team collaboration", "project ownership", "data-driven decisions"], difficulty: "hard", competencies: ["leadership", "influence", "decision making"] }
             },
             '5+': {
-                round: { name: "Data Science Leadership", questionCount: 4, focus: ["data strategy", "team building", "innovation"], difficulty: "expert", competencies: ["strategic vision", "team leadership", "innovation"] },
+                round1: { name: "Data Science Leadership", questionCount: 4, focus: ["data strategy", "team building", "innovation"], difficulty: "expert", competencies: ["strategic vision", "team leadership", "innovation"] },
                 round2: { name: "Expert Knowledge", questionCount: 6, focus: ["advanced architectures", "MLOps", "research", "fairness"], difficulty: "expert", competencies: ["cutting-edge knowledge", "ethical AI", "research application"] },
                 round3: { name: "Organizational Impact", questionCount: 5, focus: ["culture", "process", "cross-functional leadership"], difficulty: "expert", competencies: ["organizational impact", "process improvement", "executive communication"] }
             }
@@ -211,13 +211,151 @@ const QUESTION_TEMPLATES = {
         }
     },
 
-    // Simplified templates for other categories
-    devops: { /* Similar structure adapted for DevOps */ },
-    management: { /* Similar structure adapted for PM/Scrum */ },
-    qa: { /* Similar structure adapted for QA */ },
-    security: { /* Similar structure adapted for Security */ },
-    database: { /* Similar structure adapted for DBA */ },
-    other: { /* Generic template */ }
+    // Generic fallback template for all other categories
+    devops: {
+        fresher: {
+            round1: { name: "Foundation & Motivation", questionCount: 5, focus: ["career motivation", "basic concepts", "learning approach"], difficulty: "easy", competencies: ["fundamentals", "problem-solving", "passion"] },
+            round2: { name: "Technical Fundamentals", questionCount: 6, focus: ["core technical skills", "tools", "best practices"], difficulty: "medium", competencies: ["technical knowledge", "analytical thinking", "quality awareness"] },
+            round3: { name: "Practical Application", questionCount: 4, focus: ["projects", "learning scenarios", "teamwork"], difficulty: "medium", competencies: ["project experience", "collaboration", "continuous learning"] }
+        },
+        experienced: {
+            '0-2': {
+                round1: { name: "Early Career Experience", questionCount: 4, focus: ["recent projects", "team workflow", "responsibilities"], difficulty: "medium", competencies: ["hands-on experience", "professional practices", "teamwork"] },
+                round2: { name: "Technical Skills", questionCount: 6, focus: ["technical expertise", "best practices", "problem-solving"], difficulty: "medium-hard", competencies: ["depth of knowledge", "problem resolution", "standards"] },
+                round3: { name: "Growth & Collaboration", questionCount: 5, focus: ["ownership", "learning", "improvements"], difficulty: "medium", competencies: ["initiative", "learning agility", "quality focus"] }
+            },
+            '3-5': {
+                round1: { name: "Professional Expertise", questionCount: 4, focus: ["complex projects", "key decisions", "technical challenges"], difficulty: "hard", competencies: ["expertise", "decision making", "technical depth"] },
+                round2: { name: "Advanced Technical", questionCount: 6, focus: ["advanced topics", "optimization", "architecture"], difficulty: "hard", competencies: ["advanced skills", "optimization", "strategic thinking"] },
+                round3: { name: "Leadership & Impact", questionCount: 5, focus: ["mentoring", "project ownership", "direction"], difficulty: "hard", competencies: ["leadership", "influence", "business impact"] }
+            },
+            '5+': {
+                round1: { name: "Strategic Leadership", questionCount: 4, focus: ["strategic decisions", "architecture", "business alignment"], difficulty: "expert", competencies: ["strategic thinking", "vision", "business acumen"] },
+                round2: { name: "Expert Knowledge", questionCount: 6, focus: ["expert topics", "standards", "innovation"], difficulty: "expert", competencies: ["expert knowledge", "standardization", "thought leadership"] },
+                round3: { name: "Organizational Impact", questionCount: 5, focus: ["team building", "culture", "cross-team collaboration"], difficulty: "expert", competencies: ["organizational influence", "culture building", "leadership"] }
+            }
+        }
+    },
+    management: {
+        fresher: {
+            round1: { name: "Foundation & Motivation", questionCount: 5, focus: ["career motivation", "basic concepts", "learning approach"], difficulty: "easy", competencies: ["fundamentals", "problem-solving", "passion"] },
+            round2: { name: "Management Fundamentals", questionCount: 6, focus: ["management basics", "tools", "methodologies"], difficulty: "medium", competencies: ["knowledge", "thinking", "awareness"] },
+            round3: { name: "Practical Application", questionCount: 4, focus: ["projects", "scenarios", "teamwork"], difficulty: "medium", competencies: ["experience", "collaboration", "learning"] }
+        },
+        experienced: {
+            '0-2': {
+                round1: { name: "Management Experience", questionCount: 4, focus: ["projects", "team coordination", "stakeholders"], difficulty: "medium", competencies: ["experience", "practices", "teamwork"] },
+                round2: { name: "Management Skills", questionCount: 6, focus: ["methodologies", "tools", "problem-solving"], difficulty: "medium-hard", competencies: ["knowledge", "resolution", "standards"] },
+                round3: { name: "Growth", questionCount: 5, focus: ["ownership", "learning", "process improvement"], difficulty: "medium", competencies: ["initiative", "agility", "quality"] }
+            },
+            '3-5': {
+                round1: { name: "Management Expertise", questionCount: 4, focus: ["complex projects", "decisions", "challenges"], difficulty: "hard", competencies: ["management", "decision making", "depth"] },
+                round2: { name: "Advanced Management", questionCount: 6, focus: ["strategy", "optimization", "stakeholder management"], difficulty: "hard", competencies: ["skills", "optimization", "thinking"] },
+                round3: { name: "Leadership", questionCount: 5, focus: ["team development", "ownership", "direction"], difficulty: "hard", competencies: ["leadership", "influence", "impact"] }
+            },
+            '5+': {
+                round1: { name: "Strategic Leadership", questionCount: 4, focus: ["strategic decisions", "vision", "alignment"], difficulty: "expert", competencies: ["thinking", "vision", "acumen"] },
+                round2: { name: "Expert Knowledge", questionCount: 6, focus: ["best practices", "standards", "innovation"], difficulty: "expert", competencies: ["knowledge", "standardization", "leadership"] },
+                round3: { name: "Organizational Impact", questionCount: 5, focus: ["team building", "culture", "collaboration"], difficulty: "expert", competencies: ["influence", "culture", "leadership"] }
+            }
+        }
+    },
+    qa: {
+        fresher: {
+            round1: { name: "Foundation & Motivation", questionCount: 5, focus: ["career motivation", "QA basics", "learning approach"], difficulty: "easy", competencies: ["fundamentals", "problem-solving", "passion"] },
+            round2: { name: "QA Fundamentals", questionCount: 6, focus: ["testing concepts", "tools", "methodologies"], difficulty: "medium", competencies: ["knowledge", "thinking", "awareness"] },
+            round3: { name: "Practical Application", questionCount: 4, focus: ["projects", "scenarios", "teamwork"], difficulty: "medium", competencies: ["experience", "collaboration", "learning"] }
+        },
+        experienced: {
+            '0-2': {
+                round1: { name: "QA Experience", questionCount: 4, focus: ["testing projects", "workflows", "bug tracking"], difficulty: "medium", competencies: ["experience", "practices", "teamwork"] },
+                round2: { name: "Testing Skills", questionCount: 6, focus: ["test strategies", "automation", "problem-solving"], difficulty: "medium-hard", competencies: ["knowledge", "resolution", "standards"] },
+                round3: { name: "Growth", questionCount: 5, focus: ["ownership", "learning", "quality improvement"], difficulty: "medium", competencies: ["initiative", "agility", "quality"] }
+            },
+            '3-5': {
+                round1: { name: "QA Expertise", questionCount: 4, focus: ["complex testing", "decisions", "challenges"], difficulty: "hard", competencies: ["expertise", "decision making", "depth"] },
+                round2: { name: "Advanced QA", questionCount: 6, focus: ["test architecture", "optimization", "automation strategy"], difficulty: "hard", competencies: ["skills", "optimization", "thinking"] },
+                round3: { name: "Leadership", questionCount: 5, focus: ["team development", "ownership", "quality direction"], difficulty: "hard", competencies: ["leadership", "influence", "impact"] }
+            },
+            '5+': {
+                round1: { name: "Strategic QA Leadership", questionCount: 4, focus: ["strategic decisions", "quality vision", "alignment"], difficulty: "expert", competencies: ["thinking", "vision", "acumen"] },
+                round2: { name: "Expert Knowledge", questionCount: 6, focus: ["best practices", "standards", "innovation"], difficulty: "expert", competencies: ["knowledge", "standardization", "leadership"] },
+                round3: { name: "Organizational Impact", questionCount: 5, focus: ["team building", "culture", "collaboration"], difficulty: "expert", competencies: ["influence", "culture", "leadership"] }
+            }
+        }
+    },
+    security: {
+        fresher: {
+            round1: { name: "Foundation & Motivation", questionCount: 5, focus: ["career motivation", "security basics", "learning approach"], difficulty: "easy", competencies: ["fundamentals", "problem-solving", "passion"] },
+            round2: { name: "Security Fundamentals", questionCount: 6, focus: ["security concepts", "tools", "best practices"], difficulty: "medium", competencies: ["knowledge", "thinking", "awareness"] },
+            round3: { name: "Practical Application", questionCount: 4, focus: ["projects", "scenarios", "teamwork"], difficulty: "medium", competencies: ["experience", "collaboration", "learning"] }
+        },
+        experienced: {
+            '0-2': {
+                round1: { name: "Security Experience", questionCount: 4, focus: ["security projects", "workflows", "incident response"], difficulty: "medium", competencies: ["experience", "practices", "teamwork"] },
+                round2: { name: "Security Skills", questionCount: 6, focus: ["security tools", "vulnerabilities", "problem-solving"], difficulty: "medium-hard", competencies: ["knowledge", "resolution", "standards"] },
+                round3: { name: "Growth", questionCount: 5, focus: ["ownership", "learning", "security improvement"], difficulty: "medium", competencies: ["initiative", "agility", "security focus"] }
+            },
+            '3-5': {
+                round1: { name: "Security Expertise", questionCount: 4, focus: ["complex security", "decisions", "challenges"], difficulty: "hard", competencies: ["expertise", "decision making", "depth"] },
+                round2: { name: "Advanced Security", questionCount: 6, focus: ["security architecture", "optimization", "compliance"], difficulty: "hard", competencies: ["skills", "optimization", "thinking"] },
+                round3: { name: "Leadership", questionCount: 5, focus: ["team development", "ownership", "security direction"], difficulty: "hard", competencies: ["leadership", "influence", "impact"] }
+            },
+            '5+': {
+                round1: { name: "Strategic Security Leadership", questionCount: 4, focus: ["strategic decisions", "security vision", "alignment"], difficulty: "expert", competencies: ["thinking", "vision", "acumen"] },
+                round2: { name: "Expert Knowledge", questionCount: 6, focus: ["best practices", "standards", "innovation"], difficulty: "expert", competencies: ["knowledge", "standardization", "leadership"] },
+                round3: { name: "Organizational Impact", questionCount: 5, focus: ["team building", "culture", "collaboration"], difficulty: "expert", competencies: ["influence", "culture", "leadership"] }
+            }
+        }
+    },
+    database: {
+        fresher: {
+            round1: { name: "Foundation & Motivation", questionCount: 5, focus: ["career motivation", "database basics", "learning approach"], difficulty: "easy", competencies: ["fundamentals", "problem-solving", "passion"] },
+            round2: { name: "Database Fundamentals", questionCount: 6, focus: ["SQL", "database concepts", "tools"], difficulty: "medium", competencies: ["knowledge", "thinking", "awareness"] },
+            round3: { name: "Practical Application", questionCount: 4, focus: ["projects", "scenarios", "teamwork"], difficulty: "medium", competencies: ["experience", "collaboration", "learning"] }
+        },
+        experienced: {
+            '0-2': {
+                round1: { name: "Database Experience", questionCount: 4, focus: ["database projects", "workflows", "optimization"], difficulty: "medium", competencies: ["experience", "practices", "teamwork"] },
+                round2: { name: "Database Skills", questionCount: 6, focus: ["query optimization", "backup", "problem-solving"], difficulty: "medium-hard", competencies: ["knowledge", "resolution", "standards"] },
+                round3: { name: "Growth", questionCount: 5, focus: ["ownership", "learning", "performance improvement"], difficulty: "medium", competencies: ["initiative", "agility", "quality"] }
+            },
+            '3-5': {
+                round1: { name: "Database Expertise", questionCount: 4, focus: ["complex databases", "decisions", "challenges"], difficulty: "hard", competencies: ["expertise", "decision making", "depth"] },
+                round2: { name: "Advanced Database", questionCount: 6, focus: ["database architecture", "optimization", "scaling"], difficulty: "hard", competencies: ["skills", "optimization", "thinking"] },
+                round3: { name: "Leadership", questionCount: 5, focus: ["team development", "ownership", "database direction"], difficulty: "hard", competencies: ["leadership", "influence", "impact"] }
+            },
+            '5+': {
+                round1: { name: "Strategic Database Leadership", questionCount: 4, focus: ["strategic decisions", "database vision", "alignment"], difficulty: "expert", competencies: ["thinking", "vision", "acumen"] },
+                round2: { name: "Expert Knowledge", questionCount: 6, focus: ["best practices", "standards", "innovation"], difficulty: "expert", competencies: ["knowledge", "standardization", "leadership"] },
+                round3: { name: "Organizational Impact", questionCount: 5, focus: ["team building", "culture", "collaboration"], difficulty: "expert", competencies: [" influence", "culture", "leadership"] }
+            }
+        }
+    },
+    other: {
+        fresher: {
+            round1: { name: "Foundation & Motivation", questionCount: 5, focus: ["career motivation", "basic concepts", "learning approach"], difficulty: "easy", competencies: ["fundamentals", "problem-solving", "passion"] },
+            round2: { name: "Core Skills", questionCount: 6, focus: ["core knowledge", "tools", "best practices"], difficulty: "medium", competencies: ["knowledge", "thinking", "awareness"] },
+            round3: { name: "Practical Application", questionCount: 4, focus: ["projects", "scenarios", "teamwork"], difficulty: "medium", competencies: ["experience", "collaboration", "learning"] }
+        },
+        experienced: {
+            '0-2': {
+                round1: { name: "Professional Experience", questionCount: 4, focus: ["recent projects", "workflow", "responsibilities"], difficulty: "medium", competencies: ["experience", "practices", "teamwork"] },
+                round2: { name: "Professional Skills", questionCount: 6, focus: ["expertise", "best practices", "problem-solving"], difficulty: "medium-hard", competencies: ["knowledge", "resolution", "standards"] },
+                round3: { name: "Growth", questionCount: 5, focus: ["ownership", "learning", "improvement"], difficulty: "medium", competencies: ["initiative", "agility", "quality"] }
+            },
+            '3-5': {
+                round1: { name: "Professional Expertise", questionCount: 4, focus: ["complex projects", "decisions", "challenges"], difficulty: "hard", competencies: ["expertise", "decision making", "depth"] },
+                round2: { name: "Advanced Skills", questionCount: 6, focus: ["advanced topics", "optimization", "strategy"], difficulty: "hard", competencies: ["skills", "optimization", "thinking"] },
+                round3: { name: "Leadership", questionCount: 5, focus: ["team development", "ownership", "direction"], difficulty: "hard", competencies: ["leadership", "influence", "impact"] }
+            },
+            '5+': {
+                round1: { name: "Strategic Leadership", questionCount: 4, focus: ["strategic decisions", "vision", "alignment"], difficulty: "expert", competencies: ["thinking", "vision", "acumen"] },
+                round2: { name: "Expert Knowledge", questionCount: 6, focus: ["best practices", "standards", "innovation"], difficulty: "expert", competencies: ["knowledge", "standardization", "leadership"] },
+                round3: { name: "Organizational Impact", questionCount: 5, focus: ["team building", "culture", "collaboration"], difficulty: "expert", competencies: ["influence", "culture", "leadership"] }
+            }
+        }
+    }
 };
 
 /**

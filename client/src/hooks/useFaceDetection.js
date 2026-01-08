@@ -79,36 +79,69 @@ const useFaceDetection = (videoRef, enabled = true) => {
         if (video.paused || video.ended || !video.videoWidth) return;
 
         try {
-            // Detect all faces with landmarks
+            // Detect all faces with landmarks - STRICTER threshold to avoid false positives
             const detections = await faceapi
                 .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({
                     inputSize: 224,
-                    scoreThreshold: THRESHOLDS.FACE_DETECTION_SCORE
+                    scoreThreshold: 0.7 // Increased from 0.5 for stricter detection
                 }))
                 .withFaceLandmarks(true);
 
             const faces = detections.length;
             setFaceCount(faces);
-            setFaceDetected(faces > 0);
 
-            // Check if looking away (using eye/nose landmarks)
+            // Enhanced validation: Check if face is PROPERLY visible (not covered/obscured)
+            let faceValid = false;
             if (faces === 1) {
-                const landmarks = detections[0].landmarks;
-                const nose = landmarks.getNose();
-                const leftEye = landmarks.getLeftEye();
-                const rightEye = landmarks.getRightEye();
+                const detection = detections[0];
+                const landmarks = detection.landmarks;
 
-                // Calculate face orientation
-                const eyeWidth = Math.abs(rightEye[3].x - leftEye[0].x);
-                const nosePos = nose[3].x;
-                const eyeCenter = (rightEye[3].x + leftEye[0].x) / 2;
-                const deviation = Math.abs(nosePos - eyeCenter) / eyeWidth;
+                // Validate all key landmarks are detected and visible
+                try {
+                    const nose = landmarks.getNose();
+                    const leftEye = landmarks.getLeftEye();
+                    const rightEye = landmarks.getRightEye();
+                    const mouth = landmarks.getMouth();
 
-                // If nose is too far from eye center = looking away
-                setIsLookingAway(deviation > 0.25);
+                    // Check if all key features have sufficient landmark points
+                    const hasNose = nose && nose.length >= 4;
+                    const hasLeftEye = leftEye && leftEye.length >= 4;
+                    const hasRightEye = rightEye && rightEye.length >= 4;
+                    const hasMouth = mouth && mouth.length >= 6;
+
+                    // Face is valid ONLY if ALL key features are visible
+                    faceValid = hasNose && hasLeftEye && hasRightEye && hasMouth;
+
+                    // Additional check: Detection confidence must be high
+                    const confidence = detection.detection.score;
+                    if (confidence < 0.7) {
+                        faceValid = false;
+                    }
+
+                    // Calculate face orientation for "looking away" detection
+                    if (faceValid) {
+                        const eyeWidth = Math.abs(rightEye[3].x - leftEye[0].x);
+                        const nosePos = nose[3].x;
+                        const eyeCenter = (rightEye[3].x + leftEye[0].x) / 2;
+                        const deviation = Math.abs(nosePos - eyeCenter) / eyeWidth;
+
+                        // If nose is too far from eye center = looking away
+                        setIsLookingAway(deviation > 0.25);
+                    } else {
+                        setIsLookingAway(false);
+                    }
+
+                } catch (err) {
+                    // If landmark extraction fails, face is not properly visible
+                    console.warn('Landmark validation failed:', err.message);
+                    faceValid = false;
+                    setIsLookingAway(false);
+                }
             } else {
                 setIsLookingAway(false);
             }
+
+            setFaceDetected(faceValid);
 
         } catch (err) {
             console.error('Face detection error:', err);

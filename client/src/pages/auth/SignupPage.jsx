@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import api from '../../services/api';
-import './AuthPages.css';
+import TermsModal from '../../components/TermsModal';
+import './AuthPage.css';
 
 const SignupPage = () => {
     const navigate = useNavigate();
@@ -28,6 +29,7 @@ const SignupPage = () => {
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [verificationSent, setVerificationSent] = useState(false);
     const [registeredUserId, setRegisteredUserId] = useState(null);
+    const [showTermsModal, setShowTermsModal] = useState(false);
 
     // Socket connection for real-time verification status
     useEffect(() => {
@@ -56,7 +58,7 @@ const SignupPage = () => {
         if (verificationSent && registeredUserId) {
             pollingInterval = setInterval(async () => {
                 try {
-                    const response = await api.get(`/users/${registeredUserId}`);
+                    const response = await api.get(`/ users / ${registeredUserId} `);
                     if (response.data && response.data.isVerified) {
                         handleVerificationSuccess(response.data);
                     }
@@ -280,7 +282,7 @@ const SignupPage = () => {
                                         <div
                                             className="strength-fill"
                                             style={{
-                                                width: `${(passwordStrength / 4) * 100}%`,
+                                                width: `${(passwordStrength / 4) * 100}% `,
                                                 backgroundColor: getStrengthColor()
                                             }}
                                         ></div>
@@ -307,15 +309,29 @@ const SignupPage = () => {
                         </div>
 
                         <div className="form-options">
-                            <label className="checkbox-label">
+                            <div className="checkbox-label" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                                 <input
                                     type="checkbox"
                                     name="agreeToTerms"
                                     checked={formData.agreeToTerms}
                                     onChange={handleChange}
+                                    style={{ marginTop: '3px', flexShrink: 0 }}
                                 />
-                                <span>I agree to the <Link to="/terms">Terms & Conditions</Link></span>
-                            </label>
+                                <span style={{ lineHeight: '1.5' }}>
+                                    I agree to the{' '}
+                                    <a
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            console.log('Terms link clicked!');
+                                            setShowTermsModal(true);
+                                        }}
+                                        className="terms-link"
+                                    >
+                                        Terms & Conditions
+                                    </a>
+                                </span>
+                            </div>
                         </div>
 
                         <button
@@ -339,8 +355,16 @@ const SignupPage = () => {
                     </form>
                 </div>
             </div>
+
+            {/* Terms & Conditions Modal */}
+            <TermsModal
+                isOpen={showTermsModal}
+                onClose={() => setShowTermsModal(false)}
+            />
         </div>
     );
 };
 
 export default SignupPage;
+ 
+  

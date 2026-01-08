@@ -144,12 +144,14 @@ function detectProgrammingLanguages(skills) {
 
         const matched = skillsLower.some(skill => {
             if (isShortName) {
-                // For short names (c, r, go), require exact match or explicit mention
-                // e.g., "c" should match "c" or "c programming" but NOT "communication"
+                // STRICT EXACT MATCH for short names - NO REGEX to avoid false positives
+                // "go" should ONLY match: "go", "golang", "go language", "go programming"
+                // Should NOT match: "google", "mongodb", "django", or any word containing "go"
                 return skill === key ||
+                    skill === `${key}lang` ||  // golang
                     skill === `${key} programming` ||
                     skill === `${key} language` ||
-                    skill.match(new RegExp(`\\b${key}\\b`, 'i')); // Word boundary match
+                    skill === `${key} developer`;
             } else {
                 // For longer names, allow partial matches
                 return skill === key ||

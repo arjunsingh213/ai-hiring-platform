@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
+import InterviewDeclaration from '../../components/InterviewDeclaration';
 import './InterviewReadiness.css';
 
 // STRICT face detection - requires proper face posture, centering, and full visibility
@@ -252,6 +253,7 @@ const InterviewReadiness = ({
     const [interview, setInterview] = useState(null);
     const [job, setJob] = useState(null);
     const [consentChecked, setConsentChecked] = useState(false);
+    const [showDeclarationModal, setShowDeclarationModal] = useState(false);
 
     // System check states
     const [cameraStream, setCameraStream] = useState(null);
@@ -619,6 +621,18 @@ const InterviewReadiness = ({
         await testInternet();
     };
 
+    // Handle declaration acceptance
+    const handleDeclarationAccept = (declarations) => {
+        setConsentChecked(true);
+        setShowDeclarationModal(false);
+        toast.success('Declaration accepted. You can now start the interview.');
+    };
+
+    const handleDeclarationDecline = () => {
+        setShowDeclarationModal(false);
+        toast.info('You must accept the declaration to proceed.');
+    };
+
     // Check requirements
     const allSystemsReady = cameraStatus === 'ready' &&
         micStatus === 'ready' &&
@@ -807,17 +821,32 @@ const InterviewReadiness = ({
                     </section>
 
                     <section className="section consent-section">
-                        <label className="consent-checkbox">
-                            <input
-                                type="checkbox"
-                                checked={consentChecked}
-                                onChange={(e) => setConsentChecked(e.target.checked)}
-                            />
-                            <span className="consent-text">
-                                I understand my face will be captured and verified during the interview.
-                                My data is handled securely.
-                            </span>
-                        </label>
+                        <div className="declaration-prompt">
+                            <div className="declaration-icon-text">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 12L11 14L15 10" strokeLinecap="round" strokeLinejoin="round" />
+                                    <circle cx="12" cy="12" r="10" />
+                                </svg>
+                                <span className="declaration-label">
+                                    {consentChecked ? (
+                                        'Declaration Accepted ✓'
+                                    ) : (
+                                        'Complete Interview Declaration'
+                                    )}
+                                </span>
+                            </div>
+                            <button
+                                className={`declaration-btn ${consentChecked ? 'accepted' : ''}`}
+                                onClick={() => setShowDeclarationModal(true)}
+                            >
+                                {consentChecked ? 'View Declaration' : 'Read & Accept'}
+                            </button>
+                        </div>
+                        {!consentChecked && (
+                            <p className="declaration-note">
+                                You must read and accept the interview declaration before starting.
+                            </p>
+                        )}
                     </section>
                 </div>
 
@@ -961,6 +990,13 @@ const InterviewReadiness = ({
                     </div>
                 </div>
             </div>
+
+            {/* Interview Declaration Modal */}
+            <InterviewDeclaration
+                isOpen={showDeclarationModal}
+                onAccept={handleDeclarationAccept}
+                onDecline={handleDeclarationDecline}
+            />
         </div>
     );
 };

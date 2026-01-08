@@ -286,7 +286,22 @@ router.post('/start', async (req, res) => {
         });
     } catch (error) {
         console.error('[INTERVIEW] Start failed:', error);
-        res.status(500).json({ success: false, error: 'Failed to start interview' });
+        console.error('[INTERVIEW] Error stack:', error.stack);
+        console.error('[INTERVIEW] Error details:', {
+            message: error.message,
+            name: error.name,
+            code: error.code,
+            hasResume: !!req.body.parsedResume,
+            desiredRole: req.body.desiredRole,
+            experienceLevel: req.body.experienceLevel,
+            yearsOfExperience: req.body.yearsOfExperience,
+            jobDomains: req.body.jobDomains?.length || 0
+        });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to start interview',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 

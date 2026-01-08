@@ -470,6 +470,24 @@ const OnboardingInterview = ({
         }
     }, [showCodingTest, cameraEnabled]);
 
+    // Cleanup camera on component unmount - CRITICAL for stopping camera when exiting
+    useEffect(() => {
+        return () => {
+            console.log('[CLEANUP] Component unmounting, stopping camera...');
+            stopCamera();
+
+            // Also stop video recording if active
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                try {
+                    mediaRecorderRef.current.stop();
+                    mediaRecorderRef.current = null;
+                } catch (e) {
+                    console.error('Error stopping recorder:', e);
+                }
+            }
+        };
+    }, []);
+
     // Start dynamic interview on mount
     useEffect(() => {
         startInterview();
@@ -524,8 +542,8 @@ const OnboardingInterview = ({
             }
         } catch (error) {
             console.error('Failed to start interview:', error);
-            // Fallback to static if server fails
-            setQuestions(getDefaultQuestions());
+            showToast('Failed to start interview. Please try again or contact support.', 'error');
+            isStartingRef.current = false; // Reset flag on error
         } finally {
             setLoading(false);
         }

@@ -46,6 +46,7 @@ const AuthPage = () => {
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [verificationSent, setVerificationSent] = useState(false);
     const [registeredUserId, setRegisteredUserId] = useState(null);
+    const [showTermsModal, setShowTermsModal] = useState(false);
 
     // Poll for email verification status
     useEffect(() => {
@@ -384,15 +385,28 @@ const AuthPage = () => {
                             />
                         </div>
 
-                        <label className="checkbox-row">
+                        <div className="checkbox-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                             <input
                                 type="checkbox"
                                 name="agreeToTerms"
                                 checked={signupData.agreeToTerms}
                                 onChange={handleSignupChange}
+                                style={{ marginTop: '3px', flexShrink: 0 }}
                             />
-                            <span>I agree to the Terms & Conditions</span>
-                        </label>
+                            <span style={{ lineHeight: '1.5' }}>
+                                I agree to the{' '}
+                                <a
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setShowTermsModal(true);
+                                    }}
+                                    className="terms-link"
+                                >
+                                    Terms & Conditions
+                                </a>
+                            </span>
+                        </div>
 
                         <button type="submit" className="btn-solid" disabled={loading}>
                             {loading ? 'Creating...' : 'Sign Up'}
@@ -515,6 +529,44 @@ const AuthPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Terms & Conditions Modal */}
+            {showTermsModal && (
+                <div className="modal-overlay" onClick={() => setShowTermsModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Terms & Conditions</h2>
+                            <button className="modal-close" onClick={() => setShowTermsModal(false)}>
+                                ×
+                            </button>
+                        </div>
+                        <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '20px' }}>
+                            <h3>1. Acceptance of Terms</h3>
+                            <p>By accessing and using this platform, you accept and agree to be bound by the terms and provision of this agreement.</p>
+
+                            <h3>2. Use License</h3>
+                            <p>Permission is granted to temporarily use this platform for personal, non-commercial transitory viewing only.</p>
+
+                            <h3>3. User Account</h3>
+                            <p>You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.</p>
+
+                            <h3>4. Privacy</h3>
+                            <p>Your use of our platform is also governed by our Privacy Policy. Please review our Privacy Policy, which also governs the platform and informs users of our data collection practices.</p>
+
+                            <h3>5. Modifications</h3>
+                            <p>We reserve the right to modify these terms at any time. We will notify users of any changes by updating the date at the top of these terms.</p>
+
+                            <h3>6. Contact Information</h3>
+                            <p>For questions about these terms, please contact us at support@froscel.com</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-solid" onClick={() => setShowTermsModal(false)}>
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

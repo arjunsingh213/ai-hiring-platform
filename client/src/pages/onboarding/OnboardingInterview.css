@@ -374,6 +374,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    color: #ffffff;
+    /* Ensure text is visible on dark background */
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    /* Default gradient background */
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
 }
 
 .round-badge::before {
