@@ -1,4 +1,4 @@
-// pdf2json is used instead - serverless compatible (no native dependencies)
+const pdfjsLib = require('pdfjs-dist');
 const mammoth = require('mammoth');
 const fs = require('fs').promises;
 
@@ -33,7 +33,7 @@ class ResumeParser {
 
     /**
      * Parse resume from URL (for Cloudinary stored files)
-     * SERVERLESS-COMPATIBLE VERSION - Uses pdf2json (pure JS, no native dependencies)
+     * Converts to semantic HTML for structured parsing
      */
     async parseResumeFromUrl(fileUrl, mimeType) {
         try {
@@ -45,10 +45,17 @@ class ResumeParser {
             let htmlContent = '';
 
             if (mimeType === 'application/pdf' || fileUrl.endsWith('.pdf')) {
-                // Use pdf2json - Pure JavaScript, works in serverless environments
-                rawText = await this.parsePDFWithPdf2json(buffer);
-                console.log(`[ResumeParser] PDF parsed, text length: ${rawText.length}`);
-
+                // Parse PDF to text using pdf-parse
+                try {
+                    const pdf = require('pdf-parse');
+                    const pdfData = await pdf(buffer);
+                    rawText = pdfData.text || '';
+                    console.log(`[ResumeParser] PDF parsed, text length: ${rawText.length}`);
+                } catch (pdfError) {
+                    console.error('[ResumeParser] pdf-parse failed, using pdfjs-dist fallback:', pdfError.message);
+                    // Fallback to pdfjs-dist
+                    rawText = await this.parsePDFFromBuffer(buffer);
+                }
                 // Convert text to semantic HTML
                 htmlContent = this.textToSemanticHtml(rawText);
 
@@ -103,64 +110,26 @@ class ResumeParser {
     }
 
     /**
-     * Parse PDF using pdf2json (SERVERLESS-COMPATIBLE)
-     * Pure JavaScript, no native dependencies or canvas required
+     * Parse PDF from buffer using pdfjs-dist (fallback)
      */
-    async parsePDFWithPdf2json(buffer) {
-        return new Promise((resolve, reject) => {
-            try {
-                const PDFParser = require('pdf2json');
-                const pdfParser = new PDFParser(null, 1); // raw text mode
+    async parsePDFFromBuffer(buffer) {
+        try {
+            const data = new Uint8Array(buffer);
+            const loadingTask = pdfjsLib.getDocument({ data });
+            const pdfDocument = await loadingTask.promise;
 
-                let fullText = '';
-
-                pdfParser.on('pdfParser_dataReady', (pdfData) => {
-                    try {
-                        // Extract text from all pages
-                        if (pdfData && pdfData.Pages) {
-                            pdfData.Pages.forEach(page => {
-                                if (page.Texts) {
-                                    page.Texts.forEach(text => {
-                                        if (text.R) {
-                                            text.R.forEach(r => {
-                                                if (r.T) {
-                                                    // Decode URI component and add space
-                                                    fullText += decodeURIComponent(r.T) + ' ';
-                                                }
-                                            });
-                                        }
-                                    });
-                                    fullText += '\n'; // New line after each page
-                                }
-                            });
-                        }
-
-                        // Clean up text
-                        fullText = fullText
-                            .replace(/%20/g, ' ')  // Replace URL-encoded spaces
-                            .replace(/\s+/g, ' ')  // Normalize whitespace
-                            .trim();
-
-                        resolve(fullText);
-                    } catch (parseError) {
-                        console.error('[ResumeParser] pdf2json data parsing error:', parseError.message);
-                        resolve(''); // Return empty string instead of rejecting
-                    }
-                });
-
-                pdfParser.on('pdfParser_dataError', (error) => {
-                    console.error('[ResumeParser] pdf2json error:', error.parserError || error.message);
-                    resolve(''); // Return empty string instead of rejecting
-                });
-
-                // Parse the buffer
-                pdfParser.parseBuffer(buffer);
-
-            } catch (error) {
-                console.error('[ResumeParser] pdf2json initialization error:', error.message);
-                resolve(''); // Return empty string instead of rejecting
+            let fullText = '';
+            for (let i = 1; i <= pdfDocument.numPages; i++) {
+                const page = await pdfDocument.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
             }
-        });
+            return fullText;
+        } catch (error) {
+            console.error('[ResumeParser] pdfjs-dist fallback failed:', error.message);
+            return '';
+        }
     }
 
     /**

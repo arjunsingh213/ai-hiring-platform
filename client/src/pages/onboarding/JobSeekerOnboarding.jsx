@@ -22,6 +22,7 @@ import {
     validateGitHub
 } from '../../data/validationData';
 import './Onboarding.css';
+import PlatformWalkthrough from './PlatformWalkthrough';
 
 const JobSeekerOnboarding = () => {
     const navigate = useNavigate();
@@ -34,7 +35,7 @@ const JobSeekerOnboarding = () => {
         if (stepParam === 'interview') return 4;
         if (stepParam && !isNaN(parseInt(stepParam))) {
             const parsedStep = parseInt(stepParam);
-            if (parsedStep >= 1 && parsedStep <= 4) return parsedStep;
+            if (parsedStep >= 1 && parsedStep <= 5) return parsedStep;
         }
         return 1;
     };
@@ -1015,7 +1016,12 @@ const JobSeekerOnboarding = () => {
                 </div>
             )}
 
-            {!showInterview && !showInterviewReadiness && (step !== 4 || interviewStatus.canTakeInterview || interviewStatus.loading) && (
+            {/* Handle step 5 - Platform Walkthrough */}
+            {step === 5 && (
+                <PlatformWalkthrough />
+            )}
+
+            {!showInterview && !showInterviewReadiness && step !== 5 && (step !== 4 || interviewStatus.canTakeInterview || interviewStatus.loading) && (
                 <div className="onboarding-box">
                     {/* Left Panel - Purple Gradient */}
                     <div className="onboarding-sidebar">
@@ -1106,7 +1112,7 @@ const JobSeekerOnboarding = () => {
 
                     // Only parse resume if not already parsed from upload
                     if (!parsedResume && resumeFile) {
-                        console.log('No parsed resume from upload, parsing now...');
+                        console.log('No parsed resume, parsing now...');
                         setParsingResume(true);
                         try {
                             const formData = new FormData();
@@ -1116,17 +1122,12 @@ const JobSeekerOnboarding = () => {
                             });
                             if (response.success && response.data.parsedResume) {
                                 setParsedResume(response.data.parsedResume);
-                                console.log('Resume parsed with skills:', response.data.parsedResume.skills);
                             }
                         } catch (error) {
                             console.error('Resume parsing failed:', error);
-                            // Continue with empty resume data
                         }
                         setParsingResume(false);
-                    } else if (parsedResume) {
-                        console.log('Using pre-parsed resume with skills:', parsedResume.skills);
                     }
-                    // Show readiness screen first before interview
                     setShowInterviewReadiness(true);
                 }}
                 onCancel={() => {
@@ -1176,8 +1177,6 @@ const JobSeekerOnboarding = () => {
                             setShowInterviewReadiness(false);
                             setShowInterview(true);
 
-                            // Photo is already stored in localStorage by InterviewReadiness
-                            // No need to store large imageData again (causes quota errors)
                             toast.success('Ready to start interview!');
                         }}
                         onCancel={() => {
@@ -1200,7 +1199,9 @@ const JobSeekerOnboarding = () => {
                     jobDomains={formData.jobDomains}
                     onComplete={(results) => {
                         toast.success(`Interview completed! Score: ${results?.score || 'N/A'}`);
-                        navigate('/jobseeker/home');
+                        // Instead of navigating to home, go to platform walkthrough (step 5)
+                        setShowInterview(false);
+                        setStep(5);
                     }}
                     onSkip={() => {
                         toast.info('Interview skipped. You can take it later.');
