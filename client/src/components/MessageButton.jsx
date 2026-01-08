@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 import './MessageButton.css';
@@ -7,8 +7,8 @@ import './MessageButton.css';
 const MessageButton = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
     const userId = localStorage.getItem('userId');
-    const userRole = localStorage.getItem('userRole');
 
     useEffect(() => {
         if (userId) {
@@ -29,7 +29,9 @@ const MessageButton = () => {
     };
 
     const handleClick = () => {
-        const path = userRole === 'recruiter' ? '/recruiter/messages' : '/jobseeker/messages';
+        // Determine navigation based on current path, not localStorage
+        const isRecruiterPage = location.pathname.startsWith('/recruiter');
+        const path = isRecruiterPage ? '/recruiter/messages' : '/jobseeker/messages';
         navigate(path);
     };
 
