@@ -1,16 +1,16 @@
-/* Using existing onboarding design language - purple sidebar + white form */
+/* Perfect alignment with existing Onboarding.css */
 
 /* Method Options Grid */
 .method-options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
 .method-card {
     background: white;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #E2E8F0;
     border-radius: 16px;
     padding: 2rem;
     cursor: pointer;
@@ -21,13 +21,13 @@
 }
 
 .method-card:hover {
-    border-color: #6366f1;
+    border-color: #6366F1;
     box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
     transform: translateY(-2px);
 }
 
 .method-card.recommended-card {
-    border-color: #6366f1;
+    border-color: #6366F1;
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.02), rgba(139, 92, 246, 0.02));
 }
 
@@ -35,7 +35,7 @@
     position: absolute;
     top: -10px;
     right: 16px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
     color: white;
     padding: 4px 12px;
     border-radius: 12px;
@@ -59,7 +59,7 @@
 }
 
 .method-icon svg {
-    color: #6366f1;
+    color: #6366F1;
 }
 
 .method-icon.secondary {
@@ -67,19 +67,19 @@
 }
 
 .method-icon.secondary svg {
-    color: #64748b;
+    color: #64748B;
 }
 
 .method-card h3 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #1E293B;
     margin-bottom: 0.5rem;
 }
 
 .method-card p {
     font-size: 0.9375rem;
-    color: #64748b;
+    color: #64748B;
     line-height: 1.6;
     margin-bottom: 1.25rem;
     flex: 1;
@@ -103,7 +103,7 @@
 }
 
 .benefits-list svg {
-    color: #10b981;
+    color: #10B981;
     flex-shrink: 0;
 }
 
@@ -123,7 +123,7 @@
 }
 
 .primary-button {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
     color: white;
 }
 
@@ -135,12 +135,12 @@
 .secondary-button {
     background: white;
     color: #475569;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #E2E8F0;
 }
 
 .secondary-button:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: #F8FAFC;
+    border-color: #CBD5E1;
 }
 
 .method-button svg {
@@ -154,7 +154,7 @@
 .privacy-note {
     text-align: center;
     font-size: 0.875rem;
-    color: #64748b;
+    color: #64748B;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -163,14 +163,7 @@
 }
 
 .privacy-note svg {
-    color: #10b981;
-}
-
-.user-icon-large {
-    margin-top: 3rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    color: #10B981;
 }
 
 /* Responsive */
