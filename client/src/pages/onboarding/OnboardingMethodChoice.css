@@ -1,209 +1,118 @@
-/* Method Choice Page */
-.method-choice-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-    padding: 2rem;
-}
+/* Using existing onboarding design language - purple sidebar + white form */
 
-.method-choice-background {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    z-index: 0;
-}
-
-.gradient-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.6;
-    animation: float 20s ease-in-out infinite;
-}
-
-.orb-1 {
-    width: 400px;
-    height: 400px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    top: -100px;
-    left: -100px;
-    animation-delay: 0s;
-}
-
-.orb-2 {
-    width: 350px;
-    height: 350px;
-    background: linear-gradient(135deg, #ec4899, #f43f5e);
-    bottom: -100px;
-    right: -100px;
-    animation-delay: -10s;
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translate(0, 0) scale(1);
-    }
-
-    33% {
-        transform: translate(30px, -30px) scale(1.1);
-    }
-
-    66% {
-        transform: translate(-20px, 20px) scale(0.9);
-    }
-}
-
-.method-choice-container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 1100px;
-}
-
-.method-choice-header {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.method-choice-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.75rem;
-}
-
-.method-choice-header p {
-    font-size: 1.125rem;
-    color: #64748b;
-}
-
-/* Choice Cards */
-.choice-cards {
+/* Method Options Grid */
+.method-options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
-.choice-card {
+.method-card {
     background: white;
-    border-radius: 24px;
-    padding: 2.5rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    border: 2px solid transparent;
     display: flex;
     flex-direction: column;
 }
 
-.choice-card:hover {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+.method-card:hover {
     border-color: #6366f1;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+    transform: translateY(-2px);
 }
 
-.choice-card.recommended {
+.method-card.recommended-card {
     border-color: #6366f1;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.02), rgba(139, 92, 246, 0.02));
 }
 
 .recommended-badge {
     position: absolute;
-    top: -12px;
-    right: 24px;
+    top: -10px;
+    right: 16px;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
-    padding: 6px 16px;
-    border-radius: 20px;
+    padding: 4px 12px;
+    border-radius: 12px;
     font-size: 0.75rem;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
-.recommended-badge svg {
-    width: 14px;
-    height: 14px;
-}
-
-.card-icon-wrapper {
-    width: 80px;
-    height: 80px;
+.method-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
-.resume-icon {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-}
-
-.resume-icon svg {
+.method-icon svg {
     color: #6366f1;
 }
 
-.manual-icon {
-    background: linear-gradient(135deg, rgba(100, 116, 139, 0.1), rgba(148, 163, 184, 0.1));
+.method-icon.secondary {
+    background: linear-gradient(135deg, rgba(100, 116, 139, 0.08), rgba(148, 163, 184, 0.08));
 }
 
-.manual-icon svg {
+.method-icon.secondary svg {
     color: #64748b;
 }
 
-.choice-card h3 {
-    font-size: 1.5rem;
+.method-card h3 {
+    font-size: 1.25rem;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
-.choice-card p {
-    font-size: 1rem;
+.method-card p {
+    font-size: 0.9375rem;
     color: #64748b;
     line-height: 1.6;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     flex: 1;
 }
 
-.card-benefits {
+.benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    gap: 0.625rem;
 }
 
-.benefit {
+.benefits-list li {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.5rem;
     font-size: 0.875rem;
     color: #475569;
 }
 
-.benefit svg {
+.benefits-list svg {
     color: #10b981;
     flex-shrink: 0;
 }
 
-.select-button {
+.method-button {
     width: 100%;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
+    padding: 0.875rem 1.25rem;
+    border-radius: 10px;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.9375rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -213,33 +122,32 @@
     transition: all 0.3s ease;
 }
 
-.select-button.primary {
+.primary-button {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
 }
 
-.select-button.primary:hover {
+.primary-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
 }
 
-.select-button.secondary {
+.secondary-button {
     background: white;
     color: #475569;
     border: 2px solid #e2e8f0;
 }
 
-.select-button.secondary:hover {
+.secondary-button:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
-    transform: translateY(-2px);
 }
 
-.select-button svg {
+.method-button svg {
     transition: transform 0.3s ease;
 }
 
-.select-button:hover svg {
+.method-button:hover svg {
     transform: translateX(4px);
 }
 
@@ -251,32 +159,39 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    margin-top: 1.5rem;
 }
 
 .privacy-note svg {
     color: #10b981;
 }
 
+.user-icon-large {
+    margin-top: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 /* Responsive */
-@media (max-width: 768px) {
-    .method-choice-header h1 {
-        font-size: 1.875rem;
-    }
-
-    .method-choice-header p {
-        font-size: 1rem;
-    }
-
-    .choice-cards {
+@media (max-width: 1024px) {
+    .method-options {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .method-card {
+        padding: 1.5rem;
     }
 
-    .choice-card {
-        padding: 2rem;
+    .method-icon {
+        width: 64px;
+        height: 64px;
     }
 
-    .method-choice-page {
-        padding: 1rem;
+    .method-icon svg {
+        width: 40px;
+        height: 40px;
     }
 }
