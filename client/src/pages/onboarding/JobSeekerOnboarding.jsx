@@ -1086,14 +1086,9 @@ const JobSeekerOnboarding = () => {
         <div className="onboarding">
             {/* Step 0: Method Choice - Show if no method selected yet */}
             {!onboardingMethod && (
-                <OnboardingMethodChoice onSelect={handleMethodSelect} />
-            )}
-
-            {/* Resume Upload First - Show if resume method chosen but no data yet */}
-            {onboardingMethod === 'resume' && !resumeAutoFillData && (
-                <ResumeUploadFirst
-                    onComplete={handleResumeUploadComplete}
-                    onSwitchToManual={handleSwitchToManual}
+                <OnboardingMethodChoice
+                    onSelect={handleMethodSelect}
+                    onResumeUploadComplete={handleResumeUploadComplete}
                 />
             )}
 
