@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const Resume = require('../models/Resume');
 const User = require('../models/User');
-const resumeParser = require('../services/resume/resumeParser');
+const unstructuredParser = require('../services/resume/unstructuredParser');
 const aiService = require('../services/ai/aiService');
 
 const cloudinary = require('../config/cloudinary');
@@ -74,29 +74,34 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
         };
 
         let aiParsedData = null;
-        let htmlContent = '';
+        let rawText = '';
 
-        // Step 1: Parse resume to get raw text and HTML
+        // Step 1: Parse resume using Unstructured (PDF) or Mammoth (DOCX)
         try {
-            const fileUrl = cloudinaryResult.secure_url;
-            console.log(`[Resume] Parsing resume from URL: ${fileUrl}`);
+            console.log(`[Resume] Parsing ${req.file.mimetype} resume...`);
 
-            const basicParsedData = await resumeParser.parseResumeFromUrl(fileUrl, req.file.mimetype);
-            parsedData = { ...parsedData, ...basicParsedData };
-            htmlContent = basicParsedData.htmlContent || '';
+            // Use Unstructured parser with buffer (serverless-safe)
+            rawText = await unstructuredParser.parseResumeFromBuffer(
+                req.file.buffer,
+                req.file.mimetype,
+                req.file.originalname
+            );
 
-            console.log(`[Resume] Basic parsing complete. Skills found: ${parsedData.skills?.length || 0}`);
+            // Clean the extracted text
+            rawText = unstructuredParser.cleanText(rawText);
+
+            console.log(`[Resume] Text extraction complete. Length: ${rawText.length} characters`);
         } catch (parseError) {
-            console.error('[Resume] Basic parsing error (non-fatal):', parseError.message);
+            console.error('[Resume] Text extraction error (non-fatal):', parseError.message);
+            // Continue with empty text - AI parsing will be skipped
         }
 
-        // Step 2: Use AI (LLama 3.1) to extract detailed skills from HTML/text
+        // Step 2: Use AI (LLama 3.1) to extract detailed skills from extracted text
         try {
-            const contentToAnalyze = htmlContent || parsedData.rawText;
-            if (contentToAnalyze && contentToAnalyze.length > 50) {
+            if (rawText && rawText.length > 50) {
                 console.log(`[Resume] Calling LLama 3.1 for AI skill extraction...`);
 
-                aiParsedData = await aiService.parseResume(contentToAnalyze);
+                aiParsedData = await aiService.parseResume(rawText);
 
                 if (aiParsedData) {
                     console.log(`[Resume] AI parsing complete. Skills: ${aiParsedData.skills?.length || 0}, ` +
@@ -116,6 +121,8 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
                         totalYearsExperience: aiParsedData.totalYearsExperience || 0
                     };
                 }
+            } else {
+                console.warn('[Resume] No text extracted, skipping AI parsing');
             }
         } catch (aiError) {
             console.error('[Resume] AI parsing error (non-fatal):', aiError.message);
@@ -137,7 +144,7 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
             fileName: req.file.originalname,
             fileType: req.file.mimetype,
             fileUrl: cloudinaryResult.secure_url,
-            htmlContent: htmlContent,
+            htmlContent: rawText, // Store extracted text (field name kept for compatibility)
             parsedData,
             aiAnalysis: {
                 keyStrengths: aiParsedData?.skillCategories?.softSkills?.slice(0, 3) || ['Communication', 'Problem Solving'],

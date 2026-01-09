@@ -371,16 +371,10 @@ const JobSeekerOnboarding = () => {
     const extractJobDomains = (skills) => {
         if (!skills || skills.length === 0) return [];
 
-        // Map skills to JOB_DOMAINS if they match
-        const matchedDomains = skills
-            .filter(skill => JOB_DOMAINS.includes(skill))
-            .slice(0, 3);
-
-        // If we have matched domains, return them
-        if (matchedDomains.length > 0) return matchedDomains;
-
-        // Otherwise, return top 3 skills as custom domains
-        return skills.slice(0, 3);
+        // For now, just return empty array - let user select manually
+        // This avoids validation errors from mismatched skill names
+        // TODO: Implement skill-to-domain mapping in future
+        return [];
     };
 
     // Handle method selection
@@ -396,6 +390,7 @@ const JobSeekerOnboarding = () => {
     // Handle resume upload completion
     const handleResumeUploadComplete = (parsedData) => {
         console.log('Resume upload complete, parsed data:', parsedData);
+        setOnboardingMethod('resume'); // CRITICAL: Set method to enable transition
         setResumeAutoFillData(parsedData);
         // Now show step 1 with auto-filled data
         setStep(1);

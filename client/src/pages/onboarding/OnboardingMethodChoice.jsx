@@ -29,39 +29,32 @@ const OnboardingMethodChoice = ({ onSelect, onResumeUploadComplete }) => {
         }
 
         setUploading(true);
-        setUploadProgress(0);
+        setUploadProgress(30);
 
         try {
             const formData = new FormData();
             formData.append('resume', file);
             formData.append('userId', localStorage.getItem('userId'));
 
-            // Simulate progress
-            const progressInterval = setInterval(() => {
-                setUploadProgress(prev => {
-                    if (prev >= 90) {
-                        clearInterval(progressInterval);
-                        return 90;
-                    }
-                    return prev + 10;
-                });
-            }, 200);
+            setUploadProgress(50);
 
             const response = await api.post('/resumes/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            clearInterval(progressInterval);
             setUploadProgress(100);
 
             if (response.success && response.data) {
-                const resumeData = response.data.parsedResume || response.data.autoFillData;
+                // Backend returns: { success: true, data: resumeDocument }
+                // resumeDocument has: { parsedData, aiAnalysis, ... }
+                const resumeDocument = response.data;
+                const parsedData = resumeDocument.parsedData || {};
+
+                console.log('Resume uploaded, parsed data:', parsedData);
                 toast.success('Resume uploaded successfully!');
 
-                // Call the callback with parsed data
-                setTimeout(() => {
-                    onResumeUploadComplete(resumeData);
-                }, 500);
+                // Call the callback with parsed data immediately
+                onResumeUploadComplete(parsedData);
             } else {
                 throw new Error('Failed to parse resume');
             }

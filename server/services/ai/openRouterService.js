@@ -140,7 +140,7 @@ IMPORTANT:
                 this.models.resumeParsing,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.llama,
-                { temperature: 0.3, maxTokens: 2500 }
+                { temperature: 0.3, maxTokens: 1000 } // Reduced from 2500 to work with available credits
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
