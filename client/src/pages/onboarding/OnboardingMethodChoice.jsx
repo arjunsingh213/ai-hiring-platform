@@ -135,21 +135,6 @@ const OnboardingMethodChoice = ({ onSelect, onResumeUploadComplete }) => {
                                 <h3>Auto-fill with Resume</h3>
                                 <p>Upload your resume and we'll automatically fill in your details</p>
 
-                                <ul className="benefits-list">
-                                    <li>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        Save time - 2 minutes vs 10 minutes
-                                    </li>
-                                    <li>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        More accurate information
-                                    </li>
-                                </ul>
-
                                 {!uploading ? (
                                     <button className="method-button primary-button" onClick={handleUploadClick}>
                                         Upload Resume
@@ -191,21 +176,6 @@ const OnboardingMethodChoice = ({ onSelect, onResumeUploadComplete }) => {
 
                                 <h3>Fill Manually</h3>
                                 <p>Enter your information step by step through our guided form</p>
-
-                                <ul className="benefits-list">
-                                    <li>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        Full control over your data
-                                    </li>
-                                    <li>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        No resume needed
-                                    </li>
-                                </ul>
 
                                 <button className="method-button secondary-button">
                                     Fill Manually

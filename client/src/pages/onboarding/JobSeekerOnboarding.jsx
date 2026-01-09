@@ -9,6 +9,7 @@ import InterviewReadiness from '../interview/InterviewReadiness';
 import LiveCameraVerification from '../../components/LiveCameraVerification';
 import { validateProfilePhoto } from '../../services/faceValidationService';
 import AutocompleteInput from '../../components/AutocompleteInput';
+import SkillsInput from '../../components/SkillsInput';
 import { search as searchColleges } from 'aishe-institutions-list';
 import {
     DOMAINS,
@@ -60,6 +61,7 @@ const JobSeekerOnboarding = () => {
         yearsOfExperience: '', // NEW: Years of professional experience in desired role
         desiredRole: '',
         jobDomains: [], // Array of selected job domains (max 3)
+        skills: [], // Array of skills (will be populated from resume or manually)
         linkedin: '',
         github: '',
         portfolio: '',
@@ -273,10 +275,10 @@ const JobSeekerOnboarding = () => {
             setFormData(prev => ({
                 ...prev,
                 // Step 1: Personal Information
-                name: resumeAutoFillData.name || prev.name,
-                age: calculateAge(resumeAutoFillData.dateOfBirth) || resumeAutoFillData.age || prev.age,
-                dob: formatDateOfBirth(resumeAutoFillData.dateOfBirth) || prev.dob,
-                mobile: resumeAutoFillData.phone || resumeAutoFillData.mobile || prev.mobile,
+                name: resumeAutoFillData.personalInfo?.name || resumeAutoFillData.name || prev.name,
+                age: calculateAge(resumeAutoFillData.personalInfo?.dateOfBirth) || resumeAutoFillData.age || prev.age,
+                dob: formatDateOfBirth(resumeAutoFillData.personalInfo?.dateOfBirth) || prev.dob,
+                mobile: resumeAutoFillData.personalInfo?.phone || resumeAutoFillData.phone || resumeAutoFillData.mobile || prev.mobile,
 
                 // Step 2: Education
                 college: resumeAutoFillData.education?.[0]?.institution || prev.college,
@@ -285,14 +287,17 @@ const JobSeekerOnboarding = () => {
 
                 // Step 3: Experience (resume already uploaded, so skip this step in logic)
                 experienceLevel: determineExperienceLevel(resumeAutoFillData.experience) || prev.experienceLevel,
-                yearsOfExperience: resumeAutoFillData.totalExperience?.toString() || prev.yearsOfExperience,
+                yearsOfExperience: resumeAutoFillData.totalYearsExperience?.toString() || resumeAutoFillData.totalExperience?.toString() || prev.yearsOfExperience,
 
                 // Step 4: Preferences
                 desiredRole: resumeAutoFillData.desiredRole || resumeAutoFillData.currentRole || prev.desiredRole,
                 jobDomains: extractJobDomains(resumeAutoFillData.skills) || prev.jobDomains,
-                linkedin: resumeAutoFillData.linkedin || prev.linkedin,
-                github: resumeAutoFillData.github || prev.github,
-                portfolio: resumeAutoFillData.portfolio || prev.portfolio,
+                skills: resumeAutoFillData.skills || prev.skills,
+
+                // Portfolio Links - check both direct properties and nested
+                linkedin: resumeAutoFillData.personalInfo?.linkedin || resumeAutoFillData.linkedin || prev.linkedin,
+                github: resumeAutoFillData.personalInfo?.github || resumeAutoFillData.github || prev.github,
+                portfolio: resumeAutoFillData.personalInfo?.portfolio || resumeAutoFillData.portfolio || prev.portfolio,
             }));
 
             // Set parsed resume for interview
@@ -965,6 +970,22 @@ const JobSeekerOnboarding = () => {
                                 </div>
                             )}
                             {errors.jobDomains && <span className="error-message">{errors.jobDomains}</span>}
+                        </div>
+
+                        {/* Skills Input */}
+                        <div className="form-group">
+                            <label className="form-label">
+                                Your Skills
+                                <span className="label-hint">(Add relevant skills)</span>
+                            </label>
+                            <SkillsInput
+                                value={formData.skills}
+                                onChange={(skills) => setFormData(prev => ({ ...prev, skills }))}
+                                placeholder="Type to search skills (e.g., JavaScript, Python, React)"
+                            />
+                            <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>
+                                Type and select skills from suggestions, or press Enter to add custom skills
+                            </p>
                         </div>
                     </div>
                 );
