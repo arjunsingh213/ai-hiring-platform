@@ -5,7 +5,7 @@
     justify-content: center;
     position: relative;
     padding: 2rem;
-    background: var(--bg-gradient, linear-gradient(145deg, #E3EEFF 0%, #F5F7FA 50%, #FFFFFF 100%));
+    background: transparent;
     overflow-y: auto;
     /* Enable scrolling */
 }
@@ -15,9 +15,7 @@
     inset: 0;
     overflow: hidden;
     z-index: 0;
-    background:
-        radial-gradient(ellipse at 20% 20%, rgba(0, 125, 255, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
+    background: transparent;
 }
 
 /* ===== Two-Panel Box Layout (like auth page) ===== */
