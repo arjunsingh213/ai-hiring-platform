@@ -23,6 +23,8 @@ import {
 } from '../../data/validationData';
 import './Onboarding.css';
 import PlatformWalkthrough from './PlatformWalkthrough';
+import OnboardingMethodChoice from './OnboardingMethodChoice';
+import ResumeUploadFirst from './ResumeUploadFirst';
 
 const JobSeekerOnboarding = () => {
     const navigate = useNavigate();
@@ -39,6 +41,10 @@ const JobSeekerOnboarding = () => {
         }
         return 1;
     };
+
+    // Onboarding method selection
+    const [onboardingMethod, setOnboardingMethod] = useState(null); // null | 'manual' | 'resume'
+    const [resumeAutoFillData, setResumeAutoFillData] = useState(null); // Parsed resume data for auto-fill
 
     const [step, setStep] = useState(getInitialStep);
     const [showInterviewPrompt, setShowInterviewPrompt] = useState(false);
@@ -258,6 +264,149 @@ const JobSeekerOnboarding = () => {
             }
         }
     }, []);
+
+    // Auto-fill form data from resume
+    useEffect(() => {
+        if (resumeAutoFillData && onboardingMethod === 'resume') {
+            console.log('Auto-filling form from resume data:', resumeAutoFillData);
+
+            setFormData(prev => ({
+                ...prev,
+                // Step 1: Personal Information
+                name: resumeAutoFillData.name || prev.name,
+                age: calculateAge(resumeAutoFillData.dateOfBirth) || resumeAutoFillData.age || prev.age,
+                dob: formatDateOfBirth(resumeAutoFillData.dateOfBirth) || prev.dob,
+                mobile: resumeAutoFillData.phone || resumeAutoFillData.mobile || prev.mobile,
+
+                // Step 2: Education
+                college: resumeAutoFillData.education?.[0]?.institution || prev.college,
+                domain: resumeAutoFillData.education?.[0]?.field || resumeAutoFillData.domain || prev.domain,
+                profession: resumeAutoFillData.profession || determineProfession(resumeAutoFillData) || prev.profession,
+
+                // Step 3: Experience (resume already uploaded, so skip this step in logic)
+                experienceLevel: determineExperienceLevel(resumeAutoFillData.experience) || prev.experienceLevel,
+                yearsOfExperience: resumeAutoFillData.totalExperience?.toString() || prev.yearsOfExperience,
+
+                // Step 4: Preferences
+                desiredRole: resumeAutoFillData.desiredRole || resumeAutoFillData.currentRole || prev.desiredRole,
+                jobDomains: extractJobDomains(resumeAutoFillData.skills) || prev.jobDomains,
+                linkedin: resumeAutoFillData.linkedin || prev.linkedin,
+                github: resumeAutoFillData.github || prev.github,
+                portfolio: resumeAutoFillData.portfolio || prev.portfolio,
+            }));
+
+            // Set parsed resume for interview
+            if (resumeAutoFillData) {
+                setParsedResume({
+                    ...resumeAutoFillData,
+                    skills: resumeAutoFillData.skills || [],
+                    experience: resumeAutoFillData.experience || [],
+                    education: resumeAutoFillData.education || []
+                });
+            }
+
+            toast.success('Resume data loaded! Review and edit if needed.');
+        }
+    }, [resumeAutoFillData, onboardingMethod]);
+
+    // Helper function: Calculate age from date of birth
+    const calculateAge = (dob) => {
+        if (!dob) return '';
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age > 0 && age < 100 ? age.toString() : '';
+    };
+
+    // Helper function: Format date of birth to YYYY-MM-DD
+    const formatDateOfBirth = (dob) => {
+        if (!dob) return '';
+        try {
+            const date = new Date(dob);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        } catch {
+            return '';
+        }
+    };
+
+    // Helper function: Determine profession from resume data
+    const determineProfession = (resumeData) => {
+        if (resumeData.profession) return resumeData.profession;
+        if (resumeData.experience && resumeData.experience.length > 0) {
+            const latestJob = resumeData.experience[0];
+            return latestJob.title || '';
+        }
+        return '';
+    };
+
+    // Helper function: Determine experience level from experience array
+    const determineExperienceLevel = (experience) => {
+        if (!experience || experience.length === 0) return 'fresher';
+
+        // Calculate total years
+        let totalMonths = 0;
+        experience.forEach(exp => {
+            if (exp.startDate) {
+                const start = new Date(exp.startDate);
+                const end = exp.current ? new Date() : (exp.endDate ? new Date(exp.endDate) : new Date());
+                const months = (end.getFullYear() - start.getFullYear()) * 12 +
+                    (end.getMonth() - start.getMonth());
+                totalMonths += months > 0 ? months : 0;
+            }
+        });
+
+        const totalYears = totalMonths / 12;
+        if (totalYears < 1) return 'fresher';
+        if (totalYears < 3) return 'entry';
+        if (totalYears < 5) return 'mid';
+        return 'senior';
+    };
+
+    // Helper function: Extract job domains from skills (max 3)
+    const extractJobDomains = (skills) => {
+        if (!skills || skills.length === 0) return [];
+
+        // Map skills to JOB_DOMAINS if they match
+        const matchedDomains = skills
+            .filter(skill => JOB_DOMAINS.includes(skill))
+            .slice(0, 3);
+
+        // If we have matched domains, return them
+        if (matchedDomains.length > 0) return matchedDomains;
+
+        // Otherwise, return top 3 skills as custom domains
+        return skills.slice(0, 3);
+    };
+
+    // Handle method selection
+    const handleMethodSelect = (method) => {
+        setOnboardingMethod(method);
+        if (method === 'manual') {
+            // Skip directly to step 1
+            setStep(1);
+        }
+        // If 'resume', ResumeUploadFirst will be shown
+    };
+
+    // Handle resume upload completion
+    const handleResumeUploadComplete = (parsedData) => {
+        console.log('Resume upload complete, parsed data:', parsedData);
+        setResumeAutoFillData(parsedData);
+        // Now show step 1 with auto-filled data
+        setStep(1);
+    };
+
+    // Handle switch to manual from resume upload
+    const handleSwitchToManual = () => {
+        setOnboardingMethod('manual');
+        setResumeAutoFillData(null);
+        setStep(1);
+    };
 
     // College search wrapper for AISHE
     const searchCollegeWrapper = (query, limit = 10) => {
@@ -935,279 +1084,297 @@ const JobSeekerOnboarding = () => {
 
     return (
         <div className="onboarding">
-            <div className="onboarding-background">
-                <div className="gradient-orb orb-1"></div>
-                <div className="gradient-orb orb-2"></div>
-            </div>
-
-            {/* Hide onboarding form when interview or readiness is active */}
-            {/* Show pending review status instead of interview if blocked */}
-            {step === 4 && !interviewStatus.canTakeInterview && !interviewStatus.loading && (
-                <div className="onboarding-box" style={{ maxWidth: '600px' }}>
-                    <div style={{ padding: '60px 40px', textAlign: 'center' }}>
-                        {interviewStatus.status === 'pending_review' && (
-                            <>
-                                <div style={{
-                                    fontSize: '64px',
-                                    marginBottom: '24px'
-                                }}>⏳</div>
-                                <h2 style={{
-                                    color: '#1e293b',
-                                    marginBottom: '16px',
-                                    fontSize: '1.75rem'
-                                }}>Interview Under Review</h2>
-                                <p style={{
-                                    color: '#64748b',
-                                    marginBottom: '32px',
-                                    fontSize: '1rem',
-                                    lineHeight: '1.6'
-                                }}>
-                                    {interviewStatus.message}
-                                </p>
-                                <div style={{
-                                    background: '#f0f9ff',
-                                    border: '1px solid #bae6fd',
-                                    borderRadius: '12px',
-                                    padding: '20px',
-                                    marginBottom: '24px'
-                                }}>
-                                    <p style={{ color: '#0369a1', margin: 0, fontWeight: 500 }}>
-                                        📧 You'll receive an email notification once your interview has been reviewed.
-                                    </p>
-                                </div>
-                                <button
-                                    className="onboarding-btn"
-                                    onClick={() => navigate('/jobseeker/home')}
-                                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-                                >
-                                    Go to Dashboard
-                                </button>
-                            </>
-                        )}
-
-                        {interviewStatus.status === 'rejected' && (
-                            <>
-                                <div style={{ fontSize: '64px', marginBottom: '24px' }}>📋</div>
-                                <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Interview Feedback</h2>
-                                <p style={{ color: '#64748b', marginBottom: '24px', lineHeight: '1.6' }}>
-                                    {interviewStatus.message}
-                                </p>
-                                {interviewStatus.rejectionReason && (
-                                    <div style={{
-                                        background: '#fef3c7',
-                                        border: '1px solid #fcd34d',
-                                        borderRadius: '12px',
-                                        padding: '16px',
-                                        marginBottom: '24px',
-                                        textAlign: 'left'
-                                    }}>
-                                        <strong style={{ color: '#92400e' }}>Feedback:</strong>
-                                        <p style={{ color: '#78350f', margin: '8px 0 0' }}>{interviewStatus.rejectionReason}</p>
-                                    </div>
-                                )}
-                                {interviewStatus.cooldownEndsAt && (
-                                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                                        You can retake the interview after: <strong>{new Date(interviewStatus.cooldownEndsAt).toLocaleDateString()}</strong>
-                                    </p>
-                                )}
-                            </>
-                        )}
-                    </div>
-                </div>
+            {/* Step 0: Method Choice - Show if no method selected yet */}
+            {!onboardingMethod && (
+                <OnboardingMethodChoice onSelect={handleMethodSelect} />
             )}
 
-            {/* Handle step 5 - Platform Walkthrough */}
-            {step === 5 && (
-                <PlatformWalkthrough />
+            {/* Resume Upload First - Show if resume method chosen but no data yet */}
+            {onboardingMethod === 'resume' && !resumeAutoFillData && (
+                <ResumeUploadFirst
+                    onComplete={handleResumeUploadComplete}
+                    onSwitchToManual={handleSwitchToManual}
+                />
             )}
 
-            {!showInterview && !showInterviewReadiness && step !== 5 && (step !== 4 || interviewStatus.canTakeInterview || interviewStatus.loading) && (
-                <div className="onboarding-box">
-                    {/* Left Panel - Purple Gradient */}
-                    <div className="onboarding-sidebar">
-                        <div className="sidebar-content">
-                            <h2>Welcome!</h2>
-                            <p>Complete your profile to unlock amazing job opportunities</p>
-
-                            {/* Step progress circles */}
-                            <div className="step-circles">
-                                {[1, 2, 3, 4].map((s) => (
-                                    <div
-                                        key={s}
-                                        className={`step-circle ${step >= s ? 'active' : ''} ${step === s ? 'current' : ''}`}
-                                    >
-                                        {step > s ? (
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                        ) : s}
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Step labels */}
-                            <div className="step-labels">
-                                <span className={step === 1 ? 'current' : ''}>Personal</span>
-                                <span className={step === 2 ? 'current' : ''}>Education</span>
-                                <span className={step === 3 ? 'current' : ''}>Experience</span>
-                                <span className={step === 4 ? 'current' : ''}>Preferences</span>
-                            </div>
-
-                            <div className="sidebar-icon">
-                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </div>
-                        </div>
+            {/* Regular onboarding - Show once method is selected (manual or resume with data) */}
+            {onboardingMethod && (onboardingMethod === 'manual' || resumeAutoFillData) && (
+                <>
+                    <div className="onboarding-background">
+                        <div className="gradient-orb orb-1"></div>
+                        <div className="gradient-orb orb-2"></div>
                     </div>
 
-                    {/* Right Panel - Form Content */}
-                    <div className="onboarding-main">
-                        <div className="onboarding-header">
-                            <div className="header-top">
-                                <div className="progress-bar">
-                                    <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
-                                </div>
-                                <p className="step-indicator">Step {step} of 4</p>
+                    {/* Hide onboarding form when interview or readiness is active */}
+                    {/* Show pending review status instead of interview if blocked */}
+                    {step === 4 && !interviewStatus.canTakeInterview && !interviewStatus.loading && (
+                        <div className="onboarding-box" style={{ maxWidth: '600px' }}>
+                            <div style={{ padding: '60px 40px', textAlign: 'center' }}>
+                                {interviewStatus.status === 'pending_review' && (
+                                    <>
+                                        <div style={{
+                                            fontSize: '64px',
+                                            marginBottom: '24px'
+                                        }}>⏳</div>
+                                        <h2 style={{
+                                            color: '#1e293b',
+                                            marginBottom: '16px',
+                                            fontSize: '1.75rem'
+                                        }}>Interview Under Review</h2>
+                                        <p style={{
+                                            color: '#64748b',
+                                            marginBottom: '32px',
+                                            fontSize: '1rem',
+                                            lineHeight: '1.6'
+                                        }}>
+                                            {interviewStatus.message}
+                                        </p>
+                                        <div style={{
+                                            background: '#f0f9ff',
+                                            border: '1px solid #bae6fd',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '24px'
+                                        }}>
+                                            <p style={{ color: '#0369a1', margin: 0, fontWeight: 500 }}>
+                                                📧 You'll receive an email notification once your interview has been reviewed.
+                                            </p>
+                                        </div>
+                                        <button
+                                            className="onboarding-btn"
+                                            onClick={() => navigate('/jobseeker/home')}
+                                            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                                        >
+                                            Go to Dashboard
+                                        </button>
+                                    </>
+                                )}
+
+                                {interviewStatus.status === 'rejected' && (
+                                    <>
+                                        <div style={{ fontSize: '64px', marginBottom: '24px' }}>📋</div>
+                                        <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Interview Feedback</h2>
+                                        <p style={{ color: '#64748b', marginBottom: '24px', lineHeight: '1.6' }}>
+                                            {interviewStatus.message}
+                                        </p>
+                                        {interviewStatus.rejectionReason && (
+                                            <div style={{
+                                                background: '#fef3c7',
+                                                border: '1px solid #fcd34d',
+                                                borderRadius: '12px',
+                                                padding: '16px',
+                                                marginBottom: '24px',
+                                                textAlign: 'left'
+                                            }}>
+                                                <strong style={{ color: '#92400e' }}>Feedback:</strong>
+                                                <p style={{ color: '#78350f', margin: '8px 0 0' }}>{interviewStatus.rejectionReason}</p>
+                                            </div>
+                                        )}
+                                        {interviewStatus.cooldownEndsAt && (
+                                            <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                                                You can retake the interview after: <strong>{new Date(interviewStatus.cooldownEndsAt).toLocaleDateString()}</strong>
+                                            </p>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
+                    )}
 
-                        <div className="onboarding-content">
-                            {renderStep()}
+                    {/* Handle step 5 - Platform Walkthrough */}
+                    {step === 5 && (
+                        <PlatformWalkthrough />
+                    )}
 
-                            <div className="form-actions">
-                                {step > 1 && (
-                                    <button onClick={prevStep} className="btn btn-secondary">
-                                        Previous
-                                    </button>
-                                )}
-                                {step < 4 ? (
-                                    <button onClick={nextStep} className="btn btn-primary">
-                                        Next
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    {!showInterview && !showInterviewReadiness && step !== 5 && (step !== 4 || interviewStatus.canTakeInterview || interviewStatus.loading) && (
+                        <div className="onboarding-box">
+                            {/* Left Panel - Purple Gradient */}
+                            <div className="onboarding-sidebar">
+                                <div className="sidebar-content">
+                                    <h2>Welcome!</h2>
+                                    <p>Complete your profile to unlock amazing job opportunities</p>
+
+                                    {/* Step progress circles */}
+                                    <div className="step-circles">
+                                        {[1, 2, 3, 4].map((s) => (
+                                            <div
+                                                key={s}
+                                                className={`step-circle ${step >= s ? 'active' : ''} ${step === s ? 'current' : ''}`}
+                                            >
+                                                {step > s ? (
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                ) : s}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Step labels */}
+                                    <div className="step-labels">
+                                        <span className={step === 1 ? 'current' : ''}>Personal</span>
+                                        <span className={step === 2 ? 'current' : ''}>Education</span>
+                                        <span className={step === 3 ? 'current' : ''}>Experience</span>
+                                        <span className={step === 4 ? 'current' : ''}>Preferences</span>
+                                    </div>
+
+                                    <div className="sidebar-icon">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
                                         </svg>
-                                    </button>
-                                ) : (
-                                    <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
-                                        {loading ? <span className="loading"></span> : 'Complete Onboarding'}
-                                    </button>
-                                )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Panel - Form Content */}
+                            <div className="onboarding-main">
+                                <div className="onboarding-header">
+                                    <div className="header-top">
+                                        <div className="progress-bar">
+                                            <div className="progress-fill" style={{ width: `${(step / 4) * 100}%` }}></div>
+                                        </div>
+                                        <p className="step-indicator">Step {step} of 4</p>
+                                    </div>
+                                </div>
+
+                                <div className="onboarding-content">
+                                    {renderStep()}
+
+                                    <div className="form-actions">
+                                        {step > 1 && (
+                                            <button onClick={prevStep} className="btn btn-secondary">
+                                                Previous
+                                            </button>
+                                        )}
+                                        {step < 4 ? (
+                                            <button onClick={nextStep} className="btn btn-primary">
+                                                Next
+                                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                    <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            </button>
+                                        ) : (
+                                            <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
+                                                {loading ? <span className="loading"></span> : 'Complete Onboarding'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            <ConfirmDialog
-                isOpen={showInterviewPrompt}
-                title="Take AI Interview?"
-                message="Crack the interview to stand out among top-tier recruiters! Would you like to take the AI interview now? (Recommended)"
-                confirmText="Yes, Let's Go!"
-                cancelText="Skip for Now"
-                variant="info"
-                onConfirm={async () => {
-                    setShowInterviewPrompt(false);
+                    <ConfirmDialog
+                        isOpen={showInterviewPrompt}
+                        title="Take AI Interview?"
+                        message="Crack the interview to stand out among top-tier recruiters! Would you like to take the AI interview now? (Recommended)"
+                        confirmText="Yes, Let's Go!"
+                        cancelText="Skip for Now"
+                        variant="info"
+                        onConfirm={async () => {
+                            setShowInterviewPrompt(false);
 
-                    // Only parse resume if not already parsed from upload
-                    if (!parsedResume && resumeFile) {
-                        console.log('No parsed resume, parsing now...');
-                        setParsingResume(true);
-                        try {
-                            const formData = new FormData();
-                            formData.append('resume', resumeFile);
-                            const response = await api.post('/resume/parse', formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            });
-                            if (response.success && response.data.parsedResume) {
-                                setParsedResume(response.data.parsedResume);
+                            // Only parse resume if not already parsed from upload
+                            if (!parsedResume && resumeFile) {
+                                console.log('No parsed resume, parsing now...');
+                                setParsingResume(true);
+                                try {
+                                    const formData = new FormData();
+                                    formData.append('resume', resumeFile);
+                                    const response = await api.post('/resume/parse', formData, {
+                                        headers: { 'Content-Type': 'multipart/form-data' }
+                                    });
+                                    if (response.success && response.data.parsedResume) {
+                                        setParsedResume(response.data.parsedResume);
+                                    }
+                                } catch (error) {
+                                    console.error('Resume parsing failed:', error);
+                                }
+                                setParsingResume(false);
                             }
-                        } catch (error) {
-                            console.error('Resume parsing failed:', error);
-                        }
-                        setParsingResume(false);
-                    }
-                    setShowInterviewReadiness(true);
-                }}
-                onCancel={() => {
-                    setShowInterviewPrompt(false);
-                    navigate('/jobseeker/home');
-                }}
-            />
-
-            {/* Image Crop Modal */}
-            {showCropModal && cropImageSrc && (
-                <ImageCropModal
-                    image={cropImageSrc}
-                    onComplete={handleCropComplete}
-                    onCancel={handleCropCancel}
-                />
-            )}
-
-            {/* Live Camera Face Verification Modal */}
-            {showFaceVerification && (
-                <LiveCameraVerification
-                    referenceDescriptor={faceDescriptor}
-                    onVerificationComplete={handleFaceVerificationComplete}
-                    onCancel={handleFaceVerificationCancel}
-                />
-            )}
-
-            {/* Face Validation Loading Overlay */}
-            {validatingFace && (
-                <div className="face-validation-overlay">
-                    <div className="face-validation-spinner">
-                        <div className="spinner"></div>
-                        <p>Validating face in photo...</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Interview Readiness Check (Platform Interview) */}
-            {showInterviewReadiness && !showInterview && (
-                <div className="interview-readiness-wrapper">
-                    <InterviewReadiness
-                        inline={true}
-                        customInterviewId="platform-interview"
-                        onReady={(readinessData) => {
-                            // Store captured photo for identity verification
-                            setCapturedFacePhoto(readinessData.capturedPhoto);
-                            setInterviewReadinessComplete(true);
-                            setShowInterviewReadiness(false);
-                            setShowInterview(true);
-
-                            toast.success('Ready to start interview!');
+                            setShowInterviewReadiness(true);
                         }}
                         onCancel={() => {
-                            setShowInterviewReadiness(false);
-                            toast.info('Interview cancelled.');
+                            setShowInterviewPrompt(false);
                             navigate('/jobseeker/home');
                         }}
                     />
-                </div>
-            )}
 
-            {/* Inline Interview */}
-            {showInterview && (
-                <OnboardingInterview
-                    parsedResume={parsedResume}
-                    userId={localStorage.getItem('userId')}
-                    desiredRole={formData.desiredRole}
-                    experienceLevel={formData.experienceLevel}
-                    yearsOfExperience={formData.yearsOfExperience}
-                    jobDomains={formData.jobDomains}
-                    onComplete={(results) => {
-                        toast.success(`Interview completed! Score: ${results?.score || 'N/A'}`);
-                        // Instead of navigating to home, go to platform walkthrough (step 5)
-                        setShowInterview(false);
-                        setStep(5);
-                    }}
-                    onSkip={() => {
-                        toast.info('Interview skipped. You can take it later.');
-                        navigate('/jobseeker/home');
-                    }}
-                />
+                    {/* Image Crop Modal */}
+                    {showCropModal && cropImageSrc && (
+                        <ImageCropModal
+                            image={cropImageSrc}
+                            onComplete={handleCropComplete}
+                            onCancel={handleCropCancel}
+                        />
+                    )}
+
+                    {/* Live Camera Face Verification Modal */}
+                    {showFaceVerification && (
+                        <LiveCameraVerification
+                            referenceDescriptor={faceDescriptor}
+                            onVerificationComplete={handleFaceVerificationComplete}
+                            onCancel={handleFaceVerificationCancel}
+                        />
+                    )}
+
+                    {/* Face Validation Loading Overlay */}
+                    {validatingFace && (
+                        <div className="face-validation-overlay">
+                            <div className="face-validation-spinner">
+                                <div className="spinner"></div>
+                                <p>Validating face in photo...</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Interview Readiness Check (Platform Interview) */}
+                    {showInterviewReadiness && !showInterview && (
+                        <div className="interview-readiness-wrapper">
+                            <InterviewReadiness
+                                inline={true}
+                                customInterviewId="platform-interview"
+                                onReady={(readinessData) => {
+                                    // Store captured photo for identity verification
+                                    setCapturedFacePhoto(readinessData.capturedPhoto);
+                                    setInterviewReadinessComplete(true);
+                                    setShowInterviewReadiness(false);
+                                    setShowInterview(true);
+
+                                    toast.success('Ready to start interview!');
+                                }}
+                                onCancel={() => {
+                                    setShowInterviewReadiness(false);
+                                    toast.info('Interview cancelled.');
+                                    navigate('/jobseeker/home');
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {/* Inline Interview */}
+                    {showInterview && (
+                        <OnboardingInterview
+                            parsedResume={parsedResume}
+                            userId={localStorage.getItem('userId')}
+                            desiredRole={formData.desiredRole}
+                            experienceLevel={formData.experienceLevel}
+                            yearsOfExperience={formData.yearsOfExperience}
+                            jobDomains={formData.jobDomains}
+                            onComplete={(results) => {
+                                toast.success(`Interview completed! Score: ${results?.score || 'N/A'}`);
+                                // Instead of navigating to home, go to platform walkthrough (step 5)
+                                setShowInterview(false);
+                                setStep(5);
+                            }}
+                            onSkip={() => {
+                                toast.info('Interview skipped. You can take it later.');
+                                navigate('/jobseeker/home');
+                            }}
+                        />
+                    )}
+                </>
             )}
         </div>
     );

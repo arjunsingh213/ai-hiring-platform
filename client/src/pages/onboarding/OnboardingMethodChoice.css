@@ -1,0 +1,282 @@
+/* Method Choice Page */
+.method-choice-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+}
+
+.method-choice-background {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    z-index: 0;
+}
+
+.gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: float 20s ease-in-out infinite;
+}
+
+.orb-1 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    top: -100px;
+    left: -100px;
+    animation-delay: 0s;
+}
+
+.orb-2 {
+    width: 350px;
+    height: 350px;
+    background: linear-gradient(135deg, #ec4899, #f43f5e);
+    bottom: -100px;
+    right: -100px;
+    animation-delay: -10s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -30px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+}
+
+.method-choice-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1100px;
+}
+
+.method-choice-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.method-choice-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+}
+
+.method-choice-header p {
+    font-size: 1.125rem;
+    color: #64748b;
+}
+
+/* Choice Cards */
+.choice-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.choice-card {
+    background: white;
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+}
+
+.choice-card:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    border-color: #6366f1;
+}
+
+.choice-card.recommended {
+    border-color: #6366f1;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+}
+
+.recommended-badge {
+    position: absolute;
+    top: -12px;
+    right: 24px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.recommended-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+.card-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+}
+
+.resume-icon {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+}
+
+.resume-icon svg {
+    color: #6366f1;
+}
+
+.manual-icon {
+    background: linear-gradient(135deg, rgba(100, 116, 139, 0.1), rgba(148, 163, 184, 0.1));
+}
+
+.manual-icon svg {
+    color: #64748b;
+}
+
+.choice-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+}
+
+.choice-card p {
+    font-size: 1rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    flex: 1;
+}
+
+.card-benefits {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.benefit {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.benefit svg {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.select-button {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.select-button.primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+.select-button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.3);
+}
+
+.select-button.secondary {
+    background: white;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+}
+
+.select-button.secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+}
+
+.select-button svg {
+    transition: transform 0.3s ease;
+}
+
+.select-button:hover svg {
+    transform: translateX(4px);
+}
+
+.privacy-note {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.privacy-note svg {
+    color: #10b981;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .method-choice-header h1 {
+        font-size: 1.875rem;
+    }
+
+    .method-choice-header p {
+        font-size: 1rem;
+    }
+
+    .choice-cards {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .choice-card {
+        padding: 2rem;
+    }
+
+    .method-choice-page {
+        padding: 1rem;
+    }
+}
