@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const deepseekService = require('../services/ai/deepseekService');
+const geminiService = require('../services/ai/geminiService'); // For classification and suggestions
 
 // pdf-parse import with proper handling
 let pdfParse;
@@ -256,5 +257,73 @@ async function extractPDFWithPdfjs(buffer) {
         return '';
     }
 }
+
+/**
+ * GET /api/resume/skill-suggestions
+ * Get skill suggestions based on prefix (debounced, using gemini-2.5-flash-lite)
+ */
+router.get('/skill-suggestions', async (req, res) => {
+    try {
+        const { prefix, domain = 'technology' } = req.query;
+
+        if (!prefix || prefix.length < 2) {
+            return res.json({ success: true, data: { suggestions: [] } });
+        }
+
+        // Use Gemini for skill suggestions (debounced internally)
+        const suggestions = await geminiService.getSkillSuggestions(prefix, domain);
+
+        res.json({
+            success: true,
+            data: { suggestions }
+        });
+    } catch (error) {
+        console.error('[SkillSuggestions] Error:', error.message);
+        res.json({ success: true, data: { suggestions: [] } });
+    }
+});
+
+/**
+ * POST /api/resume/classify
+ * Classify resume into domain/role type (using gemini-2.5-flash-lite)
+ */
+router.post('/classify', async (req, res) => {
+    try {
+        const { resumeText } = req.body;
+
+        if (!resumeText || resumeText.length < 50) {
+            return res.json({
+                success: true,
+                data: {
+                    domain: 'IT',
+                    roleType: 'Other',
+                    experienceLevel: 'mid',
+                    primarySkills: [],
+                    confidence: 0.5
+                }
+            });
+        }
+
+        // Use Gemini for classification
+        const classification = await geminiService.classifyResume(resumeText);
+
+        res.json({
+            success: true,
+            data: classification
+        });
+    } catch (error) {
+        console.error('[ResumeClassify] Error:', error.message);
+        res.json({
+            success: true,
+            data: {
+                domain: 'IT',
+                roleType: 'Other',
+                experienceLevel: 'mid',
+                primarySkills: [],
+                confidence: 0.5
+            }
+        });
+    }
+});
 
 module.exports = router;

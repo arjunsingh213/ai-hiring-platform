@@ -72,6 +72,7 @@ const OnboardingInterview = ({
     const [showCodingTest, setShowCodingTest] = useState(false);
     const [codingProblem, setCodingProblem] = useState(null);
     const [detectedLanguages, setDetectedLanguages] = useState([]);
+    const [languagesChecked, setLanguagesChecked] = useState(false); // Track if detection completed
     const [codingResults, setCodingResults] = useState(null);
     const [loadingProblem, setLoadingProblem] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
@@ -187,12 +188,14 @@ const OnboardingInterview = ({
                     const response = await api.post('/code/detect-languages', {
                         skills: parsedResume.skills
                     });
-                    if (response.success && response.languages?.length > 0) {
-                        setDetectedLanguages(response.languages);
-                        console.log('Detected programming languages:', response.languages);
-                    }
+                    // ALWAYS set the result - even if empty - so we know detection completed
+                    const detected = response.languages || [];
+                    setDetectedLanguages(detected);
+                    setLanguagesChecked(true);
+                    console.log('[LANGUAGE DETECT] Result:', detected.length > 0 ? detected.map(l => l.name) : 'NO programming languages found');
                 } catch (error) {
                     console.log('Language detection skipped:', error.message);
+                    setLanguagesChecked(true); // Mark as checked even on error
                 }
             }
         };
@@ -738,19 +741,33 @@ const OnboardingInterview = ({
                 // DON'T show actual results to candidate - just store internally
                 setResults(response.data);
 
-                // ALWAYS show coding test after interview
-                toast.success('Interview complete! Preparing coding challenge...');
-                loadCodingProblem();
+                // DEBUG: Log detectedLanguages to trace coding test decision
+                console.log('[INTERVIEW] detectedLanguages:', detectedLanguages, 'length:', detectedLanguages?.length || 0, 'checked:', languagesChecked);
+
+                // Only show coding test if candidate has programming skills
+                // languagesChecked ensures detection completed; length > 0 means they have coding skills
+                if (languagesChecked && detectedLanguages && detectedLanguages.length > 0) {
+                    console.log('[INTERVIEW] Has programming languages, showing coding test');
+                    toast.success('Interview complete! Preparing coding challenge...');
+                    loadCodingProblem();
+                } else {
+                    // Non-technical role (IT Support, etc.) OR no programming skills detected - skip coding test
+                    console.log('[INTERVIEW] No programming languages detected (checked:', languagesChecked, '), skipping coding test');
+                    toast.success('Interview submitted! Your responses are under review.');
+                    stopCamera();
+                    setCompleted(true);
+                }
             } else {
                 throw new Error(response.error || 'Submission failed');
             }
         } catch (error) {
             console.error('Interview submission error:', error);
-            toast.error('Failed to submit interview. Proceeding to coding test.');
+            toast.error('Failed to submit interview.');
             setResults({ pendingReview: true, feedback: 'Interview submission had issues.' });
 
-            // Still proceed to coding test
-            loadCodingProblem();
+            // Skip to results (don't force coding test on error for non-technical)
+            stopCamera();
+            setCompleted(true);
         } finally {
             setSubmitting(false);
         }
@@ -1010,7 +1027,7 @@ const OnboardingInterview = ({
                     languageId={codingProblem.languageId || detectedLanguages[0]?.judge0Id || 63}
                     problem={codingProblem}
                     onComplete={handleCodingComplete}
-                    onSkip={handleSkipCoding}
+
                     timeLimit={codingProblem.timeLimit || 15}
                 />
             </div>
@@ -1104,18 +1121,7 @@ const OnboardingInterview = ({
                     <span className={`timer ${timeLeft < 30 ? 'warning' : ''}`}>
                         ⏱️ {formatTime(timeLeft)}
                     </span>
-                    <button className="skip-interview-btn" onClick={() => {
-                        if (onSkip && typeof onSkip === 'function') {
-                            onSkip();
-                        } else {
-                            // Fallback if onSkip not provided
-                            stopCamera();
-                            toast.info('Interview skipped. You can take it later from your dashboard.');
-                            window.location.href = '/jobseeker/home';
-                        }
-                    }}>
-                        Skip Interview
-                    </button>
+
                 </div>
             </div>
 
@@ -1284,7 +1290,7 @@ const OnboardingInterview = ({
                                 <span className="btn-spinner"></span>
                                 Analyzing...
                             </>
-                        ) : currentIndex < 9 ? (
+                        ) : currentIndex < (progress.totalQuestions - 1) ? (
                             <>
                                 Next Question
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

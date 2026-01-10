@@ -187,10 +187,22 @@ const JobSeekerOnboarding = () => {
                             if (profile.parsedResume) {
                                 console.log('Using pre-parsed resume with skills:', profile.parsedResume.skills?.slice(0, 5));
                                 setParsedResume(profile.parsedResume);
+                                setResumeAutoFillData(profile.parsedResume);
+                                setOnboardingMethod('resume');
+                            } else if (profile.skills && profile.skills.length > 0) {
+                                // Fallback for manual onboarding or missing parsed resume
+                                console.log('[INTERVIEW] No parsed resume, using profile data (manual mode)');
+                                setOnboardingMethod('manual');
+                                setParsedResume({
+                                    skills: profile.skills,
+                                    experience: [],
+                                    education: [],
+                                    summary: 'Profile-based manual entry'
+                                });
                             } else {
-                                // No resume found - redirect to resume upload step
-                                console.log('[INTERVIEW] No resume found - redirecting to resume upload');
-                                toast.warning('Please upload your resume first');
+                                // No resume or skills found - redirect to resume upload step
+                                console.log('[INTERVIEW] No resume or profile data found - redirecting to resume upload');
+                                toast.warning('Please upload your resume to continue');
                                 setSearchParams({ step: '3' }, { replace: true });
                                 setStep(3);
                                 return; // Stop further processing
@@ -198,7 +210,7 @@ const JobSeekerOnboarding = () => {
                         } else {
                             // No job seeker profile - redirect to resume upload
                             console.log('[INTERVIEW] No profile found - redirecting to resume upload');
-                            toast.warning('Please complete your profile first');
+                            toast.warning('Please upload your resume to continue');
                             setSearchParams({ step: '3' }, { replace: true });
                             setStep(3);
                             return; // Stop further processing
@@ -1035,6 +1047,48 @@ const JobSeekerOnboarding = () => {
                 );
 
             case 4:
+                // If user already uploaded via auto-fill, show confirmation instead of upload form
+                if (onboardingMethod === 'resume' && resumeAutoFillData) {
+                    return (
+                        <div className="form-step animate-fade-in">
+                            <h2>Resume Ready ✓</h2>
+                            <p className="step-description">Your resume has already been uploaded and analyzed</p>
+
+                            <div className="resume-confirmed-box" style={{
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                borderRadius: '12px',
+                                padding: '24px',
+                                textAlign: 'center',
+                                marginBottom: '24px'
+                            }}>
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" style={{ marginBottom: '16px' }}>
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="16 10 10.5 15 8 12.5"></polyline>
+                                </svg>
+                                <h3 style={{ color: '#10B981', margin: '0 0 8px 0' }}>Resume Uploaded Successfully</h3>
+                                <p style={{ color: '#9ca3af', margin: 0 }}>
+                                    {resumeAutoFillData.skills?.length || 0} skills extracted •
+                                    {resumeAutoFillData.experience?.length || 0} experiences found
+                                </p>
+                            </div>
+
+                            <div className="info-box">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                                    <path d="M12 16V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M12 8H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                                <div>
+                                    <strong>Ready for Interview</strong>
+                                    <p>Click "Complete Onboarding" to proceed to your AI interview.</p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                // Manual method - show upload form
                 return (
                     <div className="form-step animate-fade-in">
                         <h2>Upload Resume</h2>

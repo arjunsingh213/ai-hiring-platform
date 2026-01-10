@@ -1,24 +1,36 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
-import LandingPage from './pages/landing/LandingPage';
-import LandingPageNew from './pages/landing/LandingPageNew';
-import AuthPage from './pages/auth/AuthPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import VerifyEmailPage from './pages/auth/VerifyEmailPage';
-import RoleSelection from './pages/onboarding/RoleSelection';
-import JobSeekerOnboarding from './pages/onboarding/JobSeekerOnboarding';
-import RecruiterOnboarding from './pages/onboarding/RecruiterOnboarding';
-import JobSeekerDashboard from './pages/jobseeker/JobSeekerDashboard';
-import RecruiterDashboard from './pages/recruiter/RecruiterDashboard';
-import AIInterview from './pages/interview/AIInterview';
-import InterviewReadiness from './pages/interview/InterviewReadiness';
-import InterviewResults from './pages/interview/InterviewResults';
-import PublicProfilePage from './pages/shared/PublicProfilePage';
-// Admin Portal
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
 import './index.css';
+
+// Lazy load components
+const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
+const LandingPageNew = lazy(() => import('./pages/landing/LandingPageNew'));
+const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const VerifyEmailPage = lazy(() => import('./pages/auth/VerifyEmailPage'));
+const RoleSelection = lazy(() => import('./pages/onboarding/RoleSelection'));
+const JobSeekerOnboarding = lazy(() => import('./pages/onboarding/JobSeekerOnboarding'));
+const RecruiterOnboarding = lazy(() => import('./pages/onboarding/RecruiterOnboarding'));
+const JobSeekerDashboard = lazy(() => import('./pages/jobseeker/JobSeekerDashboard'));
+const RecruiterDashboard = lazy(() => import('./pages/recruiter/RecruiterDashboard'));
+const AIInterview = lazy(() => import('./pages/interview/AIInterview'));
+const InterviewReadiness = lazy(() => import('./pages/interview/InterviewReadiness'));
+const InterviewResults = lazy(() => import('./pages/interview/InterviewResults'));
+const PublicProfilePage = lazy(() => import('./pages/shared/PublicProfilePage'));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+
+// Loading Fallback
+const LoadingFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f8fafc' }}>
+    <div className="spinner" style={{
+      width: '40px', height: '40px', border: '4px solid #e2e8f0',
+      borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite'
+    }}></div>
+    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
 // OAuth Token Handler - extracts and stores auth data from URL params after OAuth redirect
 const OAuthTokenHandler = ({ children }) => {
@@ -71,39 +83,41 @@ function App() {
     <ToastProvider>
       <Router>
         <OAuthTokenHandler>
-          <Routes>
-            {/* Landing Page */}
-            <Route path="/" element={<LandingPageNew />} />
-            <Route path="/landing-old" element={<LandingPage />} />
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Landing Page */}
+              <Route path="/" element={<LandingPageNew />} />
+              <Route path="/landing-old" element={<LandingPage />} />
 
-            {/* Authentication - Combined sliding auth page */}
-            <Route path="/login" element={<AuthPage />} />
-            <Route path="/signup" element={<AuthPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+              {/* Authentication - Combined sliding auth page */}
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/signup" element={<AuthPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
-            {/* Onboarding */}
-            <Route path="/onboarding/role-selection" element={<RoleSelection />} />
-            <Route path="/onboarding/jobseeker" element={<JobSeekerOnboarding />} />
-            <Route path="/onboarding/recruiter" element={<RecruiterOnboarding />} />
+              {/* Onboarding */}
+              <Route path="/onboarding/role-selection" element={<RoleSelection />} />
+              <Route path="/onboarding/jobseeker" element={<JobSeekerOnboarding />} />
+              <Route path="/onboarding/recruiter" element={<RecruiterOnboarding />} />
 
-            {/* AI Interview */}
-            <Route path="/interview/:interviewId/ready" element={<InterviewReadiness />} />
-            <Route path="/interview/:interviewId" element={<AIInterview />} />
-            <Route path="/interview/:interviewId/results" element={<InterviewResults />} />
+              {/* AI Interview */}
+              <Route path="/interview/:interviewId/ready" element={<InterviewReadiness />} />
+              <Route path="/interview/:interviewId" element={<AIInterview />} />
+              <Route path="/interview/:interviewId/results" element={<InterviewResults />} />
 
-            {/* Public Profile (accessible by both roles) */}
-            <Route path="/profile/:userId" element={<PublicProfilePage />} />
+              {/* Public Profile (accessible by both roles) */}
+              <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
-            {/* Dashboards */}
-            <Route path="/jobseeker/*" element={<JobSeekerDashboard />} />
-            <Route path="/recruiter/*" element={<RecruiterDashboard />} />
+              {/* Dashboards */}
+              <Route path="/jobseeker/*" element={<JobSeekerDashboard />} />
+              <Route path="/recruiter/*" element={<RecruiterDashboard />} />
 
-            {/* Admin Portal */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
-          </Routes>
+              {/* Admin Portal */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/*" element={<AdminDashboard />} />
+            </Routes>
+          </Suspense>
         </OAuthTokenHandler>
       </Router>
     </ToastProvider>

@@ -3,7 +3,8 @@
 .onboarding-interview {
     min-height: 100vh;
     width: 100%;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    background: transparent;
+    /* Changed from dark gradient to transparent */
     padding: 24px 32px;
     display: flex;
     flex-direction: column;
@@ -11,19 +12,10 @@
     overflow-x: hidden;
 }
 
-/* Subtle background pattern */
+/* Subtle background pattern - removed for transparency */
 .onboarding-interview::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
-    pointer-events: none;
-    z-index: 0;
+    display: none;
+    /* Disabled to maintain transparent background */
 }
 
 .onboarding-interview>* {
@@ -1851,6 +1843,8 @@
     position: relative;
     min-height: 100vh;
     padding: 0;
+    /* Dark background for coding interview only */
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
 }
 
 .coding-camera {

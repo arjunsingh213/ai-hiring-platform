@@ -343,13 +343,41 @@
     padding: var(--spacing-lg) var(--spacing-xl);
     border-top: 1px solid var(--glass-separator);
     display: flex;
-    gap: var(--spacing-md);
+    align-items: center;
+    gap: var(--spacing-sm);
     background: var(--glass-white);
 }
 
 .message-input .input {
     flex: 1;
     margin: 0;
+}
+
+.btn-icon-input {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-icon-input:hover {
+    background: var(--glass-white);
+    color: var(--text-primary);
+}
+
+.send-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-width: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Empty State */
@@ -491,6 +519,7 @@
         flex-direction: column;
         height: calc(100vh - 80px);
         position: relative;
+        margin-top: 0;
     }
 
     .mobile-header {
@@ -506,7 +535,7 @@
         border-bottom: 1px solid var(--glass-border);
     }
 
-    /* By default, sidebar is visible on mobile */
+    /* Sidebar visible by default on mobile */
     .conversations-sidebar {
         position: fixed;
         top: 76px;
@@ -524,7 +553,7 @@
         transform: translateX(-100%);
     }
 
-    /* Chat window takes full width on mobile */
+    /* Chat window hidden by default, shown when conversation selected */
     .chat-window {
         position: fixed;
         top: 76px;
@@ -534,6 +563,13 @@
         margin-left: 0;
         border-radius: 0;
         z-index: 30;
+        /* Hidden when no conversation selected and sidebar is open */
+        display: none;
+    }
+
+    /* Show chat window when sidebar is closed (conversation selected) */
+    .conversations-sidebar:not(.open)~.chat-window {
+        display: flex;
     }
 
     .message-content {

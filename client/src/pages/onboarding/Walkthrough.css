@@ -1,19 +1,26 @@
+/* Platform Walkthrough - Premium Dark Glassmorphism (Matching Interview Results) */
+
 .walkthrough-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: transparent;
+    /* Transparent background like interview */
 }
 
 .walkthrough-card {
-    background: white;
+    background: rgba(30, 41, 59, 0.9);
+    /* Dark glass like interview results */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     width: 100%;
-    max-width: 500px;
+    max-width: 550px;
     padding: 40px;
-    border-radius: 24px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -34,14 +41,17 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #e2e8f0;
+    background-color: rgba(99, 102, 241, 0.3);
+    /* Dark theme dots */
     transition: all 0.3s ease;
 }
 
 .progress-dot.active {
-    background-color: #4F46E5;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    /* Gradient like interview */
     width: 24px;
     border-radius: 12px;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
 }
 
 .slide-content-wrapper {
@@ -68,6 +78,9 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 32px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1)) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
 }
 
 .slide-icon {
@@ -77,14 +90,16 @@
 .slide-content h2 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #f1f5f9;
+    /* Light text on dark background */
     margin-bottom: 16px;
     line-height: 1.2;
 }
 
 .slide-content p {
     font-size: 1.1rem;
-    color: #64748b;
+    color: #94a3b8;
+    /* Muted light gray */
     line-height: 1.6;
     max-width: 90%;
 }
@@ -96,21 +111,25 @@
     width: 100%;
     margin-top: 40px;
     padding-top: 20px;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid rgba(99, 102, 241, 0.15);
+    /* Dark theme border */
 }
 
 .btn-text {
     background: none;
     border: none;
-    color: #64748b;
+    color: #94a3b8;
+    /* Muted text */
     font-weight: 500;
     cursor: pointer;
     font-size: 0.95rem;
     padding: 8px 16px;
+    transition: all 0.2s ease;
 }
 
 .btn-text:hover {
-    color: #1e293b;
+    color: #f1f5f9;
+    /* Brighter on hover */
 }
 
 .action-buttons-right {
@@ -118,37 +137,41 @@
     gap: 12px;
 }
 
-/* Reusing generic button styles but scoped if needed */
+/* Premium gradient button matching interview */
 .btn-primary {
-    background-color: #4F46E5;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
-    padding: 10px 24px;
+    padding: 12px 28px;
     border-radius: 12px;
     font-weight: 600;
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
 }
 
 .btn-primary:hover {
-    background-color: #4338ca;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
 }
 
 .btn-secondary {
-    background-color: white;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    padding: 10px 24px;
+    background: rgba(99, 102, 241, 0.15);
+    backdrop-filter: blur(10px);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 12px 28px;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
-    background-color: #f8fafc;
-    border-color: #cbd5e1;
+    background: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #c7d2fe;
+    transform: translateY(-2px);
 }
 
 @media (max-width: 640px) {
@@ -173,7 +196,6 @@
 
     .walkthrough-actions {
         flex-direction: column-reverse;
-        /* Stack buttons, skip at bottom */
         gap: 16px;
     }
 

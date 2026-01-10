@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const deepseekService = require('../services/ai/deepseekService');
+const geminiService = require('../services/ai/geminiService');
 
 // Piston API - FREE public instance
 const PISTON_API_URL = process.env.PISTON_API_URL || 'https://emkc.org/api/v2/piston';
@@ -170,7 +171,7 @@ router.post('/generate-problem', async (req, res) => {
 
         console.log(`🔵 [BACKEND] Generating ${difficulty || 'easy'} problem for ${targetLanguage}`);
 
-        const problem = await deepseekService.generateCodingProblem(
+        const problem = await geminiService.generateCodingProblem(
             targetLanguage,
             difficulty || 'easy',
             skills || []
@@ -251,7 +252,7 @@ router.post('/evaluate', async (req, res) => {
 
         // Only if execution passed, evaluate with AI
         console.log('[EVALUATE] Code execution PASSED - evaluating with AI...');
-        const evaluation = await deepseekService.evaluateCodeSolution(
+        const evaluation = await geminiService.evaluateCodeSolution(
             code,
             problem,
             language,

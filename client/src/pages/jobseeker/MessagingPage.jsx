@@ -82,7 +82,7 @@ const MessagingPage = () => {
 
     // Handle selectedUser from navigation (e.g., from profile page)
     useEffect(() => {
-        if (location.state?.selectedUser && conversations.length > 0) {
+        if (location.state?.selectedUser) {
             const targetUserId = location.state.selectedUser._id;
 
             // Find existing conversation with this user
@@ -107,7 +107,7 @@ const MessagingPage = () => {
             // Clear the location state to prevent re-triggering
             window.history.replaceState({}, document.title);
         }
-    }, [location.state, conversations]);
+    }, [location.state]);
 
     const fetchConversations = async () => {
         try {
@@ -152,6 +152,9 @@ const MessagingPage = () => {
             await api.post('/messages', messageData);
             setNewMessage('');
             fetchMessages(selectedConversation.otherUser._id);
+
+            // Refresh conversations list to show new conversation in sidebar
+            fetchConversations();
         } catch (error) {
             console.error('Error sending message:', error);
         }
@@ -246,15 +249,15 @@ const MessagingPage = () => {
 
     return (
         <div className="messaging-page">
-            {/* Mobile header */}
-            {!sidebarOpen && (
+            {/* Mobile header - only show when chat is open */}
+            {!sidebarOpen && selectedConversation && (
                 <div className="mobile-header">
                     <button className="btn-icon" onClick={() => setSidebarOpen(true)}>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
-                    <h3>{selectedConversation?.otherUser?.profile?.name || 'Messages'}</h3>
+                    <h3>{selectedConversation?.otherUser?.profile?.name || 'User'}</h3>
                 </div>
             )}
 
@@ -396,6 +399,14 @@ const MessagingPage = () => {
                         </div>
 
                         <div className="message-input">
+                            <button className="btn-icon-input" title="Emoji" onClick={() => alert('Emoji picker coming soon!')}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                                    <circle cx="8" cy="10" r="1.5" fill="currentColor" />
+                                    <circle cx="16" cy="10" r="1.5" fill="currentColor" />
+                                    <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                            </button>
                             <input
                                 type="text"
                                 className="input"
@@ -404,8 +415,17 @@ const MessagingPage = () => {
                                 onChange={(e) => handleTyping(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                             />
-                            <button className="btn btn-primary" onClick={sendMessage}>
-                                Send
+                            <button className="btn-icon-input" title="Voice message" onClick={() => alert('Voice recording coming soon!')}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2C10.34 2 9 3.34 9 5V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V5C15 3.34 13.66 2 12 2Z" stroke="currentColor" strokeWidth="2" />
+                                    <path d="M19 10V12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M12 19V22M8 22H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                            </button>
+                            <button className="btn btn-primary send-btn" onClick={sendMessage}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 8L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
                             </button>
                         </div>
                     </>

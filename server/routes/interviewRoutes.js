@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Job = require('../models/Job');
 const aiService = require('../services/ai/aiService');
 const deepseekService = require('../services/ai/deepseekService');
+const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
 
 // Start a new interview (for job applications)
 router.post('/start', async (req, res) => {

@@ -12,10 +12,10 @@
 
 const axios = require('axios');
 
-// AI Model Configuration
+// AI Model Configuration - Using FREE tier
 const MODELS = {
     LLAMA: {
-        name: 'meta-llama/llama-3.1-8b-instruct',
+        name: 'meta-llama/llama-3.2-3b-instruct:free',  // FREE tier model
         key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY
     }
 };

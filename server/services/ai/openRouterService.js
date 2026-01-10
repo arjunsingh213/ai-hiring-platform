@@ -2,27 +2,29 @@
  * OpenRouter AI Service
  * Multi-model AI integration for the AI Interview System
  * 
- * Models:
- * - Llama 3.1 8B: Resume Parsing
- * - Gemma 2 9B: JD-Resume Matching, Recruiter Reports
- * - Qwen3 235B: Question Generation, Answer Evaluation
- * - Mistral 7B: Fast Scoring
+ * ALL USING FREE TIER MODELS:
+ * - Llama 3.2 3B: Resume Parsing, Skill Extraction
+ * - Llama 3.2 3B: JD-Resume Matching, Recruiter Reports
+ * - Llama 3.2 3B: Question Generation, Answer Evaluation
+ * - Llama 3.2 3B: Fast Scoring
  */
 
 const axios = require('axios');
+const geminiService = require('./geminiService');
 
 class OpenRouterService {
     constructor() {
         this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-        // Model configurations - NO :free suffix
+        // Model configurations - Using FREE tier models
         this.models = {
-            resumeParsing: 'meta-llama/llama-3.1-8b-instruct',
-            jdMatching: 'meta-llama/llama-3.1-8b-instruct',
-            questionGeneration: 'meta-llama/llama-3.1-8b-instruct',
-            answerEvaluation: 'meta-llama/llama-3.1-8b-instruct',
-            fastScoring: 'mistralai/mistral-7b-instruct',
-            recruiterReport: 'meta-llama/llama-3.1-8b-instruct'
+            resumeParsing: 'meta-llama/llama-3.2-3b-instruct:free',
+            jdMatching: 'meta-llama/llama-3.2-3b-instruct:free',
+            questionGeneration: 'meta-llama/llama-3.2-3b-instruct:free',
+            answerEvaluation: 'meta-llama/llama-3.2-3b-instruct:free',
+            fastScoring: 'meta-llama/llama-3.2-3b-instruct:free',
+            recruiterReport: 'meta-llama/llama-3.2-3b-instruct:free',
+            skillExtraction: 'meta-llama/llama-3.2-3b-instruct:free' // Dedicated for skill extraction
         };
 
         // API Keys from environment
@@ -69,8 +71,12 @@ class OpenRouterService {
     }
 
     /**
-     * Parse resume using Llama 8B
-     * Enhanced with detailed skill categorization
+     * Parse resume using Llama with FALLBACK CHAIN
+     * Fallback order for skill extraction:
+     * 1. meta-llama/llama-3.2-3b-instruct:free (primary)
+     * 2. meta-llama/llama-3.1-405b-instruct:free
+     * 3. meta-llama/llama-3.3-70b-instruct:free
+     * 4. meta-llama/llama-3.2-3b-instruct (paid, no :free suffix)
      */
     async parseResume(resumeText, isHtml = false) {
         const contentType = isHtml ? 'HTML' : 'Text';
@@ -80,22 +86,28 @@ class OpenRouterService {
 Resume ${contentType}:
 ${resumeText}
 
-Extract and return in JSON format:
+CRITICAL: Extract personal contact information FIRST and COMPLETELY. This is the MOST IMPORTANT part.
+
+Return EXACTLY in this JSON format:
 {
     "personalInfo": {
-        "name": "",
-        "email": "",
-        "phone": "",
-        "location": ""
+        "name": "Full name from resume",
+        "email": "email@example.com",
+        "phone": "phone number (any format)",
+        "location": "city, state/country",
+        "linkedin": "LinkedIn URL if present",
+        "github": "GitHub URL if present",
+        "portfolio": "Portfolio/website URL if present",
+        "dateOfBirth": "YYYY-MM-DD format if mentioned"
     },
-    "summary": "",
-    "skills": [],
+    "summary": "Professional summary or objective",
+    "skills": ["skill1", "skill2", "skill3"],
     "skillCategories": {
-        "programmingLanguages": ["Python", "JavaScript", "Java", etc.],
-        "frameworks": ["React", "Django", "Spring Boot", etc.],
-        "databases": ["MongoDB", "PostgreSQL", "MySQL", etc.],
-        "tools": ["Git", "Docker", "AWS", "Jenkins", etc.],
-        "softSkills": ["Leadership", "Communication", "Problem Solving", etc.]
+        "programmingLanguages": [],
+        "frameworks": [],
+        "databases": [],
+        "tools": [],
+        "softSkills": []
     },
     "experience": [
         {
@@ -115,58 +127,114 @@ Extract and return in JSON format:
             "year": ""
         }
     ],
-    "projects": [
-        {
-            "name": "",
-            "description": "",
-            "technologies": [],
-            "role": ""
-        }
-    ],
+    "projects": [],
     "certifications": [],
     "languages": [],
     "totalYearsExperience": 0
 }
 
-IMPORTANT:
-1. Be specific with programming languages - list each one separately
-2. Categorize all skills into the appropriate skillCategories
-3. Extract technologies used from each experience and project
-4. Calculate total years of experience from the experience section
-5. Return ONLY valid JSON, no additional text.`;
+RULES:
+1. personalInfo is MANDATORY - extract name, email, phone FIRST
+2. If no email/phone found, use empty string ""
+3. Extract ALL URLs (LinkedIn, GitHub, portfolio) from anywhere in resume
+4. Categorize skills properly
+5. Return ONLY valid JSON, no markdown, no extra text`;
 
-        try {
-            const response = await this.callModel(
-                this.models.resumeParsing,
-                [{ role: 'user', content: prompt }],
-                this.apiKeys.llama,
-                { temperature: 0.3, maxTokens: 1000 } // Reduced from 2500 to work with available credits
-            );
+        // Fallback model chain for skill extraction ONLY
+        const fallbackModels = [
+            this.models.resumeParsing,                    // Primary: llama-3.2-3b-instruct:free
+            'meta-llama/llama-3.1-405b-instruct:free',   // Fallback 1
+            'meta-llama/llama-3.3-70b-instruct:free',    // Fallback 2
+            'meta-llama/llama-3.2-3b-instruct'           // Fallback 3: Paid version (no :free)
+        ];
 
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
+        for (let i = 0; i < fallbackModels.length; i++) {
+            const model = fallbackModels[i];
+            try {
+                console.log(`[Resume] Trying model ${i + 1}/${fallbackModels.length}: ${model}`);
 
-                // Merge all skills into a flat array if needed
-                if (parsed.skillCategories) {
-                    const allSkills = new Set([
-                        ...(parsed.skills || []),
-                        ...(parsed.skillCategories.programmingLanguages || []),
-                        ...(parsed.skillCategories.frameworks || []),
-                        ...(parsed.skillCategories.databases || []),
-                        ...(parsed.skillCategories.tools || []),
-                        ...(parsed.skillCategories.softSkills || [])
-                    ]);
-                    parsed.skills = [...allSkills];
+                const response = await this.callModel(
+                    model,
+                    [{ role: 'user', content: prompt }],
+                    this.apiKeys.llama,
+                    { temperature: 0.2, maxTokens: 1500 }
+                );
+
+                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+
+                    // Merge all skills into a flat array if needed
+                    if (parsed.skillCategories) {
+                        const allSkills = new Set([
+                            ...(parsed.skills || []),
+                            ...(parsed.skillCategories.programmingLanguages || []),
+                            ...(parsed.skillCategories.frameworks || []),
+                            ...(parsed.skillCategories.databases || []),
+                            ...(parsed.skillCategories.tools || []),
+                            ...(parsed.skillCategories.softSkills || [])
+                        ]);
+                        parsed.skills = [...allSkills];
+                    }
+
+                    console.log(`[Resume] Successfully parsed with model: ${model}`);
+                    return parsed;
+                }
+                throw new Error('Failed to parse resume JSON');
+            } catch (error) {
+                const is429 = error.message?.includes('429') || error.response?.status === 429;
+                console.error(`[Resume] Model ${model} failed:`, is429 ? '429 Rate Limited' : error.message);
+
+                // If this is the last model, TRY GEMINI FALLBACK
+                if (i === fallbackModels.length - 1) {
+                    console.log('[Resume] All Llama models failed. Falling back to Gemini 2.0 Flash...');
+                    try {
+                        // Use Gemini Router directly via Service to get REASONING model
+                        // Task 'resume_parsing' defaults to REASONING (gemini-2.0-flash)
+                        const geminiResponse = await geminiService.router.callGemini('resume_parsing', prompt, {
+                            temperature: 0.2,
+                            maxTokens: 3000
+                        });
+
+                        if (geminiResponse) {
+                            const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                const parsed = JSON.parse(jsonMatch[0]);
+                                if (parsed.skillCategories) {
+                                    const allSkills = new Set([
+                                        ...(parsed.skills || []),
+                                        ...(parsed.skillCategories.programmingLanguages || []),
+                                        ...(parsed.skillCategories.frameworks || []),
+                                        ...(parsed.skillCategories.databases || []),
+                                        ...(parsed.skillCategories.tools || []),
+                                        ...(parsed.skillCategories.softSkills || [])
+                                    ]);
+                                    parsed.skills = [...allSkills];
+                                }
+                                console.log('[Resume] Successfully parsed with fallback: Gemini 2.0 Flash');
+                                return parsed;
+                            }
+                        }
+                    } catch (geminiError) {
+                        console.error('[Resume] Gemini fallback also failed:', geminiError.message);
+                    }
+
+                    console.error('[Resume] All fallback models (including Gemini) exhausted, returning default');
+                    return this.getDefaultParsedResume();
                 }
 
-                return parsed;
+                // Continue to next fallback only if rate limited or model unavailable
+                if (is429 || error.message?.includes('unavailable') || error.message?.includes('not found')) {
+                    console.log(`[Resume] Trying next fallback model...`);
+                    continue;
+                }
+
+                // For other errors, return default
+                return this.getDefaultParsedResume();
             }
-            throw new Error('Failed to parse resume JSON');
-        } catch (error) {
-            console.error('Resume parsing error:', error);
-            return this.getDefaultParsedResume();
         }
+
+        return this.getDefaultParsedResume();
     }
 
     /**

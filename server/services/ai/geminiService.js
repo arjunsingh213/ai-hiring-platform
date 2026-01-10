@@ -1,185 +1,218 @@
 /**
- * Gemini AI Service
- * Uses Google's Gemini Flash 2.0 for resume parsing and question generation
+ * Gemini AI Service (Updated)
+ * Unified service for Google Gemini free-tier models
+ * Integrates with geminiRouter, geminiCache, and geminiRateLimiter
+ * 
+ * Model Assignments:
+ * - gemini-2.5-flash: Interview questions, answer evaluation, recruiter reports
+ * - gemini-2.5-flash-lite: Skill suggestions, resume classification (high RPM)
+ * - gemini-2.5-flash: ATP synthesis, career roadmaps (post-interview)
+ * - text-embedding-004: Semantic matching (embeddings)
  */
 
-const axios = require('axios');
+const geminiRouter = require('./geminiRouter');
+const geminiCache = require('./geminiCache');
+const geminiRateLimiter = require('./geminiRateLimiter');
 
 class GeminiService {
     constructor() {
-        this.apiKey = process.env.GEMINI_API_KEY || 'AIzaSyAzDYksRAnTtDPsNt8PX3wPsNBCqb93avw';
-        // Use v1 API with gemini-2.0-flash model
-        this.baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent';
+        this.router = geminiRouter;
+        this.cache = geminiCache;
+        this.rateLimiter = geminiRateLimiter;
 
-        console.log('GeminiService initialized');
-        console.log('  API Key (first 15 chars):', this.apiKey?.substring(0, 15) + '...');
-        console.log('  Endpoint:', this.baseUrl);
+        console.log('[GeminiService] Initialized with multi-model routing, caching, and rate limiting');
     }
 
     /**
-     * Make API call to Gemini
+     * Internal method to call Gemini with caching and rate limiting
      */
-    async callGemini(prompt, options = {}) {
-        try {
-            const response = await axios.post(
-                `${this.baseUrl}?key=${this.apiKey}`,
-                {
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }],
-                    generationConfig: {
-                        temperature: options.temperature || 0.7,
-                        maxOutputTokens: options.maxTokens || 2048,
-                    }
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) {
-                throw new Error('No response from Gemini');
-            }
-            return text;
-        } catch (error) {
-            console.error('Gemini API error:', error.response?.data || error.message);
-            throw new Error(`Gemini API failed: ${error.message}`);
+    async _callWithCacheAndRateLimit(taskType, prompt, options = {}) {
+        // Check cache first
+        const cached = this.cache.get(taskType, prompt);
+        if (cached) {
+            return cached;
         }
+
+        // Check if should use fallback due to rate limiting
+        const modelKey = this.router.taskModelMap[taskType] || 'REASONING';
+        if (this.rateLimiter.shouldUseFallback(modelKey)) {
+            console.log(`[GeminiService] Rate limit critical for ${modelKey}, returning null for fallback`);
+            return null;
+        }
+
+        // Make API call
+        const result = await this.router.callGemini(taskType, prompt, options);
+
+        // Cache successful result
+        if (result) {
+            this.cache.set(taskType, prompt, result);
+        }
+
+        return result;
     }
 
     /**
-     * Parse resume using Gemini Flash 2.0
+     * Generate interview questions using Gemini 2.5 Flash
+     * @param {Object} context - Interview context (resume, role, type)
+     * @returns {Array} Generated questions
      */
-    async parseResume(resumeText) {
-        const prompt = `You are an expert resume parser. Analyze the following resume text and extract structured information.
+    async generateInterviewQuestions(context) {
+        const { parsedResume, role, interviewType = 'technical', jobContext = {} } = context;
 
-RESUME TEXT:
-${resumeText}
-
-Extract and return a JSON object with this exact structure:
-{
-    "personalInfo": {
-        "name": "candidate name",
-        "email": "email if found",
-        "phone": "phone if found",
-        "location": "location if found"
-    },
-    "summary": "brief professional summary",
-    "skills": ["skill1", "skill2", "skill3"],
-    "experience": [
-        {
-            "company": "company name",
-            "position": "job title",
-            "duration": "time period",
-            "description": "role description",
-            "achievements": ["achievement1", "achievement2"]
-        }
-    ],
-    "education": [
-        {
-            "institution": "school name",
-            "degree": "degree name",
-            "field": "field of study",
-            "year": "graduation year"
-        }
-    ],
-    "projects": [
-        {
-            "name": "project name",
-            "description": "what it does",
-            "technologies": ["tech1", "tech2"]
-        }
-    ],
-    "certifications": ["cert1", "cert2"]
-}
-
-Important: Extract ALL skills mentioned in the resume, including programming languages, frameworks, tools, and soft skills.
-Return ONLY the JSON, no additional text or markdown formatting.`;
-
-        try {
-            const response = await this.callGemini(prompt, { temperature: 0.3 });
-
-            // Extract JSON from response
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                console.log('Gemini parsed resume - Skills found:', parsed.skills?.length || 0);
-                return parsed;
-            }
-            throw new Error('Failed to parse resume JSON from Gemini response');
-        } catch (error) {
-            console.error('Resume parsing error:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Generate interview questions based on resume
-     */
-    async generateQuestions(parsedResume, desiredRole, interviewType = 'technical') {
         const skills = parsedResume?.skills?.join(', ') || 'general skills';
         const experience = parsedResume?.experience?.map(e => e.position).join(', ') || 'no specific experience';
         const projects = parsedResume?.projects?.map(p => p.name).join(', ') || 'no projects listed';
 
-        const prompt = `You are an expert interviewer. Generate 5 unique ${interviewType} interview questions for a candidate applying for "${desiredRole || 'Software Developer'}" role.
+        const prompt = `You are an expert interviewer. Generate 5 unique ${interviewType} interview questions for a candidate applying for "${role || 'Software Developer'}" role.
 
 CANDIDATE PROFILE:
 - Skills: ${skills}
 - Experience: ${experience}
 - Projects: ${projects}
+${jobContext.description ? `- Job Description: ${jobContext.description.substring(0, 500)}` : ''}
 
 Generate 5 ${interviewType === 'technical' ? 'technical/coding' : 'behavioral/HR'} questions that:
-1. Are SPECIFIC to the candidate's actual skills and experience listed above
+1. Are SPECIFIC to the candidate's actual skills and experience
 2. Are NOT generic questions - reference their specific technologies or projects
 3. Test their depth of knowledge in their claimed skills
 4. Are appropriate for their experience level
-5. Each question should be unique and different from others
+5. Each question should be unique
 
 Return a JSON array with exactly 5 questions:
 [
     {
-        "question": "Specific question text mentioning their actual skills",
+        "question": "Specific question text",
         "category": "${interviewType}",
         "difficulty": "medium",
-        "assessingSkill": "which specific skill this tests",
+        "assessingSkill": "which skill this tests",
         "expectedTopics": ["topic1", "topic2"],
         "timeLimit": 120
     }
 ]
 
-IMPORTANT: Make questions SPECIFIC to their resume. If they know React, ask about React. If they have a specific project, ask about it.
 Return ONLY the JSON array, no additional text.`;
 
         try {
-            const response = await this.callGemini(prompt, { temperature: 0.8 });
+            const response = await this._callWithCacheAndRateLimit('interview_questions', prompt, {
+                temperature: 0.8,
+                maxTokens: 2048
+            });
+
+            if (!response) {
+                return this.getFallbackQuestions(interviewType, role, skills);
+            }
 
             // Extract JSON array from response
             const jsonMatch = response.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
                 const questions = JSON.parse(jsonMatch[0]);
-                console.log(`Gemini generated ${questions.length} ${interviewType} questions`);
+                console.log(`[GeminiService] Generated ${questions.length} ${interviewType} questions via Gemini`);
                 return questions;
             }
-            throw new Error('Failed to parse questions JSON from Gemini response');
+            throw new Error('Failed to parse questions JSON');
         } catch (error) {
-            console.error('Question generation error:', error);
-            // Return fallback questions
-            return this.getFallbackQuestions(interviewType, desiredRole, skills);
+            console.error('[GeminiService] Question generation error:', error.message);
+            return this.getFallbackQuestions(interviewType, role, skills);
         }
     }
 
     /**
-     * Evaluate interview answers using Gemini
+     * Generate adaptive follow-up question based on conversation history
+     * Can accept either a pre-built prompt string or a context object
+     * @param {string|Object} promptOrContext - Pre-built prompt string OR context object
+     * @param {Array} history - Optional conversation history (if using prompt string)
+     * @returns {string} The next question text
      */
-    async evaluateAnswers(questionsAndAnswers, jobContext) {
+    async generateAdaptiveQuestion(promptOrContext, history = []) {
+        let prompt;
+
+        // Check if we received a pre-built prompt string
+        if (typeof promptOrContext === 'string') {
+            prompt = promptOrContext;
+            console.log('[GeminiService] Using pre-built prompt for adaptive question');
+        } else {
+            // Build prompt from context object (legacy support)
+            const context = promptOrContext;
+            const { resumeText, role, experienceLevel, round = 'technical' } = context;
+            const conversationHistory = context.history || history || [];
+
+            const historyText = conversationHistory.map((qa, i) =>
+                `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer || '(no answer)'}`
+            ).join('\n\n');
+
+            prompt = `You are an expert interviewer conducting a ${round} interview round.
+
+CANDIDATE: ${role} role, ${experienceLevel} level
+RESUME SNIPPET: ${resumeText?.substring(0, 800) || 'Not provided'}
+
+CONVERSATION SO FAR:
+${historyText || 'No previous questions yet'}
+
+Generate the NEXT question that:
+1. Builds on previous answers if any
+2. Tests a different aspect than already covered
+3. Is appropriate for ${round} round
+4. Matches the ${experienceLevel} experience level
+
+CRITICAL INSTRUCTIONS FOR EXPERIENCE LEVEL:
+- IF "FRESHER", "ENTRY", or 0-1 YEARS: Ask ONLY fundamental, basic definition/concept questions. NO complex scenarios, NO system design, NO advanced patterns. Keep it simple (e.g., "What is a variable?", "Explain OOP features").
+- IF EXPERIENCED: Ask scenario-based, in-depth questions.
+
+Return ONLY the question text, no preamble or explanation.`;
+        }
+
+        try {
+            console.log(`[GeminiService] Generating adaptive question via Gemini...`);
+            const response = await this._callWithCacheAndRateLimit('adaptive_followup', prompt, {
+                temperature: 0.85,
+                maxTokens: 256
+            });
+
+            if (!response) {
+                console.log('[GeminiService] No response from Gemini, returning null');
+                return null;
+            }
+
+            // Clean up response - extract just the question
+            let question = response.trim();
+
+            // Try to extract JSON if response is JSON formatted
+            const jsonMatch = question.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                try {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    question = parsed.question || question;
+                } catch (e) {
+                    // Not JSON, use raw response
+                }
+            }
+
+            // Remove any leading prefixes like "Question:" or "Q:"
+            question = question.replace(/^(Question:|Q:|\d+\.)\s*/i, '').trim();
+
+            console.log(`[GeminiService] Generated adaptive question: "${question.substring(0, 60)}..."`);
+            return question;
+        } catch (error) {
+            console.error('[GeminiService] Adaptive question error:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Evaluate all interview answers holistically
+     */
+    async evaluateAnswers(questionsAndAnswers, jobContext = {}) {
         const qaText = questionsAndAnswers.map((qa, i) =>
-            `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`
+            `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer || '(no answer)'}`
         ).join('\n\n');
 
         const prompt = `You are an expert interview evaluator. Evaluate the following interview responses for a "${jobContext.jobTitle || 'Software Developer'}" position.
+
+JOB DESCRIPTION:
+${jobContext.jobDescription ? jobContext.jobDescription.substring(0, 1000) : 'Not provided'}
+
+REQUIRED SKILLS:
+${jobContext.requiredSkills?.join(', ') || 'Not specified'}
 
 INTERVIEW RESPONSES:
 ${qaText}
@@ -201,20 +234,385 @@ Evaluate and return a JSON object:
     "feedback": "Overall feedback paragraph",
     "technicalFeedback": "Specific technical feedback",
     "communicationFeedback": "Communication feedback",
-    "recommendations": ["recommendation1", "recommendation2", "recommendation3"]
+    "recommendations": ["recommendation1", "recommendation2"]
 }
 
-Score each metric from 0-100 based on:
-- Quality and depth of answers
-- Relevance to the questions asked
-- Communication clarity
-- Technical accuracy (for technical questions)
-- Problem-solving approach
+Score each metric from 0-100.
+CRITICAL SCORING RULES:
+1. IF the candidate answers "I don't know", "Skipped", "Skip", or provides NO meaningful answer (e.g. "pass", "na", "-"), the Overall Score MUST be 0.
+2. Be strict. 0 means 0.
+3. If the answer is unrelated to the question, score low (<30).
 
-Return ONLY the JSON, no additional text.`;
+Return ONLY the JSON.`;
 
         try {
-            const response = await this.callGemini(prompt, { temperature: 0.5 });
+            const response = await this._callWithCacheAndRateLimit('answer_evaluation', prompt, {
+                temperature: 0.5,
+                maxTokens: 2048
+            });
+
+            if (!response) {
+                return this.calculateFallbackScore(questionsAndAnswers);
+            }
+
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                console.log('[GeminiService] Evaluation completed via Gemini');
+                return JSON.parse(jsonMatch[0]);
+            }
+            throw new Error('Failed to parse evaluation JSON');
+        } catch (error) {
+            console.error('[GeminiService] Evaluation error:', error.message);
+            return this.calculateFallbackScore(questionsAndAnswers);
+        }
+    }
+
+    /**
+     * Generate recruiter summary report
+     */
+    async generateRecruiterReport(interviewData) {
+        const { candidate, job, scores, questionsAndAnswers } = interviewData;
+
+        const prompt = `Generate a professional recruiter summary report for:
+
+CANDIDATE: ${candidate?.name || 'Candidate'}
+POSITION: ${job?.title || 'Position'}
+SCORES: Overall: ${scores?.overallScore || 'N/A'}, Technical: ${scores?.technicalScore || 'N/A'}, Communication: ${scores?.communication || 'N/A'}
+
+KEY RESPONSES:
+${questionsAndAnswers?.slice(0, 3).map((qa, i) =>
+            `Q${i + 1}: ${qa.question?.substring(0, 100)}...\nA${i + 1}: ${qa.answer?.substring(0, 200) || 'No answer'}...`
+        ).join('\n\n')}
+
+Generate a JSON report:
+{
+    "summary": "2-3 sentence executive summary",
+    "recommendation": "strong_hire|hire|consider|no_hire",
+    "keyStrengths": ["strength1", "strength2"],
+    "concerns": ["concern1", "concern2"],
+    "suggestedNextSteps": ["step1", "step2"],
+    "salaryRangeMatch": "within_range|below_range|above_range",
+    "cultureFitScore": 75
+}
+
+Return ONLY JSON.`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('recruiter_reports', prompt, {
+                temperature: 0.4
+            });
+
+            if (!response) {
+                return this.getFallbackRecruiterReport(scores);
+            }
+
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return this.getFallbackRecruiterReport(scores);
+        } catch (error) {
+            console.error('[GeminiService] Recruiter report error:', error.message);
+            return this.getFallbackRecruiterReport(scores);
+        }
+    }
+
+    /**
+     * Skill suggestions using Gemini Flash Lite (high RPM, debounced)
+     */
+    async getSkillSuggestions(prefix, domain = 'technology') {
+        // Check prefix cache first
+        const cached = this.cache.getPrefix(prefix);
+        if (cached) {
+            return cached;
+        }
+
+        // Debounce the API call
+        const result = await this.rateLimiter.debounce('skill_suggestions', prefix, async () => {
+            const prompt = `Suggest 8 professional skills starting with "${prefix}" in the ${domain} domain.
+
+Return JSON array:
+["skill1", "skill2", "skill3", "skill4", "skill5", "skill6", "skill7", "skill8"]
+
+Skills should be:
+- Commonly used in job descriptions
+- Properly capitalized
+- Relevant to ${domain}
+
+Return ONLY the JSON array.`;
+
+            const response = await this.router.callGemini('skill_suggestions', prompt, {
+                temperature: 0.3,
+                maxTokens: 256
+            });
+
+            if (!response) return [];
+
+            try {
+                const jsonMatch = response.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    const skills = JSON.parse(jsonMatch[0]);
+                    // Cache the prefix result
+                    this.cache.setPrefix(prefix, skills);
+                    return skills;
+                }
+            } catch (e) {
+                console.error('[GeminiService] Skill suggestion parse error:', e.message);
+            }
+            return [];
+        });
+
+        return result || [];
+    }
+
+    /**
+     * Resume classification using Gemini Flash Lite
+     */
+    async classifyResume(resumeText) {
+        const prompt = `Classify this resume into domain and role type.
+
+RESUME TEXT:
+${resumeText.substring(0, 2000)}
+
+Return JSON:
+{
+    "domain": "IT|Non-IT|Finance|Healthcare|Education|Marketing|Other",
+    "roleType": "Frontend|Backend|Fullstack|DevOps|Data|ML|Design|Management|Other",
+    "experienceLevel": "fresher|junior|mid|senior|lead|executive",
+    "primarySkills": ["skill1", "skill2", "skill3"],
+    "confidence": 0.85
+}
+
+Return ONLY JSON.`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('resume_classification', prompt, {
+                temperature: 0.3
+            });
+
+            if (!response) {
+                return { domain: 'IT', roleType: 'Other', experienceLevel: 'mid', primarySkills: [], confidence: 0.5 };
+            }
+
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return { domain: 'IT', roleType: 'Other', experienceLevel: 'mid', primarySkills: [], confidence: 0.5 };
+        } catch (error) {
+            console.error('[GeminiService] Classification error:', error.message);
+            return { domain: 'IT', roleType: 'Other', experienceLevel: 'mid', primarySkills: [], confidence: 0.5 };
+        }
+    }
+
+    /**
+     * Generate embeddings for semantic matching
+     */
+    async generateEmbedding(text, taskType = 'resume_jd_matching') {
+        return this.router.generateEmbedding(text, taskType);
+    }
+
+    /**
+     * Calculate semantic similarity between two texts
+     */
+    async calculateSimilarity(text1, text2) {
+        const [embedding1, embedding2] = await Promise.all([
+            this.generateEmbedding(text1),
+            this.generateEmbedding(text2)
+        ]);
+
+        if (!embedding1 || !embedding2) {
+            return null;
+        }
+
+        // Cosine similarity
+        let dotProduct = 0;
+        let norm1 = 0;
+        let norm2 = 0;
+
+        for (let i = 0; i < embedding1.length; i++) {
+            dotProduct += embedding1[i] * embedding2[i];
+            norm1 += embedding1[i] * embedding1[i];
+            norm2 += embedding2[i] * embedding2[i];
+        }
+
+        return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+    }
+
+    /**
+     * ATP Synthesis using Gemini (post-interview analytics)
+     */
+    async synthesizeATP(userData) {
+        const { scores, skills, interviews, behavioralData } = userData;
+
+        const prompt = `Synthesize an AI Talent Passport score for this candidate:
+
+INTERVIEW SCORES:
+- Overall: ${scores?.overall || 'N/A'}
+- Technical: ${scores?.technical || 'N/A'}
+- Communication: ${scores?.communication || 'N/A'}
+
+SKILLS: ${skills?.join(', ') || 'Not provided'}
+
+INTERVIEWS COMPLETED: ${interviews?.length || 0}
+
+Generate ATP synthesis:
+{
+    "talentScore": 75,
+    "globalPercentile": 70,
+    "levelBand": "Intermediate|Advanced|Expert",
+    "careerReadiness": 80,
+    "strengths": ["strength1", "strength2"],
+    "growthAreas": ["area1", "area2"],
+    "recommendedRoles": ["role1", "role2"],
+    "learningRoadmap": [
+        {"skill": "skill1", "priority": "high", "resources": ["resource1"]}
+    ]
+}
+
+Return ONLY JSON.`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('atp_synthesis', prompt, {
+                temperature: 0.5
+            });
+
+            if (!response) {
+                return this.getFallbackATP(scores);
+            }
+
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return this.getFallbackATP(scores);
+        } catch (error) {
+            console.error('[GeminiService] ATP synthesis error:', error.message);
+            return this.getFallbackATP(scores);
+        }
+    }
+
+    /**
+     * Generate a coding problem using Gemini
+     */
+    async generateCodingProblem(language, skillLevel = 'easy', skills = []) {
+        console.log('[GeminiService] Generating coding problem...');
+
+        const prompt = `Generate a coding problem for a ${skillLevel} level interview in ${language}.
+
+The candidate has these skills: ${skills.join(', ') || 'general programming'}
+
+Return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
+{
+    "title": "Problem Title",
+    "description": "Clear problem description with examples",
+    "difficulty": "${skillLevel}",
+    "language": "${language}",
+    "starterCode": "// Starter code template with function signature",
+    "testCases": [
+        {"input": "example input 1", "expectedOutput": "expected output 1"},
+        {"input": "example input 2", "expectedOutput": "expected output 2"}
+    ],
+    "hints": ["Hint 1", "Hint 2"],
+    "timeLimit": 15,
+    "sampleSolution": "// Sample solution code"
+}
+
+Make the problem practical and relevant to real-world scenarios. Include 3-4 test cases.
+IF SKILL LEVEL IS 'FRESHER', 'ENTRY' or 'EASY':
+- Keep the problem VERY SIMPLE (e.g., string manipulation, basic array operations).
+- Avoid complex algorithms or data structures.
+- Focus on basic syntax and logic.`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('interview_questions', prompt, {
+                temperature: 0.7,
+                maxTokens: 2048
+            });
+
+            if (!response) {
+                throw new Error('No response from Gemini');
+            }
+
+            // Extract JSON
+            let cleanResponse = response
+                .replace(/^```json\s*/, '')
+                .replace(/^```\s*/, '')
+                .replace(/\s*```$/, '')
+                .trim();
+
+            const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                cleanResponse = jsonMatch[0];
+            }
+
+            const parsed = JSON.parse(cleanResponse);
+            console.log('[GeminiService] Coding problem generated:', parsed.title);
+            return parsed;
+        } catch (error) {
+            console.error('[GeminiService] Coding problem generation error:', error.message);
+            throw error; // Let caller handle fallback
+        }
+    }
+
+    /**
+     * Evaluate code solution using Gemini
+     */
+    async evaluateCodeSolution(code, problem, language, output, passed) {
+        // Check for empty or minimal code
+        const codeWithoutComments = code
+            .replace(/\/\/.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/#.*$/gm, '')
+            .replace(/\s+/g, '')
+            .trim();
+
+        if (codeWithoutComments.length < 20) {
+            return {
+                score: 0,
+                codeQuality: 'No solution provided',
+                efficiency: 'N/A',
+                correctness: 'Incorrect',
+                suggestions: ['Write functional code'],
+                overallFeedback: 'Please submit a valid solution.'
+            };
+        }
+
+        const prompt = `Evaluate this code solution STRICTLY for a ${language} coding problem.
+
+Problem: ${problem.title}
+Description: ${problem.description}
+
+Submitted Code:
+${code}
+
+Execution Output: ${output || 'No output'}
+Test Cases Passed: ${passed ? 'Yes' : 'No'}
+
+SCORING GUIDELINES:
+- Tests Failed = MAX 40 points (unless logic is perfect)
+- Tests Passed = MIN 60 points
+- 80-100: Optimal, clean, well-documented
+- 60-79: Working but unoptimized or messy
+- 40-59: Partial solution, bugs
+- 0-39: Wrong approach or syntax errors
+
+Return ONLY JSON:
+{
+    "score": 0-100,
+    "codeQuality": "Assessment",
+    "efficiency": "Time/Space complexity",
+    "correctness": "Correctness assessment",
+    "suggestions": ["suggestion1", "suggestion2"],
+    "overallFeedback": "Feedback summary"
+}`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('answer_evaluation', prompt, {
+                temperature: 0.5
+            });
+
+            if (!response) throw new Error('No response from Gemini');
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
@@ -222,18 +620,106 @@ Return ONLY the JSON, no additional text.`;
             }
             throw new Error('Failed to parse evaluation JSON');
         } catch (error) {
-            console.error('Evaluation error:', error);
-            // Return rule-based evaluation
-            return this.calculateFallbackScore(questionsAndAnswers);
+            console.error('[GeminiService] Code evaluation error:', error.message);
+            return {
+                score: passed ? 50 : 10,
+                codeQuality: 'Evaluation failed',
+                efficiency: 'N/A',
+                correctness: passed ? 'Passed execution' : 'Failed execution',
+                suggestions: ['Review code manually'],
+                overallFeedback: 'AI evaluation unavailable.'
+            };
         }
     }
+
+    /**
+     * Generate MCQ assessment questions based on Job Description
+     */
+    async generateAssessmentQuestions(types, count, jobContext) {
+        const actualQuestionCount = Math.min(count, 15);
+
+        const prompt = `Generate exactly ${actualQuestionCount} MCQ questions for a job assessment.
+
+JOB CONTEXT:
+- Title: ${jobContext.title}
+- Description: ${jobContext.description?.substring(0, 800) || 'Not provided'}
+- Skills: ${jobContext.skills?.join(', ') || 'General'}
+- Experience Level: ${jobContext.experienceLevel || 'Mid'}
+
+REQUIRED TYPES: ${types.join(', ')}
+
+INSTRUCTIONS:
+1. Use the Job Description to make questions relevant to the specific role.
+2. If "technical", ask about specific technologies mentioned in the JD.
+3. If "aptitude" or "reasoning", make them professional contexts.
+4. Each question must have 4 options (A, B, C, D) and one correct answer.
+5. Return ONLY valid JSON.
+
+JSON Format:
+{
+  "questions": [
+    {
+      "id": 1,
+      "type": "technical",
+      "question": "Question text?",
+      "options": [
+        { "id": "A", "text": "Option1" },
+        { "id": "B", "text": "Option2" },
+        { "id": "C", "text": "Option3" },
+        { "id": "D", "text": "Option4" }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Brief explanation",
+      "difficulty": "medium"
+    }
+  ]
+}`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('assessment_questions', prompt, {
+                temperature: 0.7,
+                maxTokens: 3000
+            });
+
+            if (!response) {
+                return null; // Let caller handle fallback
+            }
+
+            // Clean and extract JSON
+            let cleanResponse = response
+                .replace(/^```json\s*/, '')
+                .replace(/^```\s*/, '')
+                .replace(/\s*```$/, '')
+                .trim();
+
+            const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                cleanResponse = jsonMatch[0];
+            }
+
+            const parsed = JSON.parse(cleanResponse);
+            if (parsed && Array.isArray(parsed.questions)) {
+                console.log(`[GeminiService] Generated ${parsed.questions.length} assessment questions`);
+                return parsed.questions;
+            }
+            return null;
+        } catch (error) {
+            console.error('[GeminiService] Assessment generation error:', error.message);
+            return null;
+        }
+    }
+
+    // ==================== FALLBACK METHODS ====================
 
     /**
      * Fallback questions when AI fails
      */
     getFallbackQuestions(interviewType, role, skills) {
+        const skillsArr = typeof skills === 'string' ? skills.split(',') : skills || [];
+        const firstSkill = skillsArr[0]?.trim() || 'programming';
+
         const techQuestions = [
-            { question: `Explain your experience with ${skills.split(',')[0] || 'programming'}. What projects have you built?`, category: 'technical', difficulty: 'medium', assessingSkill: 'Technical depth', timeLimit: 150 },
+            { question: `Explain your experience with ${firstSkill}. What projects have you built?`, category: 'technical', difficulty: 'medium', assessingSkill: 'Technical depth', timeLimit: 150 },
             { question: 'Describe a challenging bug you fixed recently. How did you debug it?', category: 'technical', difficulty: 'medium', assessingSkill: 'Problem solving', timeLimit: 150 },
             { question: 'How do you ensure code quality in your projects?', category: 'technical', difficulty: 'medium', assessingSkill: 'Best practices', timeLimit: 120 },
             { question: 'Explain a complex technical concept to someone non-technical.', category: 'technical', difficulty: 'medium', assessingSkill: 'Communication', timeLimit: 120 },
@@ -253,7 +739,6 @@ Return ONLY the JSON, no additional text.`;
 
     /**
      * Fallback scoring when AI evaluation fails
-     * More generous scoring that doesn't penalize short answers too harshly
      */
     calculateFallbackScore(questionsAndAnswers) {
         let totalScore = 0;
@@ -263,35 +748,20 @@ Return ONLY the JSON, no additional text.`;
             const answer = qa.answer || '';
             const wordCount = answer.trim().split(/\s+/).filter(w => w).length;
 
-            // Base score starts at 60 (passing grade)
-            let score = 60;
+            let score = 60; // Base score
 
-            // Add points for answer length (up to +20 for detailed answers)
             if (wordCount >= 100) score += 20;
             else if (wordCount >= 50) score += 15;
             else if (wordCount >= 25) score += 10;
             else if (wordCount >= 10) score += 5;
-            else if (wordCount >= 5) score += 2;
-            // Very short answers still get base 60
 
-            // Bonus for professional keywords (up to +10)
-            const keywords = ['experience', 'project', 'team', 'learned', 'achieved',
-                'implemented', 'developed', 'managed', 'created', 'improved',
-                'solved', 'built', 'designed', 'worked', 'collaborated'];
-            const matchedKeywords = keywords.filter(kw =>
-                answer.toLowerCase().includes(kw.toLowerCase())
-            );
+            const keywords = ['experience', 'project', 'team', 'learned', 'achieved', 'implemented', 'developed'];
+            const matchedKeywords = keywords.filter(kw => answer.toLowerCase().includes(kw));
             score += Math.min(10, matchedKeywords.length * 2);
 
-            // Bonus for structured response (sentences)
-            const sentenceCount = (answer.match(/[.!?]/g) || []).length;
-            if (sentenceCount >= 3) score += 5;
-            else if (sentenceCount >= 1) score += 2;
-
-            // Cap at 100
             score = Math.min(100, score);
-
             totalScore += score;
+
             if (qa.category === 'technical' || qa.round === 'technical') {
                 techScore += score;
                 techCount++;
@@ -311,32 +781,57 @@ Return ONLY the JSON, no additional text.`;
             confidence: Math.min(100, avgScore + 5),
             relevance: avgScore,
             problemSolving: avgScore,
-            strengths: avgScore >= 70
-                ? ['Good communication', 'Detailed responses', 'Professional vocabulary']
-                : avgScore >= 60
-                    ? ['Completed interview', 'Basic competency shown']
-                    : ['Completed interview'],
-            weaknesses: avgScore < 60
-                ? ['Could provide more detail', 'Consider using specific examples']
-                : [],
-            areasToImprove: [
-                { area: 'Answer Depth', suggestion: 'Use specific examples from your experience', priority: avgScore < 70 ? 'high' : 'low' },
-                { area: 'Structure', suggestion: 'Structure answers with situation, action, and result', priority: 'medium' }
-            ],
-            feedback: avgScore >= 80
-                ? 'Excellent responses! Your answers were detailed and professional.'
-                : avgScore >= 70
-                    ? 'Good job! You demonstrated solid knowledge and communication.'
-                    : avgScore >= 60
-                        ? 'Thank you for completing the interview. Consider providing more detailed answers with specific examples.'
-                        : 'Thank you for completing the interview. More detailed answers would help showcase your skills better.',
-            technicalFeedback: 'Continue practicing technical explanations and problem-solving approaches.',
-            communicationFeedback: 'Consider using the STAR method (Situation, Task, Action, Result) for behavioral questions.',
-            recommendations: [
-                'Prepare 2-3 specific examples from your experience',
-                'Practice explaining your projects concisely',
-                'Research common interview questions for your role'
-            ]
+            strengths: avgScore >= 70 ? ['Good communication', 'Detailed responses'] : ['Completed interview'],
+            weaknesses: avgScore < 60 ? ['Could provide more detail'] : [],
+            areasToImprove: [{ area: 'Answer Depth', suggestion: 'Use specific examples', priority: 'medium' }],
+            feedback: avgScore >= 70 ? 'Good job!' : 'Thank you for completing the interview.',
+            technicalFeedback: 'Continue practicing technical explanations.',
+            communicationFeedback: 'Consider using the STAR method for behavioral questions.',
+            recommendations: ['Prepare specific examples', 'Practice explaining projects concisely']
+        };
+    }
+
+    /**
+     * Fallback recruiter report
+     */
+    getFallbackRecruiterReport(scores) {
+        const overall = scores?.overallScore || 65;
+        return {
+            summary: `Candidate completed the interview with an overall score of ${overall}%.`,
+            recommendation: overall >= 75 ? 'hire' : overall >= 60 ? 'consider' : 'no_hire',
+            keyStrengths: ['Completed interview process'],
+            concerns: overall < 60 ? ['Low interview score'] : [],
+            suggestedNextSteps: overall >= 75 ? ['Schedule technical round'] : ['Request additional assessment'],
+            salaryRangeMatch: 'within_range',
+            cultureFitScore: overall
+        };
+    }
+
+    /**
+     * Fallback ATP synthesis
+     */
+    getFallbackATP(scores) {
+        const overall = scores?.overall || 65;
+        return {
+            talentScore: overall,
+            globalPercentile: Math.min(99, Math.round(overall * 0.9)),
+            levelBand: overall >= 80 ? 'Advanced' : overall >= 60 ? 'Intermediate' : 'Beginner',
+            careerReadiness: overall,
+            strengths: ['Interview completed'],
+            growthAreas: ['Technical depth', 'Communication'],
+            recommendedRoles: ['Junior Developer'],
+            learningRoadmap: [{ skill: 'Technical fundamentals', priority: 'high', resources: ['Online courses'] }]
+        };
+    }
+
+    /**
+     * Get service status
+     */
+    getStatus() {
+        return {
+            rateLimits: this.rateLimiter.getStatus(),
+            cache: this.cache.getStats(),
+            router: this.router.getRateLimitStatus()
         };
     }
 }

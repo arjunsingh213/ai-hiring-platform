@@ -6,6 +6,7 @@
 
 const User = require('../models/User');
 const Interview = require('../models/Interview');
+const geminiService = require('./ai/geminiService'); // For ATP synthesis
 
 class AITalentPassportService {
     /**

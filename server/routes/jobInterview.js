@@ -10,6 +10,7 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const Interview = require('../models/Interview');
 const deepseekService = require('../services/ai/deepseekService');
+const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
 const { requirePlatformInterview } = require('../middleware/platformInterviewGuard');
 
 /**
@@ -139,20 +140,34 @@ Experience Level: ${job.requirements?.experienceLevel || 'Not specified'}
 Description: ${job.description?.substring(0, 500) || 'Not provided'}
             `.trim();
 
-            firstQuestion = await deepseekService.generateNextQuestion(
-                jobDescriptionSummary,
-                job.title,
-                job.requirements?.experienceLevel || 'mid',
-                [],
-                firstRound.roundType
+            firstQuestion = await geminiService.generateAdaptiveQuestion(
+                jobDescriptionSummary + `\n\nROUND: ${firstRound.roundType}\nGenerate a medium difficulty question.`,
+                []
             );
+
+            // If Gemini fails (returns null), fallback to DeepSeek (though unlikely)
+            if (!firstQuestion) {
+                firstQuestion = await deepseekService.generateNextQuestion(
+                    jobDescriptionSummary,
+                    job.title,
+                    job.requirements?.experienceLevel || 'mid',
+                    [],
+                    firstRound.roundType
+                );
+            } else {
+                // Wrap simple string response in object structure expected by code below
+                firstQuestion = {
+                    question: firstQuestion,
+                    type: firstRound.roundType
+                };
+            }
         }
 
         // Create new interview with pipeline config
         interview = new Interview({
             userId,
             jobId,
-            interviewType: 'combined',
+            interviewType: 'job_specific',
             status: 'in_progress',
             pipelineConfig: pipelineConfig,
             currentRoundIndex: 0,
@@ -429,109 +444,17 @@ async function generateAssessmentQuestions(assessmentTypes, questionCount, jobCo
 
         console.log('[ASSESSMENT] Generating questions for types:', types);
 
-        // Detailed type descriptions with examples
-        const typeExamples = {
-            technical: `TECHNICAL questions (code output, programming concepts):
-- "What is the output of: let x = 5; console.log(x++);"
-- "Which data structure is best for FIFO operations?"
-- "What is the time complexity of binary search?"`,
-            communication: `COMMUNICATION questions (grammar, sentence correction, professional writing):
-- "Find the error: 'The team have completed their tasks.'"
-- "Which sentence is grammatically correct?"
-- "Fill in the blank: 'The report ___ submitted yesterday.'"
-- "Identify the correct email greeting for a formal business email"`,
-            aptitude: `APTITUDE questions (math, logical reasoning, number series):
-- "If 5 workers finish a job in 10 days, how many days for 2 workers?"
-- "Complete the series: 2, 6, 12, 20, ?"
-- "A train travels 60km in 1 hour. How long for 150km?"
-- "What is 15% of 240?"`,
-            reasoning: `REASONING questions (analytical thinking, pattern recognition, deduction):
-- "All roses are flowers. Some flowers fade quickly. What is definitely true?"
-- "If A > B and B > C, then..."
-- "Looking at the data pattern, what comes next?"
-- "Interpret: Sales went down 10% then up 20%. Net change?"`
-        };
-
-        // Build the prompt based on selected types
-        const typePrompts = types.map(t => typeExamples[t] || typeExamples.technical).join('\n\n');
-        const questionsPerType = Math.ceil(actualQuestionCount / types.length);
-
-        const prompt = `Generate exactly ${actualQuestionCount} MCQ questions for a job assessment.
-
-IMPORTANT: Distribute questions across these types: ${types.join(', ')}
-Generate approximately ${questionsPerType} questions for EACH type.
-
-${typePrompts}
-
-RULES:
-1. Each question has 4 options (A, B, C, D)
-2. One correct answer per question
-3. Include the "type" field matching the question type
-4. Return ONLY valid JSON, no markdown
-
-JSON Format:
-{"questions":[
-  {"id":1,"type":"${types[0]}","question":"Question text?","options":[{"id":"A","text":"Option1"},{"id":"B","text":"Option2"},{"id":"C","text":"Option3"},{"id":"D","text":"Option4"}],"correctAnswer":"A","explanation":"Brief explanation","difficulty":"medium"}
-]}`;
-
-        const messages = [
-            { role: 'system', content: 'You are an assessment question generator. Generate diverse MCQ questions matching the specified types. Return ONLY valid JSON.' },
-            { role: 'user', content: prompt }
-        ];
-
-        console.log('[ASSESSMENT] Calling AI to generate MCQ questions for:', jobContext.title);
-        console.log('[ASSESSMENT] Types:', types, 'Count:', actualQuestionCount);
-
-        // Increased timeout to 90 seconds
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('AI generation timeout (90s) - using fallback')), 90000)
+        // Use Gemini to generate questions based on Job Description
+        console.log('[ASSESSMENT] Calling Gemini to generate MCQ questions for:', jobContext.title);
+        const generatedQuestions = await geminiService.generateAssessmentQuestions(
+            types,
+            actualQuestionCount,
+            jobContext
         );
 
-        const response = await Promise.race([
-            deepseekService.callDeepSeek(messages, { temperature: 0.7, max_tokens: 2048 }),
-            timeoutPromise
-        ]);
-
-        // callDeepSeek returns the content string directly (not the full response object)
-        const content = typeof response === 'string' ? response :
-            (response?.choices?.[0]?.message?.content || response?.content || '');
-
-        console.log('[ASSESSMENT] AI Response received, length:', content.length);
-        console.log('[ASSESSMENT] Response preview:', content.substring(0, 200));
-
-        if (!content || content.length < 50) {
-            console.warn('[ASSESSMENT] Empty or short response from AI, using fallback');
-            return generateFallbackAssessment(assessmentTypes, questionCount, jobContext);
-        }
-
-        // Try to extract JSON
-        let parsed = null;
-
-        // Remove markdown code blocks if present
-        let cleanContent = content
-            .replace(/```json\n?/g, '')
-            .replace(/```\n?/g, '')
-            .trim();
-
-        // Try direct parse first
-        try {
-            parsed = JSON.parse(cleanContent);
-        } catch (e) {
-            console.log('[ASSESSMENT] Direct parse failed, trying regex extraction');
-            // Try to find JSON in response
-            const jsonMatch = cleanContent.match(/\{[\s\S]*"questions"[\s\S]*\}/);
-            if (jsonMatch) {
-                try {
-                    parsed = JSON.parse(jsonMatch[0]);
-                } catch (e2) {
-                    console.error('[ASSESSMENT] Failed to parse extracted JSON:', e2.message);
-                }
-            }
-        }
-
-        if (parsed?.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-            console.log(`[ASSESSMENT] ✅ Successfully generated ${parsed.questions.length} MCQ questions via AI`);
-            return parsed.questions;
+        if (generatedQuestions && generatedQuestions.length > 0) {
+            console.log(`[ASSESSMENT] ✅ Successfully generated ${generatedQuestions.length} MCQ questions via Gemini`);
+            return generatedQuestions;
         }
 
         // Fallback questions
@@ -837,19 +760,37 @@ Description: ${job.description?.substring(0, 300) || 'Not provided'}
         `.trim();
 
         // Generate next question
-        const nextQuestion = await deepseekService.generateNextQuestion(
-            jobDescriptionSummary,
-            job.title,
-            job.requirements?.experienceLevel || 'mid',
-            history,
-            round
+        // Generate next question using Gemini
+        let nextQuestion = await geminiService.generateAdaptiveQuestion(
+            jobDescriptionSummary + `\n\nROUND: ${round}\nHistory count: ${history.length}`,
+            history
         );
+
+        // Fallback to DeepSeek if Gemini fails
+        if (!nextQuestion) {
+            const dsResult = await deepseekService.generateNextQuestion(
+                jobDescriptionSummary,
+                job.title,
+                job.requirements?.experienceLevel || 'mid',
+                history,
+                round
+            );
+            nextQuestion = dsResult.question; // Extract string
+        } else {
+            // Gemini returns string directly
+        }
+
+        // Use an object structure for the next step 
+        const nextQuestionObj = {
+            question: typeof nextQuestion === 'object' ? nextQuestion.question : nextQuestion,
+            type: round
+        };
 
         // Add to interview questions
         interview.questions.push({
-            question: nextQuestion.question,
+            question: nextQuestionObj.question,
             generatedBy: 'ai',
-            category: nextQuestion.type || round,
+            category: nextQuestionObj.type || round,
             difficulty: 'medium'
         });
 
@@ -859,7 +800,7 @@ Description: ${job.description?.substring(0, 300) || 'Not provided'}
 
         res.json({
             success: true,
-            question: nextQuestion,
+            question: nextQuestionObj,
             questionNumber: currentCount + 2,
             totalQuestions: 10,
             isHRRound: round === 'hr',
@@ -901,11 +842,22 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
         }));
 
         // Evaluate using same AI service
-        const evaluation = await deepseekService.evaluateAllAnswers(questionsAndAnswers, {
-            jobTitle: job.title,
-            jobDescription: job.description,
-            requiredSkills: job.requirements?.skills
-        });
+        // Evaluate using Gemini (Primary) or DeepSeek (Fallback)
+        let evaluation;
+        try {
+            evaluation = await geminiService.evaluateAnswers(questionsAndAnswers, {
+                jobTitle: job.title,
+                jobDescription: job.description,
+                requiredSkills: job.requirements?.skills
+            });
+        } catch (err) {
+            console.log('Gemini evaluation failed, using fallback logic');
+            evaluation = await deepseekService.evaluateAllAnswers(questionsAndAnswers, {
+                jobTitle: job.title,
+                jobDescription: job.description,
+                requiredSkills: job.requirements?.skills
+            });
+        }
 
         // Combine with coding results if available
         let finalScore = evaluation.overallScore || 10;

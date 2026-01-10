@@ -33,27 +33,14 @@ const VerifyEmailPage = () => {
 
                     // Redirect logic
                     // Redirect logic
-                    setTimeout(() => {
-                        // Ensure data is persisted for onboarding
-                        if (response.data.user._id) localStorage.setItem('userId', response.data.user._id);
-                        if (response.data.user.role) localStorage.setItem('userRole', response.data.user.role);
-                        if (response.data.token) localStorage.setItem('token', response.data.token);
+                    // Manual navigation setup - no auto redirect
+                    // Ensure data is persisted so clicking the button works
+                    if (response.data.user._id) localStorage.setItem('userId', response.data.user._id);
+                    if (response.data.user.role) localStorage.setItem('userRole', response.data.user.role);
+                    if (response.data.token) localStorage.setItem('token', response.data.token);
 
-                        // Fallback storage
-                        localStorage.setItem('user', JSON.stringify(response.data.user));
-
-                        if (!response.data.user.isOnboardingComplete) {
-                            if (response.data.user.role === 'jobseeker') {
-                                navigate('/onboarding/jobseeker');
-                            } else if (response.data.user.role === 'recruiter') {
-                                navigate('/onboarding/recruiter');
-                            } else {
-                                navigate('/onboarding/role-selection');
-                            }
-                        } else {
-                            navigate('/login');
-                        }
-                    }, 3000);
+                    // Fallback storage
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
                 } else {
                     setStatus('error');
                     setMessage(response.message || 'Verification failed');
@@ -101,7 +88,9 @@ const VerifyEmailPage = () => {
                 <p className="verify-message">{message}</p>
 
                 {status === 'success' && (
-                    <p className="redirect-text">Redirecting you to login...</p>
+                    <button className="btn btn-primary" onClick={() => navigate('/login')}>
+                        Continue to Login
+                    </button>
                 )}
 
                 {status === 'error' && (

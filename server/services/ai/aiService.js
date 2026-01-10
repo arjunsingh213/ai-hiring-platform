@@ -2,13 +2,13 @@
  * AI Service - Main Entry Point
  * Delegates to OpenRouter for all AI operations
  * 
- * Model Assignments:
- * - Resume Parsing: Llama 3.1 8B
- * - JD-Resume Matching: Gemma 2 9B
- * - Question Generation: Qwen3 235B
- * - Answer Evaluation: Qwen3 235B
- * - Fast Scoring: Mistral 7B
- * - Recruiter Report: Gemma 2 9B
+ * Model Assignments (ALL FREE TIER):
+ * - Resume Parsing: Llama 3.2 3B (FREE)
+ * - JD-Resume Matching: Llama 3.2 3B (FREE)
+ * - Question Generation: Llama 3.2 3B (FREE)
+ * - Answer Evaluation: Llama 3.2 3B (FREE)
+ * - Fast Scoring: Llama 3.2 3B (FREE)
+ * - Recruiter Report: Llama 3.2 3B (FREE)
  */
 
 const openRouterService = require('./openRouterService');
@@ -20,7 +20,7 @@ class AIService {
 
     /**
      * Parse resume text to structured data
-     * Uses: Llama 3.1 8B
+     * Uses: Llama 3.2 3B (FREE)
      */
     async parseResume(resumeText) {
         return this.openRouter.parseResume(resumeText);

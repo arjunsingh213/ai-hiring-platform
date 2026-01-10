@@ -188,6 +188,40 @@
     margin-bottom: var(--spacing-xl);
 }
 
+.form-group {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary, #0F172A);
+    font-size: 0.9375rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border-color, #E2E8F0);
+    border-radius: var(--radius-lg, 12px);
+    font-size: 0.9375rem;
+    color: var(--text-primary, #0F172A);
+    transition: all 0.2s;
+    background: #fff;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #6366F1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    outline: none;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

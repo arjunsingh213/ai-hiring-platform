@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import './PlatformWalkthrough.css';
+import './Walkthrough.css';
 
 const slides = [
     {

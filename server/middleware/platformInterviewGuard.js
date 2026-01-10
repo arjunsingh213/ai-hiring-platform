@@ -37,12 +37,13 @@ const requirePlatformInterview = async (req, res, next) => {
         let interviewStatus = user.platformInterview?.status || 'pending';
 
         // BACKWARD COMPATIBILITY: Check if user completed onboarding before this feature
-        if (interviewStatus === 'pending' || !interviewStatus) {
+        // Also handle 'in_progress' status - user might have a completed interview while status says in_progress
+        if (interviewStatus === 'pending' || interviewStatus === 'in_progress' || !interviewStatus) {
             if (user.isOnboardingComplete ||
                 user.interviewStatus?.completed ||
                 user.jobSeekerProfile?.interviewScore >= 60) {
-                // User has completed onboarding, allow them through
-                console.log(`[MIDDLEWARE COMPAT] User ${userId} allowed - completed onboarding before feature`);
+                // User has completed onboarding or has a passing interview score, allow them through
+                console.log(`[MIDDLEWARE COMPAT] User ${userId} allowed - completed onboarding/interview (status was: ${interviewStatus})`);
                 return next();
             }
         }

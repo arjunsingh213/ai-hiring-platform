@@ -96,10 +96,10 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
             // Continue with empty text - AI parsing will be skipped
         }
 
-        // Step 2: Use AI (LLama 3.1) to extract detailed skills from extracted text
+        // Step 2: Use AI (LLama 3.2 FREE) to extract detailed skills from extracted text
         try {
             if (rawText && rawText.length > 50) {
-                console.log(`[Resume] Calling LLama 3.1 for AI skill extraction...`);
+                console.log(`[Resume] Calling LLama 3.2 FREE for AI skill extraction...`);
 
                 aiParsedData = await aiService.parseResume(rawText);
 
