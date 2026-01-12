@@ -189,18 +189,48 @@ const JobSeekerOnboarding = () => {
                                 setParsedResume(profile.parsedResume);
                                 setResumeAutoFillData(profile.parsedResume);
                                 setOnboardingMethod('resume');
-                            } else if (profile.skills && profile.skills.length > 0) {
-                                // Fallback for manual onboarding or missing parsed resume
-                                console.log('[INTERVIEW] No parsed resume, using profile data (manual mode)');
-                                setOnboardingMethod('manual');
+                            } else if ((profile.skills && profile.skills.length > 0) || userData.resume) {
+                                // Fallback for manual onboarding or missing parsed resume BUT resume exists
+                                console.log('[INTERVIEW] No parsed resume object, but found profile skills or resume ID');
+                                setOnboardingMethod(userData.resume ? 'resume' : 'manual');
+
+                                // If we have a resume ID but no parsed data, create a basic structure so the interview can proceed
                                 setParsedResume({
-                                    skills: profile.skills,
-                                    experience: [],
-                                    education: [],
-                                    summary: 'Profile-based manual entry'
+                                    skills: profile.skills || [], // Might be empty, but that's better than blocking
+                                    experience: profile.experience || [],
+                                    education: profile.education || [],
+                                    summary: userData.resume ? 'Resume uploaded (parsing details unavailable)' : 'Profile-based manual entry'
                                 });
+
+                                // Mock autofill data if resume exists to satisfy "Resume Ready" screen if it appears
+                                if (userData.resume) {
+                                    // Try to fetch full resume data to recover specific skills
+                                    try {
+                                        console.log(`[INTERVIEW] Fetching full resume data from ID: ${userData.resume}`);
+                                        const resumeResponse = await api.get(`/resumes/${userData.resume}`);
+                                        if (resumeResponse.success && resumeResponse.data?.parsedData) {
+                                            const recoveredResume = resumeResponse.data.parsedData;
+                                            console.log(`[INTERVIEW] Recovered ${recoveredResume.skills?.length || 0} skills from resume`);
+
+                                            setParsedResume(recoveredResume);
+                                            setResumeAutoFillData(recoveredResume);
+                                        } else {
+                                            // Keep fallback if fetch fails
+                                            setResumeAutoFillData({
+                                                skills: profile.skills || [],
+                                                experience: profile.experience || []
+                                            });
+                                        }
+                                    } catch (err) {
+                                        console.warn('[INTERVIEW] Failed to fetch resume details:', err);
+                                        setResumeAutoFillData({
+                                            skills: profile.skills || [],
+                                            experience: profile.experience || []
+                                        });
+                                    }
+                                }
                             } else {
-                                // No resume or skills found - redirect to resume upload step
+                                // No resume ID, no parsed resume, and no profile skills - ONLY THEN redirect
                                 console.log('[INTERVIEW] No resume or profile data found - redirecting to resume upload');
                                 toast.warning('Please upload your resume to continue');
                                 setSearchParams({ step: '3' }, { replace: true });

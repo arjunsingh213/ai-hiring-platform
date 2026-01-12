@@ -232,7 +232,9 @@ router.post('/start', async (req, res) => {
         const firstRound = blueprint.rounds[0];
 
         // Prepare context for AI question generation
-        const resumeSkills = parsedResume?.skills?.slice(0, 10) || [];
+        // Normalize skills - extract name if objects (handles profile fallback structure)
+        const rawSkills = parsedResume?.skills || [];
+        const resumeSkills = rawSkills.map(s => (typeof s === 'object' && s.name) ? s.name : s).slice(0, 10);
         const resumeProjects = parsedResume?.projects?.slice(0, 2) || [];
 
         const questionContext = buildQuestionPrompt({
@@ -1410,18 +1412,22 @@ router.get('/status/:userId', async (req, res) => {
 
         // CHECK THE ACTUAL INTERVIEW DOCUMENTS FOR ADMIN REVIEW STATUS
         // This takes precedence over the user's platformInterview.status
+        // CRITICAL FIX: Only look for PLATFORM/COMBINED interviews. Job-specific interviews should NOT block access.
         const pendingReviewInterview = await Interview.findOne({
             userId,
+            interviewType: { $in: ['combined', 'platform'] },
             'adminReview.status': 'pending_review'
         }).sort({ createdAt: -1 }).select('adminReview createdAt');
 
         const rejectedInterview = await Interview.findOne({
             userId,
+            interviewType: { $in: ['combined', 'platform'] },
             'adminReview.status': { $in: ['rejected', 'cheating_confirmed'] }
         }).sort({ createdAt: -1 }).select('adminReview createdAt');
 
         const approvedInterview = await Interview.findOne({
             userId,
+            interviewType: { $in: ['combined', 'platform'] },
             'adminReview.status': 'approved'
         }).sort({ createdAt: -1 }).select('adminReview scoring createdAt');
 

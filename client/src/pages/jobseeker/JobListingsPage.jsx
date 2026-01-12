@@ -31,9 +31,9 @@ const JobListingsPage = () => {
     // Check if user has passed platform interview
     const checkPlatformInterviewStatus = async () => {
         try {
-            const response = await api.get(`/onboarding-interview/status/${userId}`);
+            const response = await api.get(`/onboarding-interview/check-status/${userId}`);
             if (response.success) {
-                setPlatformInterviewStatus(response.data);
+                setPlatformInterviewStatus(response.data || response); // Handle structure variation
             }
         } catch (error) {
             console.error('Error checking platform interview status:', error);
@@ -73,7 +73,7 @@ const JobListingsPage = () => {
         }
 
         // Check platform interview status before applying
-        if (platformInterviewStatus && !platformInterviewStatus.canApplyForJobs) {
+        if (platformInterviewStatus && !platformInterviewStatus.canApplyToJobs) {
             if (platformInterviewStatus.status === 'failed' && platformInterviewStatus.canRetry) {
                 toast.warning('You can now retry your platform interview!');
                 navigate('/onboarding/jobseeker?step=interview');
@@ -350,7 +350,7 @@ const JobListingsPage = () => {
                                                 {withdrawing ? 'Withdrawing...' : 'Withdraw'}
                                             </button>
                                         </div>
-                                    ) : platformInterviewStatus && !platformInterviewStatus.canApplyForJobs ? (
+                                    ) : platformInterviewStatus && !platformInterviewStatus.canApplyToJobs ? (
                                         <div className="apply-blocked">
                                             <button
                                                 className="btn btn-primary btn-disabled"

@@ -4,8 +4,8 @@ const Interview = require('../models/Interview');
 const Resume = require('../models/Resume');
 const User = require('../models/User');
 const Job = require('../models/Job');
-const aiService = require('../services/ai/aiService');
-const deepseekService = require('../services/ai/deepseekService');
+// const aiService = require('../services/ai/aiService'); // Removed in favor of Gemini
+// const deepseekService = require('../services/ai/deepseekService'); // Removed in favor of Gemini
 const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
 
 // Start a new interview (for job applications)
@@ -50,27 +50,27 @@ router.post('/start', async (req, res) => {
         if (resume) {
             resumeId = resume._id;
 
-            // Generate questions using Qwen3 235B
+            // Generate questions using Gemini 2.5 Flash
             try {
-                questions = await aiService.generateInterviewQuestions(
-                    resume.parsedData,
+                questions = await geminiService.generateInterviewQuestions({
+                    parsedResume: resume.parsedData,
+                    role: job?.title || 'Candidate',
                     interviewType,
-                    job ? {
+                    jobContext: job ? {
                         title: job.title,
                         description: job.description,
-                        requirements: job.requirements,
-                        matchScore: matchScore
+                        requirements: job.requirements
                     } : {}
-                );
+                });
             } catch (aiError) {
-                console.log('AI service unavailable, using fallback questions');
+                console.log('Gemini service unavailable, using fallback questions:', aiError.message);
             }
         }
 
         // Use fallback questions if AI generation failed or no resume
         if (questions.length === 0) {
             const jobSkills = job?.requirements?.skills?.join(', ') || '';
-            questions = aiService.getFallbackQuestions(interviewType, job?.title || 'the position', jobSkills);
+            questions = geminiService.getFallbackQuestions(interviewType, job?.title || 'the position', jobSkills);
         }
 
         // Create interview with TWO ROUNDS of questions
@@ -144,7 +144,7 @@ router.post('/:interviewId/response', async (req, res) => {
         if (interview.jobId && !skipEvaluation) {
             try {
                 console.log(`[VALIDATION] Checking answer for Q${questionIndex + 1}: "${answer.substring(0, 50)}..."`);
-                const validation = await deepseekService.validateAnswer(
+                const validation = await geminiService.validateAnswer(
                     question.question,
                     answer
                 );
@@ -180,39 +180,88 @@ router.post('/:interviewId/response', async (req, res) => {
         // SMART LOGIC: If this is a job interview (has jobId), generate NEXT question dynamically
         if (interview.jobId) {
             const job = interview.jobId;
-            const currentCount = interview.responses.length;
+            const currentCount = interview.responses.length; // Restored definition here
 
-            // Check if we need to generate next question (up to 10 total)
-            if (currentCount < 10) {
-                try {
-                    // Build job description summary for context
-                    const jobDescriptionSummary = `
+            // Determine current round based on pipeline config or default fallback
+            const pipelineConfig = interview.pipelineConfig;
+            let currentRoundConfig = null;
+            let roundLimit = 10; // Default hard limit
+
+            if (pipelineConfig && pipelineConfig.rounds && pipelineConfig.rounds.length > 0) {
+                // Use the active round index
+                const roundIndex = interview.currentRoundIndex || 0;
+                currentRoundConfig = pipelineConfig.rounds[roundIndex];
+
+                // Get question count for THIS round (default to 5 if not set)
+                // Note: We need to count how many questions have been asked IN THIS ROUND
+                roundLimit = currentRoundConfig?.questionConfig?.questionCount || 5;
+            }
+
+            // Calculate how many questions asked in the current round so far
+            // Strict filter: Match current round index, OR if it's the very first round (index 0), allow undefined roundIndex (legacy/initial questions)
+            const questionsInCurrentRound = interview.questions.filter(q =>
+                q.roundIndex === (interview.currentRoundIndex || 0) ||
+                (q.roundIndex === undefined && (interview.currentRoundIndex || 0) === 0)
+            ).length;
+
+            console.log(`[DEBUG] Round Transition Check:
+                Current Round Index: ${interview.currentRoundIndex}
+                Round Limit: ${roundLimit}
+                Questions Counted in Round: ${questionsInCurrentRound}
+                Total Questions: ${interview.questions.length}
+                Should Generate? ${questionsInCurrentRound < roundLimit ? 'YES' : 'NO'}
+            `);
+
+            // Build job description summary for context
+            const jobDescriptionSummary = `
 Job Title: ${job.title}
 Required Skills: ${job.requirements?.skills?.join(', ') || 'Not specified'}
 Experience Level: ${job.requirements?.experienceLevel || 'Not specified'}
 Description: ${job.description?.substring(0, 500) || 'Not provided'}
-                    `.trim();
+            `.trim();
 
-                    // Build history for context
-                    const history = interview.questions.slice(0, currentCount).map((q, i) => ({
-                        question: q.question,
-                        answer: interview.responses[i]?.answer || '',
-                        type: q.category
-                    }));
+            // Build history for context
+            const history = interview.questions.slice(0, currentCount).map((q, i) => ({
+                question: q.question,
+                answer: interview.responses[i]?.answer || '',
+                type: q.category
+            }));
 
-                    // Determine round: 1-5 technical, 6-10 HR
-                    const roundType = currentCount < 5 ? 'technical' : 'hr';
+            // Check if we need to generate next question
+            // STOP if we reached the limit for this round
+            if (questionsInCurrentRound < roundLimit) {
+                try {
+                    // Update round type from config
+                    const roundType = currentRoundConfig?.roundType || (currentCount < 5 ? 'technical' : 'hr');
 
-                    console.log(`[SMART INTERVIEW] Generating Q${currentCount + 1}/10 (${roundType}) for job: ${job.title}`);
+                    console.log(`[SMART INTERVIEW] Generating Q${questionsInCurrentRound + 1}/${roundLimit} (${roundType}) for job: ${job.title}`);
 
-                    // Generate next question using deepseekService with JD context
-                    const nextQuestion = await deepseekService.generateNextQuestion(
-                        jobDescriptionSummary,
-                        job.title,
-                        job.requirements?.experienceLevel || 'mid',
-                        history,
-                        roundType
+                    // Generate next question using geminiService with JD context
+                    // Gemini returns a string directly
+                    // Generate next question using geminiService with JD context
+                    const systemInstruction = `
+You are a professional interviewer conducting a ${roundType} interview.
+Your goal is to assess the candidate's fit based on the Job Description below.
+
+INSTRUCTIONS:
+1. Roleplay as the interviewer. Speak directly to the candidate.
+2. Ask exactly ONE clear question relevant to the ${roundType} round.
+3. DO NOT generate a list of questions.
+4. DO NOT provide "Reasoning", "Expected Answer", or "Difficulty" metadata.
+5. DO NOT say "Here is a question" or "Okay, based on...".
+6. Return ONLY the question text.
+7. Example output: "Can you explain the difference between TCP and UDP?"
+`;
+
+                    const nextQuestionText = await geminiService.generateAdaptiveQuestion(
+                        systemInstruction + `\n\nJOB CONTEXT:\n${jobDescriptionSummary}\n\nHISTORY (${history.length} qs so far):\n${JSON.stringify(history)}\n\nGenerate the next question:`,
+                        history
                     );
+
+                    const nextQuestion = {
+                        question: nextQuestionText,
+                        type: roundType
+                    };
 
                     // Add to interview questions
                     interview.questions.push({
@@ -220,7 +269,8 @@ Description: ${job.description?.substring(0, 500) || 'Not provided'}
                         generatedBy: 'ai',
                         category: nextQuestion.type || roundType,
                         difficulty: 'medium',
-                        expectedTopics: job.requirements?.skills?.slice(0, 3) || []
+                        expectedTopics: job.requirements?.skills?.slice(0, 3) || [],
+                        roundIndex: interview.currentRoundIndex || 0 // CRITICAL: Track which round this question belongs to
                     });
 
                     await interview.save();
@@ -347,28 +397,16 @@ router.post('/:interviewId/complete', async (req, res) => {
         // STRICT OVERALL EVALUATION using AI
         let overallEvaluation;
         try {
-            // SMART ROUTING: Use deepseekService for job interviews, aiService for platform interviews
-            if (interview.jobId) {
-                console.log('[SMART INTERVIEW] Using deepseekService for job interview evaluation');
-                overallEvaluation = await deepseekService.evaluateAllAnswers(
-                    questionsAndAnswers,
-                    {
-                        jobTitle: job?.title || 'Position',
-                        jobDescription: job?.description || '',
-                        requiredSkills: job?.requirements?.skills || []
-                    }
-                );
-            } else {
-                console.log('[INTERVIEW] Using aiService for platform interview evaluation');
-                overallEvaluation = await aiService.evaluateAllAnswers(
-                    questionsAndAnswers,
-                    {
-                        jobTitle: job?.title || 'Position',
-                        jobDescription: job?.description || '',
-                        requiredSkills: job?.requirements?.skills || []
-                    }
-                );
-            }
+            // Use geminiService for ALL evaluations as requested
+            console.log('[INTERVIEW] Using geminiService for interview evaluation');
+            overallEvaluation = await geminiService.evaluateAnswers(
+                questionsAndAnswers,
+                {
+                    jobTitle: job?.title || 'Position',
+                    jobDescription: job?.description || '',
+                    requiredSkills: job?.requirements?.skills || []
+                }
+            );
         } catch (evalError) {
             console.error('AI evaluation failed, using rule-based:', evalError.message);
             // RULE-BASED STRICT EVALUATION as fallback
@@ -398,16 +436,14 @@ router.post('/:interviewId/complete', async (req, res) => {
         };
 
         try {
-            const aiReport = await aiService.generateRecruiterReport({
+            const aiReport = await geminiService.generateRecruiterReport({
                 candidate: {
                     name: interview.userId?.profile?.name || 'Candidate',
                     email: interview.userId?.profile?.email
                 },
                 job: job ? { title: job.title, company: job.company } : null,
-                matchScore: interview.matchScore,
-                responses: questionsAndAnswers,
-                overallScore: overallEvaluation.overallScore,
-                proctoring: interview.proctoring
+                scores: overallEvaluation,
+                questionsAndAnswers: questionsAndAnswers
             });
             if (aiReport) recruiterReport = { ...recruiterReport, ...aiReport };
         } catch (reportError) {
@@ -607,13 +643,15 @@ Description: ${job?.description?.substring(0, 500) || 'Not provided'}
                     `.trim();
 
                     // Generate first question for new round
-                    nextRoundQuestion = await deepseekService.generateNextQuestion(
-                        jobDescriptionSummary,
-                        job?.title || 'Job',
-                        job?.requirements?.experienceLevel || 'mid',
-                        [], // No previous answers for this round
-                        nextRound.roundType
+                    const nextQText = await geminiService.generateAdaptiveQuestion(
+                        jobDescriptionSummary + `\n\nROUND: ${nextRound.roundType}`,
+                        [] // No previous answers for this round
                     );
+
+                    nextRoundQuestion = {
+                        question: nextQText,
+                        type: nextRound.roundType
+                    };
 
                     // Add question to interview
                     interview.questions.push({

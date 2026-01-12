@@ -20,6 +20,7 @@ const OnboardingInterview = ({
     const toast = useToast();
     const videoRef = useRef(null);
     const streamRef = useRef(null); // Track camera stream for proper cleanup
+    const isMountedRef = useRef(true); // Track mount status to prevent race conditions
 
     // Video recording refs for admin review
     const mediaRecorderRef = useRef(null);
@@ -286,6 +287,11 @@ const OnboardingInterview = ({
             console.log('Camera stream obtained:', stream);
 
             // Store stream in ref for cleanup
+            if (!isMountedRef.current) {
+                console.log('[CAMERA] Component unmounted during init, stopping stream immediately');
+                stream.getTracks().forEach(track => track.stop());
+                return;
+            }
             streamRef.current = stream;
 
             // Wait a moment for video element to be ready
@@ -475,7 +481,9 @@ const OnboardingInterview = ({
 
     // Cleanup camera on component unmount - CRITICAL for stopping camera when exiting
     useEffect(() => {
+        isMountedRef.current = true;
         return () => {
+            isMountedRef.current = false;
             console.log('[CLEANUP] Component unmounting, stopping camera...');
             stopCamera();
 

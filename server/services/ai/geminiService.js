@@ -117,6 +117,52 @@ Return ONLY the JSON array, no additional text.`;
     }
 
     /**
+     * Validate if an answer is relevant and not gibberish
+     * @param {string} question - The question asked
+     * @param {string} answer - The candidate's answer
+     * @returns {Object} { valid: boolean, message: string }
+     */
+    async validateAnswer(question, answer) {
+        if (!answer || answer.trim().length < 2) {
+            return { valid: false, message: 'Answer is too short.' };
+        }
+
+        const prompt = `You are an interview proctor. Validate if the following answer is a legitimate attempt to answer the question.
+        
+QUESTION: "${question}"
+ANSWER: "${answer}"
+
+Rules:
+1. Allow partial, wrong, or "I don't know" answers.
+2. REJECT only complete gibberish, random keystrokes (e.g. "asdf"), or completely irrelevant text (e.g. copying the question).
+3. "I don't know" or "Not sure" is VALID.
+
+Return JSON:
+{
+    "valid": true/false,
+    "message": "Reason if invalid, otherwise null"
+}`;
+
+        try {
+            const response = await this._callWithCacheAndRateLimit('validate_answer', prompt, {
+                temperature: 0.1,
+                maxTokens: 100
+            });
+
+            if (!response) return { valid: true }; // Allow on error
+
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return { valid: true };
+        } catch (error) {
+            console.error('[GeminiService] Validation error:', error.message);
+            return { valid: true }; // Fail open
+        }
+    }
+
+    /**
      * Generate adaptive follow-up question based on conversation history
      * Can accept either a pre-built prompt string or a context object
      * @param {string|Object} promptOrContext - Pre-built prompt string OR context object
@@ -187,8 +233,55 @@ Return ONLY the question text, no preamble or explanation.`;
                 }
             }
 
-            // Remove any leading prefixes like "Question:" or "Q:"
-            question = question.replace(/^(Question:|Q:|\d+\.)\s*/i, '').trim();
+            // aggressive cleaning for "technical interview for..." context headers
+            question = question.replace(/^["']?technical["']? interview for.*?(\n|$)/i, '');
+            question = question.replace(/^["']?screening["']? interview for.*?(\n|$)/i, '');
+            question = question.replace(/^\*\*?I\..*?(\n|$)/i, ''); // Remove "**I. Topic" headers (and variances like **I. SQL:**)
+
+            // Remove markdown bolding for the whole line if present (e.g. **Question:** ...)
+            question = question.replace(/\*\*(Question|Q|Next Question):?\*\*/i, '');
+
+            // Remove common prefixes
+            question = question
+                .replace(/^(Question:|Q:|Next Question:|\d+\.)\s*/i, '')
+                .replace(/^Okay, here is a .*?:/i, '')
+                .replace(/^Okay, based on .*?:/i, '')
+                .replace(/^Okay, .*?:/i, '') // Catch-all for "Okay, ..." prefixes
+                .replace(/^Here is a .*?:/i, '')
+                .replace(/^Based on the .*?:/i, '')
+                .replace(/^Here are .*?:/i, '') // Catch "Here are some questions..."
+                .replace(/\*\*Reasoning:\*\*[\s\S]*$/i, '') // Remove reasoning at the end
+                .replace(/\*\*Why this is .*?\*\*[\s\S]*$/i, '') // Remove "Why this is..."
+                .replace(/^Role:.*?(\n|$)/i, '') // Remove "Role: Senior Data Engineer" lines
+                .trim();
+
+            // 1. Check for numbered lists first (1. Question ...)
+            if (question.match(/\n\s*\d+\./)) {
+                console.log('[GeminiService] Detected list, extracting first item...');
+                const lines = question.split('\n');
+                const firstQ = lines[0].replace(/^\d+\.\s*/, '').trim();
+                if (firstQ) question = firstQ;
+            }
+            // 2. Check for asterisk/bullet lists (* Question ...) - typical of "Topic Outline" failure mode
+            else if (question.includes('*')) {
+                const parts = question.split('*');
+                // Filter empty parts and find the first one that looks like a valid question (length > 10)
+                const potentialQuestions = parts.map(p => p.trim()).filter(p => p.length > 15);
+                if (potentialQuestions.length > 0) {
+                    console.log('[GeminiService] Detected bullet list, extracting first valid item...');
+                    question = potentialQuestions[0];
+                }
+            }
+
+            // If the question still contains multiple distinct questions separated by newlines, take the first one
+            // (Heuristic: if multiple lines end in question marks)
+            const questionLines = question.split('\n').filter(l => l.trim().length > 0);
+            if (questionLines.length > 1 && questionLines[0].trim().endsWith('?')) {
+                question = questionLines[0].trim();
+            }
+
+            // Final cleanup of any leading symbols from split
+            question = question.replace(/^[-*•]\s*/, '');
 
             console.log(`[GeminiService] Generated adaptive question: "${question.substring(0, 60)}..."`);
             return question;

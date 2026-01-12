@@ -9,7 +9,7 @@ const router = express.Router();
 const Job = require('../models/Job');
 const User = require('../models/User');
 const Interview = require('../models/Interview');
-const deepseekService = require('../services/ai/deepseekService');
+// const deepseekService = require('../services/ai/deepseekService'); // Removed
 const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
 const { requirePlatformInterview } = require('../middleware/platformInterviewGuard');
 
@@ -140,20 +140,30 @@ Experience Level: ${job.requirements?.experienceLevel || 'Not specified'}
 Description: ${job.description?.substring(0, 500) || 'Not provided'}
             `.trim();
 
+            const systemInstruction = `
+You are a professional interviewer conducting a ${firstRound.roundType} interview for the role of ${job.title}.
+
+INSTRUCTIONS:
+1. Roleplay as the interviewer. Speak directly to the candidate.
+2. Ask exactly ONE question to start the interview.
+3. DO NOT generate a list of potential questions.
+4. DO NOT explain your reasoning.
+5. Return ONLY the question text.
+6. Example output: "Could you tell me about your experience with ${job.requirements?.skills?.[0] || 'this role'}?"
+`;
+
             firstQuestion = await geminiService.generateAdaptiveQuestion(
-                jobDescriptionSummary + `\n\nROUND: ${firstRound.roundType}\nGenerate a medium difficulty question.`,
+                systemInstruction + `\n\nJOB CONTEXT:\n${jobDescriptionSummary}\n\nTASK: Ask the first question now.`,
                 []
             );
 
-            // If Gemini fails (returns null), fallback to DeepSeek (though unlikely)
+            // If Gemini fails (returns null), handle gracefully without DeepSeek
             if (!firstQuestion) {
-                firstQuestion = await deepseekService.generateNextQuestion(
-                    jobDescriptionSummary,
-                    job.title,
-                    job.requirements?.experienceLevel || 'mid',
-                    [],
-                    firstRound.roundType
-                );
+                console.log('Gemini failed to generate first question, falling back to basic question');
+                firstQuestion = {
+                    question: 'Tell me about your experience relevant to this role.',
+                    type: firstRound.roundType
+                };
             } else {
                 // Wrap simple string response in object structure expected by code below
                 firstQuestion = {
@@ -761,21 +771,33 @@ Description: ${job.description?.substring(0, 300) || 'Not provided'}
 
         // Generate next question
         // Generate next question using Gemini
+        const systemInstruction = `
+You are a professional interviewer conducting a ${round} interview for the role of ${job.title}.
+Your goal is to assess the candidate's fit based on the Job Description below.
+
+INSTRUCTIONS:
+1. Ask ONE clear, professional question relevant to the ${round} round.
+2. Based *strictly* on the Job Description and Skills.
+3. If this is a 'screening' round, verify basic qualifications and communication.
+4. If 'technical', test specific skills mentioned in JD.
+5. If 'hr', assess fit and behavior.
+6. CRITICAL: Return ONLY the question text. Do NOT include labels like "Question:", "Reasoning:", "Difficulty:", or conversational fillers like "Okay, here is a question".
+7. Do not use markdown formatting like **bold** for the question text itself.
+`;
+
         let nextQuestion = await geminiService.generateAdaptiveQuestion(
-            jobDescriptionSummary + `\n\nROUND: ${round}\nHistory count: ${history.length}`,
+            systemInstruction + `\n\nJOB CONTEXT:\n${jobDescriptionSummary}\n\nHISTORY (${history.length} qs so far):\n${JSON.stringify(history)}\n\nGenerate the next question:`,
             history
         );
 
-        // Fallback to DeepSeek if Gemini fails
+        // Fallback if Gemini fails
         if (!nextQuestion) {
-            const dsResult = await deepseekService.generateNextQuestion(
-                jobDescriptionSummary,
-                job.title,
-                job.requirements?.experienceLevel || 'mid',
-                history,
-                round
+            console.log('Gemini failed to generate next question');
+            // Try one more time with simpler prompt
+            nextQuestion = await geminiService.generateAdaptiveQuestion(
+                `You are an interviewer. Ask a ${round} question for ${job.title}. Return ONLY the question text.`,
+                history
             );
-            nextQuestion = dsResult.question; // Extract string
         } else {
             // Gemini returns string directly
         }

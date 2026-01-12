@@ -294,12 +294,12 @@
 .company-logo {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
+    background: transparent;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: #475569;
     font-size: 0.85rem;
     font-weight: 700;
 }
@@ -673,8 +673,13 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    RESPONSIVE - TABLET & MOBILE
    ═══════════════════════════════════════════════════════════════ */
+
+.mobile-close-btn {
+    display: none;
+}
 
 /* Tablet (768px - 1024px) */
 @media (max-width: 1024px) {
@@ -1213,6 +1218,10 @@
 }
 
 [data-theme="dark"] .job-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .job-info h4 {
     color: var(--text-primary);
 }
 

@@ -5,6 +5,7 @@ import api from '../../services/api';
 import FollowButton from '../../components/FollowButton';
 import UserProfileLink from '../../components/UserProfileLink';
 import './PublicProfilePage.css';
+import './PublicProfileDarkFix.css';
 
 // Icons
 const Icons = {
