@@ -668,6 +668,8 @@ const AIInterview = () => {
             // Start face verification once camera is ready
             setTimeout(() => startFaceVerification(), 1000);
         } catch (e) {
+            console.error('Camera access error:', e);
+            toast.error(`Camera Failed: ${e.name}: ${e.message}`);
             setIsRecording(false);
         }
     };
@@ -1165,7 +1167,7 @@ const AIInterview = () => {
                                         className={`round-dot ${i === currentRoundIndex ? 'active' : i < currentRoundIndex ? 'done' : ''}`}
                                         title={r.title}
                                     >
-                        {ROUND_TYPE_INFO[r.roundType]?.icon || <Icons.screening />}
+                                        {ROUND_TYPE_INFO[r.roundType]?.icon || <Icons.screening />}
                                     </span>
                                 ))}
                             </div>

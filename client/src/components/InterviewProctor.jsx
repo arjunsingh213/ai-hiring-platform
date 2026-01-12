@@ -182,10 +182,12 @@ const InterviewProctor = ({
                 <div className={`proctoring-badge ${faceDetection.faceDetected ? 'active' : 'warning'}`}>
                     <span className="badge-dot"></span>
                     <span className="badge-text">
-                        {faceDetection.loading ? 'Loading...' :
-                            faceDetection.faceDetected ? 'Proctoring Active' : 'Checking...'}
+                        {faceDetection.error ? 'Error' :
+                            faceDetection.loading ? 'Loading...' :
+                                faceDetection.faceDetected ? 'Proctoring Active' : 'Checking...'}
                     </span>
                 </div>
+                {faceDetection.error && <div className="proctor-error-msg">{faceDetection.error}</div>}
 
                 {/* Violation counter (visible but non-threatening) */}
                 {violations.length > 0 && (

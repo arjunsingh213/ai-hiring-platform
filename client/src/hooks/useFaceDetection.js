@@ -43,16 +43,19 @@ const useFaceDetection = (videoRef, enabled = true) => {
             faceApiRef.current = faceapi;
 
             // Models are served from public/models folder
-            const MODEL_URL = '/models';
+            // Models are served from public/models folder - handle base URL correctly
+            const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+            const MODEL_URL = `${baseUrl}models`;
+
+            console.log(`🔄 Loading face detection models from: ${MODEL_URL}`);
 
             // Verify models exist before loading
             const manifestResponse = await fetch(`${MODEL_URL}/tiny_face_detector_model-weights_manifest.json`);
             if (!manifestResponse.ok) {
-                throw new Error(`Model manifest not found (${manifestResponse.status})`);
+                throw new Error(`Model manifest not found at ${MODEL_URL} (Status: ${manifestResponse.status})`);
             }
 
             // Load the face detection models
-            console.log('🔄 Loading face detection models...');
             await Promise.all([
                 faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                 faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL)
