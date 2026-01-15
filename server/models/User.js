@@ -505,47 +505,6 @@ const userSchema = new mongoose.Schema({
     },
     // ==================== END AI TALENT PASSPORT ====================
 
-    // ==================== USER SETTINGS ====================
-    settings: {
-        language: {
-            type: String,
-            default: 'en'
-        },
-        theme: {
-            type: String,
-            enum: ['light', 'dark', 'system'],
-            default: 'system'
-        }
-    },
-
-    // ==================== SECURITY SETTINGS ====================
-    security: {
-        twoFactorEnabled: {
-            type: Boolean,
-            default: false
-        },
-        twoFactorSecret: {
-            type: String,
-            select: false // Don't return by default for security
-        },
-        sessions: [{
-            deviceId: String,
-            deviceInfo: String,
-            ip: String,
-            userAgent: String,
-            lastActive: { type: Date, default: Date.now },
-            createdAt: { type: Date, default: Date.now }
-        }],
-        loginHistory: [{
-            ip: String,
-            device: String,
-            location: String,
-            userAgent: String,
-            timestamp: { type: Date, default: Date.now },
-            success: { type: Boolean, default: true }
-        }]
-    },
-
     // Testing mode flag
     testingMode: {
         type: Boolean,

@@ -29,7 +29,6 @@ const VerifyEmailPage = () => {
                         localStorage.setItem('token', response.data.token);
                         localStorage.setItem('user', JSON.stringify(response.data.user));
                         localStorage.setItem('userId', response.data.user._id);
-                        localStorage.setItem('loginTimestamp', Date.now().toString());
                     }
 
                     // Redirect logic
@@ -39,7 +38,6 @@ const VerifyEmailPage = () => {
                     if (response.data.user._id) localStorage.setItem('userId', response.data.user._id);
                     if (response.data.user.role) localStorage.setItem('userRole', response.data.user.role);
                     if (response.data.token) localStorage.setItem('token', response.data.token);
-                    localStorage.setItem('loginTimestamp', Date.now().toString());
 
                     // Fallback storage
                     localStorage.setItem('user', JSON.stringify(response.data.user));

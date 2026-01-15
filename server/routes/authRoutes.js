@@ -88,60 +88,6 @@ router.post('/register', async (req, res) => {
 });
 
 /**
- * @route   POST /api/auth/resend-verification
- * @desc    Resend verification email to user
- * @access  Public
- */
-router.post('/resend-verification', async (req, res) => {
-    try {
-        const { email } = req.body;
-
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                error: 'Please provide an email address'
-            });
-        }
-
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            // Don't reveal if user exists for security
-            return res.json({
-                success: true,
-                message: 'If an account with that email exists, a new verification email has been sent.'
-            });
-        }
-
-        if (user.isVerified) {
-            return res.status(400).json({
-                success: false,
-                error: 'This email is already verified. Please login.'
-            });
-        }
-
-        // Generate new verification token
-        const verificationToken = crypto.randomBytes(32).toString('hex');
-        user.verificationToken = verificationToken;
-        await user.save();
-
-        // Send new verification email
-        await sendVerificationEmail(user, verificationToken);
-
-        res.json({
-            success: true,
-            message: 'Verification email sent successfully!'
-        });
-    } catch (error) {
-        console.error('Resend verification error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to send verification email. Please try again.'
-        });
-    }
-});
-
-/**
  * @route   POST /api/auth/verify-email
  * @desc    Verify user email
  * @access  Public

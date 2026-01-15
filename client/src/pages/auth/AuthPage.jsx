@@ -47,8 +47,6 @@ const AuthPage = () => {
     const [verificationSent, setVerificationSent] = useState(false);
     const [registeredUserId, setRegisteredUserId] = useState(null);
     const [showTermsModal, setShowTermsModal] = useState(false);
-    const [resendCooldown, setResendCooldown] = useState(0);
-    const [resending, setResending] = useState(false);
 
     // Poll for email verification status
     useEffect(() => {
@@ -66,7 +64,6 @@ const AuthPage = () => {
                         if (user._id) localStorage.setItem('userId', user._id);
                         if (user.role) localStorage.setItem('userRole', user.role);
                         localStorage.setItem('user', JSON.stringify(user));
-                        localStorage.setItem('loginTimestamp', Date.now().toString());
 
                         // Navigate to onboarding
                         if (!user.isOnboardingComplete) {
@@ -91,33 +88,6 @@ const AuthPage = () => {
             if (pollingInterval) clearInterval(pollingInterval);
         };
     }, [verificationSent, registeredUserId, navigate]);
-
-    // Cooldown timer effect for resend button
-    useEffect(() => {
-        if (resendCooldown > 0) {
-            const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [resendCooldown]);
-
-    const handleResendVerification = async () => {
-        if (resendCooldown > 0 || resending) return;
-
-        setResending(true);
-        try {
-            const response = await api.post('/auth/resend-verification', {
-                email: signupData.email
-            });
-
-            if (response.success) {
-                setResendCooldown(30); // 30 second cooldown
-            }
-        } catch (err) {
-            console.error('Resend verification error:', err);
-        } finally {
-            setResending(false);
-        }
-    };
 
     // Toggle between Sign In and Sign Up
     const toggleMode = () => {
@@ -177,7 +147,6 @@ const AuthPage = () => {
                 localStorage.setItem('userId', user._id);
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('userEmail', user.email);
-                localStorage.setItem('loginTimestamp', Date.now().toString());
 
                 if (!user.isOnboardingComplete) {
                     if (user.role === 'jobseeker') {
@@ -284,35 +253,9 @@ const AuthPage = () => {
                         <p>We've sent a verification link to</p>
                         <p className="verify-email"><strong>{signupData.email}</strong></p>
                         <p className="verify-subtext">Please check your inbox and click the link to verify your account.</p>
-                        <div style={{ marginTop: '20px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                            <p style={{ marginBottom: '5px', color: '#64748b', fontSize: '0.9rem' }}>Did not receive the email?</p>
-                            <button
-                                className="btn-outline"
-                                onClick={handleResendVerification}
-                                disabled={resendCooldown > 0 || resending}
-                                style={{
-                                    width: '100%',
-                                    color: '#6366F1',
-                                    borderColor: '#6366F1',
-                                    padding: '0.625rem 1rem',
-                                    fontSize: '0.875rem',
-                                    opacity: resendCooldown > 0 ? 0.6 : 1,
-                                    cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
-                                    backgroundColor: 'transparent'
-                                }}
-                            >
-                                {resending ? 'Sending...' :
-                                    resendCooldown > 0 ? `Resend in ${resendCooldown}s` :
-                                        'Resend Verification Email'}
-                            </button>
-                            <button
-                                className="btn-solid"
-                                onClick={() => setVerificationSent(false)}
-                                style={{ marginTop: '4px' }}
-                            >
-                                Back to Sign Up
-                            </button>
-                        </div>
+                        <button className="btn-solid" onClick={() => setVerificationSent(false)}>
+                            Back to Sign Up
+                        </button>
                     </div>
                 </div>
             </div>

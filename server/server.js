@@ -99,9 +99,6 @@ app.use('/api/admin-setup', require('./routes/adminSetup'));
 // AI Talent Passport
 app.use('/api/talent-passport', require('./routes/talentPassportRoutes'));
 
-// User Settings (Account, Privacy, Security, Notifications)
-app.use('/api/settings', require('./routes/settingsRoutes'));
-
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({
