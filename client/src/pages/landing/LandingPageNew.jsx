@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -21,6 +22,40 @@ import styles from './LandingPageNew.module.css';
  * <Route path="/landing" element={<LandingPageNew />} />
  */
 const LandingPageNew = () => {
+    const navigate = useNavigate();
+
+    // Check if user is logged in and session is still valid (24 hours)
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        const userRole = localStorage.getItem('userRole');
+        const loginTimestamp = localStorage.getItem('loginTimestamp');
+
+        if (token && userId && userRole) {
+            // Check if session is still valid (24 hours = 86400000 ms)
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+            const now = Date.now();
+            const loginTime = parseInt(loginTimestamp, 10) || 0;
+
+            if (now - loginTime < sessionDuration) {
+                // Session still valid, redirect to dashboard
+                if (userRole === 'jobseeker') {
+                    navigate('/jobseeker/home', { replace: true });
+                } else if (userRole === 'recruiter') {
+                    navigate('/recruiter/home', { replace: true });
+                } else if (userRole === 'admin') {
+                    navigate('/admin/dashboard', { replace: true });
+                }
+            } else {
+                // Session expired, clear storage
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('loginTimestamp');
+            }
+        }
+    }, [navigate]);
+
     // Force light theme on landing page
     useEffect(() => {
         const previousTheme = document.documentElement.getAttribute('data-theme');
@@ -49,3 +84,4 @@ const LandingPageNew = () => {
 };
 
 export default LandingPageNew;
+

@@ -46,6 +46,7 @@ const OAuthTokenHandler = ({ children }) => {
       // Store auth data from OAuth redirect
       localStorage.setItem('token', token);
       localStorage.setItem('userId', userId);
+      localStorage.setItem('loginTimestamp', Date.now().toString());
 
       // Fetch user data to get role and other info
       const fetchUserData = async () => {

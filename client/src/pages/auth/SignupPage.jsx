@@ -30,6 +30,8 @@ const SignupPage = () => {
     const [verificationSent, setVerificationSent] = useState(false);
     const [registeredUserId, setRegisteredUserId] = useState(null);
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const [resending, setResending] = useState(false);
 
     // Socket connection for real-time verification status
     useEffect(() => {
@@ -73,6 +75,33 @@ const SignupPage = () => {
             if (pollingInterval) clearInterval(pollingInterval);
         };
     }, [verificationSent, registeredUserId, navigate]);
+
+    // Cooldown timer effect for resend button
+    useEffect(() => {
+        if (resendCooldown > 0) {
+            const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [resendCooldown]);
+
+    const handleResendVerification = async () => {
+        if (resendCooldown > 0 || resending) return;
+
+        setResending(true);
+        try {
+            const response = await api.post('/auth/resend-verification', {
+                email: formData.email
+            });
+
+            if (response.success) {
+                setResendCooldown(30); // 30 second cooldown
+            }
+        } catch (err) {
+            console.error('Resend verification error:', err);
+        } finally {
+            setResending(false);
+        }
+    };
 
     const handleVerificationSuccess = (user) => {
         // Persist user data for onboarding/auth context
@@ -189,12 +218,25 @@ const SignupPage = () => {
                             <span className="spinner" style={{ display: 'inline-block', marginRight: '8px' }}></span>
                             Waiting for verification...
                         </p>
-                        <div className="form-options">
-                            <p>
-                                Did not receive the email? <button className="btn-link" onClick={() => window.location.reload()}>Try again</button>
+                        <div className="form-options" style={{ marginTop: '20px' }}>
+                            <p style={{ marginBottom: '10px' }}>
+                                Did not receive the email?
                             </p>
+                            <button
+                                className="btn btn-secondary btn-full"
+                                onClick={handleResendVerification}
+                                disabled={resendCooldown > 0 || resending}
+                                style={{
+                                    opacity: resendCooldown > 0 ? 0.6 : 1,
+                                    cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                {resending ? 'Sending...' :
+                                    resendCooldown > 0 ? `Resend in ${resendCooldown}s` :
+                                        'Resend Verification Email'}
+                            </button>
                         </div>
-                        <Link to="/login" className="btn btn-primary btn-full">
+                        <Link to="/login" className="btn btn-primary btn-full" style={{ marginTop: '12px' }}>
                             Go to Login
                         </Link>
                     </div>
