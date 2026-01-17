@@ -176,8 +176,7 @@ const userSchema = new mongoose.Schema({
         desiredRole: String,
         // Job domains user wants to work in (max 3)
         jobDomains: [{
-            type: String,
-            enum: ['web_dev', 'frontend', 'backend', 'fullstack', 'mobile', 'data_science', 'data_analyst', 'ml_ai', 'devops', 'cybersecurity', 'network', 'database', 'ui_ux', 'graphic_design', 'product', 'project', 'qa_testing', 'hr', 'marketing', 'sales', 'finance', 'content', 'support', 'research', 'consulting', 'other']
+            type: String
         }],
         about: String, // About me section (longer bio)
         bannerImage: String, // Banner image URL
@@ -244,7 +243,14 @@ const userSchema = new mongoose.Schema({
         verified: {
             type: Boolean,
             default: false
-        }
+        },
+        workEmail: String,
+        workEmailVerified: {
+            type: Boolean,
+            default: false
+        },
+        workEmailOTP: String,
+        workEmailOTPExpires: Date
     },
 
     // Resume reference

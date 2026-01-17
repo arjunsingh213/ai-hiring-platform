@@ -97,8 +97,44 @@ const sendPasswordResetOTP = async (user, otp) => {
     }
 };
 
+const sendWorkEmailOTP = async (user, email, otp) => {
+    const message = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #6366F1; margin-bottom: 24px;">Verify Your Work Email</h2>
+            <p>Hi ${user.profile?.name || 'Recruiter'},</p>
+            <p>To verify your employment at <strong>${user.recruiterProfile?.companyName || 'your company'}</strong>, please use the OTP code below:</p>
+            <div style="margin: 32px 0; text-align: center;">
+                <div style="display: inline-block; background: #EFF6FF; color: #1E40AF; padding: 16px 32px; border-radius: 8px; font-size: 28px; font-weight: bold; border: 1px solid #DBEAFE; letter-spacing: 4px;">
+                    ${otp}
+                </div>
+            </div>
+            <p style="color: #64748B; font-size: 14px;">This code will expire in <strong>10 minutes</strong>.</p>
+            <hr style="border: none; border-top: 1px solid #E2E8F0; margin: 24px 0;" />
+            <p style="color: #94A3B8; font-size: 12px;">Best regards,<br/>The AI Hiring Platform Team</p>
+        </div>
+    `;
+
+    try {
+        console.log('=================================================');
+        console.log(`WORK EMAIL OTP FOR ${email}: ${otp}`);
+        console.log('=================================================');
+
+        await sendEmail({
+            email: email,
+            subject: 'Verify Work Email - AI Hiring Platform',
+            html: message
+        });
+        console.log(`Work email OTP sent to ${email}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending work email OTP:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmail,
     sendVerificationEmail,
-    sendPasswordResetOTP
+    sendPasswordResetOTP,
+    sendWorkEmailOTP
 };

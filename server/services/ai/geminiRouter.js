@@ -18,9 +18,17 @@ const GEMINI_MODELS = {
     REASONING: {
         name: 'gemini-2.0-flash',
         endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-        rpmLimit: 60, // Gemini free-tier limit
+        rpmLimit: 10, // Conservative limit for 2.0 (often busy)
         tpmLimit: 1000000,
         useCases: ['interview_questions', 'answer_evaluation', 'recruiter_reports', 'adaptive_followup']
+    },
+    // Fallback model (As requested by User)
+    FALLBACK: {
+        name: 'gemini-2.5-flash',
+        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        rpmLimit: 10,
+        tpmLimit: 1000000,
+        useCases: ['fallback_scenarios']
     },
     // High-frequency UX model - for fast, lightweight tasks
     UX_LITE: {
@@ -130,16 +138,34 @@ class GeminiRouter {
     }
 
     /**
-     * Make a call to Gemini API with retry for 429 errors
+     * Make a call to Gemini API with Fallback support
      */
     async callGemini(taskType, prompt, options = {}) {
-        const modelKey = this.taskModelMap[taskType] || 'REASONING';
+        const primaryModelKey = this.taskModelMap[taskType] || 'REASONING';
+
+        // Try Primary Model
+        const result = await this._tryCallModel(primaryModelKey, prompt, options);
+        if (result) return result;
+
+        // If Primary fails, try Fallback (for REASONING tasks)
+        if (this.models[primaryModelKey].useCases.includes('interview_questions') || primaryModelKey === 'REASONING') {
+            console.log(`[GeminiRouter] Primary model ${primaryModelKey} failed. Switching to FALLBACK (gemini-2.5-flash)...`);
+            return await this._tryCallModel('FALLBACK', prompt, options);
+        }
+
+        return null;
+    }
+
+    /**
+     * Internal helper to call a specific model with retries
+     */
+    async _tryCallModel(modelKey, prompt, options) {
         const model = this.models[modelKey];
-        const maxRetries = options.retries || 2;
+        const maxRetries = options.retries || 1; // Lower default retries per model since we have fallback
 
         // Check rate limit
         if (!this.canMakeRequest(modelKey)) {
-            console.warn(`[GeminiRouter] Rate limit reached for ${modelKey}, returning null`);
+            console.warn(`[GeminiRouter] Rate limit reached for ${modelKey}`);
             return null;
         }
 
@@ -165,31 +191,35 @@ class GeminiRouter {
                 );
 
                 const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!text) {
-                    throw new Error('No response from Gemini');
+                if (!text) throw new Error('No response content');
+
+                // Log Token Usage if available
+                const usage = response.data.usageMetadata;
+                if (usage) {
+                    console.log(`[GeminiRouter] Usage (${modelKey}): Prompt=${usage.promptTokenCount}, Response=${usage.candidatesTokenCount}, Total=${usage.totalTokenCount}`);
                 }
 
-                console.log(`[GeminiRouter] ${modelKey} call successful for task: ${taskType}`);
+                console.log(`[GeminiRouter] ${modelKey} call successful for task`);
                 return text;
             } catch (error) {
                 const status = error.response?.status;
+
+                // If it's a 404 (Not Found) or 400 (Bad Request), unlikely to succeed on retry -> fail fast to fallback
+                if (status === 404 || status === 400) {
+                    console.error(`[GeminiRouter] Non-retriable error (${modelKey}): ${status}`);
+                    return null;
+                }
+
                 const isRateLimit = status === 429;
+                console.warn(`[GeminiRouter] Attempt ${attempt + 1} failed (${modelKey}):`, isRateLimit ? 'Rate Limited' : error.message);
 
-                console.error(`[GeminiRouter] API error (${modelKey}):`, error.response?.data || error.message);
-
-                // Retry on 429 with exponential backoff
-                if (isRateLimit && attempt < maxRetries) {
-                    const delay = (attempt + 1) * 2000; // 2s, 4s
-                    console.log(`[GeminiRouter] Rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+                if (attempt < maxRetries) {
+                    const delay = (attempt + 1) * 2000;
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
-
-                // Return null to allow fallback
-                return null;
             }
         }
-
         return null;
     }
 

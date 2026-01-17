@@ -1,0 +1,129 @@
+.job-domains-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.selected-domains-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.domain-chip {
+    display: flex;
+    align-items: center;
+    background: var(--primary-light, #e0f2fe);
+    color: var(--primary, #0284c7);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid var(--primary-light-border, #bae6fd);
+    animation: fadeIn 0.3s ease;
+}
+
+.remove-domain-btn {
+    background: none;
+    border: none;
+    color: var(--primary, #0284c7);
+    margin-left: 6px;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.remove-domain-btn:hover {
+    color: var(--primary-dark, #0369a1);
+}
+
+.domain-autocomplete-container {
+    position: relative;
+}
+
+.domain-search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.domain-search-input:focus {
+    outline: none;
+    border-color: var(--primary, #0284c7);
+    box-shadow: 0 0 0 2px var(--primary-light, #e0f2fe);
+}
+
+.domain-suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-top: 4px;
+}
+
+.domain-suggestion-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light, #f1f5f9);
+    transition: background 0.2s;
+}
+
+.domain-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.domain-suggestion-item:hover {
+    background: var(--bg-secondary, #f8fafc);
+}
+
+.domain-name {
+    font-weight: 500;
+    color: var(--text-primary, #1e293b);
+}
+
+.domain-roles {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #64748b);
+    margin-top: 2px;
+}
+
+.add-custom {
+    color: var(--primary, #0284c7);
+    font-weight: 500;
+}
+
+.no-suggestions {
+    padding: 12px;
+    text-align: center;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.9rem;
+}
+
+.domain-helper-text {
+    font-size: 0.8rem;
+    color: var(--text-tertiary, #94a3b8);
+    margin-top: 4px;
+    text-align: right;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -10,6 +10,7 @@ import LiveCameraVerification from '../../components/LiveCameraVerification';
 import { validateProfilePhoto } from '../../services/faceValidationService';
 import AutocompleteInput from '../../components/AutocompleteInput';
 import SkillsInput from '../../components/SkillsInput';
+import JobDomainsInput from '../../components/JobDomainsInput';
 import { search as searchColleges } from 'aishe-institutions-list';
 import {
     DOMAINS,
@@ -977,40 +978,13 @@ const JobSeekerOnboarding = () => {
                                 Job Domains You're Interested In *
                                 <span className="label-hint">(Select up to 3)</span>
                             </label>
-                            <div className="job-domains-grid">
-                                {JOB_DOMAINS.map(domain => (
-                                    <button
-                                        key={domain.id}
-                                        type="button"
-                                        className={`job-domain-chip ${formData.jobDomains.includes(domain.id) ? 'selected' : ''} ${formData.jobDomains.length >= 3 && !formData.jobDomains.includes(domain.id) ? 'disabled' : ''}`}
-                                        onClick={() => {
-                                            if (formData.jobDomains.includes(domain.id)) {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    jobDomains: prev.jobDomains.filter(d => d !== domain.id)
-                                                }));
-                                            } else if (formData.jobDomains.length < 3) {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    jobDomains: [...prev.jobDomains, domain.id]
-                                                }));
-                                            }
-                                        }}
-                                        disabled={formData.jobDomains.length >= 3 && !formData.jobDomains.includes(domain.id)}
-                                    >
-                                        <span className="domain-icon">{domain.icon}</span>
-                                        <span className="domain-name">{domain.name}</span>
-                                        {formData.jobDomains.includes(domain.id) && (
-                                            <span className="domain-check">✓</span>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                            {formData.jobDomains.length > 0 && (
-                                <div className="selected-domains-count">
-                                    {formData.jobDomains.length}/3 selected
-                                </div>
-                            )}
+
+                            <JobDomainsInput
+                                selectedDomains={formData.jobDomains}
+                                onChange={(newDomains) => setFormData(prev => ({ ...prev, jobDomains: newDomains }))}
+                                maxDomains={3}
+                            />
+
                             {errors.jobDomains && <span className="error-message">{errors.jobDomains}</span>}
                         </div>
 

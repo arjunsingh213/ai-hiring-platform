@@ -461,4 +461,91 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+/**
+ * @route   POST /api/auth/send-work-email-otp
+ * @desc    Send OTP to recruiter work email
+ * @access  Public (or protected if user is logged in, but safe to be public with user ID)
+ */
+router.post('/send-work-email-otp', async (req, res) => {
+    try {
+        const { userId, workEmail, companyName } = req.body;
+
+        if (!userId || !workEmail) {
+            return res.status(400).json({ error: 'User ID and work email are required' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Validate basic domain match if possible, but for now rely on OTP
+        // Ensure email is not same as personal email (optional check)
+        if (workEmail.toLowerCase() === user.email.toLowerCase()) {
+            return res.status(400).json({
+                error: 'Work email cannot be the same as your personal login email.'
+            });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Update user
+        user.recruiterProfile = user.recruiterProfile || {};
+        user.recruiterProfile.workEmail = workEmail;
+        user.recruiterProfile.workEmailOTP = otp;
+        user.recruiterProfile.workEmailOTPExpires = Date.now() + 10 * 60 * 1000; // 10 mins
+        user.recruiterProfile.companyName = companyName || user.recruiterProfile.companyName;
+
+        await user.save();
+
+        const { sendWorkEmailOTP } = require('../utils/email');
+        await sendWorkEmailOTP(user, workEmail, otp);
+
+        res.json({ success: true, message: 'OTP sent to work email' });
+    } catch (error) {
+        console.error('Send Work Email OTP error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @route   POST /api/auth/verify-work-email-otp
+ * @desc    Verify work email OTP
+ * @access  Public
+ */
+router.post('/verify-work-email-otp', async (req, res) => {
+    try {
+        const { userId, otp } = req.body;
+
+        if (!userId || !otp) {
+            return res.status(400).json({ error: 'User ID and OTP are required' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (
+            user.recruiterProfile.workEmailOTP !== otp ||
+            user.recruiterProfile.workEmailOTPExpires < Date.now()
+        ) {
+            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        }
+
+        // Verify
+        user.recruiterProfile.workEmailVerified = true;
+        user.recruiterProfile.workEmailOTP = undefined;
+        user.recruiterProfile.workEmailOTPExpires = undefined;
+
+        await user.save();
+
+        res.json({ success: true, message: 'Work email verified successfully' });
+    } catch (error) {
+        console.error('Verify Work Email OTP error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

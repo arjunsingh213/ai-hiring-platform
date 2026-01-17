@@ -223,14 +223,9 @@ RULES:
                     return this.getDefaultParsedResume();
                 }
 
-                // Continue to next fallback only if rate limited or model unavailable
-                if (is429 || error.message?.includes('unavailable') || error.message?.includes('not found')) {
-                    console.log(`[Resume] Trying next fallback model...`);
-                    continue;
-                }
-
-                // For other errors, return default
-                return this.getDefaultParsedResume();
+                // ALWAYS continue to next fallback on error
+                console.log(`[Resume] Trying next fallback model...`);
+                continue;
             }
         }
 

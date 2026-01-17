@@ -204,14 +204,14 @@ CRITICAL INSTRUCTIONS FOR EXPERIENCE LEVEL:
 - IF "FRESHER", "ENTRY", or 0-1 YEARS: Ask ONLY fundamental, basic definition/concept questions. NO complex scenarios, NO system design, NO advanced patterns. Keep it simple (e.g., "What is a variable?", "Explain OOP features").
 - IF EXPERIENCED: Ask scenario-based, in-depth questions.
 
-Return ONLY the question text, no preamble or explanation.`;
+Return ONLY the question text. Do NOT use any intro like "Okay" or "Here is". Start directly with the question word.`;
         }
 
         try {
             console.log(`[GeminiService] Generating adaptive question via Gemini...`);
             const response = await this._callWithCacheAndRateLimit('adaptive_followup', prompt, {
-                temperature: 0.85,
-                maxTokens: 256
+                temperature: 0.7,
+                maxTokens: 1024
             });
 
             if (!response) {

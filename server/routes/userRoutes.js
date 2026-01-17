@@ -338,5 +338,67 @@ router.get('/:id/applications', async (req, res) => {
     }
 });
 
+// Upload verification document (Business Card / ID)
+router.post('/upload-verification-doc', upload.single('document'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        // Upload to cloudinary with document-specific settings
+        const uploadPromise = new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'verification_docs',
+                    public_id: `verify_${userId}_${Date.now()}`,
+                    resource_type: 'auto', // Allow PDFs too
+                    transformation: [
+                        { width: 1000, height: 1000, crop: 'limit' } // Limit size but maintain aspect ratio
+                    ]
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
+        });
+
+        const result = await uploadPromise;
+
+        // Update user profile with document URL and set status to pending
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                $set: {
+                    'recruiterProfile.businessCard': result.secure_url,
+                    'recruiterProfile.verified': false // pending manual review
+                }
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                docUrl: result.secure_url,
+                user: user
+            }
+        });
+    } catch (error) {
+        console.error('Verification doc upload error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;
 

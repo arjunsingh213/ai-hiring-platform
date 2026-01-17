@@ -16,9 +16,12 @@ const RecruiterOnboarding = () => {
         companySize: '',
         industry: '',
         website: '',
-        linkedin: ''
+        linkedin: '',
+        verificationDoc: null
     });
     const [loading, setLoading] = useState(false);
+    const [verificationFile, setVerificationFile] = useState(null);
+    const totalSteps = 3;
 
     // Company search state
     const [companySuggestions, setCompanySuggestions] = useState([]);
@@ -26,6 +29,13 @@ const RecruiterOnboarding = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [companyValidated, setCompanyValidated] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState(null);
+
+    // Work Email Verification State
+    const [workEmail, setWorkEmail] = useState('');
+    const [workEmailOtp, setWorkEmailOtp] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [workEmailVerified, setWorkEmailVerified] = useState(false);
+    const [otpTimer, setOtpTimer] = useState(0);
 
     // Debounce company search
     const debounce = (func, delay) => {
@@ -90,16 +100,127 @@ const RecruiterOnboarding = () => {
         }
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('File size exceeds 5MB limit');
+                return;
+            }
+            setVerificationFile(file);
+            setFormData(prev => ({ ...prev, verificationDoc: file.name }));
+        }
+    };
+
     const selectCompany = (company) => {
         setFormData(prev => ({ ...prev, companyName: company.name }));
         setSelectedCompany(company);
         setCompanyValidated(true);
         setShowSuggestions(false);
         setCompanySuggestions([]);
+
+        // Reset verify state if company changes
+        setWorkEmailVerified(false);
+        setOtpSent(false);
+        setWorkEmailOtp('');
+    };
+
+    // OTP Timer
+    useEffect(() => {
+        let interval;
+        if (otpTimer > 0) {
+            interval = setInterval(() => {
+                setOtpTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [otpTimer]);
+
+    const handleSendOtp = async () => {
+        if (!workEmail) return toast.error('Please enter your work email');
+
+        // Strict Validation for Verified Companies
+        if (selectedCompany && selectedCompany.domain) {
+            const emailDomain = workEmail.split('@')[1];
+            if (!emailDomain) return toast.error('Invalid email address');
+
+            // Normalize domains
+            const normalizedEmailDomain = emailDomain.toLowerCase();
+            const normalizedCompanyDomain = selectedCompany.domain.toLowerCase();
+
+            // Check if email domain ends with company domain (e.g., eng.amazon.com matches amazon.com)
+            const isMatch = normalizedEmailDomain === normalizedCompanyDomain || normalizedEmailDomain.endsWith(`.${normalizedCompanyDomain}`);
+
+            if (!isMatch) {
+                return toast.error(`Please use an official @${selectedCompany.domain} email address.`);
+            }
+        }
+
+        // Block generic public domains for work email
+        const publicDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+        const emailDomain = workEmail.split('@')[1]?.toLowerCase();
+        if (emailDomain && publicDomains.includes(emailDomain)) {
+            // Block public domains for "Work Email" strictly
+            return toast.error('Please use your work email address, not a personal one.');
+        }
+
+        setLoading(true);
+        try {
+            let userId = localStorage.getItem('userId');
+            if (!userId) {
+                const userObj = JSON.parse(localStorage.getItem('user'));
+                userId = userObj?._id;
+            }
+
+            await api.post('/auth/send-work-email-otp', {
+                userId,
+                workEmail,
+                companyName: formData.companyName
+            });
+
+            setOtpSent(true);
+            setOtpTimer(60); // 60s cooldown
+            toast.success('OTP sent to your work email');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.error || 'Failed to send OTP');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!workEmailOtp) return toast.error('Please enter the OTP');
+
+        setLoading(true);
+        try {
+            let userId = localStorage.getItem('userId');
+            if (!userId) {
+                const userObj = JSON.parse(localStorage.getItem('user'));
+                userId = userObj?._id;
+            }
+
+            await api.post('/auth/verify-work-email-otp', {
+                userId,
+                otp: workEmailOtp
+            });
+
+            setWorkEmailVerified(true);
+            setOtpSent(false);
+            toast.success('Work email verified successfully!');
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Invalid OTP');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const nextStep = () => {
-        if (step < 2) setStep(step + 1);
+        if (step === 2 && !workEmailVerified) {
+            toast.error('Please verify your work email before proceeding.');
+            return;
+        }
+        if (step < totalSteps) setStep(step + 1);
     };
 
     const prevStep = () => {
@@ -121,23 +242,6 @@ const RecruiterOnboarding = () => {
 
         setLoading(true);
         try {
-            const userData = {
-                profile: {
-                    name: formData.name.trim(),
-                    mobile: formData.mobile.trim()
-                },
-                recruiterProfile: {
-                    position: formData.position,
-                    companyName: formData.companyName.trim(),
-                    companyDomain: formData.industry.trim(),
-                    companyWebsite: formData.website || '',
-                    companyJurisdiction: selectedCompany?.jurisdiction || '',
-                    companyVerified: companyValidated,
-                    verified: false
-                },
-                isOnboardingComplete: true
-            };
-
             let userId = localStorage.getItem('userId');
 
             if (!userId) {
@@ -155,6 +259,43 @@ const RecruiterOnboarding = () => {
             if (!userId) {
                 throw new Error('User ID not found. Please try logging in again.');
             }
+
+            // Upload verification doc first if exists
+            if (verificationFile) {
+                const docFormData = new FormData();
+                docFormData.append('document', verificationFile);
+                docFormData.append('userId', userId);
+
+                try {
+                    await api.post('/users/upload-verification-doc', docFormData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    console.log('Verification document uploaded');
+                } catch (docError) {
+                    console.error('Doc upload failed:', docError);
+                    throw new Error('Failed to upload verification document: ' + (docError.response?.data?.error || docError.message));
+                }
+            }
+
+            const userData = {
+                profile: {
+                    name: formData.name.trim(),
+                    mobile: formData.mobile.trim()
+                },
+                recruiterProfile: {
+                    position: formData.position,
+                    companyName: formData.companyName.trim(),
+                    companyDomain: formData.industry.trim(),
+                    companyWebsite: formData.website || '',
+                    companyJurisdiction: selectedCompany?.jurisdiction || '',
+                    companyJurisdiction: selectedCompany?.jurisdiction || '',
+                    companyVerified: companyValidated,
+                    workEmail: workEmail,
+                    workEmailVerified: workEmailVerified,
+                    verified: false // Always false initially
+                },
+                isOnboardingComplete: true
+            };
 
             await api.put(`/users/${userId}`, userData);
             localStorage.setItem('userRole', 'recruiter');
@@ -313,6 +454,65 @@ const RecruiterOnboarding = () => {
                             )}
                         </div>
 
+                        {/* Work Email Verification Section */}
+                        <div className="form-group animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                            <label className="form-label">Work Email *</label>
+                            <div className="work-email-container">
+                                <div className="input-group">
+                                    <input
+                                        type="email"
+                                        value={workEmail}
+                                        onChange={(e) => {
+                                            if (!workEmailVerified) setWorkEmail(e.target.value);
+                                        }}
+                                        className={`input ${workEmailVerified ? 'input-validated' : ''}`}
+                                        placeholder="you@company.com"
+                                        disabled={workEmailVerified || otpSent}
+                                    />
+                                    {workEmailVerified && <span className="verified-check">✓</span>}
+                                    {!workEmailVerified && !otpSent && (
+                                        <button
+                                            className="btn-verify"
+                                            onClick={handleSendOtp}
+                                            disabled={!workEmail || loading}
+                                        >
+                                            {loading ? 'Sending...' : 'Verify'}
+                                        </button>
+                                    )}
+                                </div>
+
+                                {otpSent && !workEmailVerified && (
+                                    <div className="otp-verification-box animate-fade-in">
+                                        <p className="otp-instruction">Enter the 6-digit code sent to {workEmail}</p>
+                                        <div className="otp-input-group">
+                                            <input
+                                                type="text"
+                                                value={workEmailOtp}
+                                                onChange={(e) => setWorkEmailOtp(e.target.value)}
+                                                placeholder="Enter OTP"
+                                                maxLength={6}
+                                                className="input otp-input"
+                                            />
+                                            <button
+                                                className="btn-confirm"
+                                                onClick={handleVerifyOtp}
+                                                disabled={!workEmailOtp || loading}
+                                            >
+                                                {loading ? 'Verifying...' : 'Confirm'}
+                                            </button>
+                                        </div>
+                                        <div className="otp-resend">
+                                            {otpTimer > 0 ? (
+                                                <span>Resend in {otpTimer}s</span>
+                                            ) : (
+                                                <button onClick={handleSendOtp} className="btn-link">Resend Code</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="form-group">
                             <label className="form-label">Company Size *</label>
                             <select
@@ -358,6 +558,88 @@ const RecruiterOnboarding = () => {
                     </div>
                 );
 
+            case 3:
+                return (
+                    <div className="form-step animate-fade-in">
+                        <h2>Identity Verification</h2>
+                        <p className="step-description">One final step to secure your account.</p>
+
+                        <div className="verify-container-styled">
+                            <div className="verify-info-card">
+                                <div className="verify-badge-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                </div>
+                                <div className="verify-info-content">
+                                    <h3>Verification Required</h3>
+                                    <p>To ensure a trusted environment for job seekers, we require proof of your recruiter status.</p>
+                                </div>
+                            </div>
+
+                            <div className="verify-docs-group">
+                                <label className="verify-label">Accepted Documents</label>
+                                <div className="verify-docs-grid">
+                                    <div className="verify-doc-pill">
+                                        <span className="doc-icon">📇</span> Business Card
+                                    </div>
+                                    <div className="verify-doc-pill">
+                                        <span className="doc-icon">🆔</span> Employee ID
+                                    </div>
+                                    <div className="verify-doc-pill">
+                                        <span className="doc-icon">📄</span> Auth Letter
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="verify-upload-section">
+                                <label className="verify-label">Upload Document <span className="required-star">*</span></label>
+                                <div className="verify-upload-wrapper">
+                                    <input
+                                        type="file"
+                                        id="verification-upload"
+                                        onChange={handleFileChange}
+                                        className="hidden-input"
+                                        accept=".jpg,.jpeg,.png,.pdf"
+                                    />
+                                    <label htmlFor="verification-upload" className={`verify-dropzone ${verificationFile ? 'has-file' : ''}`}>
+                                        {verificationFile ? (
+                                            <div className="verify-file-success">
+                                                <div className="verify-file-icon">
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg>
+                                                </div>
+                                                <div className="verify-file-info">
+                                                    <span className="file-name-strong">{verificationFile.name}</span>
+                                                    <span className="file-size-sub">{(verificationFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                                                </div>
+                                                <button type="button" className="verify-change-btn">Change</button>
+                                            </div>
+                                        ) : (
+                                            <div className="verify-upload-content">
+                                                <div className="verify-upload-circle">
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                                    </svg>
+                                                </div>
+                                                <span className="verify-cta">Click to upload document</span>
+                                                <span className="verify-formats">Supports JPG, PNG, PDF (Max 5MB)</span>
+                                            </div>
+                                        )}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+
             default:
                 return null;
         }
@@ -374,9 +656,9 @@ const RecruiterOnboarding = () => {
                 <div className="onboarding-header">
                     <h1>Recruiter Onboarding</h1>
                     <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${(step / 2) * 100}%` }}></div>
+                        <div className="progress-fill" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
                     </div>
-                    <p className="step-indicator">Step {step} of 2</p>
+                    <p className="step-indicator">Step {step} of {totalSteps}</p>
                 </div>
 
                 <div className="onboarding-content card-glass">
@@ -388,7 +670,7 @@ const RecruiterOnboarding = () => {
                                 Previous
                             </button>
                         )}
-                        {step < 2 ? (
+                        {step < totalSteps ? (
                             <button onClick={nextStep} className="btn btn-primary">
                                 Next
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -408,4 +690,3 @@ const RecruiterOnboarding = () => {
 };
 
 export default RecruiterOnboarding;
-
