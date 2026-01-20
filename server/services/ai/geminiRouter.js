@@ -1,55 +1,53 @@
 /**
  * Gemini Router Service
- * Centralized routing for Google Gemini free-tier models
+ * Centralized routing for Google Gemini Paid Tier 1 models
  * 
- * Model Assignments (STABLE ALIASES - NO PREVIEW IDs):
- * - gemini-2.0-flash: Interview questions, answer evaluation, recruiter reports
- * - gemini-2.0-flash-lite: Skill suggestions, resume classification (high RPM)
- * - gemini-2.0-flash: ATP synthesis, career roadmaps (post-interview)
- * - text-embedding-004: Semantic matching (embeddings)
+ * Model Assignments (STABLE ALIASES):
+ * - gemini-2.0-flash: Primary Reasoning (RPM: 2000)
+ * - gemini-2.5-flash: Fallback & UI Tasks (RPM: 1000)
+ * - text-embedding-004: Semantic matching (RPM: 1500)
  */
 
 const axios = require('axios');
 
-// Model configurations with STABLE endpoints (NO PREVIEW MODEL IDs)
-// Increased RPM limits for interview flow (Gemini free-tier allows 60 RPM)
+// Model configurations with STABLE endpoints
 const GEMINI_MODELS = {
-    // Primary reasoning model - for complex tasks
+    // Primary reasoning model
     REASONING: {
         name: 'gemini-2.0-flash',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-        rpmLimit: 10, // Conservative limit for 2.0 (often busy)
-        tpmLimit: 1000000,
+        endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent',
+        rpmLimit: 2000,
+        tpmLimit: 4000000,
         useCases: ['interview_questions', 'answer_evaluation', 'recruiter_reports', 'adaptive_followup']
     },
-    // Fallback model (As requested by User)
+    // Fallback model - Verified 2.5-flash in User's AI Studio
     FALLBACK: {
         name: 'gemini-2.5-flash',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        rpmLimit: 10,
+        endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent',
+        rpmLimit: 1000,
         tpmLimit: 1000000,
         useCases: ['fallback_scenarios']
     },
-    // High-frequency UX model - for fast, lightweight tasks
+    // High-frequency UI tasks - Shared with 2.5-flash for reliability
     UX_LITE: {
-        name: 'gemini-2.0-flash-lite',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
-        rpmLimit: 60, // Gemini free-tier limit
+        name: 'gemini-2.5-flash',
+        endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent',
+        rpmLimit: 1000,
         tpmLimit: 1000000,
         useCases: ['skill_suggestions', 'resume_classification', 'interview_pattern', 'light_matching']
     },
-    // Post-processing model - for analytics
+    // Post-processing model
     ANALYTICS: {
-        name: 'gemini-2.0-flash',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-        rpmLimit: 60, // Gemini free-tier limit
+        name: 'gemini-2.5-flash',
+        endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent',
+        rpmLimit: 1000,
         tpmLimit: 1000000,
         useCases: ['atp_synthesis', 'career_readiness', 'learning_roadmap', 'strength_weakness']
     },
     // Embedding model - for semantic search
     EMBEDDING: {
         name: 'text-embedding-004',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent',
+        endpoint: 'https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent',
         rpmLimit: 1500,
         tpmLimit: 1000000,
         useCases: ['resume_jd_matching', 'candidate_ranking', 'similarity_detection']
@@ -69,6 +67,7 @@ const TASK_MODEL_MAP = {
     'resume_classification': 'UX_LITE',
     'interview_pattern': 'UX_LITE',
     'light_matching': 'UX_LITE',
+    'validate_answer': 'UX_LITE',
 
     // Analytics tasks (post-processing)
     'atp_synthesis': 'ANALYTICS',
@@ -84,13 +83,18 @@ const TASK_MODEL_MAP = {
 
 class GeminiRouter {
     constructor() {
-        this.apiKey = process.env.GEMINI_API_KEY;
         this.models = GEMINI_MODELS;
         this.taskModelMap = TASK_MODEL_MAP;
 
-        // Rate limiting state
+        // Rate limiting state (RPM)
         this.requestCounts = {};
         this.lastResetTime = {};
+
+        // Burst protection state (Requests per second / spacing)
+        this.isLocked = false;
+        this.requestQueue = [];
+        this.lastRequestTimestamp = 0;
+        this.MIN_REQUEST_SPACING = 1500; // 1.5 seconds gap to avoid burst limits
 
         // Initialize rate limit tracking for each model
         Object.keys(GEMINI_MODELS).forEach(modelKey => {
@@ -98,30 +102,16 @@ class GeminiRouter {
             this.lastResetTime[modelKey] = Date.now();
         });
 
-        console.log('[GeminiRouter] Initialized with models:', Object.keys(GEMINI_MODELS).join(', '));
-        console.log('[GeminiRouter] API Key present:', !!this.apiKey);
+        console.log('[GeminiRouter] Initialized with Paid Tier 1 configuration and Burst Protection');
     }
 
     /**
-     * Get the appropriate model for a task
-     */
-    getModelForTask(taskType) {
-        const modelKey = this.taskModelMap[taskType];
-        if (!modelKey) {
-            console.warn(`[GeminiRouter] Unknown task type: ${taskType}, defaulting to REASONING`);
-            return this.models.REASONING;
-        }
-        return this.models[modelKey];
-    }
-
-    /**
-     * Check if rate limit allows the request
+     * Check if rate limit allows the request (RPM)
      */
     canMakeRequest(modelKey) {
         const now = Date.now();
         const model = this.models[modelKey];
 
-        // Reset counter every minute
         if (now - this.lastResetTime[modelKey] >= 60000) {
             this.requestCounts[modelKey] = 0;
             this.lastResetTime[modelKey] = now;
@@ -135,25 +125,67 @@ class GeminiRouter {
      */
     recordRequest(modelKey) {
         this.requestCounts[modelKey]++;
+        this.lastRequestTimestamp = Date.now();
     }
 
     /**
-     * Make a call to Gemini API with Fallback support
+     * Execute a request with Mutual Exclusion (Mutex) and Staggering
+     */
+    async _executeWithLock(taskFn) {
+        return new Promise((resolve, reject) => {
+            this.requestQueue.push({ taskFn, resolve, reject });
+            this._processQueue();
+        });
+    }
+
+    /**
+     * Process the request queue sequentially
+     */
+    async _processQueue() {
+        if (this.isLocked || this.requestQueue.length === 0) return;
+
+        this.isLocked = true;
+        const { taskFn, resolve, reject } = this.requestQueue.shift();
+
+        try {
+            const timeSinceLast = Date.now() - this.lastRequestTimestamp;
+            if (timeSinceLast < this.MIN_REQUEST_SPACING) {
+                const waitTime = this.MIN_REQUEST_SPACING - timeSinceLast;
+                console.log(`[GeminiRouter] Burst protection: Staggering request. Waiting ${waitTime}ms...`);
+                await new Promise(r => setTimeout(r, waitTime));
+            }
+
+            const result = await taskFn();
+            resolve(result);
+        } catch (error) {
+            reject(error);
+        } finally {
+            this.isLocked = false;
+            if (this.requestQueue.length > 0) {
+                setImmediate(() => this._processQueue());
+            }
+        }
+    }
+
+    /**
+     * Make a call to Gemini API with Fallback support and Burst Protection
      */
     async callGemini(taskType, prompt, options = {}) {
-        const primaryModelKey = this.taskModelMap[taskType] || 'REASONING';
+        return this._executeWithLock(async () => {
+            const primaryModelKey = this.taskModelMap[taskType] || 'REASONING';
 
-        // Try Primary Model
-        const result = await this._tryCallModel(primaryModelKey, prompt, options);
-        if (result) return result;
+            // Try Primary Model
+            const result = await this._tryCallModel(primaryModelKey, prompt, options);
+            if (result) return result;
 
-        // If Primary fails, try Fallback (for REASONING tasks)
-        if (this.models[primaryModelKey].useCases.includes('interview_questions') || primaryModelKey === 'REASONING') {
-            console.log(`[GeminiRouter] Primary model ${primaryModelKey} failed. Switching to FALLBACK (gemini-2.5-flash)...`);
-            return await this._tryCallModel('FALLBACK', prompt, options);
-        }
+            // If Primary fails, try Fallback
+            if (this.models[primaryModelKey].useCases.includes('interview_questions') || primaryModelKey === 'REASONING') {
+                console.log(`[GeminiRouter] Primary model ${primaryModelKey} failed. Switching to FALLBACK (${this.models.FALLBACK.name})...`);
+                return await this._tryCallModel('FALLBACK', prompt, options);
+            }
 
-        return null;
+            return null;
+        });
     }
 
     /**
@@ -161,11 +193,16 @@ class GeminiRouter {
      */
     async _tryCallModel(modelKey, prompt, options) {
         const model = this.models[modelKey];
-        const maxRetries = options.retries || 1; // Lower default retries per model since we have fallback
+        const maxRetries = options.retries || 3;
+        const apiKey = process.env.GEMINI_API_KEY;
 
-        // Check rate limit
+        if (!apiKey) {
+            console.error('[GeminiRouter] CRITICAL: GEMINI_API_KEY is missing');
+            return null;
+        }
+
         if (!this.canMakeRequest(modelKey)) {
-            console.warn(`[GeminiRouter] Rate limit reached for ${modelKey}`);
+            console.warn(`[GeminiRouter] RPM limit reached for ${modelKey}`);
             return null;
         }
 
@@ -174,47 +211,38 @@ class GeminiRouter {
                 this.recordRequest(modelKey);
 
                 const response = await axios.post(
-                    `${model.endpoint}?key=${this.apiKey}`,
+                    `${model.endpoint}?key=${apiKey}`,
                     {
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }],
+                        contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: {
                             temperature: options.temperature || 0.7,
                             maxOutputTokens: options.maxTokens || 2048,
                         }
                     },
-                    {
-                        headers: { 'Content-Type': 'application/json' },
-                        timeout: options.timeout || 30000
-                    }
+                    { headers: { 'Content-Type': 'application/json' }, timeout: options.timeout || 30000 }
                 );
 
                 const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!text) throw new Error('No response content');
 
-                // Log Token Usage if available
-                const usage = response.data.usageMetadata;
-                if (usage) {
-                    console.log(`[GeminiRouter] Usage (${modelKey}): Prompt=${usage.promptTokenCount}, Response=${usage.candidatesTokenCount}, Total=${usage.totalTokenCount}`);
-                }
-
-                console.log(`[GeminiRouter] ${modelKey} call successful for task`);
+                console.log(`[GeminiRouter] ${modelKey} call successful`);
                 return text;
             } catch (error) {
                 const status = error.response?.status;
+                const errorData = error.response?.data;
 
-                // If it's a 404 (Not Found) or 400 (Bad Request), unlikely to succeed on retry -> fail fast to fallback
+                if (status === 429) {
+                    console.error(`[GeminiRouter] 429 Rate Limited:`, JSON.stringify(errorData));
+                }
+
                 if (status === 404 || status === 400) {
-                    console.error(`[GeminiRouter] Non-retriable error (${modelKey}): ${status}`);
+                    console.error(`[GeminiRouter] Non-retriable error (${modelKey}): ${status}`, JSON.stringify(errorData));
                     return null;
                 }
 
-                const isRateLimit = status === 429;
-                console.warn(`[GeminiRouter] Attempt ${attempt + 1} failed (${modelKey}):`, isRateLimit ? 'Rate Limited' : error.message);
-
                 if (attempt < maxRetries) {
-                    const delay = (attempt + 1) * 2000;
+                    const delay = (Math.pow(2, attempt) * 1000) + (Math.random() * 1000);
+                    console.log(`[GeminiRouter] Retrying ${modelKey} in ${Math.round(delay)}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
@@ -227,36 +255,29 @@ class GeminiRouter {
      * Generate embeddings using Gemini Embedding model
      */
     async generateEmbedding(text, taskType = 'resume_jd_matching') {
-        const model = this.models.EMBEDDING;
+        return this._executeWithLock(async () => {
+            const model = this.models.EMBEDDING;
+            const apiKey = process.env.GEMINI_API_KEY;
 
-        if (!this.canMakeRequest('EMBEDDING')) {
-            console.warn('[GeminiRouter] Rate limit reached for embeddings');
-            return null;
-        }
+            if (!this.canMakeRequest('EMBEDDING')) return null;
 
-        try {
-            this.recordRequest('EMBEDDING');
-
-            const response = await axios.post(
-                `${model.endpoint}?key=${this.apiKey}`,
-                {
-                    model: model.name,
-                    content: {
-                        parts: [{ text }]
+            try {
+                this.recordRequest('EMBEDDING');
+                const response = await axios.post(
+                    `${model.endpoint}?key=${apiKey}`,
+                    {
+                        model: model.name,
+                        content: { parts: [{ text }] },
+                        taskType: taskType === 'similarity_detection' ? 'SIMILARITY' : 'RETRIEVAL_DOCUMENT'
                     },
-                    taskType: taskType === 'similarity_detection' ? 'SIMILARITY' : 'RETRIEVAL_DOCUMENT'
-                },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 15000
-                }
-            );
-
-            return response.data.embedding?.values || null;
-        } catch (error) {
-            console.error('[GeminiRouter] Embedding error:', error.response?.data || error.message);
-            return null;
-        }
+                    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+                );
+                return response.data.embedding?.values || null;
+            } catch (error) {
+                console.error('[GeminiRouter] Embedding error:', error.message);
+                return null;
+            }
+        });
     }
 
     /**
@@ -271,6 +292,7 @@ class GeminiRouter {
                 remaining: this.models[modelKey].rpmLimit - this.requestCounts[modelKey]
             };
         });
+        status.queueLength = this.requestQueue.length;
         return status;
     }
 }

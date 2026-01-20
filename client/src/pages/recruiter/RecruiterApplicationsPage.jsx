@@ -212,10 +212,10 @@ const RecruiterApplicationsPage = () => {
     };
 
     const getScoreColor = (score) => {
-        if (score >= 80) return 'var(--success)';
-        if (score >= 60) return 'var(--primary)';
-        if (score >= 40) return 'var(--warning)';
-        return 'var(--danger)';
+        if (score >= 80) return '#10b981'; // Success Green
+        if (score >= 60) return '#6366f1'; // Primary Indigo
+        if (score >= 40) return '#f59e0b'; // Warning Amber
+        return '#ef4444'; // Danger Red
     };
 
     const formatDate = (date) => {
@@ -546,112 +546,114 @@ const RecruiterApplicationsPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Interview Results - Enhanced */}
+                                {/* Interview Results - Fully Redesigned */}
                                 {selectedApplicant.interview && selectedApplicant.interview.status === 'completed' && (
-                                    <div className="interview-results card">
-                                        <h3>📊 Interview Results</h3>
+                                    <div className="interview-results-container">
+                                        <div className="results-header">
+                                            <h3>📊 AI Assessment Report</h3>
+                                            <div className={`pass-fail-label ${selectedApplicant.interview.passed ? 'pass' : 'fail'}`}>
+                                                {selectedApplicant.interview.passed ? '✓ RECOMMENDED' : '✗ NOT RECOMMENDED'}
+                                            </div>
+                                        </div>
 
-                                        {/* Overall Score Circle */}
-                                        <div className="scores-grid">
-                                            <div className="score-item overall">
-                                                <div
-                                                    className="score-circle"
-                                                    style={{
-                                                        background: `conic-gradient(${getScoreColor(selectedApplicant.interview.overallScore || 0)} ${(selectedApplicant.interview.overallScore || 0) * 3.6}deg, var(--bg-tertiary) 0deg)`
+                                        <div className="results-grid">
+                                            {/* Left: Overall Score & Metrics */}
+                                            <div className="results-main card">
+                                                <div className="overall-score-section">
+                                                    <div className="score-circle-wrapper">
+                                                        <div
+                                                            className="score-circle-large"
+                                                            style={{
+                                                                background: `conic-gradient(${getScoreColor(selectedApplicant.interview.overallScore || 0)} ${(selectedApplicant.interview.overallScore || 0) * 3.6}deg, rgba(255,255,255,0.05) 0deg)`
+                                                            }}
+                                                        >
+                                                            <div className="score-inner-large">
+                                                                <span className="score-value-large">{selectedApplicant.interview.overallScore || 0}</span>
+                                                                <span className="score-label-sub">Overall Score</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="metrics-list">
+                                                        <div className="metric-row">
+                                                            <div className="metric-info">
+                                                                <span>🔧 Technical Knowledge</span>
+                                                                <span>{selectedApplicant.interview.technicalScore || 0}%</span>
+                                                            </div>
+                                                            <div className="metric-progress">
+                                                                <div className="progress-bg">
+                                                                    <div className="progress-fill" style={{ width: `${selectedApplicant.interview.technicalScore || 0}%`, background: getScoreColor(selectedApplicant.interview.technicalScore || 0) }}></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="metric-row">
+                                                            <div className="metric-info">
+                                                                <span>💬 Communication</span>
+                                                                <span>{selectedApplicant.interview.communicationScore || 0}%</span>
+                                                            </div>
+                                                            <div className="metric-progress">
+                                                                <div className="progress-bg">
+                                                                    <div className="progress-fill" style={{ width: `${selectedApplicant.interview.communicationScore || 0}%`, background: getScoreColor(selectedApplicant.interview.communicationScore || 0) }}></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="metric-row">
+                                                            <div className="metric-info">
+                                                                <span>🎯 JD Match Score</span>
+                                                                <span>{selectedApplicant.interview.matchScore || 0}%</span>
+                                                            </div>
+                                                            <div className="metric-progress">
+                                                                <div className="progress-bg">
+                                                                    <div className="progress-fill" style={{ width: `${selectedApplicant.interview.matchScore || 0}%`, background: 'var(--primary)' }}></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="ai-feedback-summary">
+                                                    <h4>Executive Summary</h4>
+                                                    <p>{selectedApplicant.interview.feedback || "The candidate's performance across technical and communication rounds has been evaluated by the AI. Review details below for a comprehensive understanding."}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Right: Strengths & Weaknesses */}
+                                            <div className="results-side">
+                                                <div className="strength-card card">
+                                                    <h4>💪 Key Strengths</h4>
+                                                    <ul>
+                                                        {(selectedApplicant.interview.strengths || []).length > 0 ? (
+                                                            selectedApplicant.interview.strengths.slice(0, 4).map((s, i) => <li key={i}>{s}</li>)
+                                                        ) : (
+                                                            <li>No significant strengths identified.</li>
+                                                        )}
+                                                    </ul>
+                                                </div>
+
+                                                <div className="weakness-card card">
+                                                    <h4>⚠️ Areas for Improvement</h4>
+                                                    <ul>
+                                                        {(selectedApplicant.interview.weaknesses || []).length > 0 ? (
+                                                            selectedApplicant.interview.weaknesses.slice(0, 4).map((w, i) => <li key={i}>{w}</li>)
+                                                        ) : (
+                                                            <li>Excellent performance; no major weaknesses noted.</li>
+                                                        )}
+                                                    </ul>
+                                                </div>
+
+                                                <button
+                                                    className="btn-glass full-width"
+                                                    onClick={() => {
+                                                        const interviewId = selectedApplicant.interview._id ||
+                                                            selectedApplicant.interview.id ||
+                                                            selectedApplicant.interviewId;
+                                                        navigate(`/interview/${interviewId}/results`);
                                                     }}
                                                 >
-                                                    <div className="score-inner">
-                                                        <span className="score-value">{selectedApplicant.interview.overallScore || 0}</span>
-                                                    </div>
-                                                </div>
-                                                <span className="score-label">Overall Score</span>
-                                            </div>
-
-                                            {/* Technical Score Bar */}
-                                            <div className="score-item">
-                                                <div className="score-bar-container">
-                                                    <span className="score-title">🔧 Technical Knowledge</span>
-                                                    <div className="score-bar">
-                                                        <div
-                                                            className="score-fill"
-                                                            style={{
-                                                                width: `${selectedApplicant.interview.technicalScore || 0}%`,
-                                                                background: getScoreColor(selectedApplicant.interview.technicalScore || 0)
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                    <span className="score-num">{selectedApplicant.interview.technicalScore || 0}%</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Communication Score Bar */}
-                                            <div className="score-item">
-                                                <div className="score-bar-container">
-                                                    <span className="score-title">💬 Communication</span>
-                                                    <div className="score-bar">
-                                                        <div
-                                                            className="score-fill"
-                                                            style={{
-                                                                width: `${selectedApplicant.interview.communicationScore || 0}%`,
-                                                                background: getScoreColor(selectedApplicant.interview.communicationScore || 0)
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                    <span className="score-num">{selectedApplicant.interview.communicationScore || 0}%</span>
-                                                </div>
+                                                    View Full Evaluation Details →
+                                                </button>
                                             </div>
                                         </div>
-
-                                        {/* Match Score */}
-                                        {selectedApplicant.interview.matchScore > 0 && (
-                                            <div className="match-score-section" style={{ marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                                                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>JD Match Score:</span>
-                                                <span style={{ fontWeight: 700, color: getScoreColor(selectedApplicant.interview.matchScore), marginLeft: 'var(--spacing-sm)' }}>
-                                                    {selectedApplicant.interview.matchScore}%
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {/* Passed/Failed Indicator */}
-                                        <div style={{ marginTop: 'var(--spacing-lg)', textAlign: 'center' }}>
-                                            {selectedApplicant.interview.passed ? (
-                                                <span className="badge badge-success" style={{ fontSize: '1rem', padding: 'var(--spacing-sm) var(--spacing-lg)' }}>
-                                                    ✓ Interview Passed
-                                                </span>
-                                            ) : (
-                                                <span className="badge badge-danger" style={{ fontSize: '1rem', padding: 'var(--spacing-sm) var(--spacing-lg)' }}>
-                                                    ✗ Did Not Pass
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Strengths */}
-                                        {selectedApplicant.interview.strengths?.length > 0 && (
-                                            <div className="strengths-section" style={{ marginTop: 'var(--spacing-lg)' }}>
-                                                <h4>💪 Strengths</h4>
-                                                <div className="strength-tags">
-                                                    {selectedApplicant.interview.strengths.map((s, i) => (
-                                                        <span key={i} className="strength-tag">{s}</span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* View Full Report Button - only show if we have an interview ID */}
-                                        {(selectedApplicant.interview._id || selectedApplicant.interview.id || selectedApplicant.interviewId) && (
-                                            <button
-                                                className="btn btn-secondary view-full-report"
-                                                style={{ marginTop: 'var(--spacing-lg)', width: '100%' }}
-                                                onClick={() => {
-                                                    const interviewId = selectedApplicant.interview._id ||
-                                                        selectedApplicant.interview.id ||
-                                                        selectedApplicant.interviewId;
-                                                    navigate(`/interview/${interviewId}/results`);
-                                                }}
-                                            >
-                                                View Full Interview Report →
-                                            </button>
-                                        )}
                                     </div>
                                 )}
 

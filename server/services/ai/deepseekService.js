@@ -21,7 +21,7 @@ const MODELS = {
     },
     // Fallback 2 - Gemma (free)
     GEMMA: {
-        name: 'google/gemma-2-9b-it:free',
+        name: 'google/gemini-pro-1.5', // More reliable free tier option or low cost
         key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_GEMMA_KEY
     },
     // Premium model - DeepSeek (requires credits)
@@ -676,9 +676,10 @@ Return JSON:
         ]);
 
         return extractJson(response);
+        return { valid: true }; // Fail open
     } catch (error) {
-        console.error('Validation failed:', error);
-        // If validation fails, ALLOW the answer through (fail-open)
+        console.error('Validation failed:', error.message);
+        // If validation fails (e.g. rate limit), ALLOW the answer through (fail-open)
         return { valid: true };
     }
 }

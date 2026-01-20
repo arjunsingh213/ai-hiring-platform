@@ -122,13 +122,15 @@ router.post('/validate-answer', async (req, res) => {
         const { question, answer } = req.body;
 
         console.log('Validating answer:', answer.substring(0, 50) + '...');
-        const result = await deepseekService.validateAnswer(question, answer);
-
-        res.json({
-            success: true,
-            valid: result.valid,
-            message: result.message
-        });
+        // 1. Strict Validation using Gemini
+        const validation = await geminiService.validateAnswer(currentQuestion.question, answer);
+        if (!validation.valid) {
+            return res.json({
+                success: true,
+                valid: false,
+                message: validation.message || 'Please provide a clearer answer.'
+            });
+        }
     } catch (error) {
         console.error('Validation route error:', error);
         res.json({ success: true, valid: true }); // Fail open
@@ -404,7 +406,7 @@ Difficulty Level: ${difficulty}
 Competencies to Assess: ${competencies.join(', ')}
 
 TASK:
-Generate ONE specific, relevant interview question that:
+Generate EXACTLY ONE specific, relevant interview question that:
 1. Matches the candidate's EXACT experience level (${experienceLevel}${yearsOfExperience ? `, ${yearsOfExperience} years` : ''})
 2. Is appropriate for ${desiredRole} at ${experienceLevel} level
 3. ${history && history.length > 0 ? 'ADAPTS based on the previous answer quality and content' : 'Starts the conversation naturally'}
@@ -412,9 +414,9 @@ Generate ONE specific, relevant interview question that:
 5. Assesses: ${roundFocus[0]}
 6. Difficulty: ${difficulty}
 
-${experienceLevel === 'fresher' ? '⚠️ REMINDER: FRESHER = SIMPLE CONCEPTUAL QUESTIONS ONLY!' : ''}
+⚠️ CRITICAL: Return ONLY the question text string. Do NOT provide a list of options. Do NOT provide multiple questions. Do NOT use any preamble or "Here is your question". Ensure the question is a complete sentence and ends with a question mark.
 
-Return ONLY the question text, no explanations or preamble.
+${experienceLevel === 'fresher' ? '⚠️ REMINDER: FRESHER = SIMPLE CONCEPTUAL QUESTIONS ONLY!' : ''}
 `;
 }
 
@@ -434,8 +436,8 @@ router.post('/next', async (req, res) => {
             blueprint
         } = req.body;
 
-        // 1. Strict Validation
-        const validation = await deepseekService.validateAnswer(currentQuestion.question, answer);
+        // 1. Strict Validation using Gemini
+        const validation = await geminiService.validateAnswer(currentQuestion.question, answer);
         if (!validation.valid) {
             return res.json({
                 success: true,
@@ -523,8 +525,14 @@ router.post('/next', async (req, res) => {
         try {
             nextQuestion = await geminiService.generateAdaptiveQuestion(questionContext, updatedHistory);
         } catch (geminiError) {
-            console.log('[INTERVIEW] Gemini unavailable, falling back to DeepSeek');
-            nextQuestion = await deepseekService.generateContextualQuestion(questionContext);
+            console.warn(`[INTERVIEW] Gemini failed (${geminiError.message}). FAILING OVER TO DEEPSEEK/LLAMA...`);
+            try {
+                nextQuestion = await deepseekService.generateContextualQuestion(questionContext);
+                console.log('[INTERVIEW] DeepSeek fallback successful');
+            } catch (deepseekError) {
+                console.error('[INTERVIEW] DeepSeek fallback failed too! Using hardcoded fallback.');
+                nextQuestion = "Can you describe a challenging technical problem you've solved recently?";
+            }
         }
 
         // 6. Add round context to the question
@@ -828,7 +836,7 @@ router.post('/submit', async (req, res) => {
                     escalationReason = 'Auto-escalated: Multiple cheating flags detected';
                 }
 
-                await Interview.create({
+                const newInterview = await Interview.create({
                     userId,
                     interviewType: 'combined',
                     status: 'pending_review', // Changed from 'completed'
@@ -927,6 +935,7 @@ router.post('/submit', async (req, res) => {
         res.json({
             success: true,
             data: {
+                interviewId: typeof newInterview !== 'undefined' ? newInterview._id : null,
                 // Core scores - FALLBACKS ARE NOW 0-10 (NOT 50)
                 score: evaluation.overallScore ?? 10,
                 technicalScore: evaluation.technicalScore ?? 10,

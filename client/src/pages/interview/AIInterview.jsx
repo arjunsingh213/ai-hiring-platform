@@ -158,6 +158,35 @@ const ROUND_TYPE_INFO = {
     screening: { icon: <Icons.screening />, label: 'Screening' }
 };
 
+// Clean AI-generated questions from internal reasoning/headers
+const cleanQuestionText = (text) => {
+    if (!text) return '';
+
+    // Remove markdown headers (###, ##, #)
+    let cleaned = text.replace(/^#+\s*/gm, '');
+
+    // Remove pattern matches for common AI leakage
+    const patternsToRemove = [
+        /Goal:\s*.*/gi,
+        /Plan:\s*.*/gi,
+        /Duration:\s*.*/gi,
+        /Overall Goal:\s*.*/gi,
+        /Technical Round\s*\d*:\s*/gi,
+        /Ice-Breaker\s*\(\w+\):\s*/gi,
+        /\*\*Goal:\*\*\s*.*/gi,
+        /\*\*Duration:\*\*\s*.*/gi,
+    ];
+
+    patternsToRemove.forEach(pattern => {
+        cleaned = cleaned.replace(pattern, '');
+    });
+
+    // Remove bold asterisks from start/end if they wrap the whole thing
+    cleaned = cleaned.replace(/^\*\*|\*\*$/g, '');
+
+    return cleaned.trim();
+};
+
 const AIInterview = () => {
     const { interviewId } = useParams();
     const navigate = useNavigate();
@@ -462,8 +491,10 @@ const AIInterview = () => {
         // Stop any current speech
         window.speechSynthesis.cancel();
 
-        const question = interview?.questions?.[currentQuestionIndex]?.question;
-        if (!question) return;
+        const rawQuestion = interview?.questions?.[currentQuestionIndex]?.question;
+        if (!rawQuestion) return;
+
+        const question = cleanQuestionText(rawQuestion);
 
         const utterance = new SpeechSynthesisUtterance(question);
         utterance.rate = 0.9; // Slightly slower for clarity
@@ -1480,7 +1511,7 @@ const AIInterview = () => {
                                 {currentQuestion.difficulty || 'Medium'}
                             </span>
                         </div>
-                        <h3 className="question-text">{currentQuestion.question}</h3>
+                        <h3 className="question-text">{cleanQuestionText(currentQuestion.question)}</h3>
                         {currentQuestion.assessingSkill && (
                             <p className="assessing-skill">Skill: {currentQuestion.assessingSkill}</p>
                         )}

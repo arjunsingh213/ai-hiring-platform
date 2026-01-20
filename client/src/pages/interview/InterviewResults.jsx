@@ -12,6 +12,7 @@ const InterviewResults = () => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
     const [expandedQuestion, setExpandedQuestion] = useState(null);
+    const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'jobseeker');
 
     useEffect(() => {
         fetchResults();
@@ -90,8 +91,8 @@ const InterviewResults = () => {
                 <div className="error-container card">
                     <h2>Unable to Load Results</h2>
                     <p>{safeRender(error)}</p>
-                    <button className="btn btn-primary" onClick={() => navigate('/jobseeker/interviews')}>
-                        Back to Interviews
+                    <button className="btn btn-primary" onClick={() => navigate(-1)}>
+                        Go Back
                     </button>
                 </div>
             </div>
@@ -107,8 +108,8 @@ const InterviewResults = () => {
                 <div className="error-container card">
                     <h2>Unable to Load Results</h2>
                     <p>Interview data is incomplete. Please try again.</p>
-                    <button className="btn btn-primary" onClick={() => navigate('/jobseeker/interviews')}>
-                        Back to Interviews
+                    <button className="btn btn-primary" onClick={() => navigate(-1)}>
+                        Go Back
                     </button>
                 </div>
             </div>
@@ -120,8 +121,8 @@ const InterviewResults = () => {
             {/* Back Navigation */}
             <button
                 className="back-btn"
-                onClick={() => navigate('/jobseeker/interviews')}
-                title="Back to Interviews"
+                onClick={() => navigate(-1)}
+                title="Go Back"
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -390,11 +391,13 @@ const InterviewResults = () => {
             </div>
 
             {/* Actions */}
-            <div className="results-actions">
-                <button className="btn btn-primary" onClick={() => navigate('/jobseeker/jobs')}>
-                    Browse More Jobs
-                </button>
-            </div>
+            {userRole === 'jobseeker' && (
+                <div className="results-actions">
+                    <button className="btn btn-primary" onClick={() => navigate('/jobseeker/jobs')}>
+                        Browse More Jobs
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

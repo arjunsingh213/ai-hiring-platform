@@ -204,20 +204,22 @@ CRITICAL INSTRUCTIONS FOR EXPERIENCE LEVEL:
 - IF "FRESHER", "ENTRY", or 0-1 YEARS: Ask ONLY fundamental, basic definition/concept questions. NO complex scenarios, NO system design, NO advanced patterns. Keep it simple (e.g., "What is a variable?", "Explain OOP features").
 - IF EXPERIENCED: Ask scenario-based, in-depth questions.
 
-Return ONLY the question text. Do NOT use any intro like "Okay" or "Here is". Start directly with the question word.`;
+Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a list, multiple options, or any preamble. Start directly with the question word.`;
         }
 
         try {
             console.log(`[GeminiService] Generating adaptive question via Gemini...`);
             const response = await this._callWithCacheAndRateLimit('adaptive_followup', prompt, {
                 temperature: 0.7,
-                maxTokens: 1024
+                maxTokens: 2048 // Increased to ensure no truncation
             });
 
             if (!response) {
-                console.log('[GeminiService] No response from Gemini, returning null');
-                return null;
+                console.log('[GeminiService] No response from Gemini, throwing for fallback');
+                throw new Error('Gemini Rate Limited');
             }
+
+            console.log('[GeminiService] RAW Response:', response);
 
             // Clean up response - extract just the question
             let question = response.trim();
@@ -255,39 +257,25 @@ Return ONLY the question text. Do NOT use any intro like "Okay" or "Here is". St
                 .replace(/^Role:.*?(\n|$)/i, '') // Remove "Role: Senior Data Engineer" lines
                 .trim();
 
-            // 1. Check for numbered lists first (1. Question ...)
-            if (question.match(/\n\s*\d+\./)) {
-                console.log('[GeminiService] Detected list, extracting first item...');
-                const lines = question.split('\n');
-                const firstQ = lines[0].replace(/^\d+\.\s*/, '').trim();
-                if (firstQ) question = firstQ;
-            }
-            // 2. Check for asterisk/bullet lists (* Question ...) - typical of "Topic Outline" failure mode
-            else if (question.includes('*')) {
-                const parts = question.split('*');
-                // Filter empty parts and find the first one that looks like a valid question (length > 10)
-                const potentialQuestions = parts.map(p => p.trim()).filter(p => p.length > 15);
-                if (potentialQuestions.length > 0) {
-                    console.log('[GeminiService] Detected bullet list, extracting first valid item...');
-                    question = potentialQuestions[0];
-                }
-            }
+            // 1. Remove obvious Topic/Header lines (e.g. "Topic: MySQL")
+            question = question.split('\n').filter(line => {
+                const l = line.trim().toLowerCase();
+                return !l.startsWith('topic:') && !l.startsWith('round:') && !l.startsWith('focus:');
+            }).join('\n').trim();
 
-            // If the question still contains multiple distinct questions separated by newlines, take the first one
-            // (Heuristic: if multiple lines end in question marks)
-            const questionLines = question.split('\n').filter(l => l.trim().length > 0);
-            if (questionLines.length > 1 && questionLines[0].trim().endsWith('?')) {
-                question = questionLines[0].trim();
-            }
+            // 2. Remove list numbering only if it's at the very start (e.g. "1. What is...")
+            question = question.replace(/^\d+\.\s*/, '');
 
-            // Final cleanup of any leading symbols from split
-            question = question.replace(/^[-*•]\s*/, '');
+            // 3. If there are multiple lines, try to find the actual question part
+            // (Remove trailing reasoning/notes that Gemini often adds)
+            // SAFER REGEX: Only split if it looks like a header (starts a line or follows a newline)
+            question = question.split(/\n\s*(?:reasoning|why this is|note|evaluation criteria):/i)[0].trim();
 
             console.log(`[GeminiService] Generated adaptive question: "${question.substring(0, 60)}..."`);
             return question;
         } catch (error) {
             console.error('[GeminiService] Adaptive question error:', error.message);
-            return null;
+            throw error; // Propagate to trigger route-level fallback
         }
     }
 
@@ -314,27 +302,29 @@ Evaluate and return a JSON object:
 {
     "overallScore": 75,
     "technicalScore": 70,
-    "hrScore": 80,
-    "communication": 75,
-    "confidence": 70,
-    "relevance": 80,
-    "problemSolving": 70,
+    "communicationScore": 80,
+    "confidenceScore": 70,
+    "relevanceScore": 80,
     "strengths": ["strength1", "strength2", "strength3"],
     "weaknesses": ["weakness1", "weakness2"],
     "areasToImprove": [
         {"area": "Area Name", "suggestion": "How to improve", "priority": "high"}
     ],
-    "feedback": "Overall feedback paragraph",
-    "technicalFeedback": "Specific technical feedback",
-    "communicationFeedback": "Communication feedback",
-    "recommendations": ["recommendation1", "recommendation2"]
+    "feedback": "Overall feedback paragraph"
 }
 
 Score each metric from 0-100.
 CRITICAL SCORING RULES:
-1. IF the candidate answers "I don't know", "Skipped", "Skip", or provides NO meaningful answer (e.g. "pass", "na", "-"), the Overall Score MUST be 0.
-2. Be strict. 0 means 0.
-3. If the answer is unrelated to the question, score low (<30).
+1. GIBBERISH/NONSENSE answers (random text, "asdf", single words, unrelated content) = 0-15 points
+2. VERY SHORT answers (less than 15 words) = 15-30 points
+3. IRRELEVANT answers (doesn't address the question) = 20-40 points
+1. GIBBERISH/NONSENSE answers (random text, "asdf", single words, unrelated content) = 0-10 points
+2. VERY SHORT answers (less than 15 words) = 10-25 points
+3. IRRELEVANT answers (doesn't address the question) = 15-35 points
+4. IF more than 50% of the interview contains the above, the overallScore MUST be below 20.
+5. "I don't know" is better than gibberish but still lacks knowledge - score accordingly (e.g., 20-40 points depending on context).
+6. Be strict. 0 means 0.
+7. Ensure all scores (overallScore, technicalScore, communicationScore, confidenceScore, relevanceScore) are present and are numbers between 0 and 100.
 
 Return ONLY the JSON.`;
 
@@ -627,21 +617,51 @@ IF SKILL LEVEL IS 'FRESHER', 'ENTRY' or 'EASY':
                 throw new Error('No response from Gemini');
             }
 
-            // Extract JSON
-            let cleanResponse = response
-                .replace(/^```json\s*/, '')
-                .replace(/^```\s*/, '')
-                .replace(/\s*```$/, '')
-                .trim();
+            // Robust JSON extraction
+            let jsonStr = response;
 
-            const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                cleanResponse = jsonMatch[0];
+            // 1. Try to find content between ```json and ```
+            const markdownMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+            if (markdownMatch) {
+                jsonStr = markdownMatch[1];
+            } else {
+                // 2. Try to find content between ``` and ```
+                const generalMarkdownMatch = response.match(/```\s*([\s\S]*?)\s*```/);
+                if (generalMarkdownMatch) {
+                    jsonStr = generalMarkdownMatch[1];
+                } else {
+                    // 3. Fallback: try to find the first { and last }
+                    const braceMatch = response.match(/\{[\s\S]*\}/);
+                    if (braceMatch) {
+                        jsonStr = braceMatch[0];
+                    }
+                }
             }
 
-            const parsed = JSON.parse(cleanResponse);
-            console.log('[GeminiService] Coding problem generated:', parsed.title);
-            return parsed;
+            // Cleanup common AI JSON errors
+            jsonStr = jsonStr.trim()
+                // Replace escaped newlines that are literal \n inside strings
+                .replace(/\\n/g, ' ')
+                // Try to catch trailing commas
+                .replace(/,\s*([\}\]])/g, '$1');
+
+            try {
+                const parsed = JSON.parse(jsonStr);
+                console.log('[GeminiService] Coding problem generated successfully:', parsed.title);
+                return parsed;
+            } catch (parseError) {
+                console.warn('[GeminiService] JSON parse failed, trying aggressive cleanup...', parseError.message);
+                // Last ditch effort: remove everything that isn't valid JSON structure
+                // This is risky but better than failing
+                try {
+                    // Remove common control characters that break JSON
+                    const aggressiveClean = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+                    const parsed = JSON.parse(aggressiveClean);
+                    return parsed;
+                } catch (e) {
+                    throw new Error(`JSON parse failed even after cleanup: ${parseError.message}`);
+                }
+            }
         } catch (error) {
             console.error('[GeminiService] Coding problem generation error:', error.message);
             throw error; // Let caller handle fallback
@@ -828,6 +848,21 @@ JSON Format:
         ];
 
         return interviewType === 'technical' ? techQuestions : hrQuestions;
+    }
+
+    /**
+     * Fallback adaptive question when AI fails
+     */
+    getFallbackAdaptiveQuestion(promptOrContext) {
+        const isTechnical = typeof promptOrContext === 'string'
+            ? promptOrContext.toLowerCase().includes('technical')
+            : (promptOrContext.round === 'technical');
+
+        if (isTechnical) {
+            return "Tell me about a complex technical problem you solved recently and the steps you took to resolve it.";
+        } else {
+            return "How do you handle working on multiple tasks with competing deadlines? Can you give an example?";
+        }
     }
 
     /**

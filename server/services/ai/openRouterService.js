@@ -339,24 +339,22 @@ ${previousContext}
 
 === QUESTION GENERATION RULES ===
 ${previousAnswers?.length > 0 ?
-                `Generate 1 ADAPTIVE follow-up question:
+                `Generate EXACTLY 1 ADAPTIVE follow-up question:
 - If previous score was LOW (<60): Ask an easier question to assess basic understanding
 - If previous score was MEDIUM (60-80): Probe deeper on the same topic
 - If previous score was HIGH (>80): Challenge with a harder question
 - Focus on: ${focusAreas}` :
-                `Generate 5 ROLE-SPECIFIC interview questions:
+                `Generate EXACTLY 1 STARTING interview question for this ${jobTitle} role:
 
-1. ICE-BREAKER (Easy): Ask about their experience with a KEY SKILL from the job requirements
-2. TECHNICAL (Medium): Ask how they would apply ${requiredSkills.split(',')[0] || 'their skills'} in a real scenario
-3. BEHAVIORAL (Medium): Ask about a past experience demonstrating skills needed for this role
-4. PROBLEM-SOLVING (Medium-Hard): Present a scenario related to the job responsibilities
-5. ROLE FIT (Medium): Ask why they're suitable for this specific ${jobTitle} position
+1. ICE-BREAKER (Easy): Ask about their experience with a KEY SKILL from the job requirements (e.g., ${requiredSkills.split(',')[0] || 'core technologies'}).
 
 IMPORTANT:
-- Questions MUST be specific to the job title "${jobTitle}"
-- Questions MUST assess the required skills: ${requiredSkills}
-- If candidate is missing skills (${missingSkills}), include questions to assess their ability to learn
-- Make questions practical and scenario-based when possible`}
+- YOU MUST RETURN ONLY ONE QUESTION.
+- DO NOT return a list.
+- DO NOT return headers like 'Goal:', 'Duration:', or 'Plan:'.
+- The 'question' field must contain ONLY the question text for the candidate to read.
+- Questions MUST be specific to the job title "${jobTitle}".
+- Make the question practical and conversation-based.`}
 
 === OUTPUT FORMAT ===
 Return ONLY valid JSON:
@@ -497,13 +495,15 @@ Return JSON:
 {
     "overallScore": 0-100,
     "technicalScore": 0-100,
-    "hrScore": 0-100,
-    "confidence": 0-100,
-    "relevance": 0-100,
+    "communicationScore": 0-100,
+    "confidenceScore": 0-100,
+    "relevanceScore": 0-100,
     "strengths": ["specific strength 1", "specific strength 2"],
     "weaknesses": ["specific weakness 1", "specific weakness 2"],
     "feedback": "Overall assessment of the candidate's performance"
 }
+
+IMPORTANT: If the candidate gives gibberish, "I don't know", or very short answers (<15 words) for more than 50% of questions, the overallScore MUST be below 20.
 
 BE STRICT AND HONEST. Return ONLY valid JSON.`;
 

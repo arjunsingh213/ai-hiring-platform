@@ -15,8 +15,8 @@ const NotificationCenter = () => {
     useEffect(() => {
         if (userId) {
             fetchUnreadCount();
-            // Poll for updates every 30 seconds
-            const interval = setInterval(fetchUnreadCount, 30000);
+            // Poll for updates every 2 minutes
+            const interval = setInterval(fetchUnreadCount, 120000);
             return () => clearInterval(interval);
         }
     }, [userId]);

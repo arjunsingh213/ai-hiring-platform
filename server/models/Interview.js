@@ -154,8 +154,8 @@ const interviewSchema = new mongoose.Schema({
         // AI Evaluation (Qwen3 235B)
         evaluation: {
             score: Number, // 0-100
-            technicalAccuracy: Number,
-            communication: Number,
+            technicalScore: Number,
+            communicationScore: Number,
             confidence: Number,
             relevance: Number,
             completeness: Number,
@@ -178,10 +178,10 @@ const interviewSchema = new mongoose.Schema({
 
     // Scoring
     scoring: {
-        technicalAccuracy: Number, // 0-100
-        communication: Number, // 0-100
-        confidence: Number, // 0-100
-        relevance: Number, // 0-100
+        technicalScore: Number, // 0-100
+        communicationScore: Number, // 0-100
+        confidenceScore: Number, // 0-100
+        relevanceScore: Number, // 0-100
         overallScore: Number, // 0-100
         strengths: [String],
         weaknesses: [String],

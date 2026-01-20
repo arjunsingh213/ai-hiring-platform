@@ -900,10 +900,10 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
         interview.completedAt = new Date();
         interview.passed = passed;
         interview.scoring = {
-            technicalAccuracy: evaluation.technicalScore || 10,
-            communication: evaluation.communication || 10,
-            confidence: evaluation.confidence || 10,
-            relevance: evaluation.relevance || 10,
+            technicalScore: evaluation.technicalScore || 10,
+            communicationScore: evaluation.communicationScore || evaluation.communication || 10,
+            confidenceScore: evaluation.confidenceScore || evaluation.confidence || 10,
+            relevanceScore: evaluation.relevanceScore || evaluation.relevance || 10,
             overallScore: finalScore,
             strengths: evaluation.strengths || [],
             weaknesses: evaluation.weaknesses || [],
@@ -930,7 +930,7 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
             data: {
                 score: finalScore,
                 technicalScore: evaluation.technicalScore || 10,
-                hrScore: evaluation.hrScore || 10,
+                communicationScore: evaluation.communicationScore || 10,
                 codingScore: codingResults?.score,
                 passed,
                 feedback: evaluation.feedback,

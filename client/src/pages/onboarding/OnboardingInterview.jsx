@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useToast } from '../../components/Toast';
 import api from '../../services/api';
 import CodeIDE from '../../components/CodeIDE';
 import InterviewProctor from '../../components/InterviewProctor';
 import RoundInfoPage from '../../components/interview/RoundInfoPage';
+import InterviewResultsPreview from '../../components/interview/InterviewResultsPreview';
 import './OnboardingInterview.css';
 
 const OnboardingInterview = ({
@@ -90,19 +91,39 @@ const OnboardingInterview = ({
     const [proctoringViolations, setProctoringViolations] = useState([]);
     const proctoringViolationsRef = useRef([]);
 
+    const [currentInterviewId, setCurrentInterviewId] = useState(null);
+    const [finalViolations, setFinalViolations] = useState([]); // Store violations at interview submit for later upload
+
     // Handle violations from InterviewProctor - accumulate for entire interview
-    const handleViolationLog = (violations) => {
-        // Violations already have timestamps from InterviewProctor
-        // We add videoTimestamp for admin video seeking
-        const violationsWithVideoTime = violations.map(v => ({
-            ...v,
-            videoTimestamp: interviewStartTimeRef.current
-                ? Math.max(0, Math.round((new Date(v.timestamp).getTime() - interviewStartTimeRef.current) / 1000))
-                : 0
-        }));
-        proctoringViolationsRef.current = violationsWithVideoTime;
-        setProctoringViolations(violationsWithVideoTime);
-        console.log(`[PROCTORING] Total violations: ${violations.length}`);
+    const handleViolationLog = useCallback((violations) => {
+        // Use functional update to avoid dependency on proctoringViolations
+        setProctoringViolations(prev => {
+            const violationsWithVideoTime = violations.map(v => ({
+                ...v,
+                videoTimestamp: interviewStartTimeRef.current
+                    ? Math.max(0, Math.round((new Date(v.timestamp).getTime() - interviewStartTimeRef.current) / 1000))
+                    : 0
+            }));
+            proctoringViolationsRef.current = violationsWithVideoTime;
+            console.log(`[PROCTORING] Total violations: ${violations.length}`);
+            return violationsWithVideoTime;
+        });
+    }, []);
+
+    const finalizeVideoRecording = async (violations = null, interviewId = null) => {
+        try {
+            console.log('📹 Finalizing video recording...');
+            const videoBlob = await stopRecording();
+
+            if (videoBlob && videoBlob.size > 0) {
+                const markers = violations || finalViolations || proctoringViolations;
+                const id = interviewId || currentInterviewId;
+
+                await uploadVideoToCloudinary(videoBlob, markers, id);
+            }
+        } catch (error) {
+            console.error('Error finalizing video:', error);
+        }
     };
 
     // Initialize speech recognition
@@ -386,7 +407,7 @@ const OnboardingInterview = ({
     };
 
     // Upload video to Cloudinary via backend
-    const uploadVideoToCloudinary = async (videoBlob, cheatingMarkers) => {
+    const uploadVideoToCloudinary = async (videoBlob, cheatingMarkers, interviewId = null) => {
         if (!videoBlob || videoBlob.size === 0) {
             console.log('No video to upload');
             return null;
@@ -394,11 +415,14 @@ const OnboardingInterview = ({
 
         try {
             setUploadingVideo(true);
-            console.log('📤 Uploading video to Cloudinary...');
+            console.log(`📤 Uploading video to Cloudinary (interviewId: ${interviewId})...`);
 
             const formData = new FormData();
             formData.append('video', videoBlob, 'interview-recording.webm');
             formData.append('userId', userId);
+            if (interviewId) {
+                formData.append('interviewId', interviewId);
+            }
             formData.append('cheatingMarkers', JSON.stringify(cheatingMarkers || []));
 
             // Use same base URL pattern as the api service - VITE_API_URL already contains /api
@@ -704,21 +728,8 @@ const OnboardingInterview = ({
 
             console.log('Submitting interview with violations:', formattedViolations.length);
 
-            // Stop video recording and get the blob
-            console.log('📹 Stopping video recording...');
-            const videoBlob = await stopRecording();
-
-            // Upload video to Cloudinary if we have a recording
-            let videoData = null;
-            if (videoBlob && videoBlob.size > 0) {
-                console.log('📤 Uploading video, size:', videoBlob.size);
-                toast.info('Uploading interview recording...');
-                videoData = await uploadVideoToCloudinary(videoBlob, formattedViolations);
-                if (videoData) {
-                    videoUrlRef.current = videoData.url;
-                    console.log('✅ Video uploaded:', videoData.url);
-                }
-            }
+            // STORE VIOLATIONS for later upload but DON'T stop recording yet if moving to coding
+            setFinalViolations(formattedViolations);
 
             const response = await api.post('/onboarding-interview/submit', {
                 userId,
@@ -727,27 +738,22 @@ const OnboardingInterview = ({
                 desiredRole,
                 // Include proctoring data for admin review
                 proctoringFlags: formattedViolations,
-                // Include video recording data
-                videoRecording: videoData ? {
-                    url: videoData.url,
-                    secureUrl: videoData.secureUrl || videoData.url, // Admin page needs secureUrl
-                    publicId: videoData.publicId,
-                    duration: Math.round(interviewDuration),
-                    format: videoData.format || 'webm',
-                    fileSize: videoData.fileSize,
-                    cheatingMarkers: formattedViolations.map(v => ({
-                        timestamp: v.videoTimestamp,
-                        type: v.type,
-                        description: v.description,
-                        duration: v.duration,
-                        severity: v.severity
-                    }))
-                } : null
+                // videoRecording data is NO LONGER sent here, will be updated in next step
+                videoRecording: null
             });
 
             if (response.success) {
-                // DON'T show actual results to candidate - just store internally
+                // Store the interview ID for linking the video later
+                if (response.data?.interviewId) {
+                    setCurrentInterviewId(response.data.interviewId);
+                    console.log('📍 Current interview ID stored:', response.data.interviewId);
+                }
+
+                // Show actual results to candidate (Preliminary)
                 setResults(response.data);
+
+                // Show success toast
+                toast.success('Interview submitted! Showing preliminary results...');
 
                 // DEBUG: Log detectedLanguages to trace coding test decision
                 console.log('[INTERVIEW] detectedLanguages:', detectedLanguages, 'length:', detectedLanguages?.length || 0, 'checked:', languagesChecked);
@@ -759,9 +765,10 @@ const OnboardingInterview = ({
                     toast.success('Interview complete! Preparing coding challenge...');
                     loadCodingProblem();
                 } else {
-                    // Non-technical role (IT Support, etc.) OR no programming skills detected - skip coding test
-                    console.log('[INTERVIEW] No programming languages detected (checked:', languagesChecked, '), skipping coding test');
-                    toast.success('Interview submitted! Your responses are under review.');
+                    // Non-technical role - FINALIZE VIDEO NOW
+                    console.log('[INTERVIEW] No programming languages, finalizing video...');
+                    finalizeVideoRecording(formattedViolations, response.data?.interviewId);
+
                     stopCamera();
                     setCompleted(true);
                 }
@@ -772,6 +779,9 @@ const OnboardingInterview = ({
             console.error('Interview submission error:', error);
             toast.error('Failed to submit interview.');
             setResults({ pendingReview: true, feedback: 'Interview submission had issues.' });
+
+            // On error, try to finalize whatever we have recorded
+            finalizeVideoRecording();
 
             // Skip to results (don't force coding test on error for non-technical)
             stopCamera();
@@ -851,6 +861,7 @@ const OnboardingInterview = ({
         stopCamera();
 
         toast.success(`Coding test completed! Score: ${codingResult.score}/100`);
+        finalizeVideoRecording();
         setCompleted(true);
     };
 
@@ -858,6 +869,9 @@ const OnboardingInterview = ({
     const handleSkipCoding = () => {
         setShowCodingTest(false);
         setCodingResults({ skipped: true });
+
+        // Finalize video recording even if skipped
+        finalizeVideoRecording();
 
         // Stop camera when interview is complete
         stopCamera();
@@ -1025,6 +1039,7 @@ const OnboardingInterview = ({
                     <InterviewProctor
                         videoRef={videoRef}
                         enabled={proctoringEnabled && cameraEnabled && !completed}
+                        initialViolations={proctoringViolations}
                         onViolationLog={handleViolationLog}
                     />
                 </div>
@@ -1042,79 +1057,48 @@ const OnboardingInterview = ({
         );
     }
 
+    // Render Results view if completed and results exist
     if (completed && results) {
-        // Show "Pending Review" message instead of actual scores
-        // Candidate should NOT see their results until admin approves
         return (
-            <div className="onboarding-interview results-state">
-                <div className="results-card pending-review">
-                    {/* Pending Review Icon */}
-                    <div className="pending-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
+            <div className="interview-completion-page animate-fade-in">
+                <div className="completion-banner success">
+                    <div className="banner-icon">✓</div>
+                    <div className="banner-content">
+                        <h3>Interview Submitted Successfully</h3>
+                        <p>Below are your <strong>Preliminary AI Results</strong>. Final approval is pending Admin review.</p>
                     </div>
+                </div>
 
-                    <h2>🎯 Interview Submitted Successfully!</h2>
-                    <p className="pending-message">
-                        Your interview has been submitted and is now being reviewed by our team.
-                    </p>
+                {/* Reuse InterviewResults component but pass data directly */}
+                <InterviewResultsPreview results={results} onContinue={onComplete} />
+            </div>
+        );
+    }
 
-                    {/* What happens next */}
-                    <div className="next-steps-card">
-                        <h4>📋 What Happens Next?</h4>
-                        <ul className="next-steps-list">
-                            <li>
-                                <span className="step-icon">👀</span>
-                                <span>Our team will review your responses within 24-48 hours</span>
-                            </li>
-                            <li>
-                                <span className="step-icon">📧</span>
-                                <span>You'll receive an email notification with your results</span>
-                            </li>
-                            <li>
-                                <span className="step-icon">✅</span>
-                                <span>Once approved, you'll be able to apply to jobs on our platform</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {/* Coding test completion note if applicable */}
-                    {codingResults && !codingResults.skipped && (
-                        <div className="coding-submitted-note">
-                            <span className="note-icon">💻</span>
-                            <span>Coding challenge also submitted for review</span>
-                        </div>
-                    )}
-
-                    {/* Proctoring note if violations were detected */}
-                    {proctoringViolations.length > 0 && (
-                        <div className="proctoring-note">
-                            <span className="note-icon">📝</span>
-                            <span>Your session included {proctoringViolations.length} activity flag(s) which will be reviewed</span>
-                        </div>
-                    )}
-
-                    <button className="btn-primary finish-btn" onClick={handleFinish}>
-                        Continue to Dashboard →
+    // Default completion view (fallback)
+    if (completed) {
+        return (
+            <div className="interview-completion-page animate-fade-in">
+                <div className="completion-content">
+                    <div className="completion-icon">🎉</div>
+                    <h2>Interview Completed!</h2>
+                    <p>Thank you for completing the interview.</p>
+                    <p className="sub-text">Your responses have been submitted for review.</p>
+                    <button className="btn btn-primary" onClick={onComplete}>
+                        Continue to Dashboard
                     </button>
-
-                    <p className="support-text">
-                        Questions? Contact <a href="mailto:support@aihiring.com">support@aihiring.com</a>
-                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="onboarding-interview">
-            {/* Header */}
+        <div className={`onboarding-interview ${cameraEnabled ? 'camera-active' : ''}`}>
+            {/* Top Bar - Progress & Timer */}
             <div className="interview-header">
                 <div className="header-left">
                     <span className={`round-badge ${isHRRound ? 'hr' : 'tech'}`}>
-                        {currentRound.displayName || (isHRRound ? 'HR Round' : 'Technical Round')}
+                        {currentRound && currentRound.displayName ? currentRound.displayName : (isHRRound ? 'HR Round' : 'Technical Round')}
                     </span>
                     <span className="question-counter">
                         Question {currentIndex + 1} of {progress.totalQuestions}
@@ -1129,6 +1113,7 @@ const OnboardingInterview = ({
                     <span className={`timer ${timeLeft < 30 ? 'warning' : ''}`}>
                         ⏱️ {formatTime(timeLeft)}
                     </span>
+
 
                 </div>
             </div>

@@ -8,9 +8,9 @@ class GeminiRateLimiter {
     constructor() {
         // Per-model rate tracking
         this.modelStats = {
-            REASONING: { requests: [], rpmLimit: 15 },
-            UX_LITE: { requests: [], rpmLimit: 30 },
-            ANALYTICS: { requests: [], rpmLimit: 15 },
+            REASONING: { requests: [], rpmLimit: 2000 },
+            UX_LITE: { requests: [], rpmLimit: 2000 },
+            ANALYTICS: { requests: [], rpmLimit: 2000 },
             EMBEDDING: { requests: [], rpmLimit: 1500 }
         };
 
@@ -187,8 +187,8 @@ class GeminiRateLimiter {
      */
     shouldUseFallback(modelKey) {
         const remaining = this.getRemainingRequests(modelKey);
-        // Use fallback if less than 20% of rate limit remaining
-        return remaining <= Math.ceil(this.modelStats[modelKey].rpmLimit * 0.2);
+        // Use fallback if less than or equal to 1 request remaining
+        return remaining <= 1;
     }
 }
 

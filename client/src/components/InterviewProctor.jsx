@@ -19,31 +19,49 @@ const InterviewProctor = ({
 }) => {
     // Violation log (all violations recorded for admin review)
     // Initialize with parent's cumulative violations to maintain count across remounts
+    // Violation log (all violations recorded for admin review)
+    // Initialize with parent's cumulative violations to maintain count across remounts
     const [violations, setViolations] = useState(initialViolations);
     const [currentNotice, setCurrentNotice] = useState(null);
     const [showNotice, setShowNotice] = useState(false);
 
-    // Update violations if initialViolations changes (when parent updates cumulative count)
-    useEffect(() => {
-        setViolations(initialViolations);
-    }, [initialViolations]);
+    // REMOVED manual sync useEffect that was causing infinite loops
+    // initialViolations is used for initial state only
+    // Components should be remounted with a new key if a full reset is needed
+    // or the parent should manage the state entirely.
 
-    // Use our custom hooks
-    const faceDetection = useFaceDetection(videoRef, enabled);
-    const activityMonitor = useActivityMonitor(enabled, handleViolation);
-
-    // Start monitoring when component mounts
-    useEffect(() => {
-        if (enabled) {
-            activityMonitor.startMonitoring();
+    // Determine violation severity for admin review
+    const getSeverity = useCallback((type) => {
+        switch (type) {
+            case 'TAB_SWITCH':
+            case 'WINDOW_BLUR':
+                return 'high';
+            case 'MULTIPLE_FACES':
+            case 'NO_FACE':
+                return 'medium';
+            case 'LOOK_AWAY':
+            case 'COPY_ATTEMPT':
+            case 'PASTE_ATTEMPT':
+                return 'low';
+            default:
+                return 'medium';
         }
-        return () => activityMonitor.stopMonitoring();
-    }, [enabled]);
+    }, []);
 
-    // Handle violations from activity monitor
-    function handleViolation(violation) {
-        logViolation(violation.type, violation.details.message);
-    }
+    // Get icon for violation type
+    const getViolationIcon = useCallback((type) => {
+        switch (type) {
+            case 'NO_FACE': return '👤';
+            case 'MULTIPLE_FACES': return '👥';
+            case 'LOOK_AWAY': return '👀';
+            case 'TAB_SWITCH': return '🔀';
+            case 'WINDOW_BLUR': return '🪟';
+            case 'COPY_ATTEMPT':
+            case 'PASTE_ATTEMPT': return '📋';
+            case 'DEV_TOOLS': return '⚙️';
+            default: return '⚠️';
+        }
+    }, []);
 
     // Log a violation (does NOT terminate - just records)
     const logViolation = useCallback((type, message) => {
@@ -72,40 +90,24 @@ const InterviewProctor = ({
         setTimeout(() => setShowNotice(false), 3000);
 
         console.log(`📋 Violation logged: ${type} - ${message}`);
-    }, [onViolationLog]);
+    }, [onViolationLog, getSeverity]);
 
-    // Determine violation severity for admin review
-    const getSeverity = (type) => {
-        switch (type) {
-            case 'TAB_SWITCH':
-            case 'WINDOW_BLUR':
-                return 'high';
-            case 'MULTIPLE_FACES':
-            case 'NO_FACE':
-                return 'medium';
-            case 'LOOK_AWAY':
-            case 'COPY_ATTEMPT':
-            case 'PASTE_ATTEMPT':
-                return 'low';
-            default:
-                return 'medium';
-        }
-    };
+    // Handle violations from activity monitor
+    const handleViolation = useCallback((violation) => {
+        logViolation(violation.type, violation.details.message);
+    }, [logViolation]);
 
-    // Get icon for violation type
-    const getViolationIcon = (type) => {
-        switch (type) {
-            case 'NO_FACE': return '👤';
-            case 'MULTIPLE_FACES': return '👥';
-            case 'LOOK_AWAY': return '👀';
-            case 'TAB_SWITCH': return '🔀';
-            case 'WINDOW_BLUR': return '🪟';
-            case 'COPY_ATTEMPT':
-            case 'PASTE_ATTEMPT': return '📋';
-            case 'DEV_TOOLS': return '⚙️';
-            default: return '⚠️';
+    // Use our custom hooks
+    const faceDetection = useFaceDetection(videoRef, enabled);
+    const activityMonitor = useActivityMonitor(enabled, handleViolation);
+
+    // Start monitoring when component mounts
+    useEffect(() => {
+        if (enabled) {
+            activityMonitor.startMonitoring();
         }
-    };
+        return () => activityMonitor.stopMonitoring();
+    }, [enabled, activityMonitor]);
 
     // Track previous face detection states to prevent duplicate logging
     const prevFaceState = useRef({ shouldWarnNoFace: false, hasMultipleFaces: false, shouldWarnLookAway: false });

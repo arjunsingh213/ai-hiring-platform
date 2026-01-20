@@ -51,10 +51,25 @@ router.get('/', async (req, res) => {
 router.get('/recruiter/:recruiterId', async (req, res) => {
     try {
         const { recruiterId } = req.params;
+        const mongoose = require('mongoose');
 
-        const jobs = await Job.find({ recruiterId })
+        console.log(`[JOB_ROUTE] Fetching jobs for recruiterId: ${recruiterId}`);
+
+        // Validate and cast to ObjectId to ensure query matches
+        if (!mongoose.Types.ObjectId.isValid(recruiterId)) {
+            console.warn(`[JOB_ROUTE] Invalid recruiterId format: ${recruiterId}`);
+            return res.status(400).json({ success: false, error: 'Invalid recruiter ID format' });
+        }
+
+        const queryId = new mongoose.Types.ObjectId(recruiterId);
+        const jobs = await Job.find({ recruiterId: queryId })
             .populate('recruiterId', 'profile.name profile.company email')
             .sort({ createdAt: -1 });
+
+        console.log(`[JOB_ROUTE] Found ${jobs.length} jobs for recruiter ${recruiterId}`);
+        if (jobs.length > 0) {
+            console.log(`[JOB_ROUTE] Sample job: ${jobs[0].title} (Status: ${jobs[0].status})`);
+        }
 
         res.json({ success: true, data: jobs, count: jobs.length });
     } catch (error) {
@@ -67,18 +82,31 @@ router.get('/recruiter/:recruiterId', async (req, res) => {
 router.get('/recruiter/:recruiterId/analytics', async (req, res) => {
     try {
         const { recruiterId } = req.params;
+        const mongoose = require('mongoose');
+
+        console.log(`[ANALYTICS] Fetching analytics for recruiterId: ${recruiterId}`);
+
+        if (!mongoose.Types.ObjectId.isValid(recruiterId)) {
+            console.warn(`[ANALYTICS] Invalid recruiterId format: ${recruiterId}`);
+            return res.status(400).json({ success: false, error: 'Invalid recruiter ID format' });
+        }
+
+        const queryId = new mongoose.Types.ObjectId(recruiterId);
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        const startOfWeek = new Date();
+        startOfWeek.setDate(now.getDate() - now.getDay());
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
 
         // Get all jobs by this recruiter with populated applicants
-        const jobs = await Job.find({ recruiterId })
+        const jobs = await Job.find({ recruiterId: queryId })
             .populate({
                 path: 'applicants.userId',
                 select: 'profile.name profile.photo email'
             });
+
+        console.log(`[ANALYTICS] Processed ${jobs.length} jobs for recruiter ${recruiterId}`);
 
         // Calculate job stats
         const totalJobs = jobs.length;
@@ -157,7 +185,7 @@ router.get('/recruiter/:recruiterId/analytics', async (req, res) => {
                                     title: 'Interview Completed',
                                     description: `${applicant.userId?.profile?.name || 'Candidate'} completed interview for ${job.title}`,
                                     timestamp: interview.completedAt,
-                                    score: interview.scoring?.overall
+                                    score: interview.scoring?.overallScore
                                 });
                             }
                         }
@@ -242,15 +270,26 @@ router.get('/recruiter/:recruiterId/all-applicants', async (req, res) => {
     try {
         const { recruiterId } = req.params;
         const { status, interviewCompleted, sortBy = 'date' } = req.query;
+        const mongoose = require('mongoose');
+
+        console.log(`[PIPELINE] Fetching all applicants for recruiterId: ${recruiterId}`);
+
+        if (!mongoose.Types.ObjectId.isValid(recruiterId)) {
+            console.warn(`[PIPELINE] Invalid recruiterId format: ${recruiterId}`);
+            return res.status(400).json({ success: false, error: 'Invalid recruiter ID format' });
+        }
+
+        const queryId = new mongoose.Types.ObjectId(recruiterId);
 
         // Get all jobs by this recruiter
-        const jobs = await Job.find({ recruiterId })
+        const jobs = await Job.find({ recruiterId: queryId })
             .populate({
                 path: 'applicants.userId',
                 select: 'profile.name profile.photo email jobSeekerProfile'
             });
 
         let allApplicants = [];
+        console.log(`[PIPELINE] Found ${jobs.length} jobs for recruiter ${recruiterId}`);
 
         for (const job of jobs) {
             for (const applicant of job.applicants) {
@@ -276,14 +315,17 @@ router.get('/recruiter/:recruiterId/all-applicants', async (req, res) => {
                         rejectionReason: applicant.rejectionReason
                     },
                     interview: interview ? {
+                        _id: interview._id,
                         status: interview.status,
                         overallScore: interview.scoring?.overallScore || 0,
-                        technicalScore: interview.scoring?.technicalAccuracy || 0,
-                        communicationScore: interview.scoring?.communication || 0,
+                        technicalScore: interview.scoring?.technicalScore || 0,
+                        communicationScore: interview.scoring?.communicationScore || 0,
                         matchScore: interview.matchScore?.overall || 0,
                         passed: interview.passed,
                         completedAt: interview.completedAt,
-                        strengths: interview.scoring?.strengths || []
+                        strengths: interview.scoring?.strengths || [],
+                        weaknesses: interview.scoring?.weaknesses || [],
+                        feedback: interview.scoring?.detailedFeedback
                     } : null
                 });
             }
@@ -511,15 +553,6 @@ router.put('/:jobId/applicants/:applicantId', async (req, res) => {
     }
 });
 
-// Get jobs by recruiter
-router.get('/recruiter/:recruiterId', async (req, res) => {
-    try {
-        const jobs = await Job.find({ recruiterId: req.params.recruiterId }).sort({ createdAt: -1 });
-        res.json({ success: true, data: jobs, count: jobs.length });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 
 // Get applicants for a job with interview data
 router.get('/:id/applicants', async (req, res) => {
@@ -757,229 +790,8 @@ router.post('/:jobId/applicants/:userId/notes', async (req, res) => {
     }
 });
 
-// Get all applicants across all jobs for a recruiter
-router.get('/recruiter/:recruiterId/all-applicants', async (req, res) => {
-    try {
-        const { recruiterId } = req.params;
-        const { status, interviewCompleted, sortBy } = req.query;
 
-        // Get all jobs for this recruiter
-        const jobs = await Job.find({ recruiterId })
-            .populate({
-                path: 'applicants.userId',
-                select: 'profile.name profile.photo email jobSeekerProfile'
-            })
-            .sort({ createdAt: -1 });
 
-        // Flatten all applicants with job context
-        let allApplicants = [];
-
-        for (const job of jobs) {
-            for (const applicant of job.applicants) {
-                // Fetch interview data
-                const interview = await Interview.findById(applicant.interviewId)
-                    .select('status scoring matchScore passed completedAt duration');
-
-                allApplicants.push({
-                    jobId: job._id,
-                    jobTitle: job.title,
-                    company: job.company?.name,
-                    applicant: {
-                        userId: applicant.userId?._id,
-                        name: applicant.userId?.profile?.name,
-                        photo: applicant.userId?.profile?.photo,
-                        email: applicant.userId?.email,
-                        profession: applicant.userId?.jobSeekerProfile?.profession,
-                        experienceLevel: applicant.userId?.jobSeekerProfile?.experienceLevel,
-                        appliedAt: applicant.appliedAt,
-                        status: applicant.status,
-                        notes: applicant.notes
-                    },
-                    interview: interview ? {
-                        id: interview._id,
-                        status: interview.status,
-                        passed: interview.passed,
-                        overallScore: interview.scoring?.overallScore || 0,
-                        technicalScore: interview.scoring?.technicalAccuracy || 0,
-                        hrScore: interview.scoring?.communication || 0,
-                        strengths: interview.scoring?.strengths || [],
-                        completedAt: interview.completedAt,
-                        duration: interview.duration
-                    } : null
-                });
-            }
-        }
-
-        // Apply filters
-        if (status) {
-            allApplicants = allApplicants.filter(a => a.applicant.status === status);
-        }
-        if (interviewCompleted === 'true') {
-            allApplicants = allApplicants.filter(a => a.interview?.status === 'completed');
-        } else if (interviewCompleted === 'false') {
-            allApplicants = allApplicants.filter(a => !a.interview || a.interview.status !== 'completed');
-        }
-
-        // Sort
-        if (sortBy === 'score') {
-            allApplicants.sort((a, b) => (b.interview?.overallScore || 0) - (a.interview?.overallScore || 0));
-        } else if (sortBy === 'date') {
-            allApplicants.sort((a, b) => new Date(b.applicant.appliedAt) - new Date(a.applicant.appliedAt));
-        } else if (sortBy === 'name') {
-            allApplicants.sort((a, b) => (a.applicant.name || '').localeCompare(b.applicant.name || ''));
-        }
-
-        res.json({
-            success: true,
-            data: allApplicants,
-            count: allApplicants.length
-        });
-    } catch (error) {
-        console.error('Get all applicants error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Hire an applicant
-router.put('/:jobId/applicants/:applicantId/hire', async (req, res) => {
-    try {
-        const { jobId, applicantId } = req.params;
-
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({ success: false, error: 'Job not found' });
-        }
-
-        // Find the applicant
-        const applicant = job.applicants.find(a =>
-            a.userId?.toString() === applicantId || a.userId?._id?.toString() === applicantId
-        );
-
-        if (!applicant) {
-            return res.status(404).json({ success: false, error: 'Applicant not found' });
-        }
-
-        // Update applicant status
-        applicant.status = 'hired';
-        applicant.hiredAt = new Date();
-        await job.save();
-
-        // Get user details for email notification
-        const user = await User.findById(applicantId);
-
-        // Send email notification if nodemailer is available
-        try {
-            const nodemailer = require('nodemailer');
-            if (process.env.EMAIL_USER && process.env.EMAIL_PASS && user?.email) {
-                const transporter = nodemailer.createTransport({
-                    service: process.env.EMAIL_SERVICE || 'gmail',
-                    auth: {
-                        user: process.env.EMAIL_USER,
-                        pass: process.env.EMAIL_PASS
-                    }
-                });
-
-                await transporter.sendMail({
-                    from: `"AI Hiring Platform" <${process.env.EMAIL_USER}>`,
-                    to: user.email,
-                    subject: `🎉 Congratulations! You've been hired for ${job.title}`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                            <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 20px; border-radius: 10px 10px 0 0;">
-                                <h1 style="color: white; margin: 0;">🎉 Congratulations!</h1>
-                            </div>
-                            <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-top: none;">
-                                <p style="color: #334155; font-size: 16px;">Hi ${user.profile?.name || 'Candidate'},</p>
-                                <p style="color: #334155; font-size: 16px;">Great news! You've been selected for the position of <strong>${job.title}</strong> at <strong>${job.company?.name || 'our company'}</strong>.</p>
-                                <p style="color: #334155; font-size: 16px;">The recruiter will reach out to you shortly with next steps.</p>
-                                <p style="color: #334155; font-size: 16px;">Congratulations on this achievement!</p>
-                            </div>
-                        </div>
-                    `
-                });
-            }
-        } catch (emailError) {
-            console.error('Failed to send hire notification email:', emailError);
-        }
-
-        res.json({ success: true, message: 'Applicant hired successfully', data: applicant });
-    } catch (error) {
-        console.error('Hire applicant error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Reject an applicant
-router.put('/:jobId/applicants/:applicantId/reject', async (req, res) => {
-    try {
-        const { jobId, applicantId } = req.params;
-        const { rejectionReason } = req.body || {};
-
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({ success: false, error: 'Job not found' });
-        }
-
-        // Find the applicant
-        const applicant = job.applicants.find(a =>
-            a.userId?.toString() === applicantId || a.userId?._id?.toString() === applicantId
-        );
-
-        if (!applicant) {
-            return res.status(404).json({ success: false, error: 'Applicant not found' });
-        }
-
-        // Update applicant status
-        applicant.status = 'rejected';
-        applicant.rejectedAt = new Date();
-        applicant.rejectionReason = rejectionReason || '';
-        await job.save();
-
-        // Get user details for email notification
-        const user = await User.findById(applicantId);
-
-        // Send email notification if nodemailer is available
-        try {
-            const nodemailer = require('nodemailer');
-            if (process.env.EMAIL_USER && process.env.EMAIL_PASS && user?.email) {
-                const transporter = nodemailer.createTransport({
-                    service: process.env.EMAIL_SERVICE || 'gmail',
-                    auth: {
-                        user: process.env.EMAIL_USER,
-                        pass: process.env.EMAIL_PASS
-                    }
-                });
-
-                await transporter.sendMail({
-                    from: `"AI Hiring Platform" <${process.env.EMAIL_USER}>`,
-                    to: user.email,
-                    subject: `Update on your application for ${job.title}`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                            <div style="background: linear-gradient(135deg, #6366f1, #a855f7); padding: 20px; border-radius: 10px 10px 0 0;">
-                                <h1 style="color: white; margin: 0;">Application Update</h1>
-                            </div>
-                            <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-top: none;">
-                                <p style="color: #334155; font-size: 16px;">Hi ${user.profile?.name || 'Candidate'},</p>
-                                <p style="color: #334155; font-size: 16px;">Thank you for your interest in the <strong>${job.title}</strong> position.</p>
-                                <p style="color: #334155; font-size: 16px;">After careful review, we've decided to move forward with other candidates. We encourage you to apply for future opportunities that match your profile.</p>
-                                ${rejectionReason ? `<p style="color: #64748b; font-size: 14px;"><em>Feedback: ${rejectionReason}</em></p>` : ''}
-                                <p style="color: #334155; font-size: 16px;">Best of luck in your job search!</p>
-                            </div>
-                        </div>
-                    `
-                });
-            }
-        } catch (emailError) {
-            console.error('Failed to send rejection notification email:', emailError);
-        }
-
-        res.json({ success: true, message: 'Applicant rejected', data: applicant });
-    } catch (error) {
-        console.error('Reject applicant error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 
 // UPDATE a job
 router.put('/:id', async (req, res) => {
