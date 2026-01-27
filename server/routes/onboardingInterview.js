@@ -71,6 +71,7 @@ router.get('/check-status/:userId', async (req, res) => {
                 canTakeInterview: true,
                 status: 'approved',
                 message: 'Congratulations! You are approved for job-specific interviews.',
+                canApplyForJobs: true,
                 canApplyToJobs: true
             });
         }
@@ -802,17 +803,24 @@ router.post('/submit', async (req, res) => {
             // Interview goes to "pending_review" - admin must approve before candidate sees results
             // DO NOT set platformInterview.status to passed/failed yet - wait for admin review
 
+            const passed = (
+                (evaluation.overallScore ?? 0) >= 60 &&
+                (evaluation.technicalScore ?? 0) >= 50 &&
+                (evaluation.hrScore ?? 0) >= 50 &&
+                (evaluation.communication ?? 0) >= 40
+            );
+
             await User.findByIdAndUpdate(userId, {
                 $set: {
                     'jobSeekerProfile.onboardingInterview': interviewResults,
                     'jobSeekerProfile.interviewScore': evaluation.overallScore || 10,
-                    // Set status to pending_review instead of passed/failed
-                    'platformInterview.status': 'in_progress', // Will be updated after admin review
+                    // PILOT TESTING: Set status to passed/failed immediately
+                    'platformInterview.status': passed ? 'passed' : 'failed',
                     'platformInterview.lastAttemptAt': new Date()
                 },
                 $inc: { 'platformInterview.attempts': 1 }
             });
-            console.log('Interview submitted. Pending admin review.');
+            console.log(`Interview submitted. AI Result: ${passed ? 'PASSED' : 'FAILED'}`);
 
             // Create Interview document with adminReview fields for admin dashboard
             try {
@@ -838,18 +846,18 @@ router.post('/submit', async (req, res) => {
 
                 const newInterview = await Interview.create({
                     userId,
-                    interviewType: 'combined',
-                    status: 'pending_review', // Changed from 'completed'
-                    passed: false, // Will be set after admin approval
-                    resultVisibleToCandidate: false, // Hidden until admin approves
+                    interviewType: 'platform',
+                    status: 'completed', // Changed from pending_review to completed
+                    passed: passed,
+                    resultVisibleToCandidate: true, // Show results immediately
 
-                    // Scoring from AI
+                    // Scoring from AI (Aligned with schema)
                     scoring: {
                         overallScore: evaluation.overallScore || 10,
-                        technicalAccuracy: evaluation.technicalScore || 10,
-                        communication: evaluation.communication || 10,
-                        confidence: evaluation.confidence || 10,
-                        relevance: evaluation.relevance || 10,
+                        technicalScore: evaluation.technicalScore || 10,
+                        communicationScore: evaluation.communication || 10,
+                        confidenceScore: evaluation.confidence || 10,
+                        relevanceScore: evaluation.relevance || 10,
                         strengths: evaluation.strengths || [],
                         weaknesses: evaluation.weaknesses || [],
                         detailedFeedback: evaluation.feedback || 'Platform interview completed'
@@ -968,8 +976,8 @@ router.post('/submit', async (req, res) => {
                 technicalFeedback: evaluation.technicalFeedback || 'Review your technical fundamentals and practice problem-solving.',
                 communicationFeedback: evaluation.communicationFeedback || 'Practice structuring your answers with examples.',
 
-                // Recommendations
-                recommendations: evaluation.recommendations || [
+                // Recommendations (Combined from areasToImprove)
+                recommendations: evaluation.recommendations || evaluation.areasToImprove || [
                     'Practice with mock interviews',
                     'Prepare specific examples from your experience',
                     'Research common interview questions for your role'
@@ -1490,7 +1498,9 @@ router.get('/status/:userId', async (req, res) => {
             }
         }
 
-        const canApplyForJobs = status === 'passed';
+        // PILOT TESTING: Allow jobs if any interview exists (participation-based)
+        const canApplyForJobs = !!(pendingReviewInterview || approvedInterview || rejectedInterview ||
+            user.isOnboardingComplete || user.interviewStatus?.completed);
 
         // Check if can retry
         let canRetry = false;
@@ -1516,10 +1526,10 @@ router.get('/status/:userId', async (req, res) => {
                 attempts: platformInterview.attempts || 0,
                 completedAt: platformInterview.completedAt,
                 canApplyForJobs,
+                canApplyToJobs: canApplyForJobs, // Alias for compatibility
                 canRetry,
                 retryAfter,
-                rejectionReason,
-                message: canApplyForJobs
+                statusMessage: canApplyForJobs
                     ? 'You can apply for jobs!'
                     : status === 'pending_review'
                         ? 'Your interview is under review. Please wait for admin approval.'

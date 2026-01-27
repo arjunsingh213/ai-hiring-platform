@@ -12,15 +12,22 @@ const axios = require('axios');
 
 // Model configurations with STABLE endpoints
 const GEMINI_MODELS = {
-    // Primary reasoning model
     REASONING: {
+        name: 'gemini-2.5-flash',
+        endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent',
+        rpmLimit: 1000,
+        tpmLimit: 1000000,
+        useCases: ['interview_questions', 'answer_evaluation', 'recruiter_reports', 'adaptive_followup']
+    },
+    // Secondary reasoning model - keeping 2.0 as high-RPM backup
+    REASONING_FAST: {
         name: 'gemini-2.0-flash',
         endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent',
         rpmLimit: 2000,
         tpmLimit: 4000000,
-        useCases: ['interview_questions', 'answer_evaluation', 'recruiter_reports', 'adaptive_followup']
+        useCases: ['fast_reasoning']
     },
-    // Fallback model - Verified 2.5-flash in User's AI Studio
+    // Fallback model
     FALLBACK: {
         name: 'gemini-2.5-flash',
         endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent',

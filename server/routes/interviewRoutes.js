@@ -7,6 +7,21 @@ const Job = require('../models/Job');
 // const aiService = require('../services/ai/aiService'); // Removed in favor of Gemini
 // const deepseekService = require('../services/ai/deepseekService'); // Removed in favor of Gemini
 const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
+const cloudinary = require('../config/cloudinary');
+const multer = require('multer');
+
+// Configure multer for video uploads (in memory)
+const videoUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for videos
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('video/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only video files are allowed'), false);
+        }
+    }
+});
 
 // Start a new interview (for job applications)
 router.post('/start', async (req, res) => {
@@ -1156,6 +1171,98 @@ router.get('/user/:userId', async (req, res) => {
         res.json({ success: true, data: interviews, count: interviews.length });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
+/**
+ * POST /api/interviews/upload-video
+ * Upload interview video recording to Cloudinary
+ */
+router.post('/upload-video', videoUpload.single('video'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No video file provided' });
+        }
+
+        const { interviewId, userId, cheatingMarkers } = req.body;
+
+        console.log(`Uploading interview video for user ${userId}, size: ${req.file.size} bytes`);
+
+        // Upload to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    resource_type: 'video',
+                    folder: 'interview-recordings',
+                    public_id: `interview_${interviewId || userId}_${Date.now()}`,
+                    chunk_size: 6000000, // 6MB chunks for large videos
+                    eager: [
+                        { format: 'mp4', video_codec: 'h264' } // Ensure compatibility
+                    ]
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
+        });
+
+        console.log('Video uploaded successfully:', uploadResult.public_id);
+
+        // Parse cheating markers if provided
+        let parsedMarkers = [];
+        try {
+            if (cheatingMarkers) {
+                parsedMarkers = typeof cheatingMarkers === 'string'
+                    ? JSON.parse(cheatingMarkers)
+                    : cheatingMarkers;
+            }
+        } catch (e) {
+            console.error('Failed to parse cheating markers:', e);
+        }
+
+        // Update Interview document with video details (if interviewId provided)
+        if (interviewId) {
+            await Interview.findByIdAndUpdate(interviewId, {
+                $set: {
+                    'videoRecording.publicId': uploadResult.public_id,
+                    'videoRecording.url': uploadResult.url,
+                    'videoRecording.secureUrl': uploadResult.secure_url,
+                    'videoRecording.duration': uploadResult.duration,
+                    'videoRecording.format': uploadResult.format,
+                    'videoRecording.uploadedAt': new Date(),
+                    'videoRecording.fileSize': req.file.size,
+                    'videoRecording.cheatingMarkers': parsedMarkers.map(m => ({
+                        flagType: m.type || m.flagType,
+                        timestamp: m.videoTimestamp || m.timestamp || 0,
+                        duration: m.duration || 5,
+                        severity: m.severity || 'medium',
+                        description: m.description || '',
+                        aiConfidence: m.confidence || 80
+                    })),
+                    'videoRecording.totalFlagsInVideo': parsedMarkers.length,
+                    'videoRecording.highSeverityFlagsCount': parsedMarkers.filter(m => m.severity === 'high').length
+                }
+            });
+            console.log('Interview document updated with video');
+        }
+
+        res.json({
+            success: true,
+            data: {
+                publicId: uploadResult.public_id,
+                url: uploadResult.url,
+                secureUrl: uploadResult.secure_url,
+                duration: uploadResult.duration,
+                format: uploadResult.format,
+                fileSize: req.file.size
+            }
+        });
+    } catch (error) {
+        console.error('Video upload error:', error);
+        res.status(500).json({ success: false, error: 'Failed to upload video' });
     }
 });
 

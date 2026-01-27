@@ -48,43 +48,23 @@ const requirePlatformInterview = async (req, res, next) => {
             }
         }
 
-        // Check if passed
-        if (interviewStatus === 'passed') {
+        // PILOT TESTING: Allow access if interview is completed, passed, failed, or pending_review
+        // The core requirement is that they ATTENDED it once.
+        if (['passed', 'failed', 'pending_review', 'completed'].includes(interviewStatus)) {
             return next();
         }
 
-        // Check if failed but can retry
-        if (interviewStatus === 'failed') {
-            const canRetry = user.platformInterview?.canRetry;
-            const retryAfter = user.platformInterview?.retryAfter;
-
-            if (canRetry && retryAfter && new Date() > new Date(retryAfter)) {
-                // User can retry, but still can't apply until they pass
-                return res.status(403).json({
-                    success: false,
-                    error: 'Platform interview not passed',
-                    code: 'INTERVIEW_RETRY_AVAILABLE',
-                    message: 'You can retry your platform interview now. Pass it to apply for jobs.',
-                    canRetry: true
-                });
-            }
-
-            return res.status(403).json({
-                success: false,
-                error: 'Platform interview not passed',
-                code: 'INTERVIEW_FAILED',
-                message: `You failed the platform interview. You can retry after ${new Date(retryAfter).toLocaleDateString()}.`,
-                canRetry: false,
-                retryAfter: retryAfter
-            });
+        // Even if status is skipped or pending, if onboarding complete is true, allow through
+        if (user.isOnboardingComplete || user.interviewStatus?.completed) {
+            return next();
         }
 
-        // Pending, skipped, or in_progress
+        // Only block if strictly required and not even attempted
         return res.status(403).json({
             success: false,
             error: 'Platform interview required',
             code: 'INTERVIEW_REQUIRED',
-            message: 'You must complete and pass the platform interview before applying for jobs.',
+            message: 'You must complete the platform interview once before applying for jobs.',
             interviewStatus: interviewStatus
         });
 

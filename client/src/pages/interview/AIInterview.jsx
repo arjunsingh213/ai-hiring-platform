@@ -192,6 +192,16 @@ const AIInterview = () => {
     const navigate = useNavigate();
     const toast = useToast();
     const videoRef = useRef(null);
+    const streamRef = useRef(null); // Track camera stream
+    const isMountedRef = useRef(true); // Track mount status
+
+    // Video recording refs
+    const mediaRecorderRef = useRef(null);
+    const recordedChunksRef = useRef([]);
+    const interviewStartTimeRef = useRef(null);
+    const videoUrlRef = useRef(null);
+    const [uploadingVideo, setUploadingVideo] = useState(false);
+    const [finalViolations, setFinalViolations] = useState([]);
 
     // Core interview state
     const [interview, setInterview] = useState(null);
@@ -246,10 +256,93 @@ const AIInterview = () => {
     const [violationReport, setViolationReport] = useState(null);
 
     // Handle proctoring violations (log-only, no termination)
-    const handleViolationLog = (violations, getReport) => {
-        setProctoringViolations(violations);
-        if (getReport) {
-            setViolationReport(getReport());
+    const handleViolationLog = (violations) => {
+        const violationsWithVideoTime = violations.map(v => ({
+            ...v,
+            videoTimestamp: interviewStartTimeRef.current
+                ? Math.max(0, Math.round((new Date(v.timestamp).getTime() - interviewStartTimeRef.current) / 1000))
+                : 0
+        }));
+        setProctoringViolations(violationsWithVideoTime);
+    };
+
+    // Video recording functions
+    const startRecording = () => {
+        if (!streamRef.current || mediaRecorderRef.current) return;
+
+        try {
+            recordedChunksRef.current = [];
+            const mimeTypes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+            let mimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+            const options = mimeType ? { mimeType } : {};
+            const mediaRecorder = new MediaRecorder(streamRef.current, options);
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) recordedChunksRef.current.push(event.data);
+            };
+
+            mediaRecorder.start(1000);
+            mediaRecorderRef.current = mediaRecorder;
+            setIsRecording(true);
+            console.log('📹 Video recording started');
+        } catch (error) {
+            console.error('Failed to start recording:', error);
+        }
+    };
+
+    const stopRecording = () => {
+        return new Promise((resolve) => {
+            if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
+                resolve(null);
+                return;
+            }
+            mediaRecorderRef.current.onstop = () => {
+                const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+                console.log('📹 Video recording stopped, size:', blob.size);
+                resolve(blob);
+            };
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current = null;
+            setIsRecording(false);
+        });
+    };
+
+    const uploadVideoToCloudinary = async (videoBlob, cheatingMarkers, id = null) => {
+        if (!videoBlob || videoBlob.size === 0) return null;
+        try {
+            setUploadingVideo(true);
+            const formData = new FormData();
+            formData.append('video', videoBlob, 'interview-recording.webm');
+            formData.append('userId', localStorage.getItem('userId'));
+            if (id || interviewId) formData.append('interviewId', id || interviewId);
+            formData.append('cheatingMarkers', JSON.stringify(cheatingMarkers || []));
+
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${baseUrl}/interviews/upload-video`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const result = await response.json();
+            console.log('✅ Video uploaded:', result.data?.url);
+            return result.data;
+        } catch (error) {
+            console.error('Video upload error:', error);
+            return null;
+        } finally {
+            setUploadingVideo(false);
+        }
+    };
+
+    const finalizeVideoRecording = async () => {
+        try {
+            const videoBlob = await stopRecording();
+            if (videoBlob) {
+                await uploadVideoToCloudinary(videoBlob, proctoringViolations);
+            }
+        } catch (error) {
+            console.error('Error finalizing video:', error);
         }
     };
 
@@ -545,14 +638,30 @@ const AIInterview = () => {
     };
 
     useEffect(() => {
+        isMountedRef.current = true;
         fetchInterview();
         startCamera();
         const timer = setInterval(() => setTimeSpent(prev => prev + 1), 1000);
         return () => {
+            isMountedRef.current = false;
             clearInterval(timer);
             stopCamera();
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            }
         };
     }, []);
+
+    // Start recording when camera is ready
+    useEffect(() => {
+        if (streamRef.current && !isRecording && !completed) {
+            const timer = setTimeout(() => {
+                interviewStartTimeRef.current = Date.now();
+                startRecording();
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [isRecording, completed]);
 
     const fetchInterview = async () => {
         try {
@@ -694,19 +803,25 @@ const AIInterview = () => {
     const startCamera = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (!isMountedRef.current) {
+                stream.getTracks().forEach(t => t.stop());
+                return;
+            }
+            streamRef.current = stream;
             if (videoRef.current) videoRef.current.srcObject = stream;
-            setIsRecording(true);
-            // Start face verification once camera is ready
-            setTimeout(() => startFaceVerification(), 1000);
+            // Removed direct setIsRecording(true), recording logic moved to useEffect
         } catch (e) {
             console.error('Camera access error:', e);
             toast.error(`Camera Failed: ${e.name}: ${e.message}`);
-            setIsRecording(false);
         }
     };
 
 
     const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
         if (videoRef.current?.srcObject) {
             videoRef.current.srcObject.getTracks().forEach(t => t.stop());
         }
@@ -794,7 +909,9 @@ const AIInterview = () => {
 
             // Check if there are more rounds
             if (roundResponse.data?.isComplete || roundResponse.isComplete) {
-                // All rounds done - go to results
+                // All rounds done - finalize video and go to results
+                await finalizeVideoRecording();
+                stopCamera();
                 navigate(`/interview/${interviewId}/results`);
             } else {
                 // Advance to next round
@@ -853,6 +970,8 @@ const AIInterview = () => {
 
             // Check if there are more rounds
             if (roundResponse.data?.isComplete || roundResponse.isComplete) {
+                await finalizeVideoRecording();
+                stopCamera();
                 navigate(`/interview/${interviewId}/results`);
             } else {
                 const nextRoundIdx = (roundResponse.data?.currentRoundIndex ?? roundResponse.currentRoundIndex) || currentRoundIndex + 1;
@@ -963,7 +1082,8 @@ const AIInterview = () => {
             console.log('[INTERVIEW] Round complete response:', { isComplete: resData.isComplete, currentRoundIndex: resData.currentRoundIndex });
 
             if (resData.isComplete) {
-                // All rounds complete - go to results
+                // All rounds complete - finalize video and go to results
+                await finalizeVideoRecording();
                 stopCamera();
                 toast.success('Interview complete!');
                 navigate(`/interview/${interviewId}/results`);
@@ -1321,12 +1441,11 @@ const AIInterview = () => {
                         </div>
                         <div className="round-scores">
                             <div className="round-score-item">
-                                <span className="round-label">Technical</span>
-                                <span className="round-value">{Math.round(finalResults.scoring?.technicalAccuracy || 0)}%</span>
+                                <span className="round-value">{Math.round(finalResults.scoring?.technicalScore || finalResults.scoring?.technicalAccuracy || 0)}%</span>
                             </div>
                             <div className="round-score-item">
                                 <span className="round-label">HR</span>
-                                <span className="round-value">{Math.round(finalResults.scoring?.communication || 0)}%</span>
+                                <span className="round-value">{Math.round(finalResults.scoring?.communicationScore || finalResults.scoring?.communication || 0)}%</span>
                             </div>
                         </div>
                         {finalResults.scoring?.strengths?.length > 0 && (
@@ -1465,7 +1584,14 @@ const AIInterview = () => {
                 </div>
                 <div className="header-right">
                     <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/jobseeker/interviews')}>Exit</button>
+                    <button className="btn btn-secondary btn-sm" onClick={async () => {
+                        if (window.confirm('Are you sure you want to exit? Your progress will be saved, but this session will end.')) {
+                            setSubmitting(true);
+                            await finalizeVideoRecording();
+                            stopCamera();
+                            navigate('/jobseeker/interviews');
+                        }
+                    }}>Exit</button>
                 </div>
             </div>
 
@@ -1590,6 +1716,35 @@ const AIInterview = () => {
                     </div>
                 </div>
             </div>
+            {submitting && (
+                <div className="submitting-overlay" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    color: 'white'
+                }}>
+                    <div className="loading-spinner" style={{
+                        width: '50px',
+                        height: '50px',
+                        border: '4px solid rgba(255, 255, 255, 0.3)',
+                        borderTop: '4px solid white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        marginBottom: '20px'
+                    }}></div>
+                    <p style={{ fontSize: '1.2rem' }}>
+                        {uploadingVideo ? '📤 Uploading interview recording...' : '🔍 Evaluating your responses...'}
+                    </p>
+                </div>
+            )}
         </div>
     );
 };

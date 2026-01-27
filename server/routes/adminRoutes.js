@@ -234,8 +234,8 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
             ]),
             Interview.countDocuments({ createdAt: { $gte: startOfToday } }),
             Interview.aggregate([
-                { $match: { 'scoring.overall': { $exists: true } } },
-                { $group: { _id: null, avgScore: { $avg: '$scoring.overall' } } }
+                { $match: { $or: [{ 'scoring.overall': { $exists: true } }, { 'scoring.overallScore': { $exists: true } }] } },
+                { $group: { _id: null, avgScore: { $avg: { $ifNull: ['$scoring.overallScore', '$scoring.overall'] } } } }
             ]),
             Interview.countDocuments({
                 'proctoring.flags': { $elemMatch: { severity: 'high' } }
@@ -367,10 +367,10 @@ router.get('/dashboard/activity', adminAuth, async (req, res) => {
                 })),
                 recentInterviews: recentInterviews.map(interview => ({
                     id: interview._id,
-                    candidate: interview.userId?.profile?.name || interview.userId?.email || 'Unknown',
+                    candidate: interview.userId?.profile?.name || interview.userId?.email || 'Candidate',
                     type: interview.interviewType,
                     priority: interview.adminReview?.priorityLevel || 'normal',
-                    score: interview.scoring?.overall,
+                    score: interview.scoring?.overallScore || interview.scoring?.overall,
                     submittedAt: interview.createdAt
                 })),
                 recentUsers: recentUsers.map(user => ({
@@ -505,7 +505,7 @@ router.get('/interviews/pending', adminAuth, requirePermission('view_interviews'
         const { page = 1, limit = 20, priority, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
         const query = {
-            status: 'pending_review',
+            status: { $in: ['pending_review', 'completed'] },
             'adminReview.status': 'pending_review'
         };
 
