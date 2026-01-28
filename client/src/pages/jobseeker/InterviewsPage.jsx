@@ -51,8 +51,8 @@ const InterviewsPage = () => {
     const completedInterviews = interviews.filter(i => i.status === 'completed' && i.scoring);
     const upcomingInterviews = interviews.filter(i => i.status === 'in_progress' || i.status === 'scheduled');
 
-    const canApplyForJobs = platformInterviewStatus?.canApplyForJobs;
     const interviewStatus = platformInterviewStatus?.status || 'pending';
+    const isPassed = interviewStatus === 'passed';
     const isPendingReview = interviewStatus === 'pending_review';
 
     // Get interview display name based on job info
@@ -83,8 +83,8 @@ const InterviewsPage = () => {
                 <h1>Interviews</h1>
             </div>
 
-            {/* Platform Interview Status Banner - Handle all states */}
-            {!canApplyForJobs && (
+            {/* Platform Interview Status Banner - Show as Recommended if not passed */}
+            {!isPassed && (
                 <div className={`platform-interview-banner card-highlight ${isPendingReview ? 'pending-review' : ''}`}>
                     <div className="banner-icon">
                         {isPendingReview ? (
@@ -114,8 +114,8 @@ const InterviewsPage = () => {
                             <>
                                 <h2>Platform Interview Recommended</h2>
                                 <p>
-                                    Complete the Platform Interview to unlock job applications.
-                                    This is a one-time domain-specific interview based on your skills.
+                                    Improve your profile visibility by completing the Platform Interview.
+                                    This domain-specific assessment helps recruiters find you faster!
                                 </p>
 
                                 {/* Rejected State */}
@@ -190,7 +190,7 @@ const InterviewsPage = () => {
             )}
 
             {/* If passed, show success message */}
-            {canApplyForJobs && (
+            {isPassed && (
                 <div className="platform-status-success">
                     <div className="status-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -212,7 +212,7 @@ const InterviewsPage = () => {
                     className={`tab-btn ${activeTab === 'slots' ? 'active' : ''}`}
                     onClick={() => setActiveTab('slots')}
                 >
-                    {canApplyForJobs ? 'Job Interviews' : 'Platform Interview'}
+                    Interviews
                 </button>
                 <button
                     className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
@@ -231,8 +231,8 @@ const InterviewsPage = () => {
             <div className="interviews-content">
                 {activeTab === 'slots' && (
                     <div className="interviews-grid">
-                        {!canApplyForJobs ? (
-                            /* Show Platform Interview for users who haven't passed */
+                        {/* Always show Platform Interview if not passed */}
+                        {!isPassed && (
                             <div className={`interview-card card card-platform ${isPendingReview ? 'under-review' : ''}`}>
                                 <div className="card-header">
                                     <div className="company-logo platform-logo">
@@ -298,7 +298,10 @@ const InterviewsPage = () => {
                                         </button>
                                     )}
                             </div>
-                        ) : upcomingInterviews.filter(i => i.jobId).length === 0 ? (
+                        )}
+
+                        {/* Always show Job Interviews */}
+                        {upcomingInterviews.filter(i => i.jobId).length === 0 ? (
                             /* No job interviews available */
                             <div className="empty-state card">
                                 <svg width="80" height="80" viewBox="0 0 24 24" fill="none">

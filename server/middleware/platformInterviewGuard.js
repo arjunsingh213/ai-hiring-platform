@@ -48,6 +48,12 @@ const requirePlatformInterview = async (req, res, next) => {
             }
         }
 
+        // VALIDATION PHASE: Allow all job seekers through to gather data
+        // Even if status is skipped, failed, or pending, we allow them to proceed.
+        return next();
+
+        /* 
+        // Logic temporarily disabled for validation phase:
         // Only allow if passed, pending review, or just completed (waiting for processing)
         if (['passed', 'pending_review', 'completed'].includes(interviewStatus)) {
             return next();
@@ -57,6 +63,7 @@ const requirePlatformInterview = async (req, res, next) => {
         if (user.jobSeekerProfile?.interviewScore >= 60 || user.interviewStatus?.cracked) {
             return next();
         }
+        */
 
         // Only block if strictly required and not even attempted
         return res.status(403).json({
