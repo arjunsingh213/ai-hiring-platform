@@ -48,14 +48,13 @@ const requirePlatformInterview = async (req, res, next) => {
             }
         }
 
-        // PILOT TESTING: Allow access if interview is completed, passed, failed, or pending_review
-        // The core requirement is that they ATTENDED it once.
-        if (['passed', 'failed', 'pending_review', 'completed'].includes(interviewStatus)) {
+        // Only allow if passed, pending review, or just completed (waiting for processing)
+        if (['passed', 'pending_review', 'completed'].includes(interviewStatus)) {
             return next();
         }
 
-        // Even if status is skipped or pending, if onboarding complete is true, allow through
-        if (user.isOnboardingComplete || user.interviewStatus?.completed) {
+        // BACKWARD COMPATIBILITY: Allow if they have an old passing score
+        if (user.jobSeekerProfile?.interviewScore >= 60 || user.interviewStatus?.cracked) {
             return next();
         }
 

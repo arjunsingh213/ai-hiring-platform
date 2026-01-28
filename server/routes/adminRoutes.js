@@ -943,6 +943,17 @@ router.post('/interviews/:id/reject', adminAuth, requirePermission('reject_inter
 
         await interview.save();
 
+        // Update user's platform interview status
+        if (interview.interviewType === 'combined' || !interview.jobId) {
+            await User.findByIdAndUpdate(interview.userId, {
+                'platformInterview.status': 'failed',
+                'platformInterview.lastAttemptAt': new Date(),
+                // Disable direct retry until cooldown if needed? 
+                // For now, allow retry button to show in UI
+                'platformInterview.canRetry': true
+            });
+        }
+
         await auditLog(req, 'reject_interview', 'interview', interview._id, {
             previousValue,
             newValue: { status: 'rejected' },

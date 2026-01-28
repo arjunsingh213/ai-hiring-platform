@@ -1498,9 +1498,10 @@ router.get('/status/:userId', async (req, res) => {
             }
         }
 
-        // PILOT TESTING: Allow jobs if any interview exists (participation-based)
-        const canApplyForJobs = !!(pendingReviewInterview || approvedInterview || rejectedInterview ||
-            user.isOnboardingComplete || user.interviewStatus?.completed);
+        // Determine if user can apply for jobs based on platform interview status
+        // REMOVED PILOT TESTING override: now strictly requires passed status
+        const canApplyToJobs = (status === 'passed');
+        const canApplyForJobs = canApplyToJobs;
 
         // Check if can retry
         let canRetry = false;
