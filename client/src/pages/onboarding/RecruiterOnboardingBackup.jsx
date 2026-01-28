@@ -30,7 +30,12 @@ const RecruiterOnboarding = () => {
     const [companyValidated, setCompanyValidated] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState(null);
 
-
+    // Work Email Verification State
+    const [workEmail, setWorkEmail] = useState('');
+    const [workEmailOtp, setWorkEmailOtp] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [workEmailVerified, setWorkEmailVerified] = useState(false);
+    const [otpTimer, setOtpTimer] = useState(0);
 
     // Debounce company search
     const debounce = (func, delay) => {
@@ -113,13 +118,108 @@ const RecruiterOnboarding = () => {
         setCompanyValidated(true);
         setShowSuggestions(false);
         setCompanySuggestions([]);
+
+        // Reset verify state if company changes
+        setWorkEmailVerified(false);
+        setOtpSent(false);
+        setWorkEmailOtp('');
     };
 
+    // OTP Timer
+    useEffect(() => {
+        let interval;
+        if (otpTimer > 0) {
+            interval = setInterval(() => {
+                setOtpTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [otpTimer]);
 
+    const handleSendOtp = async () => {
+        if (!workEmail) return toast.error('Please enter your work email');
 
+        // Strict Validation for Verified Companies
+        if (selectedCompany && selectedCompany.domain) {
+            const emailDomain = workEmail.split('@')[1];
+            if (!emailDomain) return toast.error('Invalid email address');
 
+            // Normalize domains
+            const normalizedEmailDomain = emailDomain.toLowerCase();
+            const normalizedCompanyDomain = selectedCompany.domain.toLowerCase();
+
+            // Check if email domain ends with company domain (e.g., eng.amazon.com matches amazon.com)
+            const isMatch = normalizedEmailDomain === normalizedCompanyDomain || normalizedEmailDomain.endsWith(`.${normalizedCompanyDomain}`);
+
+            if (!isMatch) {
+                return toast.error(`Please use an official @${selectedCompany.domain} email address.`);
+            }
+        }
+
+        // Block generic public domains for work email
+        const publicDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+        const emailDomain = workEmail.split('@')[1]?.toLowerCase();
+        if (emailDomain && publicDomains.includes(emailDomain)) {
+            // Block public domains for "Work Email" strictly
+            return toast.error('Please use your work email address, not a personal one.');
+        }
+
+        setLoading(true);
+        try {
+            let userId = localStorage.getItem('userId');
+            if (!userId) {
+                const userObj = JSON.parse(localStorage.getItem('user'));
+                userId = userObj?._id;
+            }
+
+            await api.post('/auth/send-work-email-otp', {
+                userId,
+                workEmail,
+                companyName: formData.companyName
+            });
+
+            setOtpSent(true);
+            setOtpTimer(60); // 60s cooldown
+            toast.success('OTP sent to your work email');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.error || 'Failed to send OTP');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!workEmailOtp) return toast.error('Please enter the OTP');
+
+        setLoading(true);
+        try {
+            let userId = localStorage.getItem('userId');
+            if (!userId) {
+                const userObj = JSON.parse(localStorage.getItem('user'));
+                userId = userObj?._id;
+            }
+
+            await api.post('/auth/verify-work-email-otp', {
+                userId,
+                otp: workEmailOtp
+            });
+
+            setWorkEmailVerified(true);
+            setOtpSent(false);
+            toast.success('Work email verified successfully!');
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Invalid OTP');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const nextStep = () => {
+        if (step === 2 && !workEmailVerified) {
+            toast.error('Please verify your work email before proceeding.');
+            return;
+        }
         if (step < totalSteps) setStep(step + 1);
     };
 
@@ -188,7 +288,10 @@ const RecruiterOnboarding = () => {
                     companyDomain: formData.industry.trim(),
                     companyWebsite: formData.website || '',
                     companyJurisdiction: selectedCompany?.jurisdiction || '',
+                    companyJurisdiction: selectedCompany?.jurisdiction || '',
                     companyVerified: companyValidated,
+                    workEmail: workEmail,
+                    workEmailVerified: workEmailVerified,
                     verified: false // Always false initially
                 },
                 isOnboardingComplete: true
@@ -351,7 +454,64 @@ const RecruiterOnboarding = () => {
                             )}
                         </div>
 
+                        {/* Work Email Verification Section */}
+                        <div className="form-group animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                            <label className="form-label">Work Email *</label>
+                            <div className="work-email-container">
+                                <div className="input-group">
+                                    <input
+                                        type="email"
+                                        value={workEmail}
+                                        onChange={(e) => {
+                                            if (!workEmailVerified) setWorkEmail(e.target.value);
+                                        }}
+                                        className={`input ${workEmailVerified ? 'input-validated' : ''}`}
+                                        placeholder="you@company.com"
+                                        disabled={workEmailVerified || otpSent}
+                                    />
+                                    {workEmailVerified && <span className="verified-check">✓</span>}
+                                    {!workEmailVerified && !otpSent && (
+                                        <button
+                                            className="btn-verify"
+                                            onClick={handleSendOtp}
+                                            disabled={!workEmail || loading}
+                                        >
+                                            {loading ? 'Sending...' : 'Verify'}
+                                        </button>
+                                    )}
+                                </div>
 
+                                {otpSent && !workEmailVerified && (
+                                    <div className="otp-verification-box animate-fade-in">
+                                        <p className="otp-instruction">Enter the 6-digit code sent to {workEmail}</p>
+                                        <div className="otp-input-group">
+                                            <input
+                                                type="text"
+                                                value={workEmailOtp}
+                                                onChange={(e) => setWorkEmailOtp(e.target.value)}
+                                                placeholder="Enter OTP"
+                                                maxLength={6}
+                                                className="input otp-input"
+                                            />
+                                            <button
+                                                className="btn-confirm"
+                                                onClick={handleVerifyOtp}
+                                                disabled={!workEmailOtp || loading}
+                                            >
+                                                {loading ? 'Verifying...' : 'Confirm'}
+                                            </button>
+                                        </div>
+                                        <div className="otp-resend">
+                                            {otpTimer > 0 ? (
+                                                <span>Resend in {otpTimer}s</span>
+                                            ) : (
+                                                <button onClick={handleSendOtp} className="btn-link">Resend Code</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         <div className="form-group">
                             <label className="form-label">Company Size *</label>
