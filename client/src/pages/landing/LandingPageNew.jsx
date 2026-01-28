@@ -6,6 +6,7 @@ import Features from './components/Features';
 import Proof from './components/Proof';
 import CTA from './components/CTA';
 import Footer from './components/Footer';
+import ContactForm from '../../components/ContactForm';
 import styles from './LandingPageNew.module.css';
 
 /**
@@ -77,6 +78,21 @@ const LandingPageNew = () => {
                 <Features />
                 <Proof />
                 <CTA />
+                <section id="contact" className={styles.section} style={{ padding: '80px 20px', backgroundColor: '#f9fafb' }}>
+                    <div className={styles.container} style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                            <h2 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem', color: '#111827' }}>
+                                Get In Touch
+                            </h2>
+                            <p style={{ fontSize: '1.125rem', color: '#6b7280' }}>
+                                Have questions? We're here to help.
+                            </p>
+                        </div>
+                        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                            <ContactForm />
+                        </div>
+                    </div>
+                </section>
             </main>
             <Footer />
         </div>

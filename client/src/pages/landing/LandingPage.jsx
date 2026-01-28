@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Typed from 'typed.js';
 import './LandingPage.css';
+import ContactForm from '../../components/ContactForm';
 
 // Import assets
 import heroDashboard from './assets/hero-dashboard-1600x900.webp';
@@ -430,6 +431,23 @@ const LandingPage = () => {
                 </div>
             </section>
 
+            {/* Contact Section */}
+            <section id="contact" className="contact-section">
+                <div className="section-container">
+                    <div className="reveal-up section-header">
+                        <h2 className="section-title">
+                            <span className="title-bold">Get In Touch</span>
+                        </h2>
+                        <p className="section-subtitle">
+                            Have questions? We're here to help.
+                        </p>
+                    </div>
+                    <div className="reveal-up contact-wrapper">
+                        <ContactForm />
+                    </div>
+                </div>
+            </section>
+
             {/* Footer */}
             <footer className="landing-footer">
                 <div className="footer-container">
@@ -449,7 +467,7 @@ const LandingPage = () => {
                                 <h5>Company</h5>
                                 <a href="#">About Us</a>
                                 <a href="#">Careers</a>
-                                <a href="#">Contact</a>
+                                <a onClick={() => scrollToSection('contact')} style={{ cursor: 'pointer' }}>Contact</a>
                             </div>
                             <div className="footer-column">
                                 <h5>Legal</h5>

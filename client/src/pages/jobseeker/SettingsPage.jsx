@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import './SettingsPage.css';
+import ContactForm from '../../components/ContactForm';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
@@ -383,6 +384,15 @@ const SettingsPage = () => {
                         </svg>
                         Security
                     </button>
+                    <button
+                        className={`settings-tab ${activeTab === 'support' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('support')}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" stroke="currentColor" strokeWidth="2" />
+                        </svg>
+                        Support
+                    </button>
                 </div>
 
                 <div className="settings-content card">
@@ -604,6 +614,14 @@ const SettingsPage = () => {
                                     View History
                                 </button>
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'support' && (
+                        <div className="settings-section">
+                            <h2>Contact Support</h2>
+                            <p className="text-muted" style={{ marginBottom: '20px' }}>Need help? Send us a message.</p>
+                            <ContactForm />
                         </div>
                     )}
 

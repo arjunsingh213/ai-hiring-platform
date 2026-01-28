@@ -24,7 +24,9 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://ai-hiring-platform-cm5t.vercel.app',
-    'https://ai-hiring-platform-sootv.vercel.app',
+    'https://ai-hiring-platform-sooly.vercel.app',
+    'https://froscel.com',
+    'https://www.froscel.com',
     process.env.CLIENT_URL
 ].filter(Boolean);
 
@@ -89,6 +91,7 @@ app.use('/api/onboarding-interview', require('./routes/onboardingInterview'));
 app.use('/api/code', require('./routes/codeExecutionRoutes'));
 app.use('/api/job-interview', require('./routes/jobInterview'));
 app.use('/api/companies', require('./routes/companyRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 // Admin Review System
 app.use('/api/admin', require('./routes/adminRoutes'));

@@ -8,7 +8,9 @@ const initializeSocket = (server) => {
             origin: [
                 'http://localhost:5173',
                 process.env.CLIENT_URL,
-                'https://ai-hiring-platform-cm5t.vercel.app'
+                'https://ai-hiring-platform-cm5t.vercel.app',
+                'https://froscel.com',
+                'https://www.froscel.com'
             ].filter(Boolean),
             methods: ['GET', 'POST'],
             credentials: true
