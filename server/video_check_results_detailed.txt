@@ -1,0 +1,24 @@
+Connected to MongoDB
+Interview Stats by Type:
+[
+  {
+    "_id": "hr",
+    "total": 2,
+    "withVideo": 0
+  },
+  {
+    "_id": "technical",
+    "total": 8,
+    "withVideo": 0
+  },
+  {
+    "_id": "job_specific",
+    "total": 10,
+    "withVideo": 0
+  },
+  {
+    "_id": "combined",
+    "total": 76,
+    "withVideo": 20
+  }
+]

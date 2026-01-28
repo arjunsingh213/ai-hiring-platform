@@ -1,0 +1,46 @@
+Connected to MongoDB
+Total Interviews: 96
+Interviews with Video: 20
+Sample Video Records:
+[
+  {
+    "videoRecording": {
+      "secureUrl": "https://res.cloudinary.com/ddzdtny2b/video/upload/v1766758248/interview-recordings/interview_694e6ec9c3b90b4384db5204_1766758244073.webm",
+      "uploadedAt": "2025-12-26T14:11:15.420Z"
+    },
+    "_id": "694e9783c3b90b4384db57d3",
+    "interviewType": "combined"
+  },
+  {
+    "videoRecording": {
+      "secureUrl": "https://res.cloudinary.com/ddzdtny2b/video/upload/v1766758511/interview-recordings/interview_694e6ec9c3b90b4384db5204_1766758505260.webm",
+      "uploadedAt": "2025-12-26T14:15:19.531Z"
+    },
+    "_id": "694e9877c3b90b4384db588c",
+    "interviewType": "combined"
+  },
+  {
+    "videoRecording": {
+      "secureUrl": "https://res.cloudinary.com/ddzdtny2b/video/upload/v1766759409/interview-recordings/interview_694e9ab30b1440c1b567974f_1766759400961.webm",
+      "uploadedAt": "2025-12-26T14:30:28.769Z"
+    },
+    "_id": "694e9c040b1440c1b567986a",
+    "interviewType": "combined"
+  },
+  {
+    "videoRecording": {
+      "secureUrl": "https://res.cloudinary.com/ddzdtny2b/video/upload/v1766915378/interview-recordings/interview_6950f9f6b54b2a5ee6ad1394_1766915374398.webm",
+      "uploadedAt": "2025-12-28T09:50:05.941Z"
+    },
+    "_id": "6950fd4db54b2a5ee6ad13a9",
+    "interviewType": "combined"
+  },
+  {
+    "videoRecording": {
+      "secureUrl": "https://res.cloudinary.com/ddzdtny2b/video/upload/v1766924677/interview-recordings/interview_69511f375f78f6fdfbb3a574_1766924670978.webm",
+      "uploadedAt": "2025-12-28T12:25:29.743Z"
+    },
+    "_id": "695121b95f78f6fdfbb3a59a",
+    "interviewType": "combined"
+  }
+]

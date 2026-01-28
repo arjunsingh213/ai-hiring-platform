@@ -102,21 +102,20 @@ const InterviewsPage = () => {
                     <div className="banner-content">
                         {isPendingReview ? (
                             <>
-                                <h2>🕐 Interview Under Review</h2>
+                                <h2>✅ Interview Submitted</h2>
                                 <p>
-                                    Your interview has been submitted and is being reviewed by our team.
-                                    You will be notified via email within <strong>24-48 hours</strong> with the results.
+                                    Thank you! Your interview has been submitted. You can now browse and apply for jobs!
                                 </p>
                                 <p className="review-note">
-                                    Once approved, you'll be able to apply for jobs on the platform.
+                                    Our AI has evaluated your responses, and you can view your results in the "Completed Interviews" tab below.
                                 </p>
                             </>
                         ) : (
                             <>
-                                <h2>Platform Interview Required</h2>
+                                <h2>Platform Interview Recommended</h2>
                                 <p>
-                                    You must complete and pass the Platform Interview to unlock job applications.
-                                    This is a domain-specific interview based on your resume and skills.
+                                    Complete the Platform Interview to unlock job applications.
+                                    This is a one-time domain-specific interview based on your skills.
                                 </p>
 
                                 {/* Rejected State */}
@@ -242,7 +241,7 @@ const InterviewsPage = () => {
                                     <div>
                                         <h3>Domain-Specific Platform Interview</h3>
                                         <p className="interview-type">
-                                            {isPendingReview ? 'Awaiting admin review' : 'Required to apply for jobs'}
+                                            {isPendingReview ? 'Evaluation complete' : 'Complete to unlock job applications'}
                                         </p>
                                     </div>
                                 </div>
@@ -261,12 +260,11 @@ const InterviewsPage = () => {
                                 </div>
                                 {isPendingReview ? (
                                     <div className="review-timeline">
-                                        <h4>⏳ Review Timeline</h4>
+                                        <h4>🚀 Access Unlocked</h4>
                                         <ul>
-                                            <li>Your responses are being evaluated by our team</li>
-                                            <li>Proctoring footage is being reviewed</li>
-                                            <li>Expected notification: 24-48 hours</li>
-                                            <li>You'll receive an email with the results</li>
+                                            <li>You have successfully completed the platform interview</li>
+                                            <li>Your AI results are available in the Results tab</li>
+                                            <li>You can now apply for job-specific interviews</li>
                                         </ul>
                                     </div>
                                 ) : (
@@ -379,15 +377,15 @@ const InterviewsPage = () => {
                                     <div className="assessment-details">
                                         <div className="detail-item">
                                             <span className="label">Technical Accuracy</span>
-                                            <span className="value">{interview.scoring?.technicalAccuracy || 0}%</span>
+                                            <span className="value">{interview.scoring?.technicalScore || 0}%</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Communication</span>
-                                            <span className="value">{interview.scoring?.communication || 0}%</span>
+                                            <span className="value">{interview.scoring?.communicationScore || 0}%</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Confidence</span>
-                                            <span className="value">{interview.scoring?.confidence || 0}%</span>
+                                            <span className="value">{interview.scoring?.confidenceScore || 0}%</span>
                                         </div>
                                     </div>
                                     {interview.scoring?.strengths?.length > 0 && (

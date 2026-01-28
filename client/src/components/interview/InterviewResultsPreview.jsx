@@ -6,7 +6,10 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
     if (!results) return null;
 
     // Handle both data structures (direct from API vs nested data property)
-    const { interview, candidate, job, scoring, strengths, weaknesses, recommendations, codingResults } = results.data || results || {};
+    const { interview, candidate, job, scoring, strengths, weaknesses, recommendations, areasToImprove, codingResults } = results.data || results || {};
+    
+    // Recommendations fallback
+    const currentRecommendations = recommendations || areasToImprove || [];
 
     // Helper functions
     const formatDuration = (seconds) => {
@@ -28,6 +31,9 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
         return String(value);
     };
 
+    const overallScore = scoring?.overallScore || scoring?.overall || 0;
+    const isPassing = overallScore >= 60;
+
     return (
         <div className="interview-results-preview">
             {/* Header Card */}
@@ -36,13 +42,13 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
                     <div>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Preliminary Results</h2>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <span className={`badge ${scoring?.overall >= 60 ? 'badge-success' : 'badge-danger'}`}
+                            <span className={`badge ${isPassing ? 'badge-success' : 'badge-danger'}`}
                                 style={{
                                     padding: '4px 12px', borderRadius: '16px', fontSize: '0.875rem', fontWeight: '500',
-                                    backgroundColor: scoring?.overall >= 60 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                    color: scoring?.overall >= 60 ? '#10b981' : '#ef4444'
+                                    backgroundColor: isPassing ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    color: isPassing ? '#10b981' : '#ef4444'
                                 }}>
-                                {scoring?.overall >= 60 ? 'Passing Score' : 'Needs Improvement'}
+                                {isPassing ? 'Passing Score' : 'Needs Improvement'}
                             </span>
                             <span className="badge" style={{ padding: '4px 12px', borderRadius: '16px', fontSize: '0.875rem', backgroundColor: '#f3f4f6', color: '#4b5563' }}>
                                 {safeRender(interview?.interviewType || 'Technical')}
@@ -53,14 +59,14 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
                     {/* Overall Score Circle */}
                     <div style={{
                         position: 'relative', width: '80px', height: '80px', borderRadius: '50%',
-                        background: `conic-gradient(${getScoreColor(scoring?.overall || 0)} ${(scoring?.overall || 0) * 3.6}deg, #e5e7eb 0deg)`,
+                        background: `conic-gradient(${getScoreColor(overallScore)} ${overallScore * 3.6}deg, #e5e7eb 0deg)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
                         <div style={{
                             width: '70px', height: '70px', borderRadius: '50%', backgroundColor: 'white',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>{scoring?.overall || 0}</span>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>{overallScore}</span>
                             <span style={{ fontSize: '0.625rem', color: '#6b7280', textTransform: 'uppercase' }}>Overall</span>
                         </div>
                     </div>
@@ -97,7 +103,7 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
                                 {/* Metric Item */}
                                 {['Technical', 'Communication', 'Confidence', 'Relevance'].map((metric) => {
                                     const key = metric.toLowerCase();
-                                    const score = scoring?.[key] || 0;
+                                    const score = scoring?.[`${key}Score`] || scoring?.[key] || 0;
                                     return (
                                         <div key={key}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -112,19 +118,19 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
                                 })}
 
                                 {/* Coding Score (Conditional) */}
-                                {(typeof scoring?.coding === 'number' || codingResults) && (
+                                {(typeof scoring?.codingScore === 'number' || typeof scoring?.coding === 'number' || codingResults) && (
                                     <div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                             <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>
                                                 Coding {codingResults?.language ? `(${codingResults.language})` : ''}
                                             </span>
-                                            <span style={{ fontSize: '0.875rem', fontWeight: '600', color: getScoreColor(scoring?.coding || 0) }}>
-                                                {codingResults?.skipped ? 'Skipped' : `${scoring?.coding || 0}%`}
+                                            <span style={{ fontSize: '0.875rem', fontWeight: '600', color: getScoreColor(scoring?.codingScore || scoring?.coding || 0) }}>
+                                                {codingResults?.skipped ? 'Skipped' : `${scoring?.codingScore || scoring?.coding || 0}%`}
                                             </span>
                                         </div>
                                         {codingResults?.skipped !== true && (
                                             <div style={{ width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
-                                                <div style={{ width: `${scoring?.coding || 0}%`, height: '100%', backgroundColor: getScoreColor(scoring?.coding || 0), borderRadius: '4px' }}></div>
+                                                <div style={{ width: `${scoring?.codingScore || scoring?.coding || 0}%`, height: '100%', backgroundColor: getScoreColor(scoring?.codingScore || scoring?.coding || 0), borderRadius: '4px' }}></div>
                                             </div>
                                         )}
                                     </div>
@@ -159,20 +165,22 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
                         </div>
 
                         {/* Detailed Suggestions */}
-                        {(recommendations?.length > 0) && (
+                        {(currentRecommendations?.length > 0) && (
                             <div className="card" style={{ padding: '24px' }}>
                                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '16px' }}>AI Recommendations</h3>
                                 <div style={{ display: 'grid', gap: '16px' }}>
-                                    {recommendations.map((rec, i) => (
+                                    {currentRecommendations.map((rec, i) => (
                                         <div key={i} style={{ padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                                 <span style={{
                                                     width: '8px', height: '8px', borderRadius: '50%',
                                                     backgroundColor: rec?.priority === 'high' ? '#ef4444' : rec?.priority === 'medium' ? '#f59e0b' : '#10b981'
                                                 }}></span>
-                                                <strong style={{ color: '#111827' }}>{safeRender(rec?.area)}</strong>
+                                                <strong style={{ color: '#111827' }}>{safeRender(rec?.area || rec)}</strong>
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '0.875rem', color: '#4b5563' }}>{safeRender(rec?.suggestion)}</p>
+                                            <p style={{ margin: 0, fontSize: '0.875rem', color: '#4b5563' }}>
+                                                {safeRender(rec?.suggestion || (typeof rec === 'string' ? rec : 'Prepare for this area'))}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>

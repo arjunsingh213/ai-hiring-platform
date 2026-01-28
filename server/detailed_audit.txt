@@ -1,0 +1,35 @@
+Detailed Interview Audit
+[
+  {
+    "_id": "technical",
+    "originalNames": [
+      "technical"
+    ],
+    "total": 8,
+    "withVideo": 0
+  },
+  {
+    "_id": "hr",
+    "originalNames": [
+      "hr"
+    ],
+    "total": 2,
+    "withVideo": 0
+  },
+  {
+    "_id": "combined",
+    "originalNames": [
+      "combined"
+    ],
+    "total": 76,
+    "withVideo": 20
+  },
+  {
+    "_id": "job_specific",
+    "originalNames": [
+      "job_specific"
+    ],
+    "total": 10,
+    "withVideo": 0
+  }
+]

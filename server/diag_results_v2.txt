@@ -1,0 +1,11 @@
+﻿[dotenv@17.2.3] injecting env (26) from .env -- tip: ≡ƒôí add observability to secrets: https://dotenvx.com/ops
+Interview Status Distribution:
+Status: approved, AdminStatus: approved => Count: 8
+Status: completed, AdminStatus: undefined => Count: 28
+Status: in_progress, AdminStatus: undefined => Count: 17
+Status: completed, AdminStatus: pending_review => Count: 4
+Status: in_progress, AdminStatus: pending_review => Count: 8
+Status: pending_review, AdminStatus: pending_review => Count: 18
+Status: scheduled, AdminStatus: undefined => Count: 7
+Status: approved, AdminStatus: reattempt_allowed => Count: 1
+Status: approved, AdminStatus: rejected => Count: 5

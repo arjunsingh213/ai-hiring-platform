@@ -1,0 +1,18 @@
+﻿[dotenv@17.2.3] injecting env (26) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+Interview Status Distribution:
+Status: pending_review, AdminStatus: pending_review => Count: 18
+Status: approved, AdminStatus: rejected => Count: 5
+Status: scheduled, AdminStatus: undefined => Count: 7
+Status: approved, AdminStatus: reattempt_allowed => Count: 1
+Status: in_progress, AdminStatus: undefined => Count: 17
+Status: completed, AdminStatus: undefined => Count: 28
+Status: approved, AdminStatus: approved => Count: 8
+Status: in_progress, AdminStatus: pending_review => Count: 8
+Status: completed, AdminStatus: pending_review => Count: 4
+
+Most Recent Interviews:
+ID: 6974af10b52769f1d3b056cd, Type: job_specific, Status: in_progress, AdminStatus: pending_review, User: arjunthakur73308@gmail.com, Name: Cognizant
+ID: 6973b35675ed82272d0af417, Type: job_specific, Status: in_progress, AdminStatus: pending_review, User: arjunthakur73308@gmail.com, Name: Cognizant
+ID: 6973a79875ed82272d0af38d, Type: job_specific, Status: in_progress, AdminStatus: pending_review, User: arjunthakur73308@gmail.com, Name: Cognizant
+ID: 6971e2dbed2495595485e330, Type: combined, Status: approved, AdminStatus: approved, User: yeshwanthdamarla@gmail.com, Name: Damarla Yeshwanth
+ID: 696f3a8004f31d71efe7f30b, Type: job_specific, Status: completed, AdminStatus: pending_review, User: N/A, Name: N/A

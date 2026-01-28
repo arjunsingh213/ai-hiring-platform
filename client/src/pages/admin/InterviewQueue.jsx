@@ -157,7 +157,7 @@ const InterviewQueue = ({ flaggedOnly = false }) => {
                                         <td>
                                             <div>
                                                 <strong style={{ color: '#f8fafc' }}>
-                                                    {interview.userId?.profile?.name || 'Unknown'}
+                                                    {interview.userId?.profile?.name || interview.userId?.email || 'Candidate'}
                                                 </strong>
                                                 <br />
                                                 <small style={{ color: '#64748b' }}>

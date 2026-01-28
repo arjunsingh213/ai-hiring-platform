@@ -438,13 +438,13 @@ const InterviewDetail = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                     <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                                         <div style={{ color: '#22c55e', fontSize: '1.5rem', fontWeight: 600 }}>
-                                            {interview.scoring.technicalAccuracy || '-'}
+                                            {interview.scoring.technicalScore || interview.scoring.technicalAccuracy || '-'}
                                         </div>
                                         <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Technical</div>
                                     </div>
                                     <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                                         <div style={{ color: '#8b5cf6', fontSize: '1.5rem', fontWeight: 600 }}>
-                                            {interview.scoring.communication || '-'}
+                                            {interview.scoring.communicationScore || interview.scoring.communication || '-'}
                                         </div>
                                         <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Communication</div>
                                     </div>

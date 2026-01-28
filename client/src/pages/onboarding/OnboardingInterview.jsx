@@ -113,6 +113,7 @@ const OnboardingInterview = ({
     const finalizeVideoRecording = async (violations = null, interviewId = null) => {
         try {
             console.log('📹 Finalizing video recording...');
+            setUploadingVideo(true); // Start blocking UI
             const videoBlob = await stopRecording();
 
             if (videoBlob && videoBlob.size > 0) {
@@ -123,6 +124,8 @@ const OnboardingInterview = ({
             }
         } catch (error) {
             console.error('Error finalizing video:', error);
+        } finally {
+            setUploadingVideo(false); // End blocking UI
         }
     };
 
@@ -767,7 +770,7 @@ const OnboardingInterview = ({
                 } else {
                     // Non-technical role - FINALIZE VIDEO NOW
                     console.log('[INTERVIEW] No programming languages, finalizing video...');
-                    finalizeVideoRecording(formattedViolations, response.data?.interviewId);
+                    await finalizeVideoRecording(formattedViolations, response.data?.interviewId);
 
                     stopCamera();
                     setCompleted(true);
@@ -781,7 +784,7 @@ const OnboardingInterview = ({
             setResults({ pendingReview: true, feedback: 'Interview submission had issues.' });
 
             // On error, try to finalize whatever we have recorded
-            finalizeVideoRecording();
+            await finalizeVideoRecording();
 
             // Skip to results (don't force coding test on error for non-technical)
             stopCamera();
@@ -838,6 +841,7 @@ const OnboardingInterview = ({
                 status: error.response?.status
             });
             toast.error('Could not load coding test. Skipping to results.');
+            await finalizeVideoRecording();
             setCompleted(true);
         } finally {
             setLoadingProblem(false);
@@ -845,7 +849,7 @@ const OnboardingInterview = ({
     };
 
     // Handle coding test completion
-    const handleCodingComplete = (codingResult) => {
+    const handleCodingComplete = async (codingResult) => {
         setCodingResults(codingResult);
         setShowCodingTest(false);
 
@@ -861,22 +865,22 @@ const OnboardingInterview = ({
         stopCamera();
 
         toast.success(`Coding test completed! Score: ${codingResult.score}/100`);
-        finalizeVideoRecording();
+        // Use await to ensure upload finishes before showing completion screen
+        await finalizeVideoRecording();
         setCompleted(true);
     };
 
     // Skip coding test
-    const handleSkipCoding = () => {
+    const handleSkipCoding = async () => {
         setShowCodingTest(false);
         setCodingResults({ skipped: true });
 
         // Finalize video recording even if skipped
-        finalizeVideoRecording();
-
-        // Stop camera when interview is complete
+        // Stop camera first
         stopCamera();
 
         toast.info('Coding test skipped.');
+        await finalizeVideoRecording();
         setCompleted(true);
     };
 
@@ -1065,7 +1069,7 @@ const OnboardingInterview = ({
                     <div className="banner-icon">✓</div>
                     <div className="banner-content">
                         <h3>Interview Submitted Successfully</h3>
-                        <p>Below are your <strong>Preliminary AI Results</strong>. Final approval is pending Admin review.</p>
+                        <p>Below are your <strong>AI Evaluation Results</strong>. You can now start applying for jobs!</p>
                     </div>
                 </div>
 
@@ -1302,10 +1306,23 @@ const OnboardingInterview = ({
                 </motion.div>
             </div>
 
-            {submitting && (
-                <div className="submitting-overlay">
+            {(submitting || uploadingVideo) && (
+                <div className="submitting-overlay" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    color: 'white'
+                }}>
                     <div className="loading-spinner"></div>
-                    <p>
+                    <p style={{ marginTop: '20px', fontSize: '1.2rem' }}>
                         {uploadingVideo
                             ? '📤 Uploading interview recording...'
                             : '🔍 Evaluating your responses...'}
