@@ -61,7 +61,9 @@ router.get('/check-status/:userId', async (req, res) => {
                 canTakeInterview: false,
                 status: 'pending_review',
                 message: 'Your interview is under review by our admin team. You will be notified once a decision is made.',
-                submittedAt: latestInterview.createdAt
+                submittedAt: latestInterview.createdAt,
+                canApplyForJobs: true,
+                canApplyToJobs: true
             });
         }
 
@@ -92,7 +94,9 @@ router.get('/check-status/:userId', async (req, res) => {
                     : `Your interview was not approved. You can retry after ${cooldownEndsAt.toLocaleDateString()}.`,
                 rejectionReason: latestInterview.adminReview?.notes || 'Please review your interview feedback and improve.',
                 cooldownEndsAt: cooldownEndsAt,
-                canRetry
+                canRetry,
+                canApplyForJobs: true,
+                canApplyToJobs: true
             });
         }
 

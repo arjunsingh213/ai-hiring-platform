@@ -650,23 +650,24 @@
     opacity: 0.85;
 }
 
-.apply-blocked {
+.apply-section {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
-.apply-blocked-message {
+.apply-info-message {
     font-size: 0.75rem;
-    color: #D97706;
+    color: #007DFF;
     text-align: center;
     padding: 8px 12px;
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(0, 144, 255, 0.08);
+    border: 1px dashed rgba(0, 144, 255, 0.3);
     border-radius: 10px;
     margin: 0;
 }
 
-.apply-blocked-message a {
+.apply-info-message a {
     color: #007DFF;
     text-decoration: underline;
     font-weight: 600;

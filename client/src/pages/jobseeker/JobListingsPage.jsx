@@ -72,18 +72,11 @@ const JobListingsPage = () => {
             return;
         }
 
-        // Check platform interview status before applying
+        // Check platform interview status before applying - REDUCED TO WARNING for validation phase
         if (platformInterviewStatus && !platformInterviewStatus.canApplyToJobs) {
-            if (platformInterviewStatus.status === 'failed' && platformInterviewStatus.canRetry) {
-                toast.warning('You can now retry your platform interview!');
-                navigate('/onboarding/jobseeker?step=interview');
-            } else if (platformInterviewStatus.status === 'failed') {
-                toast.error(`Please wait until ${new Date(platformInterviewStatus.retryAfter).toLocaleDateString()} to retry the interview`);
-            } else {
-                toast.warning('You must complete the platform interview to apply for jobs');
-                navigate('/onboarding/jobseeker?step=interview');
-            }
-            return;
+            // Keep the warning but don't prevent application if they really want to proceed
+            // However, the user wants it to be OPEN, so let's just log and move on or show a soft toast
+            console.log('Platform interview not passed, but proceeding for validation phase');
         }
 
         setApplying(true);
@@ -137,8 +130,9 @@ const JobListingsPage = () => {
 
             // Handle 403 - platform interview required
             if (error.code === 'INTERVIEW_REQUIRED' || error.code === 'INTERVIEW_FAILED') {
-                toast.warning(error.message || 'Complete the platform interview to apply');
-                navigate('/onboarding/jobseeker?step=interview');
+                // For validation phase, we shouldn't hit this often if backend is opened, 
+                // but just in case, show a softer message.
+                toast.info('Completing the Platform Interview is recommended for better visibility.');
             } else if (error.code === 'INTERVIEW_RETRY_AVAILABLE') {
                 toast.info('You can retry your platform interview now!');
                 navigate('/onboarding/jobseeker?step=interview');
@@ -350,37 +344,28 @@ const JobListingsPage = () => {
                                                 {withdrawing ? 'Withdrawing...' : 'Withdraw'}
                                             </button>
                                         </div>
-                                    ) : platformInterviewStatus && !platformInterviewStatus.canApplyToJobs ? (
-                                        <div className="apply-blocked">
-                                            <button
-                                                className="btn btn-primary btn-disabled"
-                                                onClick={() => {
-                                                    toast.warning('Complete the Platform Interview first!');
-                                                    navigate('/jobseeker/interviews');
-                                                }}
-                                                title="Complete Platform Interview to apply"
-                                            >
-                                                🔒 Apply Now
-                                            </button>
-                                            <p className="apply-blocked-message">
-                                                ⚠️ Complete the <a href="/jobseeker/interviews">Platform Interview</a> to unlock job applications
-                                            </p>
-                                        </div>
                                     ) : (
-                                        <button
-                                            className="btn btn-primary"
-                                            onClick={() => applyToJob(selectedJob._id)}
-                                            disabled={applying}
-                                        >
-                                            {applying ? (
-                                                <>
-                                                    <span className="loading-spinner"></span>
-                                                    Applying...
-                                                </>
-                                            ) : (
-                                                <>Apply Now</>
+                                        <div className="apply-section">
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={() => applyToJob(selectedJob._id)}
+                                                disabled={applying}
+                                            >
+                                                {applying ? (
+                                                    <>
+                                                        <span className="loading-spinner"></span>
+                                                        Applying...
+                                                    </>
+                                                ) : (
+                                                    <>Apply Now</>
+                                                )}
+                                            </button>
+                                            {platformInterviewStatus && !platformInterviewStatus.canApplyToJobs && (
+                                                <p className="apply-info-message">
+                                                    💡 Pro Tip: Complete the <a href="/jobseeker/interviews">Platform Interview</a> to stand out!
+                                                </p>
                                             )}
-                                        </button>
+                                        </div>
                                     )}
                                     <button className="btn btn-secondary">
                                         Save
