@@ -1246,6 +1246,38 @@ const JobSeekerOnboarding = () => {
                                         )}
                                     </>
                                 )}
+
+                                {interviewStatus.status === 'passed' && (
+                                    <>
+                                        <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎉</div>
+                                        <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Interview Passed!</h2>
+                                        <p style={{ color: '#64748b', marginBottom: '32px', lineHeight: '1.6' }}>
+                                            Congratulations! You have successfully passed the platform interview.
+                                            You can now apply for jobs.
+                                        </p>
+                                        <div style={{
+                                            background: 'rgba(16, 185, 129, 0.1)',
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '24px',
+                                            marginBottom: '32px'
+                                        }}>
+                                            <div style={{ fontSize: '32px', color: '#059669', fontWeight: 'bold', marginBottom: '8px' }}>
+                                                {interviewStatus.score || 77}/100
+                                            </div>
+                                            <div style={{ color: '#059669', fontSize: '0.9rem', fontWeight: 500 }}>
+                                                STRONG MATCH
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="onboarding-btn"
+                                            onClick={() => navigate('/jobseeker/home')}
+                                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                                        >
+                                            Go to Dashboard
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
