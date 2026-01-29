@@ -142,18 +142,22 @@ function calculateStrictScore(questionsAndAnswers) {
 
     const avgScore = Math.round(totalScore / questionsAndAnswers.length);
 
+    // Safety: If category detection failed (techCount 0), use avgScore for technical/hr
+    const finalTechScore = techCount > 0 ? Math.round(techScore / techCount) : avgScore;
+    const finalHrScore = hrCount > 0 ? Math.round(hrScore / hrCount) : avgScore;
+
     return {
         overallScore: avgScore,
-        technicalScore: techCount > 0 ? Math.round(techScore / techCount) : 0,
-        hrScore: hrCount > 0 ? Math.round(hrScore / hrCount) : 0,
-        communication: Math.max(10, avgScore - 5),
-        confidence: avgScore,
-        relevance: avgScore,
+        technicalScore: finalTechScore,
+        hrScore: finalHrScore, // Not in schema but harmless
+        communicationScore: Math.max(10, avgScore - 5), // RENAMED to match schema
+        confidenceScore: avgScore,                      // RENAMED to match schema
+        relevanceScore: avgScore,                       // RENAMED to match schema
         problemSolving: avgScore,
         strengths: avgScore >= 60 ? ['Attempted most questions', 'Good communication'] : ['Completed interview'],
         weaknesses: avgScore < 50 ? ['Answers could be more detailed'] : [],
         feedback: avgScore >= 60 ? 'Good effort! You answered the questions reasonably well.' : 'Thank you for completing the interview.',
-        detailedFeedback: 'Score updated via strictness relaxation fix.', // Ensure we have this field
+        detailedFeedback: 'Score updated via strictness relaxation fix.',
         recommendations: ['Practice answering with the STAR method']
     };
 }
