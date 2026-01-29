@@ -214,6 +214,7 @@ const AIInterview = () => {
     const [completed, setCompleted] = useState(false);
     const [finalResults, setFinalResults] = useState(null);
     const [allAnswers, setAllAnswers] = useState([]);
+    const [cameraReady, setCameraReady] = useState(false); // Fix for recording trigger
 
     // Pipeline-aware state
     const [pipelineConfig, setPipelineConfig] = useState(null);
@@ -499,14 +500,14 @@ const AIInterview = () => {
 
     // Start recording when camera is ready
     useEffect(() => {
-        if (streamRef.current && !isRecording && !completed) {
+        if (streamRef.current && cameraReady && !isRecording && !completed) {
             const timer = setTimeout(() => {
                 interviewStartTimeRef.current = Date.now();
                 startRecording();
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [isRecording, completed]);
+    }, [isRecording, completed, cameraReady]);
 
     const fetchInterview = async () => {
         try {
@@ -654,7 +655,7 @@ const AIInterview = () => {
             }
             streamRef.current = stream;
             if (videoRef.current) videoRef.current.srcObject = stream;
-            // Removed direct setIsRecording(true), recording logic moved to useEffect
+            setCameraReady(true); // Trigger recording effect
         } catch (e) {
             console.error('Camera access error:', e);
             toast.error(`Camera Failed: ${e.name}: ${e.message}`);
