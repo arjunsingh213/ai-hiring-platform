@@ -272,23 +272,44 @@ const JobSeekerOnboarding = () => {
 
                         const response = await api.get(`/onboarding-interview/check-status/${userId}`);
                         if (response.success) {
+                            const data = response.data || {};
+                            const status = data.status || 'none';
+                            const canRetry = data.canRetry || false;
+
+                            // Derive canTakeInterview client-side since backend doesn't send it explicitly
+                            // Allow interview if:
+                            // 1. Never taken (none/pending)
+                            // 2. In progress (resume)
+                            // 3. Failed/Rejected AND cool-down period is over (canRetry is true)
+                            // BLOCK if: passed, pending_review, or failed/rejected with active cooldown
+                            const canTakeInterview =
+                                status === 'pending' ||
+                                status === 'in_progress' ||
+                                status === 'none' ||
+                                ((status === 'failed' || status === 'rejected' || status === 'cheating') && canRetry);
+
                             setInterviewStatus({
                                 loading: false,
-                                canTakeInterview: response.canTakeInterview,
-                                status: response.status,
-                                message: response.message,
-                                rejectionReason: response.rejectionReason || null,
-                                cooldownEndsAt: response.cooldownEndsAt || null
+                                canTakeInterview,
+                                status: status,
+                                score: data.score, // Capture score for passed screen
+                                message: data.statusMessage || response.message || '',
+                                rejectionReason: data.rejectionReason || response.rejectionReason || null,
+                                cooldownEndsAt: data.retryAfter || response.cooldownEndsAt || null
                             });
 
-                            if (response.canTakeInterview) {
+                            if (canTakeInterview) {
                                 setStep(4);
                                 setShowInterviewReadiness(true);
                                 toast.info('Complete the interview preparation to start');
                             } else {
                                 setStep(4);
-                                // Don't show readiness, show status message instead
-                                toast.warning(response.message);
+                                // Don't show readiness, show status message instead (Passed, Rejected, Pending)
+                                if (status === 'passed') {
+                                    toast.success('You have already passed the interview!');
+                                } else {
+                                    toast.warning(data.statusMessage || 'Interview status updated.');
+                                }
                             }
                         }
                     } catch (error) {
