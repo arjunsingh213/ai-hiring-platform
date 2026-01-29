@@ -670,7 +670,6 @@ const AIInterview = () => {
         if (videoRef.current?.srcObject) {
             videoRef.current.srcObject.getTracks().forEach(t => t.stop());
         }
-        stopFaceVerification();
     };
 
     // Detect programming languages from job requirements and description
