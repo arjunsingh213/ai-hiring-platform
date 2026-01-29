@@ -341,15 +341,14 @@ Evaluate and return a JSON object:
 }
 
 Return EACH score as a number from 0-100.
-CRITICAL SCORING RULES (BE EXTREMELY RIGOROUS):
-1. GIBBERISH/NONSENSE answers (random text, "asdf", single words, unrelated content) = 0-5 points
-2. VERY SHORT answers (less than 15 words) = 5-15 points
-3. IRRELEVANT answers (doesn't address the question or avoids the topic) = 10-25 points
-4. SKIPPED questions or "No answer": Score EXACTLY 0 for that question.
-5. IF more than 30% of the interview contains [gibberish, very short, irrelevant, or skipped] answers, the overallScore MUST be below 10.
-6. A candidate who skips more than 2 questions SHOULD NOT PASS (overallScore < 50).
-7. A score above 70 should only be given for detailed, technically accurate, and professional answers.
-8. Be brutal. If they are not good, mark them low. 0 is the default for no value.
+Return EACH score as a number from 0-100.
+CRITICAL SCORING RULES:
+1. ALLOW TYPOS & SPEECH-TO-TEXT ERRORS: "flot" instead of "cloud", "double" instead of "tuple", etc. are ACCEPTABLE. Do not penalize for phonetic spelling errors.
+2. GIBBERISH (random keys like "asdf") = 0 points.
+3. VERY SHORT answers (less than 5 words) = 5-15 points.
+4. SKIPPED questions: Score 0 for that question.
+5. If the answer demonstrates understanding of the concept despite typos, give full credit for technical content.
+6. A score above 70 should be given for answers that are technically correct, even if they have grammar issues.
 
 Return ONLY the JSON.`;
 

@@ -1233,22 +1233,22 @@ function calculateStrictScore(questionsAndAnswers, validationResult) {
         const wordCount = answer.split(/\s+/).filter(w => w).length;
         let score = 0;
 
-        // Strict scoring based on answer quality
+        // Relaxed scoring based on answer quality
         if (!answer || answer === '(Skipped)' || wordCount < 1) {
             score = 0; // Empty/skipped = 0
-        } else if (wordCount < 10) {
-            score = 15; // Very short
-        } else if (wordCount < 25) {
-            score = 35; // Short
+        } else if (wordCount < 5) {
+            score = 30; // Very short but attempted
+        } else if (wordCount < 20) {
+            score = 50; // Short but likely valid
         } else if (wordCount < 50) {
-            score = 55; // Medium
+            score = 65; // Medium
         } else if (wordCount < 100) {
-            score = 70; // Good
+            score = 75; // Good
         } else {
             score = 85; // Detailed
         }
 
-        // Check for relevance keywords
+        // Check for relevance keywords (Bonus only, no penalty)
         const question = (qa.question || '').toLowerCase();
         const answerLower = answer.toLowerCase();
 
@@ -1256,8 +1256,8 @@ function calculateStrictScore(questionsAndAnswers, validationResult) {
         const questionWords = question.split(/\s+/).filter(w => w.length > 4);
         const relevantMatches = questionWords.filter(w => answerLower.includes(w)).length;
 
-        if (relevantMatches >= 2) {
-            score = Math.min(100, score + 10);
+        if (relevantMatches >= 1) {
+            score = Math.min(100, score + 15);
         }
 
         totalScore += score;
@@ -1276,33 +1276,27 @@ function calculateStrictScore(questionsAndAnswers, validationResult) {
         overallScore: avgScore,
         technicalScore: techCount > 0 ? Math.round(techScore / techCount) : 0,
         hrScore: hrCount > 0 ? Math.round(hrScore / hrCount) : 0,
-        communication: Math.max(0, avgScore - 5),
+        communication: Math.max(10, avgScore - 5),
         confidence: avgScore,
         relevance: avgScore,
         problemSolving: avgScore,
-        strengths: avgScore >= 70 ? ['Detailed responses', 'Good communication'] : avgScore >= 40 ? ['Some effort shown'] : [],
-        weaknesses: validationResult.emptyCount > 0
-            ? [`${validationResult.emptyCount} questions not answered properly`]
-            : avgScore < 50
-                ? ['Answers need more detail']
-                : [],
+        strengths: avgScore >= 60 ? ['Attempted most questions', 'Good communication'] : ['Completed interview'],
+        weaknesses: avgScore < 50
+            ? ['Answers could be more detailed']
+            : [],
         areasToImprove: [
-            { area: 'Answer Quality', suggestion: 'Provide detailed responses with specific examples', priority: avgScore < 50 ? 'high' : 'medium' },
-            { area: 'Relevance', suggestion: 'Ensure answers directly address the question asked', priority: 'medium' }
+            { area: 'Answer Detail', suggestion: 'Try to provide longer, more descriptive answers', priority: 'medium' }
         ],
-        feedback: avgScore >= 70
-            ? 'Good performance! Your answers were relevant and detailed.'
-            : avgScore >= 40
-                ? 'Average performance. Focus on providing more complete answers.'
-                : 'Please provide more detailed and relevant answers to interview questions.',
+        feedback: avgScore >= 60
+            ? 'Good effort! You answered the questions reasonably well.'
+            : 'Thank you for completing the interview. Review the feedback to improve your scores.',
         technicalFeedback: techCount > 0
-            ? (techScore / techCount >= 50 ? 'Technical responses were adequate.' : 'Technical responses need improvement.')
-            : 'No technical responses to evaluate.',
-        communicationFeedback: 'Structure your answers with context, action, and results.',
+            ? (techScore / techCount >= 50 ? 'Technical responses show promise.' : 'Technical concepts need review.')
+            : 'No technical responses.',
+        communicationFeedback: 'Keep practicing your explanations.',
         recommendations: [
-            'Prepare specific examples from your experience',
-            'Answer each question directly before elaborating',
-            'Aim for 50-100 word responses for each question'
+            'Practice answering with the STAR method',
+            'Review core technical concepts'
         ]
     };
 }
