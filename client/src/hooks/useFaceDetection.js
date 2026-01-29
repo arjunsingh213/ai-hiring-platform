@@ -12,7 +12,7 @@ const THRESHOLDS = {
     NO_FACE_DISMISS_DELAY: 10000,   // 10 seconds to auto-fail
     LOOK_AWAY_WARNING_DELAY: 3000,  // 3 seconds before lookaway warning
     DETECTION_INTERVAL: 500,        // Check every 500ms
-    FACE_DETECTION_SCORE: 0.4,      // RELAXED: Minimum confidence for face detection (from 0.5)
+    FACE_DETECTION_SCORE: 0.2,      // RELAXED: Minimum confidence for face detection (from 0.4)
 };
 
 const useFaceDetection = (videoRef, enabled = true) => {
@@ -96,13 +96,16 @@ const useFaceDetection = (videoRef, enabled = true) => {
             // Enhanced validation: Check if face is PROPERLY visible (not covered/obscured)
             let faceValid = false;
             if (faces === 1) {
+                const detection = detections[0];
+                const landmarks = detection.landmarks;
+
                 // Landmarks check - if faceapi detected it and we have basic landmarks, it's a face
                 const hasNose = landmarks.getNose()?.length > 0;
                 const hasLeftEye = landmarks.getLeftEye()?.length > 0;
                 const hasRightEye = landmarks.getRightEye()?.length > 0;
 
                 // Face is valid if basic features exist and score is decent
-                faceValid = hasNose && hasLeftEye && hasRightEye && detection.detection.score >= THRESHOLDS.FACE_DETECTION_SCORE;
+                faceValid = !!(hasNose && hasLeftEye && hasRightEye && detection.detection.score >= THRESHOLDS.FACE_DETECTION_SCORE);
 
                 if (faceValid) {
                     try {

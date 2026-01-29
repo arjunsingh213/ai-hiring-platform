@@ -54,7 +54,7 @@ export const detectFace = async (input) => {
 
     const options = new faceapi.TinyFaceDetectorOptions({
         inputSize: 416,
-        scoreThreshold: 0.4 // RELAXED: from 0.5
+        scoreThreshold: 0.2 // RELAXED: from 0.4 (original 0.5)
     });
 
     const detections = await faceapi

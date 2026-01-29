@@ -713,30 +713,8 @@ router.post('/submit', async (req, res) => {
 
         // If too many empty answers, give severe penalty
         if (validationResult.emptyCount >= questionsAndAnswers.length) {
-            // All answers are empty - return 0 score
-            const emptyEvaluation = {
-                overallScore: 0,
-                technicalScore: 0,
-                hrScore: 0,
-                communication: 0,
-                confidence: 0,
-                relevance: 0,
-                problemSolving: 0,
-                strengths: [],
-                weaknesses: ['No answers provided', 'Interview not completed properly'],
-                areasToImprove: [
-                    { area: 'Complete Responses', suggestion: 'Please provide answers to interview questions', priority: 'high' }
-                ],
-                feedback: 'No answers were provided. Please complete the interview with thoughtful responses.',
-                technicalFeedback: 'No technical responses to evaluate.',
-                communicationFeedback: 'No communication demonstrated.',
-                recommendations: ['Prepare answers beforehand', 'Take time to respond thoughtfully']
-            };
-
-            return res.json({
-                success: true,
-                data: emptyEvaluation
-            });
+            console.log('[SUBMIT] All answers are empty/skipped. Applying minimal score instead of early return.');
+            // We continue instead of returning, to ensure an Interview document is created
         }
 
         // Use Gemini as primary, DeepSeek as fallback
@@ -770,6 +748,12 @@ router.post('/submit', async (req, res) => {
                 console.error('[SUBMIT] Both AI evaluations failed, using rule-based:', deepseekError.message);
                 evaluation = calculateStrictScore(questionsAndAnswers, validationResult);
             }
+        }
+
+        // Ensure evaluation exists before proceeding
+        if (!evaluation) {
+            console.warn('[SUBMIT] Evaluation failed completely, using fallback score.');
+            evaluation = calculateStrictScore(questionsAndAnswers, validationResult);
         }
 
         // Apply penalty for empty/skipped answers
@@ -1196,7 +1180,7 @@ function validateAnswers(questionsAndAnswers) {
         const answer = (qa.answer || '').trim();
         const wordCount = answer.split(/\s+/).filter(w => w).length;
 
-        if (!answer || answer === '(Skipped)' || wordCount < 3) {
+        if (!answer || answer === '(Skipped)' || wordCount < 1) {
             emptyCount++;
             details.push({ question: index + 1, status: 'empty', words: wordCount });
         } else if (wordCount < 10) {
@@ -1250,7 +1234,7 @@ function calculateStrictScore(questionsAndAnswers, validationResult) {
         let score = 0;
 
         // Strict scoring based on answer quality
-        if (!answer || answer === '(Skipped)' || wordCount < 3) {
+        if (!answer || answer === '(Skipped)' || wordCount < 1) {
             score = 0; // Empty/skipped = 0
         } else if (wordCount < 10) {
             score = 15; // Very short
