@@ -3,228 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import InterviewDeclaration from '../../components/InterviewDeclaration';
+import useFaceDetection from '../../hooks/useFaceDetection';
 import './InterviewReadiness.css';
 
-// STRICT face detection - requires proper face posture, centering, and full visibility
-// Will NOT pass if face is tilted, partial, or not properly positioned
-const detectFaceInImage = (imageData, width, height) => {
-    const data = imageData.data;
 
-    // Define oval face region (center area where face should be positioned)
-    const centerX = Math.floor(width * 0.5);
-    const centerY = Math.floor(height * 0.4); // Slightly above center for typical face position
-    const ovalWidth = Math.floor(width * 0.35);
-    const ovalHeight = Math.floor(height * 0.45);
-
-    // Detection regions: top (forehead), middle (eyes/nose), bottom (mouth/chin)
-    const regions = {
-        forehead: { startY: centerY - ovalHeight * 0.45, endY: centerY - ovalHeight * 0.15 },
-        eyes: { startY: centerY - ovalHeight * 0.15, endY: centerY + ovalHeight * 0.05 },
-        nose: { startY: centerY + ovalHeight * 0.05, endY: centerY + ovalHeight * 0.25 },
-        mouth: { startY: centerY + ovalHeight * 0.25, endY: centerY + ovalHeight * 0.45 }
-    };
-
-    const startX = centerX - ovalWidth;
-    const endX = centerX + ovalWidth;
-
-    // 1. CHECK BRIGHTNESS DISTRIBUTION - face should have proper lighting
-    let brightPixels = 0;
-    let darkPixels = 0;
-    let midPixels = 0;
-    let totalSampled = 0;
-
-    for (let y = regions.forehead.startY; y < regions.mouth.endY; y += 4) {
-        for (let x = startX; x < endX; x += 4) {
-            if (x < 0 || x >= width || y < 0 || y >= height) continue;
-            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
-
-            if (brightness > 180) brightPixels++;
-            else if (brightness < 70) darkPixels++;
-            else midPixels++;
-            totalSampled++;
-        }
-    }
-
-    if (totalSampled < 100) return false; // Not enough pixels sampled
-
-    const brightRatio = brightPixels / totalSampled;
-    const darkRatio = darkPixels / totalSampled;
-    const midRatio = midPixels / totalSampled;
-
-    // Face should have good mid-range brightness (not too dark, not too bright)
-    const hasProperLighting = midRatio > 0.25 && brightRatio < 0.7 && darkRatio < 0.7;
-    if (!hasProperLighting) return false;
-
-    // 2. CHECK FOR EDGES IN SPECIFIC FACE REGIONS
-    // Eyes region should have significant horizontal edges
-    // Mouth region should have edges too
-    const edgeThreshold = 25;
-    let eyeEdges = 0, noseEdges = 0, mouthEdges = 0;
-    let eyeSamples = 0, noseSamples = 0, mouthSamples = 0;
-
-    const checkEdges = (startY, endY) => {
-        let edges = 0, samples = 0;
-        for (let y = startY; y < endY; y += 5) {
-            for (let x = startX + 10; x < endX - 10; x += 5) {
-                if (x < 0 || x >= width || y < 0 || y >= height) continue;
-                const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
-                const idxRight = (Math.floor(y) * width + Math.floor(x + 5)) * 4;
-                const idxDown = (Math.floor(y + 5) * width + Math.floor(x)) * 4;
-
-                if (idxRight >= data.length || idxDown >= data.length) continue;
-
-                const curr = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-                const right = (data[idxRight] + data[idxRight + 1] + data[idxRight + 2]) / 3;
-                const down = (data[idxDown] + data[idxDown + 1] + data[idxDown + 2]) / 3;
-
-                if (Math.abs(curr - right) > edgeThreshold || Math.abs(curr - down) > edgeThreshold) {
-                    edges++;
-                }
-                samples++;
-            }
-        }
-        return { edges, samples };
-    };
-
-    const eyeResult = checkEdges(regions.eyes.startY, regions.eyes.endY);
-    const noseResult = checkEdges(regions.nose.startY, regions.nose.endY);
-    const mouthResult = checkEdges(regions.mouth.startY, regions.mouth.endY);
-
-    eyeEdges = eyeResult.edges;
-    eyeSamples = eyeResult.samples;
-    noseEdges = noseResult.edges;
-    noseSamples = noseResult.samples;
-    mouthEdges = mouthResult.edges;
-    mouthSamples = mouthResult.samples;
-
-    // Eyes should have significant edges (eyebrows, eyes themselves)
-    const eyeEdgeRatio = eyeSamples > 0 ? eyeEdges / eyeSamples : 0;
-    const noseEdgeRatio = noseSamples > 0 ? noseEdges / noseSamples : 0;
-    const mouthEdgeRatio = mouthSamples > 0 ? mouthEdges / mouthSamples : 0;
-
-    // STRICT: Require edges in MULTIPLE facial feature regions
-    // Eye region must have edges (>8%), and at least one of nose/mouth must have edges (>5%)
-    const hasEyeFeatures = eyeEdgeRatio > 0.08;
-    const hasNoseOrMouth = noseEdgeRatio > 0.05 || mouthEdgeRatio > 0.05;
-
-    if (!hasEyeFeatures) return false;
-    if (!hasNoseOrMouth) return false;
-
-    // 3. CHECK FOR FACE SYMMETRY (left vs right side should be similar)
-    const leftHalf = { brightness: 0, count: 0 };
-    const rightHalf = { brightness: 0, count: 0 };
-
-    for (let y = regions.eyes.startY; y < regions.mouth.endY; y += 6) {
-        for (let x = startX; x < centerX; x += 6) {
-            if (x < 0 || x >= width || y < 0 || y >= height) continue;
-            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
-            leftHalf.brightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-            leftHalf.count++;
-        }
-        for (let x = centerX; x < endX; x += 6) {
-            if (x < 0 || x >= width || y < 0 || y >= height) continue;
-            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
-            rightHalf.brightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-            rightHalf.count++;
-        }
-    }
-
-    const leftAvg = leftHalf.count > 0 ? leftHalf.brightness / leftHalf.count : 0;
-    const rightAvg = rightHalf.count > 0 ? rightHalf.brightness / rightHalf.count : 0;
-    const symmetryDiff = Math.abs(leftAvg - rightAvg);
-
-    // Face should be relatively symmetric (not too tilted) - allow up to 40 brightness difference
-    const isSymmetric = symmetryDiff < 40;
-
-    // 4. CHECK CENTER MASS - the "face" content should be centered
-    let centerMassX = 0, centerMassY = 0, massCount = 0;
-
-    for (let y = regions.forehead.startY; y < regions.mouth.endY; y += 4) {
-        for (let x = startX; x < endX; x += 4) {
-            if (x < 0 || x >= width || y < 0 || y >= height) continue;
-            const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
-            const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-            // Count medium brightness pixels as "face content"
-            if (brightness > 50 && brightness < 220) {
-                centerMassX += x;
-                centerMassY += y;
-                massCount++;
-            }
-        }
-    }
-
-    if (massCount < 50) return false; // Not enough face content
-
-    const avgMassX = centerMassX / massCount;
-    const avgMassY = centerMassY / massCount;
-
-    // Center of mass should be within 20% of the expected center
-    const isCentered = Math.abs(avgMassX - centerX) < width * 0.15 &&
-        Math.abs(avgMassY - centerY) < height * 0.15;
-
-    // FINAL VERDICT: All checks must pass
-    return hasProperLighting && hasEyeFeatures && hasNoseOrMouth && isSymmetric && isCentered;
-};
-
-
-// Compare two images for similarity (basic histogram comparison)
-const compareImages = (img1Data, img2Data, width, height) => {
-    if (!img1Data || !img2Data) return 0;
-
-    const data1 = img1Data.data;
-    const data2 = img2Data.data;
-
-    // Create simplified color histograms
-    const bins = 16;
-    const hist1 = new Array(bins * 3).fill(0);
-    const hist2 = new Array(bins * 3).fill(0);
-
-    // Sample center region for comparison
-    const startX = Math.floor(width * 0.25);
-    const endX = Math.floor(width * 0.75);
-    const startY = Math.floor(height * 0.15);
-    const endY = Math.floor(height * 0.65);
-
-    for (let y = startY; y < endY; y++) {
-        for (let x = startX; x < endX; x++) {
-            const idx = (y * width + x) * 4;
-
-            // Quantize colors to bins
-            const r1Bin = Math.floor(data1[idx] / (256 / bins));
-            const g1Bin = Math.floor(data1[idx + 1] / (256 / bins));
-            const b1Bin = Math.floor(data1[idx + 2] / (256 / bins));
-
-            const r2Bin = Math.floor(data2[idx] / (256 / bins));
-            const g2Bin = Math.floor(data2[idx + 1] / (256 / bins));
-            const b2Bin = Math.floor(data2[idx + 2] / (256 / bins));
-
-            hist1[r1Bin]++;
-            hist1[bins + g1Bin]++;
-            hist1[bins * 2 + b1Bin]++;
-
-            hist2[r2Bin]++;
-            hist2[bins + g2Bin]++;
-            hist2[bins * 2 + b2Bin]++;
-        }
-    }
-
-    // Calculate histogram intersection (similarity)
-    let intersection = 0;
-    let sum1 = 0;
-    let sum2 = 0;
-
-    for (let i = 0; i < hist1.length; i++) {
-        intersection += Math.min(hist1[i], hist2[i]);
-        sum1 += hist1[i];
-        sum2 += hist2[i];
-    }
-
-    return intersection / Math.max(sum1, sum2);
-};
 
 const InterviewReadiness = ({
     // Props for inline mode (platform interview)
@@ -276,8 +58,10 @@ const InterviewReadiness = ({
     const [capturedImageData, setCapturedImageData] = useState(null);
     const [showCaptureModal, setShowCaptureModal] = useState(false);
     const [captureCountdown, setCaptureCountdown] = useState(0);
-    const [faceDetected, setFaceDetected] = useState(false);
-    const [detectingFace, setDetectingFace] = useState(false);
+
+    // AI Face Detection Hook
+    const faceDetection = useFaceDetection(videoRef, cameraStatus === 'ready' && showCaptureModal);
+    const { faceDetected, loading: modelsLoading } = faceDetection;
 
     useEffect(() => {
         fetchInterviewData();
@@ -310,53 +94,10 @@ const InterviewReadiness = ({
         }
     }, [cameraStream, showCaptureModal]);
 
-    // Real-time face detection when camera is active
-    useEffect(() => {
-        if (cameraStatus === 'ready' && showCaptureModal && videoRef.current) {
-            // Ensure video has stream when modal opens
-            if (cameraStream && !videoRef.current.srcObject) {
-                videoRef.current.srcObject = cameraStream;
-                videoRef.current.play().catch(() => { });
-            }
-            startFaceDetection();
-        } else {
-            stopFaceDetection();
-        }
-
-        return () => stopFaceDetection();
-    }, [cameraStatus, showCaptureModal, cameraStream]);
 
 
-    const startFaceDetection = () => {
-        if (faceCheckIntervalRef.current) return;
 
-        faceCheckIntervalRef.current = setInterval(() => {
-            if (videoRef.current && canvasRef.current) {
-                const video = videoRef.current;
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
 
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
-
-                ctx.translate(canvas.width, 0);
-                ctx.scale(-1, 1);
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const hasFace = detectFaceInImage(imageData, canvas.width, canvas.height);
-                setFaceDetected(hasFace);
-            }
-        }, 500); // Check every 500ms
-    };
-
-    const stopFaceDetection = () => {
-        if (faceCheckIntervalRef.current) {
-            clearInterval(faceCheckIntervalRef.current);
-            faceCheckIntervalRef.current = null;
-        }
-    };
 
     const fetchInterviewData = async () => {
         try {
@@ -574,10 +315,7 @@ const InterviewReadiness = ({
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const hasFace = detectFaceInImage(imageData, canvas.width, canvas.height);
-
-        if (!hasFace) {
+        if (!faceDetected) {
             setFaceStatus('no-face');
             // Defer toast to avoid setState during render cycle
             setTimeout(() => toast.error('No face detected in photo. Please try again.'), 0);
@@ -586,20 +324,14 @@ const InterviewReadiness = ({
 
         const photoData = canvas.toDataURL('image/jpeg', 0.7); // Compress more (0.7 quality)
         setCapturedPhoto(photoData);
-        setCapturedImageData(imageData); // Keep in memory for session
         setFaceStatus('captured');
         setShowCaptureModal(false);
 
-        // Store only compressed photo for interview verification (not full imageData - too large!)
+        // Store only compressed photo for interview verification
         try {
             localStorage.setItem(`interview_${interviewId}_photo`, photoData);
-            // Store dimensions only (not the full pixel array which exceeds quota)
-            localStorage.setItem(`interview_${interviewId}_dimensions`, JSON.stringify({
-                width: canvas.width,
-                height: canvas.height
-            }));
         } catch (storageError) {
-            console.warn('LocalStorage quota issue, photo kept in memory only:', storageError);
+            console.warn('LocalStorage quota issue:', storageError);
         }
 
         // Defer toast to avoid setState during render cycle

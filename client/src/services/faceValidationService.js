@@ -54,7 +54,7 @@ export const detectFace = async (input) => {
 
     const options = new faceapi.TinyFaceDetectorOptions({
         inputSize: 416,
-        scoreThreshold: 0.5
+        scoreThreshold: 0.4 // RELAXED: from 0.5
     });
 
     const detections = await faceapi
@@ -113,10 +113,10 @@ export const validateFaceQuality = (detection, imageSize) => {
     const offsetX = Math.abs(faceCenterX - imageCenterX) / imageSize.width;
     const offsetY = Math.abs(faceCenterY - imageCenterY) / imageSize.height;
 
-    if (offsetX > 0.3 || offsetY > 0.3) {
+    if (offsetX > 0.4 || offsetY > 0.4) { // RELAXED: from 0.3
         issues.push('Face is not centered. Please center your face in the frame.');
         score -= 20;
-    } else if (offsetX > 0.2 || offsetY > 0.2) {
+    } else if (offsetX > 0.3 || offsetY > 0.3) { // RELAXED: from 0.2
         warnings.push('Face could be more centered.');
         score -= 5;
     }
@@ -139,10 +139,10 @@ export const validateFaceQuality = (detection, imageSize) => {
         eyeCenterRight.x - eyeCenterLeft.x
     ) * (180 / Math.PI));
 
-    if (eyeAngle > 15) {
+    if (eyeAngle > 25) { // RELAXED: from 15
         issues.push('Please keep your head straight (not tilted).');
         score -= 25;
-    } else if (eyeAngle > 10) {
+    } else if (eyeAngle > 15) { // RELAXED: from 10
         warnings.push('Slight head tilt detected.');
         score -= 10;
     }

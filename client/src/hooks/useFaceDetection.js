@@ -12,7 +12,7 @@ const THRESHOLDS = {
     NO_FACE_DISMISS_DELAY: 10000,   // 10 seconds to auto-fail
     LOOK_AWAY_WARNING_DELAY: 3000,  // 3 seconds before lookaway warning
     DETECTION_INTERVAL: 500,        // Check every 500ms
-    FACE_DETECTION_SCORE: 0.5,      // Minimum confidence for face detection
+    FACE_DETECTION_SCORE: 0.4,      // RELAXED: Minimum confidence for face detection (from 0.5)
 };
 
 const useFaceDetection = (videoRef, enabled = true) => {
@@ -82,11 +82,11 @@ const useFaceDetection = (videoRef, enabled = true) => {
         if (video.paused || video.ended || !video.videoWidth) return;
 
         try {
-            // Detect all faces with landmarks - STRICTER threshold to avoid false positives
+            // Detect all faces with landmarks - RELAXED threshold for better reliability
             const detections = await faceapi
                 .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({
                     inputSize: 224,
-                    scoreThreshold: 0.7 // Increased from 0.5 for stricter detection
+                    scoreThreshold: THRESHOLDS.FACE_DETECTION_SCORE // Relaxed from 0.7
                 }))
                 .withFaceLandmarks(true);
 
@@ -96,48 +96,32 @@ const useFaceDetection = (videoRef, enabled = true) => {
             // Enhanced validation: Check if face is PROPERLY visible (not covered/obscured)
             let faceValid = false;
             if (faces === 1) {
-                const detection = detections[0];
-                const landmarks = detection.landmarks;
+                // Landmarks check - if faceapi detected it and we have basic landmarks, it's a face
+                const hasNose = landmarks.getNose()?.length > 0;
+                const hasLeftEye = landmarks.getLeftEye()?.length > 0;
+                const hasRightEye = landmarks.getRightEye()?.length > 0;
 
-                // Validate all key landmarks are detected and visible
-                try {
-                    const nose = landmarks.getNose();
-                    const leftEye = landmarks.getLeftEye();
-                    const rightEye = landmarks.getRightEye();
-                    const mouth = landmarks.getMouth();
+                // Face is valid if basic features exist and score is decent
+                faceValid = hasNose && hasLeftEye && hasRightEye && detection.detection.score >= THRESHOLDS.FACE_DETECTION_SCORE;
 
-                    // Check if all key features have sufficient landmark points
-                    const hasNose = nose && nose.length >= 4;
-                    const hasLeftEye = leftEye && leftEye.length >= 4;
-                    const hasRightEye = rightEye && rightEye.length >= 4;
-                    const hasMouth = mouth && mouth.length >= 6;
+                if (faceValid) {
+                    try {
+                        // Calculate face orientation for "looking away" detection
+                        const nose = landmarks.getNose();
+                        const leftEye = landmarks.getLeftEye();
+                        const rightEye = landmarks.getRightEye();
 
-                    // Face is valid ONLY if ALL key features are visible
-                    faceValid = hasNose && hasLeftEye && hasRightEye && hasMouth;
-
-                    // Additional check: Detection confidence must be high
-                    const confidence = detection.detection.score;
-                    if (confidence < 0.7) {
-                        faceValid = false;
-                    }
-
-                    // Calculate face orientation for "looking away" detection
-                    if (faceValid) {
                         const eyeWidth = Math.abs(rightEye[3].x - leftEye[0].x);
                         const nosePos = nose[3].x;
                         const eyeCenter = (rightEye[3].x + leftEye[0].x) / 2;
                         const deviation = Math.abs(nosePos - eyeCenter) / eyeWidth;
 
                         // If nose is too far from eye center = looking away
-                        setIsLookingAway(deviation > 0.25);
-                    } else {
+                        setIsLookingAway(deviation > 0.35); // RELAXED: from 0.25 to 0.35
+                    } catch (err) {
                         setIsLookingAway(false);
                     }
-
-                } catch (err) {
-                    // If landmark extraction fails, face is not properly visible
-                    console.warn('Landmark validation failed:', err.message);
-                    faceValid = false;
+                } else {
                     setIsLookingAway(false);
                 }
             } else {
