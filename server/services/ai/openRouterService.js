@@ -44,6 +44,90 @@ class OpenRouterService {
     }
 
     /**
+     * Clean AI-generated JSON to fix common parsing errors
+     * Handles: trailing commas, missing commas between elements, unclosed brackets
+     */
+    cleanAIGeneratedJson(jsonStr) {
+        try {
+            // First try to parse as-is
+            return JSON.parse(jsonStr);
+        } catch (e) {
+            // Clean up common issues
+            let cleaned = jsonStr;
+
+            // Remove any markdown code blocks
+            cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+
+            // Remove trailing commas before ] or }
+            cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+
+            // Add missing commas between array elements (common issue)
+            // Pattern: "value"\n"value" or "value" "value"
+            cleaned = cleaned.replace(/"\s*\n\s*"/g, '",\n"');
+            cleaned = cleaned.replace(/"\s+"/g, '", "');
+
+            // Add missing commas between objects in arrays
+            cleaned = cleaned.replace(/}\s*\n\s*{/g, '},\n{');
+            cleaned = cleaned.replace(/}\s+{/g, '}, {');
+
+            // Fix missing commas after values before keys
+            cleaned = cleaned.replace(/(\d)\s*\n\s*"/g, '$1,\n"');
+            cleaned = cleaned.replace(/(true|false|null)\s*\n\s*"/g, '$1,\n"');
+
+            // Try to extract just the first complete JSON object
+            const firstBrace = cleaned.indexOf('{');
+            if (firstBrace !== -1) {
+                let braceCount = 0;
+                let lastBrace = -1;
+                for (let i = firstBrace; i < cleaned.length; i++) {
+                    if (cleaned[i] === '{') braceCount++;
+                    if (cleaned[i] === '}') {
+                        braceCount--;
+                        if (braceCount === 0) {
+                            lastBrace = i;
+                            break;
+                        }
+                    }
+                }
+                if (lastBrace !== -1) {
+                    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+                }
+            }
+
+            try {
+                return JSON.parse(cleaned);
+            } catch (e2) {
+                // Last resort: try to fix unclosed arrays/objects
+                let brackets = 0;
+                let braces = 0;
+                for (const char of cleaned) {
+                    if (char === '[') brackets++;
+                    if (char === ']') brackets--;
+                    if (char === '{') braces++;
+                    if (char === '}') braces--;
+                }
+
+                // Add missing closing brackets/braces
+                while (brackets > 0) {
+                    cleaned += ']';
+                    brackets--;
+                }
+                while (braces > 0) {
+                    cleaned += '}';
+                    braces--;
+                }
+
+                try {
+                    return JSON.parse(cleaned);
+                } catch (e3) {
+                    console.error('[JSON Clean] Failed to parse even after cleaning:', e3.message);
+                    throw e3;
+                }
+            }
+        }
+    }
+
+    /**
      * Make API call to OpenRouter
      */
     async callModel(model, messages, apiKey, options = {}) {
@@ -162,7 +246,8 @@ RULES:
 
                 const jsonMatch = response.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
-                    const parsed = JSON.parse(jsonMatch[0]);
+                    // Use cleaning function to handle malformed JSON
+                    const parsed = this.cleanAIGeneratedJson(jsonMatch[0]);
 
                     // Merge all skills into a flat array if needed
                     if (parsed.skillCategories) {
@@ -199,7 +284,8 @@ RULES:
                         if (geminiResponse) {
                             const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
                             if (jsonMatch) {
-                                const parsed = JSON.parse(jsonMatch[0]);
+                                // Use cleaning function to handle malformed JSON
+                                const parsed = this.cleanAIGeneratedJson(jsonMatch[0]);
                                 if (parsed.skillCategories) {
                                     const allSkills = new Set([
                                         ...(parsed.skills || []),

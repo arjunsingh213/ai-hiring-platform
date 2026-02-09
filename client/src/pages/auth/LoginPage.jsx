@@ -46,13 +46,17 @@ const LoginPage = () => {
                 console.log('Extracted user:', user);
                 console.log('Extracted token:', token);
 
-                // Store auth data
+                // Persist user data consistently
                 localStorage.setItem('token', token);
-                localStorage.setItem('userId', user._id);
-                localStorage.setItem('userRole', user.role);
-                localStorage.setItem('userEmail', user.email);
+                if (user._id) localStorage.setItem('userId', user._id);
+                if (user.role) localStorage.setItem('userRole', user.role);
+                if (user.email) localStorage.setItem('userEmail', user.email);
 
-                console.log('Stored userId:', localStorage.getItem('userId'));
+                // Always store full user object and update timestamp
+                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('loginTimestamp', Date.now().toString());
+
+                console.log('Login successful - Stored userId:', user._id);
 
                 // Redirect based on role and onboarding status
                 if (!user.isOnboardingComplete) {

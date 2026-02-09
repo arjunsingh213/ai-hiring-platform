@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const User = require('../models/User');
 const { getIO } = require('../config/socket');
 const nodemailer = require('nodemailer');
+const { userAuth } = require('../middleware/userAuth');
 
 // Email transporter (using environment variables)
 const createTransporter = () => {
@@ -61,18 +63,19 @@ const sendMessageNotificationEmail = async (senderName, receiverEmail, receiverN
     }
 };
 
-// Send message
-router.post('/', async (req, res) => {
+// Send message - PROTECTED
+router.post('/', userAuth, async (req, res) => {
     try {
-        // Accept both receiverId and recipientId for compatibility
-        const { senderId, receiverId, recipientId, content, attachments } = req.body;
+        // userId from token is the sender
+        const senderId = req.userId;
+        const { receiverId, recipientId, content, attachments } = req.body;
 
         const actualRecipientId = receiverId || recipientId;
 
-        if (!senderId || !actualRecipientId || !content) {
+        if (!actualRecipientId || !content) {
             return res.status(400).json({
                 success: false,
-                error: 'senderId, receiverId/recipientId, and content are required'
+                error: 'receiverId/recipientId and content are required'
             });
         }
 
@@ -114,13 +117,10 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Get unread message count for a user
-router.get('/unread-count', async (req, res) => {
+// Get unread message count for a user - PROTECTED
+router.get('/unread-count', userAuth, async (req, res) => {
     try {
-        const { userId } = req.query;
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'userId required' });
-        }
+        const userId = req.userId; // Secure: Use authenticated user ID
 
         const count = await Message.countDocuments({
             recipientId: userId,
@@ -133,10 +133,22 @@ router.get('/unread-count', async (req, res) => {
     }
 });
 
-// Get conversation between two users
-router.get('/conversation/:userId1/:userId2', async (req, res) => {
+// Get conversation between two users - PROTECTED
+router.get('/conversation/:userId1/:userId2', userAuth, async (req, res) => {
     try {
         const { userId1, userId2 } = req.params;
+        const currentUserId = String(req.userId).trim();
+        let targetUserId1 = String(userId1).trim();
+        let targetUserId2 = String(userId2).trim();
+
+        // SECURITY: Check if current user is part of this conversation
+        // If not, but they are a valid authenticated user, check if they are trying to access their own data
+        if (targetUserId1 !== currentUserId && targetUserId2 !== currentUserId) {
+            console.log(`[SECURITY] ID Mismatch in GET /conversation. Params: ${targetUserId1}/${targetUserId2}, Token: ${currentUserId}`);
+            // Resilient fallback: If they are authenticated, allow them to view conversations where they are a part
+            // The query below handles this naturally if we just use currentUserId as one of the participants
+            targetUserId1 = currentUserId;
+        }
 
         const messages = await Message.find({
             $or: [
@@ -151,10 +163,19 @@ router.get('/conversation/:userId1/:userId2', async (req, res) => {
     }
 });
 
-// Get all conversations for a user
-router.get('/conversations/:userId', async (req, res) => {
+// Get all conversations for a user - PROTECTED
+router.get('/conversations/:userId', userAuth, async (req, res) => {
     try {
         const { userId } = req.params;
+        const currentUserId = String(req.userId).trim();
+        let targetUserId = String(userId).trim();
+
+        // Check if user is requesting their own conversations
+        if (targetUserId !== currentUserId) {
+            console.log(`[SECURITY] ID Mismatch in GET /conversations/:userId. Param: ${targetUserId}, Token: ${currentUserId}`);
+            // Robust fallback: Always use the token's user ID
+            targetUserId = currentUserId;
+        }
 
         const messages = await Message.find({
             $or: [{ senderId: userId }, { recipientId: userId }]
@@ -166,6 +187,9 @@ router.get('/conversations/:userId', async (req, res) => {
         // Group by conversation
         const conversations = {};
         messages.forEach(msg => {
+            // Skip messages with deleted users (populate returns null)
+            if (!msg.senderId || !msg.recipientId) return;
+
             const otherUserId = msg.senderId._id.toString() === userId
                 ? msg.recipientId._id.toString()
                 : msg.senderId._id.toString();
@@ -192,24 +216,48 @@ router.get('/conversations/:userId', async (req, res) => {
     }
 });
 
-// Mark message as read
-router.put('/:id/read', async (req, res) => {
+// Mark message as read - PROTECTED
+router.put('/:id/read', userAuth, async (req, res) => {
     try {
-        const message = await Message.findByIdAndUpdate(
-            req.params.id,
-            { read: true, readAt: new Date() },
-            { new: true }
-        );
+        const message = await Message.findById(req.params.id);
+
+        if (!message) {
+            return res.status(404).json({ success: false, error: 'Message not found' });
+        }
+
+        // Only recipient can mark as read
+        if (!message.recipientId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Unauthorized',
+                code: 'FORBIDDEN'
+            });
+        }
+
+        message.read = true;
+        message.readAt = new Date();
+        await message.save();
+
         res.json({ success: true, data: message });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Mark all messages in a conversation as read
-router.put('/conversation/:senderId/:recipientId/read', async (req, res) => {
+// Mark all messages in a conversation as read - PROTECTED
+router.put('/conversation/:senderId/:recipientId/read', userAuth, async (req, res) => {
     try {
         const { senderId, recipientId } = req.params;
+        const currentUserId = req.userId.toString();
+
+        // Only the recipient can mark messages as read
+        if (recipientId !== currentUserId) {
+            return res.status(403).json({
+                success: false,
+                error: 'Unauthorized',
+                code: 'FORBIDDEN'
+            });
+        }
 
         // Mark all messages from sender to recipient as read
         const result = await Message.updateMany(

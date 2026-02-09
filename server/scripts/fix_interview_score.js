@@ -149,10 +149,14 @@ function calculateStrictScore(questionsAndAnswers) {
     return {
         overallScore: avgScore,
         technicalScore: finalTechScore,
-        hrScore: finalHrScore, // Not in schema but harmless
-        communicationScore: Math.max(10, avgScore - 5), // RENAMED to match schema
-        confidenceScore: avgScore,                      // RENAMED to match schema
-        relevanceScore: avgScore,                       // RENAMED to match schema
+        technicalAccuracy: finalTechScore,              // COMPATIBILITY
+        hrScore: finalHrScore,
+        communicationScore: Math.max(10, avgScore - 5),
+        communication: Math.max(10, avgScore - 5),      // COMPATIBILITY
+        confidenceScore: avgScore,
+        confidence: avgScore,                           // COMPATIBILITY
+        relevanceScore: avgScore,
+        relevance: avgScore,                            // COMPATIBILITY
         problemSolving: avgScore,
         strengths: avgScore >= 60 ? ['Attempted most questions', 'Good communication'] : ['Completed interview'],
         weaknesses: avgScore < 50 ? ['Answers could be more detailed'] : [],

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
+const { userAuth, requireOwnership } = require('../middleware/userAuth');
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -29,22 +30,25 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Get user by ID
+// Get user by ID - Publicly accessible for profile views
 router.get('/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
-        // Return consistent structure
+
+        // Remove sensitive fields if not the owner or recruiter
+        // (Optional: add more granular protection here if needed)
+
         res.json({ success: true, data: user });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Update user profile - MERGE nested fields instead of replacing
-router.put('/:id', async (req, res) => {
+// Update user profile - PROTECTED: Only owner can update
+router.put('/:id', userAuth, requireOwnership('id'), async (req, res) => {
     try {
         const { profile, jobSeekerProfile, recruiterProfile, isOnboardingComplete } = req.body;
 
@@ -104,17 +108,14 @@ router.put('/:id', async (req, res) => {
 });
 
 
-// Upload profile photo
-router.post('/upload-photo', upload.single('photo'), async (req, res) => {
+// Upload profile photo - PROTECTED
+router.post('/upload-photo', userAuth, upload.single('photo'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        const { userId } = req.body;
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'User ID is required' });
-        }
+        const userId = req.userId; // Secure: Use authenticated user ID
 
         // Upload to cloudinary
         const uploadPromise = new Promise((resolve, reject) => {
@@ -161,17 +162,14 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
     }
 });
 
-// Upload banner image
-router.post('/upload-banner', upload.single('banner'), async (req, res) => {
+// Upload banner image - PROTECTED
+router.post('/upload-banner', userAuth, upload.single('banner'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        const { userId } = req.body;
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'User ID is required' });
-        }
+        const userId = req.userId; // Secure: Use authenticated user ID
 
         // Upload to cloudinary with banner-specific settings
         const uploadPromise = new Promise((resolve, reject) => {
@@ -245,20 +243,36 @@ router.get('/role/:role', async (req, res) => {
 router.get('/top-candidates/:domainId', async (req, res) => {
     try {
         const { domainId } = req.params;
-        const { limit = 5 } = req.query;
+        const { limit = 25, timeframe = 'all-time' } = req.query;
 
-        // First try to find candidates in the specific domain
-        let candidates = await User.find({
+        let query = {
             role: 'jobseeker',
-            'jobSeekerProfile.jobDomains': domainId,
             'aiTalentPassport.talentScore': { $gt: 0 }
-        })
-            .select('profile.name profile.photo profile.headline jobSeekerProfile.domain jobSeekerProfile.jobDomains aiTalentPassport.talentScore aiTalentPassport.levelBand')
+        };
+
+        // If not "all", filter by specific domain
+        if (domainId && domainId !== 'all') {
+            query['jobSeekerProfile.jobDomains'] = domainId;
+        }
+
+        // Add timeframe filter based on aiTalentPassport.lastUpdated
+        if (timeframe === 'weekly') {
+            const lastWeek = new Date();
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            query['aiTalentPassport.lastUpdated'] = { $gte: lastWeek };
+        } else if (timeframe === 'monthly') {
+            const lastMonth = new Date();
+            lastMonth.setDate(lastMonth.getDate() - 30);
+            query['aiTalentPassport.lastUpdated'] = { $gte: lastMonth };
+        }
+
+        let candidates = await User.find(query)
+            .select('profile.name profile.photo profile.headline jobSeekerProfile.domain jobSeekerProfile.jobDomains aiTalentPassport.talentScore aiTalentPassport.levelBand aiTalentPassport.lastUpdated')
             .sort({ 'aiTalentPassport.talentScore': -1 })
             .limit(parseInt(limit));
 
-        // If no candidates found in domain, show all top candidates globally
-        if (candidates.length === 0) {
+        // Global fallback only if domain search failed and we are in all-time
+        if (candidates.length === 0 && domainId !== 'all' && timeframe === 'all-time') {
             candidates = await User.find({
                 role: 'jobseeker',
                 'aiTalentPassport.talentScore': { $gt: 0 }
@@ -272,16 +286,17 @@ router.get('/top-candidates/:domainId', async (req, res) => {
             success: true,
             data: candidates,
             domain: domainId,
+            timeframe: timeframe,
             count: candidates.length,
-            isGlobalFallback: candidates.length > 0 && !candidates.some(c => c.jobSeekerProfile?.jobDomains?.includes(domainId))
+            isGlobalFallback: candidates.length > 0 && domainId !== 'all' && !candidates.some(c => c.jobSeekerProfile?.jobDomains?.includes(domainId))
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Get user's job applications
-router.get('/:id/applications', async (req, res) => {
+// Get user's job applications - PROTECTED
+router.get('/:id/applications', userAuth, requireOwnership('id'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -338,17 +353,14 @@ router.get('/:id/applications', async (req, res) => {
     }
 });
 
-// Upload verification document (Business Card / ID)
-router.post('/upload-verification-doc', upload.single('document'), async (req, res) => {
+// Upload verification document - PROTECTED
+router.post('/upload-verification-doc', userAuth, upload.single('document'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        const { userId } = req.body;
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'User ID is required' });
-        }
+        const userId = req.userId; // Secure: Use authenticated user ID
 
         // Upload to cloudinary with document-specific settings
         const uploadPromise = new Promise((resolve, reject) => {

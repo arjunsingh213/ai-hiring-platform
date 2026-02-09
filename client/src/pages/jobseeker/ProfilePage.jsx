@@ -302,6 +302,7 @@ const ProfilePage = () => {
 
     return (
         <div className="profile-page">
+            <div className="neural-bg" />
             {/* Banner Section */}
             <div className="profile-banner-section">
                 <div
@@ -395,154 +396,166 @@ const ProfilePage = () => {
                     userName={user?.profile?.name}
                 />
             ) : (
-                <>
-                    {/* About Section */}
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>About</h2>
-                            <button className="btn-icon" onClick={() => setActiveSection('about')}>✏️</button>
-                        </div>
-                        <p className="about-text">
-                            {user.jobSeekerProfile?.about || 'Tell people about yourself, your experience, and what you\'re looking for.'}
-                        </p>
-                        <div className="about-details">
-                            <div className="detail-item"><span>🎓</span> {user.jobSeekerProfile?.college || 'Add education'}</div>
-                            <div className="detail-item"><span>💼</span> {user.jobSeekerProfile?.domain || 'Add domain'}</div>
-                            <div className="detail-item"><span>🎯</span> Looking for: {user.jobSeekerProfile?.desiredRole || 'Add desired role'}</div>
-                        </div>
-                    </div>
-
-                    {/* Experience Section */}
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>Experience</h2>
-                            <button className="btn-icon" onClick={() => {
-                                setExperienceForm({ title: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' });
-                                setEditingIndex(null);
-                                setActiveSection('experience');
-                            }}>➕</button>
-                        </div>
-
-                        {(user.jobSeekerProfile?.experience || []).length > 0 ? (
-                            <div className="experience-list">
-                                {user.jobSeekerProfile.experience.map((exp, index) => (
-                                    <div key={index} className="experience-item">
-                                        <div className="exp-icon">💼</div>
-                                        <div className="exp-content">
-                                            <h3>{exp.title}</h3>
-                                            <p className="company">{exp.company}</p>
-                                            <p className="dates">
-                                                {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
-                                                {exp.location && ` • ${exp.location}`}
-                                            </p>
-                                            {exp.description && <p className="description">{exp.description}</p>}
-                                        </div>
-                                        <div className="exp-actions">
-                                            <button onClick={() => {
-                                                setExperienceForm(exp);
-                                                setEditingIndex(index);
-                                                setActiveSection('experience');
-                                            }}>✏️</button>
-                                            <button onClick={() => handleDeleteExperience(index)}>🗑️</button>
-                                        </div>
-                                    </div>
-                                ))}
+                <div className="profile-grid-container">
+                    {/* Left Sidebar */}
+                    <aside className="profile-sidebar">
+                        {/* About Section */}
+                        <div className="profile-section">
+                            <div className="section-header">
+                                <h2>About</h2>
+                                <button className="btn-icon" onClick={() => setActiveSection('about')}>✏️</button>
                             </div>
-                        ) : (
-                            <p className="empty-state">Add your work experience to stand out to recruiters</p>
-                        )}
-                    </div>
-
-                    {/* Education Section */}
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>Education</h2>
-                            <button className="btn-icon" onClick={() => {
-                                setEducationForm({ degree: '', institution: '', field: '', startYear: '', endYear: '', grade: '' });
-                                setEditingIndex(null);
-                                setActiveSection('education');
-                            }}>➕</button>
-                        </div>
-
-                        {(user.jobSeekerProfile?.education || []).length > 0 ? (
-                            <div className="education-list">
-                                {user.jobSeekerProfile.education.map((edu, index) => (
-                                    <div key={index} className="education-item">
-                                        <div className="edu-icon">🎓</div>
-                                        <div className="edu-content">
-                                            <h3>{edu.institution}</h3>
-                                            <p className="degree">{edu.degree} {edu.field && `in ${edu.field}`}</p>
-                                            <p className="years">
-                                                {edu.startYear || edu.year} - {edu.endYear || 'Present'}
-                                                {edu.grade && ` • Grade: ${edu.grade}`}
-                                            </p>
-                                        </div>
-                                        <div className="edu-actions">
-                                            <button onClick={() => {
-                                                setEducationForm(edu);
-                                                setEditingIndex(index);
-                                                setActiveSection('education');
-                                            }}>✏️</button>
-                                            <button onClick={() => handleDeleteEducation(index)}>🗑️</button>
-                                        </div>
-                                    </div>
-                                ))}
+                            <p className="about-text">
+                                {user.jobSeekerProfile?.about || 'Tell people about yourself, your experience, and what you\'re looking for.'}
+                            </p>
+                            <div className="about-details">
+                                <div className="detail-item"><span>🎓</span> {user.jobSeekerProfile?.college || 'Add education'}</div>
+                                <div className="detail-item"><span>💼</span> {user.jobSeekerProfile?.domain || 'Add domain'}</div>
+                                <div className="detail-item"><span>🎯</span> Looking for: {user.jobSeekerProfile?.desiredRole || 'Add desired role'}</div>
                             </div>
-                        ) : (
-                            <p className="empty-state">Add your educational background</p>
-                        )}
-                    </div>
-
-                    {/* Skills Section */}
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>Skills</h2>
-                            <button className="btn-icon" onClick={() => setActiveSection('skills')}>➕</button>
                         </div>
 
-                        <div className="skills-container">
-                            {(user.jobSeekerProfile?.skills || []).map((skill, index) => (
-                                <span key={index} className="skill-tag">
-                                    {skill.name}
-                                    <button className="skill-remove" onClick={() => handleDeleteSkill(index)}>×</button>
-                                </span>
-                            ))}
-                            {(!user.jobSeekerProfile?.skills || user.jobSeekerProfile.skills.length === 0) && (
-                                <p className="empty-state">Add skills to showcase your expertise</p>
-                            )}
-                        </div>
-                    </div>
+                        {/* Skills Section */}
+                        <div className="profile-section">
+                            <div className="section-header">
+                                <h2>Skills</h2>
+                                <button className="btn-icon" onClick={() => setActiveSection('skills')}>➕</button>
+                            </div>
 
-                    {/* Portfolio Links Section */}
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>Links</h2>
-                            <button className="btn-icon" onClick={() => setActiveSection('about')}>✏️</button>
+                            <div className="skills-container">
+                                {(user.jobSeekerProfile?.skills || []).map((skill, index) => (
+                                    <span key={index} className="skill-tag">
+                                        {skill.name}
+                                        <button className="skill-remove" onClick={() => handleDeleteSkill(index)}>×</button>
+                                    </span>
+                                ))}
+                                {(!user.jobSeekerProfile?.skills || user.jobSeekerProfile.skills.length === 0) && (
+                                    <div className="empty-state">Add skills to showcase your expertise</div>
+                                )}
+                            </div>
                         </div>
-                        <div className="links-container">
-                            {user.jobSeekerProfile?.portfolioLinks?.linkedin && (
-                                <a href={user.jobSeekerProfile.portfolioLinks.linkedin} target="_blank" rel="noopener noreferrer" className="link-item linkedin">
-                                    💼 LinkedIn
-                                </a>
-                            )}
-                            {user.jobSeekerProfile?.portfolioLinks?.github && (
-                                <a href={user.jobSeekerProfile.portfolioLinks.github} target="_blank" rel="noopener noreferrer" className="link-item github">
-                                    💻 GitHub
-                                </a>
-                            )}
-                            {user.jobSeekerProfile?.portfolioLinks?.portfolio && (
-                                <a href={user.jobSeekerProfile.portfolioLinks.portfolio} target="_blank" rel="noopener noreferrer" className="link-item portfolio">
-                                    🌐 Portfolio
-                                </a>
-                            )}
-                            {user.jobSeekerProfile?.portfolioLinks?.twitter && (
-                                <a href={user.jobSeekerProfile.portfolioLinks.twitter} target="_blank" rel="noopener noreferrer" className="link-item twitter">
-                                    Twitter
-                                </a>
+
+                        {/* Portfolio Links Section */}
+                        <div className="profile-section">
+                            <div className="section-header">
+                                <h2>Links</h2>
+                                <button className="btn-icon" onClick={() => setActiveSection('about')}>✏️</button>
+                            </div>
+                            <div className="links-container">
+                                {user.jobSeekerProfile?.portfolioLinks?.linkedin && (
+                                    <a href={user.jobSeekerProfile.portfolioLinks.linkedin} target="_blank" rel="noopener noreferrer" className="link-item linkedin">
+                                        💼 LinkedIn
+                                    </a>
+                                )}
+                                {user.jobSeekerProfile?.portfolioLinks?.github && (
+                                    <a href={user.jobSeekerProfile.portfolioLinks.github} target="_blank" rel="noopener noreferrer" className="link-item github">
+                                        💻 GitHub
+                                    </a>
+                                )}
+                                {user.jobSeekerProfile?.portfolioLinks?.portfolio && (
+                                    <a href={user.jobSeekerProfile.portfolioLinks.portfolio} target="_blank" rel="noopener noreferrer" className="link-item portfolio">
+                                        🌐 Portfolio
+                                    </a>
+                                )}
+                                {user.jobSeekerProfile?.portfolioLinks?.twitter && (
+                                    <a href={user.jobSeekerProfile.portfolioLinks.twitter} target="_blank" rel="noopener noreferrer" className="link-item twitter">
+                                        Twitter
+                                    </a>
+                                )}
+                                {!user.jobSeekerProfile?.portfolioLinks?.linkedin &&
+                                    !user.jobSeekerProfile?.portfolioLinks?.github &&
+                                    !user.jobSeekerProfile?.portfolioLinks?.portfolio &&
+                                    !user.jobSeekerProfile?.portfolioLinks?.twitter && (
+                                        <div className="empty-state">Add professional links</div>
+                                    )}
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="profile-main-content">
+                        {/* Experience Section */}
+                        <div className="profile-section">
+                            <div className="section-header">
+                                <h2>Experience</h2>
+                                <button className="btn-icon" onClick={() => {
+                                    setExperienceForm({ title: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' });
+                                    setEditingIndex(null);
+                                    setActiveSection('experience');
+                                }}>➕</button>
+                            </div>
+
+                            {(user.jobSeekerProfile?.experience || []).length > 0 ? (
+                                <div className="experience-list">
+                                    {user.jobSeekerProfile.experience.map((exp, index) => (
+                                        <div key={index} className="experience-item">
+                                            <div className="exp-icon">💼</div>
+                                            <div className="exp-content">
+                                                <h3>{exp.title}</h3>
+                                                <p className="company">{exp.company}</p>
+                                                <p className="dates">
+                                                    {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
+                                                    {exp.location && ` • ${exp.location}`}
+                                                </p>
+                                                {exp.description && <p className="description">{exp.description}</p>}
+                                            </div>
+                                            <div className="exp-actions">
+                                                <button onClick={() => {
+                                                    setExperienceForm(exp);
+                                                    setEditingIndex(index);
+                                                    setActiveSection('experience');
+                                                }}>✏️</button>
+                                                <button onClick={() => handleDeleteExperience(index)}>🗑️</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="empty-state">Add your work experience to stand out to recruiters</div>
                             )}
                         </div>
-                    </div>
-                </>
+
+                        {/* Education Section */}
+                        <div className="profile-section">
+                            <div className="section-header">
+                                <h2>Education</h2>
+                                <button className="btn-icon" onClick={() => {
+                                    setEducationForm({ degree: '', institution: '', field: '', startYear: '', endYear: '', grade: '' });
+                                    setEditingIndex(null);
+                                    setActiveSection('education');
+                                }}>➕</button>
+                            </div>
+
+                            {(user.jobSeekerProfile?.education || []).length > 0 ? (
+                                <div className="education-list">
+                                    {user.jobSeekerProfile.education.map((edu, index) => (
+                                        <div key={index} className="education-item">
+                                            <div className="edu-icon">🎓</div>
+                                            <div className="edu-content">
+                                                <h3>{edu.institution}</h3>
+                                                <p className="degree">{edu.degree} {edu.field && `in ${edu.field}`}</p>
+                                                <p className="years">
+                                                    {edu.startYear || edu.year} - {edu.endYear || 'Present'}
+                                                    {edu.grade && ` • Grade: ${edu.grade}`}
+                                                </p>
+                                            </div>
+                                            <div className="edu-actions">
+                                                <button onClick={() => {
+                                                    setEducationForm(edu);
+                                                    setEditingIndex(index);
+                                                    setActiveSection('education');
+                                                }}>✏️</button>
+                                                <button onClick={() => handleDeleteEducation(index)}>🗑️</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="empty-state">Add your educational background</div>
+                            )}
+                        </div>
+                    </main>
+                </div>
             )}
 
             {/* Edit Profile Modal */}
@@ -783,6 +796,8 @@ const ProfilePage = () => {
                     onComplete={handleCropComplete}
                     onCancel={() => { setShowCropModal(false); setSelectedImage(null); }}
                     aspectRatio={cropType === 'banner' ? 3 : 1}
+                    cropShape={cropType === 'banner' ? 'rect' : 'round'}
+                    title={cropType === 'banner' ? 'Crop Profile Banner' : 'Crop Profile Photo'}
                 />
             )}
         </div>

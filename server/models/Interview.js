@@ -179,9 +179,13 @@ const interviewSchema = new mongoose.Schema({
     // Scoring
     scoring: {
         technicalScore: Number, // 0-100
+        technicalAccuracy: Number, // Added for compatibility with detailed-results route
         communicationScore: Number, // 0-100
+        communication: Number, // Added for compatibility with detailed-results route
         confidenceScore: Number, // 0-100
+        confidence: Number, // Added for compatibility with detailed-results route
         relevanceScore: Number, // 0-100
+        relevance: Number, // Added for compatibility with detailed-results route
         overallScore: Number, // 0-100
         strengths: [String],
         weaknesses: [String],

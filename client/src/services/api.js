@@ -27,6 +27,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response.data,
     (error) => {
+        // Handle unauthorized errors (stale tokens/expired sessions)
+        if (error.response?.status === 401) {
+            console.error('Session expired or unauthorized - clearing storage');
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('loginTimestamp');
+
+            // Redirect only if not already on auth page to avoid loops
+            if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/signup')) {
+                window.location.href = '/?expired=true';
+            }
+        }
+
         console.error('API Error:', error.response?.data || error.message);
         return Promise.reject(error.response?.data || error);
     }

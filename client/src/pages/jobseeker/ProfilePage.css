@@ -1,11 +1,44 @@
 /* Profile Page - Matching App Design Language */
 
 .profile-page {
-    max-width: 900px;
+    max-width: 1300px;
     margin: 0 auto;
     padding: 0 var(--spacing-lg) var(--spacing-2xl);
-    padding-top: var(--spacing-lg);
+    padding-top: var(--spacing-xl);
     min-height: 100vh;
+    position: relative;
+}
+
+.profile-grid-container {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: var(--spacing-xl);
+    align-items: start;
+}
+
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.profile-main-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.neural-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 10% 20%, var(--primary-glow) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, var(--primary-glow) 0%, transparent 20%);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: -1;
 }
 
 /* Loading State */
@@ -21,11 +54,11 @@
 /* Banner Section */
 .profile-banner-section {
     position: relative;
-    margin-bottom: 80px;
+    margin-bottom: 40px;
 }
 
 .profile-banner {
-    height: 220px;
+    height: 260px;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     background-size: cover;
     background-position: center;
@@ -81,7 +114,7 @@
     background: var(--bg-card);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
-    border: 5px solid rgba(255, 255, 255, 0.9);
+    border: 4px solid var(--bg-soft);
 }
 
 .profile-photo img {
@@ -128,14 +161,15 @@
 
 /* Profile Header Card */
 .profile-header-card {
-    background: var(--bg-card);
+    background: var(--bg-soft);
     backdrop-filter: var(--blur-lg);
     -webkit-backdrop-filter: var(--blur-lg);
     border: 1px solid var(--glass-border);
+    border-top: none;
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-    padding: 80px var(--spacing-xl) var(--spacing-xl);
-    margin-bottom: var(--spacing-lg);
-    box-shadow: var(--shadow-lg);
+    padding: 60px var(--spacing-2xl) var(--spacing-2xl);
+    margin-bottom: 0px;
+    box-shadow: var(--shadow-sm);
     position: relative;
 }
 
@@ -241,14 +275,12 @@
 
 /* Profile Sections */
 .profile-section {
-    background: var(--bg-card);
-    backdrop-filter: var(--blur-lg);
-    -webkit-backdrop-filter: var(--blur-lg);
+    background: var(--bg-soft);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-xl);
     padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-lg);
-    box-shadow: var(--shadow-lg);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
     position: relative;
     transition: all var(--transition-normal);
 }
@@ -264,8 +296,8 @@
 }
 
 .profile-section:hover {
-    border-color: var(--border-glow);
-    box-shadow: var(--shadow-xl), var(--shadow-glow);
+    border-color: var(--primary-glow);
+    box-shadow: var(--shadow-md);
 }
 
 .section-header {
@@ -320,7 +352,8 @@
     background: var(--glass-white);
     backdrop-filter: var(--blur-sm);
     border-radius: var(--radius-md);
-    border: 1px solid var(--glass-border);
+    border: 1px solid transparent;
+    background: var(--bg-soft);
     font-size: 0.9rem;
     color: var(--text-secondary);
     transition: all var(--transition-fast);
@@ -349,7 +382,8 @@
     padding: var(--spacing-lg);
     background: var(--glass-white);
     backdrop-filter: var(--blur-sm);
-    border: 1px solid var(--glass-border);
+    border: 1px solid transparent;
+    background: var(--bg-soft);
     border-radius: var(--radius-lg);
     position: relative;
     transition: all var(--transition-normal);
@@ -372,7 +406,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-sm);
 }
 
 .exp-content,
@@ -453,25 +487,24 @@
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--gradient-primary);
-    color: white;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-soft);
+    color: var(--text-primary);
     border-radius: var(--radius-full);
     font-size: 0.875rem;
     font-weight: 500;
-    box-shadow: var(--shadow-sm), var(--shadow-glow);
     transition: all var(--transition-fast);
 }
 
 .skill-tag:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md), var(--shadow-glow-accent);
+    background: var(--bg-softer);
+    color: var(--primary);
 }
 
 .skill-remove {
     background: none;
     border: none;
-    color: white;
+    color: var(--text-muted);
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
@@ -530,9 +563,24 @@
 
 /* Empty State */
 .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-2xl);
+    background: var(--bg-soft);
+    border: 1px dashed var(--glass-border);
+    border-radius: var(--radius-lg);
     color: var(--text-muted);
-    font-style: italic;
     font-size: 0.9rem;
+    min-height: 160px;
+    gap: var(--spacing-sm);
+}
+
+.empty-state::before {
+    content: '+';
+    font-size: 1.5rem;
+    opacity: 0.5;
 }
 
 /* Modal Styles */
@@ -552,7 +600,7 @@
 }
 
 .modal {
-    background: var(--bg-card);
+    background: var(--bg-soft);
     backdrop-filter: var(--blur-xl);
     -webkit-backdrop-filter: var(--blur-xl);
     border: 1px solid var(--glass-border);
@@ -817,15 +865,18 @@
 .profile-tabs {
     display: flex;
     justify-content: center;
-    margin-bottom: 24px;
-    background: white;
+    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    background: var(--bg-soft);
     padding: 6px;
     border-radius: 100px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--blur-md);
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
+    position: relative;
+    z-index: 5;
 }
 
 .profile-tab {

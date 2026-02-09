@@ -1,0 +1,206 @@
+{
+  "requirements": {
+    "skills": [
+      "QL",
+      "Python",
+      "data engineering frameworks",
+      "AWS/GCP/Azure",
+      "Spark",
+      "Kafka",
+      "Airflow"
+    ],
+    "minExperience": 0,
+    "maxExperience": 3,
+    "education": [
+      "Bacheolr's in Technology, B.Com"
+    ],
+    "certifications": []
+  },
+  "jobDetails": {
+    "salary": {
+      "min": 450000,
+      "max": 600000,
+      "currency": "INR",
+      "period": "yearly"
+    },
+    "type": "full-time",
+    "location": "Hyderabad, Telangana, IND",
+    "remote": true,
+    "benefits": []
+  },
+  "applicationSettings": {
+    "requireResume": true,
+    "questionsRequired": []
+  },
+  "interviewPipeline": {
+    "settings": {
+      "requirePlatformInterview": false,
+      "autoRejectBelowScore": null,
+      "autoAdvanceAboveScore": 70,
+      "allowReschedule": true,
+      "maxAttempts": 1,
+      "expiryDays": 7,
+      "notifyOnCompletion": true,
+      "sendFeedbackToCandidate": false
+    },
+    "pipelineType": "custom",
+    "rounds": [
+      {
+        "codingConfig": {
+          "difficulty": "medium",
+          "languages": [],
+          "problemCount": 2,
+          "topics": [],
+          "timePerProblem": 20,
+          "allowCodeExecution": true
+        },
+        "questionConfig": {
+          "difficultyDistribution": {
+            "easy": 20,
+            "medium": 60,
+            "hard": 20
+          },
+          "questionCount": 3,
+          "categories": [
+            "general"
+          ],
+          "focusSkills": []
+        },
+        "assessmentConfig": {
+          "questionCount": 20,
+          "duration": 30,
+          "passingScore": 60,
+          "topics": [],
+          "randomize": true,
+          "assessmentTypes": [
+            "technical"
+          ]
+        },
+        "scoring": {
+          "passingScore": 60,
+          "weightage": 100
+        },
+        "roundNumber": 1,
+        "roundType": "screening",
+        "title": "Initial Screening",
+        "description": "Quick aptitude and communication check",
+        "duration": 15,
+        "isAIEnabled": true,
+        "isRequired": true,
+        "_id": "696f3a01f90123e4274ed300"
+      },
+      {
+        "codingConfig": {
+          "difficulty": "medium",
+          "languages": [],
+          "problemCount": 2,
+          "topics": [],
+          "timePerProblem": 20,
+          "allowCodeExecution": true
+        },
+        "questionConfig": {
+          "difficultyDistribution": {
+            "easy": 20,
+            "medium": 60,
+            "hard": 20
+          },
+          "questionCount": 8,
+          "categories": [
+            "conceptual",
+            "practical",
+            "problem_solving"
+          ],
+          "focusSkills": []
+        },
+        "assessmentConfig": {
+          "questionCount": 20,
+          "duration": 30,
+          "passingScore": 60,
+          "topics": [],
+          "randomize": true,
+          "assessmentTypes": [
+            "technical"
+          ]
+        },
+        "scoring": {
+          "passingScore": 60,
+          "weightage": 100
+        },
+        "roundNumber": 2,
+        "roundType": "technical",
+        "title": "Technical Deep Dive",
+        "description": "In-depth technical knowledge assessment",
+        "duration": 45,
+        "isAIEnabled": true,
+        "isRequired": true,
+        "_id": "696f3a01f90123e4274ed301"
+      },
+      {
+        "codingConfig": {
+          "difficulty": "medium",
+          "languages": [],
+          "problemCount": 2,
+          "topics": [],
+          "timePerProblem": 20,
+          "allowCodeExecution": true
+        },
+        "questionConfig": {
+          "difficultyDistribution": {
+            "easy": 20,
+            "medium": 60,
+            "hard": 20
+          },
+          "questionCount": 5,
+          "categories": [],
+          "focusSkills": []
+        },
+        "assessmentConfig": {
+          "questionCount": 20,
+          "duration": 30,
+          "passingScore": 60,
+          "topics": [],
+          "randomize": true,
+          "assessmentTypes": [
+            "technical"
+          ]
+        },
+        "scoring": {
+          "passingScore": 60,
+          "weightage": 100
+        },
+        "roundNumber": 3,
+        "roundType": "portfolio_review",
+        "title": "Portfolio Review Round",
+        "description": "Technical knowledge interview",
+        "duration": 30,
+        "isAIEnabled": true,
+        "isRequired": true,
+        "_id": "696f3a01f90123e4274ed302"
+      }
+    ]
+  },
+  "aiGenerated": {
+    "suggestedSkills": [],
+    "matchingCandidates": []
+  },
+  "_id": "696f39d8f90123e4274ed2fa",
+  "recruiterId": "696df11848928463a77b308d",
+  "title": "Senior Data Engineer",
+  "description": "Design, build, and maintain scalable data pipelines and data platforms.\n\nDevelop and optimize ETL/ELT processes for large-scale structured and unstructured data.\n\nEnsure data quality, reliability, and performance across data systems.\n\nCollaborate with Data Scientists, Analysts, and Product teams to support data needs.\n\nLead data architecture decisions and mentor junior data engineers.\n\nImplement data security, governance, and best practices.\n\nMonitor, troubleshoot, and optimize data workflows in production.",
+  "status": "active",
+  "views": 3,
+  "applicants": [
+    {
+      "userId": "696d06cad95332d1e828e79f",
+      "status": "interviewing",
+      "interviewId": "696f3a8004f31d71efe7f30b",
+      "interviewCompleted": false,
+      "answers": [],
+      "_id": "696f3a7804f31d71efe7f302",
+      "appliedAt": "2026-01-20T08:19:04.178Z"
+    }
+  ],
+  "createdAt": "2026-01-20T08:16:24.305Z",
+  "updatedAt": "2026-01-20T08:21:29.470Z",
+  "__v": 1
+}

@@ -13,15 +13,24 @@ const MessageButton = () => {
     useEffect(() => {
         if (userId) {
             fetchUnreadCount();
+
+            // Listen for manual reads (e.g. from the messages page)
+            const handleRefresh = () => fetchUnreadCount();
+            window.addEventListener('messages_read', handleRefresh);
+
             // Poll for updates every 2 minutes
             const interval = setInterval(fetchUnreadCount, 120000);
-            return () => clearInterval(interval);
+            return () => {
+                window.removeEventListener('messages_read', handleRefresh);
+                clearInterval(interval);
+            };
         }
     }, [userId]);
 
     const fetchUnreadCount = async () => {
         try {
-            const response = await api.get(`/messages/unread-count?userId=${userId}`);
+            // Securely fetching using authenticated token handled by interceptor
+            const response = await api.get('/messages/unread-count');
             setUnreadCount(response.count || 0);
         } catch (error) {
             console.error('Error fetching unread count:', error);

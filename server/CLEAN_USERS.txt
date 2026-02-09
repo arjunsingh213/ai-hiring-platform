@@ -1,0 +1,98 @@
+[
+  {
+    "profile": {
+      "name": ""
+    },
+    "_id": "6968fe41458e4ab93e1bb763",
+    "role": "jobseeker",
+    "email": "testresend@gmail.com"
+  },
+  {
+    "profile": {
+      "name": ""
+    },
+    "_id": "69690555458e4ab93e1bb9b8",
+    "role": "jobseeker",
+    "email": "test_jetski_1@example.com"
+  },
+  {
+    "profile": {
+      "name": "Cognizant"
+    },
+    "_id": "696b64181e21819ad3f83b41",
+    "role": "recruiter",
+    "email": "arjunthakur73308@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Bavisetti vasanth kumar"
+    },
+    "_id": "696c6f875e63d0235083f819",
+    "role": "jobseeker",
+    "email": "20t81a0108@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Sovran Singh Thakur"
+    },
+    "_id": "696df11848928463a77b308d",
+    "role": "jobseeker",
+    "email": "anirudh73308@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Yagnesh Pandraju"
+    },
+    "_id": "696f4f020a6aa3419acb6f14",
+    "role": "jobseeker",
+    "email": "yagneshpandraju1@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Damarla Yeshwanth"
+    },
+    "_id": "6971dbe28952fa7a5a05f82f",
+    "role": "jobseeker",
+    "email": "yeshwanthdamarla@gmail.com"
+  },
+  {
+    "profile": {
+      "name": ""
+    },
+    "_id": "69722e7fb1c81f1ee790c3fb",
+    "role": "jobseeker",
+    "email": "laxmaninverseek@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Thakur Arjun Singh"
+    },
+    "_id": "697b14a9cd5193eac2d9a892",
+    "role": "recruiter",
+    "email": "arjunsingh73309@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Arjun Singh"
+    },
+    "_id": "697b421972588e332b01c8c3",
+    "role": "jobseeker",
+    "email": "jackk96760@gmail.com"
+  },
+  {
+    "profile": {
+      "name": "Remma Kaushik"
+    },
+    "_id": "697bb12ca0fe4d90fa844730",
+    "role": "jobseeker",
+    "email": "remmakaushik@gmail.com"
+  },
+  {
+    "profile": {
+      "name": ""
+    },
+    "_id": "6981d3dae099c8ba5e9b6847",
+    "role": "jobseeker",
+    "email": "prachithakur7330@gmail.com"
+  }
+]

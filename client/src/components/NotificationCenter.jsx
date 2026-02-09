@@ -15,9 +15,17 @@ const NotificationCenter = () => {
     useEffect(() => {
         if (userId) {
             fetchUnreadCount();
+
+            // Listen for manual reads (e.g. from the notification list)
+            const handleRefresh = () => fetchUnreadCount();
+            window.addEventListener('notifications_read', handleRefresh);
+
             // Poll for updates every 2 minutes
             const interval = setInterval(fetchUnreadCount, 120000);
-            return () => clearInterval(interval);
+            return () => {
+                window.removeEventListener('notifications_read', handleRefresh);
+                clearInterval(interval);
+            };
         }
     }, [userId]);
 
@@ -40,6 +48,8 @@ const NotificationCenter = () => {
 
     const fetchUnreadCount = async () => {
         try {
+            // Securely fetching using authenticated token handled by interceptor
+            // The backend endpoint requires userId in query for validation
             const response = await api.get(`/notifications/unread-count?userId=${userId}`);
             setUnreadCount(response.count || 0);
         } catch (error) {
@@ -65,6 +75,9 @@ const NotificationCenter = () => {
             if (!notification.read) {
                 await api.put(`/notifications/${notification._id}/read`);
                 setUnreadCount(prev => Math.max(0, prev - 1));
+
+                // Notify global components to refresh their badges
+                window.dispatchEvent(new CustomEvent('notifications_read'));
             }
 
             // Navigate to relevant content
@@ -85,6 +98,9 @@ const NotificationCenter = () => {
             await api.put('/notifications/mark-all-read', { userId });
             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
             setUnreadCount(0);
+
+            // Notify global components to refresh their badges
+            window.dispatchEvent(new CustomEvent('notifications_read'));
         } catch (error) {
             console.error('Error marking all as read:', error);
         }

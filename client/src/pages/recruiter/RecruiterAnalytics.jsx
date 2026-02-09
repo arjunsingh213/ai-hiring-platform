@@ -18,7 +18,8 @@ const RecruiterAnalytics = () => {
     const fetchAnalytics = async () => {
         try {
             setLoading(true);
-            const userId = user._id || user.id || localStorage.getItem('userId');
+            // Robust userId retrieval - prioritize direct localStorage 'userId' which is updated on login
+            const userId = localStorage.getItem('userId') || user._id || user.id;
 
             if (!userId) {
                 setError('User not found');

@@ -7,6 +7,7 @@ const Sidebar = () => {
     const navItems = [
         { path: '/jobseeker/home', icon: 'home', label: 'Home' },
         { path: '/jobseeker/profile', icon: 'user', label: 'Profile' },
+        { path: '/jobseeker/candidates', icon: 'trophy', label: 'Leaderboard' },
         { path: '/jobseeker/messages', icon: 'message', label: 'Messages' },
         { path: '/jobseeker/interviews', icon: 'video', label: 'Interviews' },
         { path: '/jobseeker/jobs', icon: 'briefcase', label: 'Jobs' },
@@ -16,6 +17,7 @@ const Sidebar = () => {
     const getIcon = (iconName) => {
         const icons = {
             home: <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
+            trophy: <><path d="M6 9H4.5C3.67 9 3 8.33 3 7.5V4.5C3 3.67 3.67 3 4.5 3H6M18 9H19.5C20.33 9 21 8.33 21 7.5V4.5C21 3.67 20.33 3 19.5 3H18M6 3H18V10C18 13.31 15.31 16 12 16C8.69 16 6 13.31 6 10V3Z" stroke="currentColor" strokeWidth="2" /><path d="M12 16V21M8 21H16" stroke="currentColor" strokeWidth="2" /></>,
             user: <><path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" /></>,
             message: <><path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,
             video: <><path d="M23 7L16 12L23 17V7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>,

@@ -576,6 +576,14 @@ const AIInterview = () => {
             }
         } catch (error) {
             console.error('Error:', error);
+
+            // SECURITY: If unauthorized or forbidden, redirect to landing/signup
+            if (error.status === 401 || error.status === 403 || error.code === 'FORBIDDEN') {
+                toast.error('Access denied. You do not have permission for this interview.');
+                navigate('/');
+                return;
+            }
+
             toast.error('Failed to load interview');
             navigate('/jobseeker/interviews');
         }

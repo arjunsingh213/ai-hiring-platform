@@ -1,16 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Job = require('../models/Job');
 const User = require('../models/User');
 const Resume = require('../models/Resume');
 const Interview = require('../models/Interview');
 const aiService = require('../services/ai/aiService');
 const { requirePlatformInterview } = require('../middleware/platformInterviewGuard');
+const { userAuth, requireRole } = require('../middleware/userAuth');
 
-// Create job posting
-router.post('/', async (req, res) => {
+// Create job posting - PROTECTED: Recruiter only
+router.post('/', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
-        const job = new Job(req.body);
+        const job = new Job({
+            ...req.body,
+            recruiterId: req.userId // Securely set recruiter ID from token
+        });
 
         // If raw description provided, format with AI
         if (req.body.rawDescription) {
@@ -47,29 +52,35 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get jobs by recruiter ID
-router.get('/recruiter/:recruiterId', async (req, res) => {
+// Get jobs by recruiter ID - PROTECTED: Recruiter can only see their own jobs
+router.get('/recruiter/:recruiterId', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { recruiterId } = req.params;
         const mongoose = require('mongoose');
 
-        console.log(`[JOB_ROUTE] Fetching jobs for recruiterId: ${recruiterId}`);
+        // SECURITY: Check if recruiter is requesting their own jobs
+        const currentUserId = String(req.userId).trim();
+        let targetRecruiterId = String(recruiterId).trim();
 
-        // Validate and cast to ObjectId to ensure query matches
-        if (!mongoose.Types.ObjectId.isValid(recruiterId)) {
-            console.warn(`[JOB_ROUTE] Invalid recruiterId format: ${recruiterId}`);
-            return res.status(400).json({ success: false, error: 'Invalid recruiter ID format' });
+        // If IDs don't match, check if current user is actually a recruiter and use their ID as fallback
+        if (targetRecruiterId !== currentUserId) {
+            console.log(`[SECURITY] ID Mismatch in GET /recruiter/:recruiterId. Params: ${targetRecruiterId}, Token: ${currentUserId}`);
+            if (req.user && req.user.role === 'recruiter') {
+                console.log(`[SECURITY] Falling back to token userId ${currentUserId} for recruiter`);
+                targetRecruiterId = currentUserId;
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied. You can only view your own jobs.',
+                    code: 'FORBIDDEN'
+                });
+            }
         }
 
-        const queryId = new mongoose.Types.ObjectId(recruiterId);
+        const queryId = new mongoose.Types.ObjectId(targetRecruiterId);
         const jobs = await Job.find({ recruiterId: queryId })
             .populate('recruiterId', 'profile.name profile.company email')
             .sort({ createdAt: -1 });
-
-        console.log(`[JOB_ROUTE] Found ${jobs.length} jobs for recruiter ${recruiterId}`);
-        if (jobs.length > 0) {
-            console.log(`[JOB_ROUTE] Sample job: ${jobs[0].title} (Status: ${jobs[0].status})`);
-        }
 
         res.json({ success: true, data: jobs, count: jobs.length });
     } catch (error) {
@@ -78,20 +89,30 @@ router.get('/recruiter/:recruiterId', async (req, res) => {
     }
 });
 
-// Get comprehensive analytics for recruiter dashboard
-router.get('/recruiter/:recruiterId/analytics', async (req, res) => {
+// Get comprehensive analytics for recruiter dashboard - PROTECTED
+router.get('/recruiter/:recruiterId/analytics', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { recruiterId } = req.params;
-        const mongoose = require('mongoose');
 
-        console.log(`[ANALYTICS] Fetching analytics for recruiterId: ${recruiterId}`);
+        // SECURITY: Check if recruiter is requesting their own analytics
+        const currentUserId = String(req.userId).trim();
+        let targetRecruiterId = String(recruiterId).trim();
 
-        if (!mongoose.Types.ObjectId.isValid(recruiterId)) {
-            console.warn(`[ANALYTICS] Invalid recruiterId format: ${recruiterId}`);
-            return res.status(400).json({ success: false, error: 'Invalid recruiter ID format' });
+        if (targetRecruiterId !== currentUserId) {
+            console.log(`[SECURITY] ID Mismatch in GET /analytics. Params: ${targetRecruiterId}, Token: ${currentUserId}`);
+            if (req.user && req.user.role === 'recruiter') {
+                console.log(`[SECURITY] Falling back to token userId ${currentUserId} for recruiter analytics`);
+                targetRecruiterId = currentUserId;
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied. You can only view your own analytics.',
+                    code: 'FORBIDDEN'
+                });
+            }
         }
 
-        const queryId = new mongoose.Types.ObjectId(recruiterId);
+        const queryId = new mongoose.Types.ObjectId(targetRecruiterId);
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfWeek = new Date();
@@ -106,7 +127,7 @@ router.get('/recruiter/:recruiterId/analytics', async (req, res) => {
                 select: 'profile.name profile.photo email'
             });
 
-        console.log(`[ANALYTICS] Processed ${jobs.length} jobs for recruiter ${recruiterId}`);
+        console.log(`[ANALYTICS] Processed ${jobs.length} jobs for recruiter ${targetRecruiterId}`);
 
         // Calculate job stats
         const totalJobs = jobs.length;
@@ -265,21 +286,31 @@ router.get('/recruiter/:recruiterId/analytics', async (req, res) => {
     }
 });
 
-// Get ALL applicants across all jobs for a recruiter
-router.get('/recruiter/:recruiterId/all-applicants', async (req, res) => {
+// Get ALL applicants across all jobs for a recruiter - PROTECTED
+router.get('/recruiter/:recruiterId/all-applicants', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { recruiterId } = req.params;
-        const { status, interviewCompleted, sortBy = 'date' } = req.query;
-        const mongoose = require('mongoose');
 
-        console.log(`[PIPELINE] Fetching all applicants for recruiterId: ${recruiterId}`);
+        // SECURITY: Check if recruiter is requesting their own applicants
+        const currentUserId = String(req.userId).trim();
+        let targetRecruiterId = String(recruiterId).trim();
 
-        if (!mongoose.Types.ObjectId.isValid(recruiterId)) {
-            console.warn(`[PIPELINE] Invalid recruiterId format: ${recruiterId}`);
-            return res.status(400).json({ success: false, error: 'Invalid recruiter ID format' });
+        if (targetRecruiterId !== currentUserId) {
+            console.log(`[SECURITY] ID Mismatch in /all-applicants. Params: ${targetRecruiterId}, Token: ${currentUserId}`);
+            if (req.user && req.user.role === 'recruiter') {
+                console.log(`[SECURITY] Falling back to token userId ${currentUserId} for all-applicants`);
+                targetRecruiterId = currentUserId;
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied. You can only view your own applicants.',
+                    code: 'FORBIDDEN'
+                });
+            }
         }
 
-        const queryId = new mongoose.Types.ObjectId(recruiterId);
+        const { status, interviewCompleted, sortBy = 'date' } = req.query;
+        const queryId = new mongoose.Types.ObjectId(targetRecruiterId);
 
         // Get all jobs by this recruiter
         const jobs = await Job.find({ recruiterId: queryId })
@@ -289,11 +320,12 @@ router.get('/recruiter/:recruiterId/all-applicants', async (req, res) => {
             });
 
         let allApplicants = [];
-        console.log(`[PIPELINE] Found ${jobs.length} jobs for recruiter ${recruiterId}`);
+        console.log(`[PIPELINE] Found ${jobs.length} jobs for recruiter ${targetRecruiterId}`);
 
         for (const job of jobs) {
             for (const applicant of job.applicants) {
-                if (!applicant.userId) continue;
+                // Determine if user exists or was deleted
+                const userExists = !!applicant.userId;
 
                 // Fetch interview data
                 let interview = null;
@@ -307,7 +339,7 @@ router.get('/recruiter/:recruiterId/all-applicants', async (req, res) => {
                     jobTitle: job.title,
                     jobCompany: job.company?.name || 'Company',
                     applicant: {
-                        userId: applicant.userId,
+                        userId: applicant.userId || { _id: null, profile: { name: 'Deleted User' }, email: 'N/A' },
                         status: applicant.status,
                         appliedAt: applicant.appliedAt,
                         notes: applicant.recruiterNotes,
@@ -377,11 +409,12 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Apply to job - ENHANCED with AI Interview integration
+// Apply to job - ENHANCED with AI Interview integration - PROTECTED
 // REQUIRES: Platform interview must be passed before applying
-router.post('/:id/apply', requirePlatformInterview, async (req, res) => {
+router.post('/:id/apply', userAuth, requireRole('jobseeker'), requirePlatformInterview, async (req, res) => {
     try {
-        const { userId, answers } = req.body;
+        const userId = req.userId; // Securely get user ID from token
+        const { answers } = req.body;
 
         const job = await Job.findById(req.params.id);
         if (!job) {
@@ -411,25 +444,21 @@ router.post('/:id/apply', requirePlatformInterview, async (req, res) => {
         }
 
         // Add to job applicants WITHOUT creating interview yet
-        // The interview will be created when user starts it via /job-interview/start
         job.applicants.push({
             userId,
             answers: answers || [],
             status: 'applied',
-            interviewId: null // Will be set when interview is started
+            appliedAt: new Date(),
+            interviewId: null
         });
 
         await job.save();
-
-        console.log(`[JOB APPLY] User ${userId} applied to job ${job._id} (${job.title})`);
 
         res.json({
             success: true,
             message: 'Application submitted! You will need to complete an AI interview.',
             interviewRequired: true,
-            jobId: job._id,
-            // Frontend should redirect to /job-interview/start with this jobId
-            note: 'Please start the interview via /api/job-interview/start'
+            jobId: job._id
         });
     } catch (error) {
         console.error('Job application error:', error);
@@ -437,15 +466,11 @@ router.post('/:id/apply', requirePlatformInterview, async (req, res) => {
     }
 });
 
-// Withdraw application from a job
-router.delete('/:id/withdraw', async (req, res) => {
+// Withdraw application from a job - PROTECTED
+router.delete('/:id/withdraw', userAuth, requireRole('jobseeker'), async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId.toString(); // Secure user ID from token
         const jobId = req.params.id;
-
-        if (!userId) {
-            return res.status(400).json({ success: false, error: 'User ID required' });
-        }
 
         const job = await Job.findById(jobId);
         if (!job) {
@@ -526,15 +551,24 @@ router.get('/:id/interview-status/:userId', async (req, res) => {
 });
 
 // Update applicant status
-router.put('/:jobId/applicants/:applicantId', async (req, res) => {
+// Update applicant status - PROTECTED: Recruiter only
+router.put('/:jobId/applicants/:applicantId', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { jobId, applicantId } = req.params;
-        // Safely destructure - may be undefined if no body sent
         const { status, notes } = req.body || {};
 
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only update applicants for your own jobs.',
+                code: 'FORBIDDEN'
+            });
         }
 
         const applicant = job.applicants.id(applicantId);
@@ -543,19 +577,21 @@ router.put('/:jobId/applicants/:applicantId', async (req, res) => {
         }
 
         if (status) applicant.status = status;
+        if (status === 'hired') applicant.hiredAt = new Date();
         if (notes) applicant.notes = notes;
 
         await job.save();
 
         res.json({ success: true, data: job });
     } catch (error) {
+        console.error('Update applicant status error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 
-// Get applicants for a job with interview data
-router.get('/:id/applicants', async (req, res) => {
+// Get applicants for a job with interview data - PROTECTED: Recruiter only
+router.get('/:id/applicants', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
             .populate({
@@ -567,9 +603,20 @@ router.get('/:id/applicants', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Job not found' });
         }
 
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only view applicants for your own jobs.',
+                code: 'FORBIDDEN'
+            });
+        }
+
         // Fetch interview data for each applicant
         const applicantsWithInterviews = await Promise.all(
             job.applicants.map(async (applicant) => {
+                if (!applicant.userId) return { ...applicant.toObject(), interview: null };
+
                 const interview = await Interview.findOne({
                     userId: applicant.userId._id,
                     jobId: job._id
@@ -592,16 +639,24 @@ router.get('/:id/applicants', async (req, res) => {
     }
 });
 
-// HIRE a candidate
-router.put('/:jobId/applicants/:userId/hire', async (req, res) => {
+// HIRE a candidate - PROTECTED: Recruiter only
+router.put('/:jobId/applicants/:userId/hire', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { jobId, userId } = req.params;
-        // Safely destructure notes - may be undefined if no body sent
         const { notes } = req.body || {};
 
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only hire for your own jobs.',
+                code: 'FORBIDDEN'
+            });
         }
 
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
@@ -646,16 +701,24 @@ router.put('/:jobId/applicants/:userId/hire', async (req, res) => {
     }
 });
 
-// REJECT a candidate
-router.put('/:jobId/applicants/:userId/reject', async (req, res) => {
+// REJECT a candidate - PROTECTED: Recruiter only
+router.put('/:jobId/applicants/:userId/reject', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { jobId, userId } = req.params;
-        // Safely destructure - may be undefined if no body sent
         const { rejectionReason, notes } = req.body || {};
 
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only reject for your own jobs.',
+                code: 'FORBIDDEN'
+            });
         }
 
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
@@ -701,14 +764,23 @@ router.put('/:jobId/applicants/:userId/reject', async (req, res) => {
     }
 });
 
-// UNDO REJECT - Restore a rejected candidate
-router.put('/:jobId/applicants/:userId/undo-reject', async (req, res) => {
+// UNDO REJECT - Restore a rejected candidate - PROTECTED
+router.put('/:jobId/applicants/:userId/undo-reject', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { jobId, userId } = req.params;
 
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only manage your own jobs.',
+                code: 'FORBIDDEN'
+            });
         }
 
         const applicant = job.applicants.find(a =>
@@ -761,8 +833,8 @@ router.put('/:jobId/applicants/:userId/undo-reject', async (req, res) => {
     }
 });
 
-// Add recruiter notes to applicant
-router.post('/:jobId/applicants/:userId/notes', async (req, res) => {
+// Add recruiter notes to applicant - PROTECTED
+router.post('/:jobId/applicants/:userId/notes', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { jobId, userId } = req.params;
         const { notes } = req.body;
@@ -770,6 +842,15 @@ router.post('/:jobId/applicants/:userId/notes', async (req, res) => {
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only add notes to applicants of your own jobs.',
+                code: 'FORBIDDEN'
+            });
         }
 
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
@@ -793,42 +874,66 @@ router.post('/:jobId/applicants/:userId/notes', async (req, res) => {
 
 
 
-// UPDATE a job
-router.put('/:id', async (req, res) => {
+// UPDATE a job - PROTECTED
+router.put('/:id', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
 
+        const job = await Job.findById(id);
+        if (!job) {
+            return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only update your own jobs.',
+                code: 'FORBIDDEN'
+            });
+        }
+
         // Remove fields that shouldn't be updated
         delete updateData._id;
         delete updateData.createdAt;
-        delete updateData.applicants; // Don't allow overwriting applicants
+        delete updateData.recruiterId; // VERY IMPORTANT: Prevent job "vanishing" by overwriting ID
+        delete updateData.applicants; // Don't allow overwriting applicants via this route
 
-        const job = await Job.findByIdAndUpdate(
+        const updatedJob = await Job.findByIdAndUpdate(
             id,
             { ...updateData, updatedAt: new Date() },
             { new: true, runValidators: true }
         );
 
-        if (!job) {
+        if (!updatedJob) {
             return res.status(404).json({ success: false, error: 'Job not found' });
         }
 
-        res.json({ success: true, message: 'Job updated successfully', data: job });
+        res.json({ success: true, message: 'Job updated successfully', data: updatedJob });
     } catch (error) {
         console.error('Update job error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// DELETE a job
-router.delete('/:id', async (req, res) => {
+// DELETE a job - PROTECTED: Recruiter only
+router.delete('/:id', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
         const { id } = req.params;
 
         const job = await Job.findById(id);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        // SECURITY: Verify recruiter owns this job
+        if (!job.recruiterId.equals(req.userId)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only perform this action on your own jobs.',
+                code: 'FORBIDDEN'
+            });
         }
 
         // Check if job has applicants - warn but still allow delete
@@ -839,11 +944,7 @@ router.delete('/:id', async (req, res) => {
         res.json({
             success: true,
             message: `Job deleted successfully${applicantCount > 0 ? ` (had ${applicantCount} applicants)` : ''}`,
-            deletedJob: {
-                id: job._id,
-                title: job.title,
-                applicantCount
-            }
+            data: { id: job._id, title: job.title }
         });
     } catch (error) {
         console.error('Delete job error:', error);

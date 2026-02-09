@@ -104,14 +104,15 @@ const SignupPage = () => {
     };
 
     const handleVerificationSuccess = (user) => {
-        // Persist user data for onboarding/auth context
+        // Persist user data consistently
         const finalUserId = user._id || registeredUserId;
         if (finalUserId) localStorage.setItem('userId', finalUserId);
-
         if (user.role) localStorage.setItem('userRole', user.role);
+        if (user.email) localStorage.setItem('userEmail', user.email);
 
-        // Also store full user object for fallbacks (RecruiterOnboarding checks this)
-        if (user) localStorage.setItem('user', JSON.stringify(user));
+        // Always store full user object and update timestamp
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('loginTimestamp', Date.now().toString());
 
         console.log('SignupPage - handleVerificationSuccess:', { finalUserId, role: user.role });
 

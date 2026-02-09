@@ -34,7 +34,7 @@ const postSchema = new mongoose.Schema({
 
     postType: {
         type: String,
-        enum: ['text', 'media', 'achievement', 'proof_of_work', 'atp', 'job_posting', 'company_update', 'job_update', 'open_to_work'],
+        enum: ['text', 'media', 'achievement', 'proof_of_work', 'atp', 'job_posting', 'company_update', 'job_update', 'open_to_work', 'challenge'],
         default: 'text'
     },
 

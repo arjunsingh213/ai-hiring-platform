@@ -49,7 +49,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     optionsSuccessStatus: 200
 }));
-
 // -------------------------------------------------------
 
 // Initialize Socket.io

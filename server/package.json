@@ -37,6 +37,7 @@
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",
     "speakeasy": "^2.0.0",
+    "unpdf": "^1.4.0",
     "unstructured-client": "^0.30.2"
   },
   "devDependencies": {

@@ -82,6 +82,9 @@ const RecruiterMessages = () => {
                             ? { ...conv, unreadCount: 0 }
                             : conv
                     ));
+
+                    // Notify global navbar to refresh unread count
+                    window.dispatchEvent(new CustomEvent('messages_read'));
                 } catch (error) {
                     console.error('Error marking messages as read:', error);
                 }

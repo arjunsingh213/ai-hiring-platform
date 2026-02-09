@@ -24,6 +24,14 @@ const InterviewResults = () => {
             const response = await api.get(`/interviews/${interviewId}/detailed-results`);
             setResults(response.data);
         } catch (err) {
+            console.error('Error fetching results:', err);
+
+            // SECURITY: If unauthorized or forbidden, redirect to landing/signup
+            if (err.status === 401 || err.status === 403 || err.code === 'FORBIDDEN') {
+                navigate('/');
+                return;
+            }
+
             setError(err.error || 'Failed to load results');
         } finally {
             setLoading(false);
@@ -190,16 +198,16 @@ const InterviewResults = () => {
                                 </div>
                                 <div className="score-details">
                                     <span className="score-title">Technical Skills</span>
-                                    <span className="score-num" style={{ color: getScoreColor(scoring.technical) }}>
-                                        {scoring.technical}%
+                                    <span className="score-num" style={{ color: getScoreColor(scoring.technical || scoring.technicalScore || 0) }}>
+                                        {scoring.technical || scoring.technicalScore || 0}%
                                     </span>
                                 </div>
                                 <div className="score-bar">
                                     <div
                                         className="score-fill"
                                         style={{
-                                            width: `${scoring.technical}%`,
-                                            background: getScoreColor(scoring.technical)
+                                            width: `${scoring.technical || scoring.technicalScore || 0}%`,
+                                            background: getScoreColor(scoring.technical || scoring.technicalScore || 0)
                                         }}
                                     ></div>
                                 </div>
@@ -213,16 +221,16 @@ const InterviewResults = () => {
                                 </div>
                                 <div className="score-details">
                                     <span className="score-title">Communication</span>
-                                    <span className="score-num" style={{ color: getScoreColor(scoring.communication) }}>
-                                        {scoring.communication}%
+                                    <span className="score-num" style={{ color: getScoreColor(scoring.communication || scoring.communicationScore || 0) }}>
+                                        {scoring.communication || scoring.communicationScore || 0}%
                                     </span>
                                 </div>
                                 <div className="score-bar">
                                     <div
                                         className="score-fill"
                                         style={{
-                                            width: `${scoring.communication}%`,
-                                            background: getScoreColor(scoring.communication)
+                                            width: `${scoring.communication || scoring.communicationScore || 0}%`,
+                                            background: getScoreColor(scoring.communication || scoring.communicationScore || 0)
                                         }}
                                     ></div>
                                 </div>
@@ -236,16 +244,16 @@ const InterviewResults = () => {
                                 </div>
                                 <div className="score-details">
                                     <span className="score-title">Confidence</span>
-                                    <span className="score-num" style={{ color: getScoreColor(scoring.confidence) }}>
-                                        {scoring.confidence}%
+                                    <span className="score-num" style={{ color: getScoreColor(scoring.confidence || scoring.confidenceScore || 0) }}>
+                                        {scoring.confidence || scoring.confidenceScore || 0}%
                                     </span>
                                 </div>
                                 <div className="score-bar">
                                     <div
                                         className="score-fill"
                                         style={{
-                                            width: `${scoring.confidence}%`,
-                                            background: getScoreColor(scoring.confidence)
+                                            width: `${scoring.confidence || scoring.confidenceScore || 0}%`,
+                                            background: getScoreColor(scoring.confidence || scoring.confidenceScore || 0)
                                         }}
                                     ></div>
                                 </div>
@@ -261,8 +269,8 @@ const InterviewResults = () => {
                                 </div>
                                 <div className="score-details">
                                     <span className="score-title">Relevance</span>
-                                    <span className="score-num" style={{ color: getScoreColor(scoring.relevance) }}>
-                                        {scoring.relevance}%
+                                    <span className="score-num" style={{ color: getScoreColor(scoring.relevance || scoring.relevanceScore || 0) }}>
+                                        {scoring.relevance || scoring.relevanceScore || 0}%
                                     </span>
                                 </div>
                                 <div className="score-bar">

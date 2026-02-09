@@ -9,6 +9,7 @@ const Job = require('../models/Job');
 const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
 const cloudinary = require('../config/cloudinary');
 const multer = require('multer');
+const { userAuth, optionalAuth } = require('../middleware/userAuth');
 
 // Configure multer for video uploads (in memory)
 const videoUpload = multer({
@@ -24,9 +25,10 @@ const videoUpload = multer({
 });
 
 // Start a new interview (for job applications)
-router.post('/start', async (req, res) => {
+router.post('/start', userAuth, async (req, res) => {
     try {
-        const { userId, interviewType, jobId } = req.body;
+        const userId = req.userId; // Secure: Use authenticated user ID
+        const { interviewType, jobId } = req.body;
 
         // If interview already exists for this job, return it
         if (jobId) {
@@ -142,7 +144,7 @@ router.post('/start', async (req, res) => {
 });
 
 // Submit interview response - SMART ROUTING: Dynamically generate next question for job interviews
-router.post('/:interviewId/response', async (req, res) => {
+router.post('/:interviewId/response', userAuth, async (req, res) => {
     try {
         const { interviewId } = req.params;
         const { questionIndex, answer, timeSpent, round, skipEvaluation } = req.body;
@@ -150,6 +152,15 @@ router.post('/:interviewId/response', async (req, res) => {
         const interview = await Interview.findById(interviewId).populate('jobId');
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // SECURITY: Verify user owns this interview
+        if (interview.userId.toString() !== req.userId.toString()) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You can only respond to your own interviews.',
+                code: 'FORBIDDEN'
+            });
         }
 
         const question = interview.questions[questionIndex];
@@ -313,8 +324,8 @@ INSTRUCTIONS:
     }
 });
 
-// Report proctoring flag
-router.post('/:interviewId/proctoring-flag', async (req, res) => {
+// Report proctoring flag - PROTECTED
+router.post('/:interviewId/proctoring-flag', userAuth, async (req, res) => {
     try {
         const { interviewId } = req.params;
         const { type, severity, description } = req.body;
@@ -322,6 +333,11 @@ router.post('/:interviewId/proctoring-flag', async (req, res) => {
         const interview = await Interview.findById(interviewId);
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // SECURITY: Verify user owns this interview
+        if (interview.userId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Access denied.' });
         }
 
         interview.proctoring.flags.push({
@@ -347,8 +363,8 @@ router.post('/:interviewId/proctoring-flag', async (req, res) => {
     }
 });
 
-// Complete interview - OVERALL EVALUATION with STRICT ANALYSIS
-router.post('/:interviewId/complete', async (req, res) => {
+// Complete interview - OVERALL EVALUATION with STRICT ANALYSIS - PROTECTED
+router.post('/:interviewId/complete', userAuth, async (req, res) => {
     try {
         const { interviewId } = req.params;
         const { allAnswers, evaluateOverall } = req.body;
@@ -359,6 +375,12 @@ router.post('/:interviewId/complete', async (req, res) => {
 
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // SECURITY: Verify user owns this interview
+        if (interview.userId._id.toString() !== req.userId.toString() &&
+            interview.userId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Access denied.' });
         }
 
         // Get job info (jobId is now populated object or null)
@@ -547,8 +569,8 @@ router.post('/:interviewId/complete', async (req, res) => {
     }
 });
 
-// Save coding test results
-router.post('/:interviewId/coding-results', async (req, res) => {
+// Save coding test results - PROTECTED
+router.post('/:interviewId/coding-results', userAuth, async (req, res) => {
     try {
         const { interviewId } = req.params;
         const { codingResults } = req.body;
@@ -556,6 +578,11 @@ router.post('/:interviewId/coding-results', async (req, res) => {
         const interview = await Interview.findById(interviewId);
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // SECURITY: Verify user owns this interview
+        if (interview.userId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Access denied.' });
         }
 
         // Save coding results
@@ -597,8 +624,8 @@ router.post('/:interviewId/coding-results', async (req, res) => {
     }
 });
 
-// Save round completion results (for pipeline-aware interviews)
-router.post('/:interviewId/round-complete', async (req, res) => {
+// Save round completion results (for pipeline-aware interviews) - PROTECTED
+router.post('/:interviewId/round-complete', userAuth, async (req, res) => {
     try {
         const { interviewId } = req.params;
         const { roundIndex, roundType, score, details } = req.body;
@@ -606,6 +633,11 @@ router.post('/:interviewId/round-complete', async (req, res) => {
         const interview = await Interview.findById(interviewId).populate('jobId');
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // SECURITY: Verify user owns this interview
+        if (interview.userId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Access denied.' });
         }
 
         // Add round result
@@ -866,9 +898,9 @@ function performStrictLocalEvaluation(questionsAndAnswers, interview) {
     };
 }
 
-// Platform interview - returns mock data for onboarding flow
+// Platform interview - returns mock data for onboarding flow - PROTECTED
 // MUST be placed BEFORE the /:id route to avoid ObjectId cast error
-router.get('/platform-interview', async (req, res) => {
+router.get('/platform-interview', userAuth, async (req, res) => {
     try {
         // Return mock interview data for platform interviews (onboarding)
         res.json({
@@ -887,16 +919,32 @@ router.get('/platform-interview', async (req, res) => {
     }
 });
 
-// Get interview by ID
-router.get('/:id', async (req, res) => {
+// Get interview by ID - PROTECTED: Only interview owner or job recruiter can access
+router.get('/:id', userAuth, async (req, res) => {
     try {
         const interview = await Interview.findById(req.params.id)
             .populate('userId', 'profile.name profile.photo profile.email')
             .populate('resumeId')
-            .populate('jobId', 'title company description requirements');
+            .populate('jobId', 'title company description requirements recruiterId');
 
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // Authorization check: Only the interview owner or job recruiter can access
+        const interviewOwnerId = interview.userId?._id?.toString() || interview.userId?.toString();
+        const currentUserId = req.userId.toString();
+        const jobRecruiterId = interview.jobId?.recruiterId?.toString();
+
+        const isOwner = interviewOwnerId === currentUserId;
+        const isRecruiter = req.user.role === 'recruiter' && jobRecruiterId === currentUserId;
+
+        if (!isOwner && !isRecruiter) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You do not have permission to view this interview.',
+                code: 'FORBIDDEN'
+            });
         }
 
         res.json({ success: true, data: interview });
@@ -905,15 +953,31 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Get recruiter report for interview
-router.get('/:id/report', async (req, res) => {
+// Get recruiter report for interview - PROTECTED
+router.get('/:id/report', userAuth, async (req, res) => {
     try {
         const interview = await Interview.findById(req.params.id)
             .populate('userId', 'profile.name profile.photo profile.email')
-            .populate('jobId', 'title company');
+            .populate('jobId', 'title company recruiterId');
 
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // Authorization check
+        const interviewOwnerId = interview.userId?._id?.toString() || interview.userId?.toString();
+        const currentUserId = req.userId.toString();
+        const jobRecruiterId = interview.jobId?.recruiterId?.toString();
+
+        const isOwner = interviewOwnerId === currentUserId;
+        const isRecruiter = req.user.role === 'recruiter' && jobRecruiterId === currentUserId;
+
+        if (!isOwner && !isRecruiter) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You do not have permission to view this report.',
+                code: 'FORBIDDEN'
+            });
         }
 
         if (!interview.recruiterReport) {
@@ -945,16 +1009,32 @@ router.get('/:id/report', async (req, res) => {
     }
 });
 
-// Get DETAILED interview results with question-by-question breakdown
-router.get('/:id/detailed-results', async (req, res) => {
+// Get DETAILED interview results with question-by-question breakdown - PROTECTED
+router.get('/:id/detailed-results', userAuth, async (req, res) => {
     try {
         const interview = await Interview.findById(req.params.id)
             .populate('userId', 'profile.name profile.photo profile.email')
             .populate('resumeId')
-            .populate('jobId', 'title company description requirements');
+            .populate('jobId', 'title company description requirements recruiterId');
 
         if (!interview) {
             return res.status(404).json({ success: false, error: 'Interview not found' });
+        }
+
+        // Authorization check
+        const interviewOwnerId = interview.userId?._id?.toString() || interview.userId?.toString();
+        const currentUserId = req.userId.toString();
+        const jobRecruiterId = interview.jobId?.recruiterId?.toString();
+
+        const isOwner = interviewOwnerId === currentUserId;
+        const isRecruiter = req.user.role === 'recruiter' && jobRecruiterId === currentUserId;
+
+        if (!isOwner && !isRecruiter) {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You do not have permission to view these results.',
+                code: 'FORBIDDEN'
+            });
         }
 
         if (interview.status !== 'completed') {
@@ -1041,12 +1121,12 @@ router.get('/:id/detailed-results', async (req, res) => {
                     description: interview.jobId.description
                 } : null,
                 scoring: {
-                    overall: interview.scoring?.overallScore || 0,
-                    technical: interview.scoring?.technicalAccuracy || 0,
-                    communication: interview.scoring?.communication || 0,
-                    confidence: interview.scoring?.confidence || 0,
-                    relevance: interview.scoring?.relevance || 0,
-                    coding: interview.codingResults?.score // Only included if coding was done
+                    overall: interview.scoring?.overallScore || interview.scoring?.overall || 0,
+                    technical: interview.scoring?.technicalAccuracy || interview.scoring?.technicalScore || interview.scoring?.technical || 0,
+                    communication: interview.scoring?.communication || interview.scoring?.communicationScore || 0,
+                    confidence: interview.scoring?.confidence || interview.scoring?.confidenceScore || 0,
+                    relevance: interview.scoring?.relevance || interview.scoring?.relevanceScore || 0,
+                    coding: interview.codingResults?.score || interview.scoring?.codingScore || 0
                 },
                 codingResults: interview.codingResults || null,
                 strengths: interview.scoring?.strengths || [],
@@ -1161,9 +1241,13 @@ function generateImprovementRecommendations(scoring, breakdown) {
     return recommendations;
 }
 
-// Get user's interviews
-router.get('/user/:userId', async (req, res) => {
+// Get user's interviews - PROTECTED
+router.get('/user/:userId', userAuth, async (req, res) => {
     try {
+        // SECURITY: Users can only see their own interview list
+        if (req.params.userId !== req.userId.toString() && req.user.role !== 'admin' && req.user.role !== 'recruiter') {
+            return res.status(403).json({ success: false, error: 'Access denied.' });
+        }
         const interviews = await Interview.find({ userId: req.params.userId })
             .populate('jobId', 'title company')
             .sort({ createdAt: -1 });
@@ -1177,15 +1261,17 @@ router.get('/user/:userId', async (req, res) => {
 
 /**
  * POST /api/interviews/upload-video
- * Upload interview video recording to Cloudinary
+ * Upload interview video recording to Cloudinary - PROTECTED
  */
-router.post('/upload-video', videoUpload.single('video'), async (req, res) => {
+router.post('/upload-video', userAuth, videoUpload.single('video'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No video file provided' });
         }
 
-        const { interviewId, userId, cheatingMarkers } = req.body;
+        // Get userId from tokent instead of body to be secure
+        const userId = req.userId;
+        const { interviewId, cheatingMarkers } = req.body;
 
         console.log(`Uploading interview video for user ${userId}, size: ${req.file.size} bytes`);
 

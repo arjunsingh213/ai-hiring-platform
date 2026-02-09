@@ -10,6 +10,7 @@ import JobListingsPage from './JobListingsPage';
 import SettingsPage from './SettingsPage';
 import OfferAcceptancePage from './OfferAcceptancePage';
 import OnboardingPortal from './OnboardingPortal';
+import LeaderboardPage from './LeaderboardPage';
 import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
@@ -25,6 +26,7 @@ const JobSeekerDashboard = () => {
                     <Route path="messages" element={<MessagingPage />} />
                     <Route path="interviews" element={<InterviewsPage />} />
                     <Route path="jobs" element={<JobListingsPage />} />
+                    <Route path="candidates" element={<LeaderboardPage />} />
                     <Route path="offer/:hiringId" element={<OfferAcceptancePage />} />
                     <Route path="onboarding/:hiringId" element={<OnboardingPortal />} />
                     <Route path="settings" element={<SettingsPage />} />

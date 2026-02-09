@@ -182,6 +182,17 @@ const HomeFeed = () => {
         }
     };
 
+    const handleJoinChallenge = async (challengeId) => {
+        try {
+            await api.post(`/challenges/${challengeId}/join`, { userId });
+            toast.success('Successfully joined the challenge!');
+            // After joining, we might want to refresh only that card or the whole feed
+            fetchActivities();
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to join challenge');
+        }
+    };
+
     const addSkill = () => {
         if (skillInput.trim() && !achievementForm.skills.includes(skillInput.trim())) {
             setAchievementForm({
@@ -206,25 +217,45 @@ const HomeFeed = () => {
         }
 
         try {
-            await api.post('/posts', {
-                userId,
-                postType: achievementForm.type,
-                content: {
-                    text: achievementForm.description,
+            if (achievementForm.type === 'challenge') {
+                await api.post('/challenges', {
+                    creatorId: userId,
                     title: achievementForm.title,
-                    score: achievementForm.score ? parseInt(achievementForm.score) : null,
-                    skills: achievementForm.skills
-                },
-                visibility: 'public'
-            });
+                    description: achievementForm.description,
+                    domain: achievementForm.domain,
+                    difficulty: 'Intermediate', // Default for now
+                    requirements: achievementForm.skills
+                });
+                toast.success('Challenge created and posted!');
+            } else {
+                await api.post('/posts', {
+                    userId,
+                    postType: achievementForm.type,
+                    content: {
+                        text: achievementForm.description,
+                        title: achievementForm.title,
+                        score: achievementForm.score ? parseInt(achievementForm.score) : null,
+                        skills: achievementForm.skills,
+                        domain: achievementForm.domain
+                    },
+                    visibility: 'public'
+                });
+                toast.success('Achievement posted!');
+            }
 
-            toast.success('Achievement posted!');
             setShowAchievementModal(false);
-            setAchievementForm({ type: 'achievement', title: '', description: '', score: '', skills: [] });
+            setAchievementForm({
+                type: 'achievement',
+                title: '',
+                description: '',
+                score: '',
+                skills: [],
+                domain: 'Software Engineering'
+            });
             fetchActivities();
         } catch (error) {
-            console.error('Error posting achievement:', error);
-            toast.error('Failed to post achievement');
+            console.error('Error posting:', error);
+            toast.error('Failed to post');
         }
     };
 
@@ -266,6 +297,8 @@ const HomeFeed = () => {
                 return { icon: Icons.trophy, label: 'Achievement', className: 'type-achievement' };
             case 'atp':
                 return { icon: Icons.chart, label: 'Talent Passport', className: 'type-atp' };
+            case 'challenge':
+                return { icon: Icons.star, label: 'Community Challenge', className: 'type-challenge' };
             case 'proof_of_work':
                 return { icon: Icons.check, label: 'Proof of Work', className: 'type-proof' };
             case 'job_posting':
@@ -539,6 +572,28 @@ const HomeFeed = () => {
                             {Icons.arrow}
                         </a>
                     )}
+
+                    {/* Challenge Card Interaction */}
+                    {postType === 'challenge' && activity.content?.challengeId && (
+                        <div className="challenge-interaction-box">
+                            <div className="challenge-meta">
+                                <span className="challenge-domain-tag">{activity.content.domain}</span>
+                                <span className="challenge-participants">
+                                    {Icons.trophy}
+                                    {activity.engagement?.likes?.length || 0} participants
+                                </span>
+                            </div>
+                            <button
+                                className="btn btn-primary join-challenge-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleJoinChallenge(activity.content.challengeId);
+                                }}
+                            >
+                                Join Challenge
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Card Actions */}
@@ -567,16 +622,36 @@ const HomeFeed = () => {
         <div className="activity-feed">
             {/* Header */}
             <div className="activity-feed-header">
-                <h1>Your Activity</h1>
-                <motion.button
-                    className="btn btn-primary post-achievement-btn"
-                    onClick={() => setShowAchievementModal(true)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                >
-                    {Icons.plus}
-                    {userRole === 'recruiter' ? 'Create Post' : 'Post Achievement'}
-                </motion.button>
+                <div className="header-title">
+                    <h1>Community Hub</h1>
+                    <p className="header-subtitle">Explore challenges, achievements, and opportunities</p>
+                </div>
+                <div className="header-actions">
+                    <motion.button
+                        className="btn btn-secondary create-challenge-btn"
+                        onClick={() => {
+                            setAchievementForm({ ...achievementForm, type: 'challenge' });
+                            setShowAchievementModal(true);
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {Icons.star}
+                        Create Challenge
+                    </motion.button>
+                    <motion.button
+                        className="btn btn-primary post-achievement-btn"
+                        onClick={() => {
+                            setAchievementForm({ ...achievementForm, type: 'achievement' });
+                            setShowAchievementModal(true);
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {Icons.plus}
+                        {userRole === 'recruiter' ? 'Create Post' : 'Post Achievement'}
+                    </motion.button>
+                </div>
             </div>
 
             {/* Tabs */}
@@ -864,6 +939,13 @@ const HomeFeed = () => {
                                     ) : (
                                         <>
                                             <button
+                                                className={`type-btn ${achievementForm.type === 'challenge' ? 'active' : ''}`}
+                                                onClick={() => setAchievementForm({ ...achievementForm, type: 'challenge' })}
+                                            >
+                                                <span className="type-icon">{Icons.star}</span>
+                                                Community Challenge
+                                            </button>
+                                            <button
                                                 className={`type-btn ${achievementForm.type === 'achievement' ? 'active' : ''}`}
                                                 onClick={() => setAchievementForm({ ...achievementForm, type: 'achievement' })}
                                             >
@@ -915,17 +997,30 @@ const HomeFeed = () => {
                                         </div>
 
                                         <div className="form-group">
+                                            <label>Domain</label>
+                                            <select
+                                                className="input"
+                                                value={achievementForm.domain}
+                                                onChange={(e) => setAchievementForm({ ...achievementForm, domain: e.target.value })}
+                                            >
+                                                {['Software Engineering', 'Marketing', 'Customer Support', 'Design', 'Data Science', 'HR'].map(d => (
+                                                    <option key={d} value={d}>{d}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="form-group">
                                             <label>Description</label>
                                             <textarea
                                                 className="input"
-                                                placeholder="Tell others about your achievement..."
+                                                placeholder={achievementForm.type === 'challenge' ? "Describe the challenge and what participants need to do..." : "Tell others about your achievement..."}
                                                 rows="3"
                                                 value={achievementForm.description}
                                                 onChange={(e) => setAchievementForm({ ...achievementForm, description: e.target.value })}
                                             />
                                         </div>
 
-                                        {(achievementForm.type === 'achievement' || achievementForm.type === 'proof_of_work') && (
+                                        {(achievementForm.type === 'achievement' || achievementForm.type === 'proof_of_work' || achievementForm.type === 'challenge') && (
                                             <>
                                                 <div className="form-group">
                                                     <label>Score (optional)</label>
@@ -969,7 +1064,8 @@ const HomeFeed = () => {
 
                                         <button className="btn btn-primary full-width" onClick={postAchievement}>
                                             Post {achievementForm.type === 'achievement' ? 'Achievement' :
-                                                achievementForm.type === 'job_posting' ? 'Job' : 'Update'}
+                                                achievementForm.type === 'challenge' ? 'Challenge' :
+                                                    achievementForm.type === 'job_posting' ? 'Job' : 'Update'}
                                         </button>
                                     </>
                                 )}

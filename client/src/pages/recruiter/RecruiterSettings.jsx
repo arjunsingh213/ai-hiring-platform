@@ -8,9 +8,16 @@ const RecruiterSettings = () => {
     const [activeTab, setActiveTab] = useState('account');
 
     const handleLogout = () => {
+        // Clear ALL auth data for a complete logout
+        localStorage.removeItem('token');
         localStorage.removeItem('userId');
         localStorage.removeItem('userRole');
-        navigate('/');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('user');
+        localStorage.removeItem('loginTimestamp');
+
+        // Use window.location.href to ensure a clean state redirect
+        window.location.href = '/';
     };
 
     return (

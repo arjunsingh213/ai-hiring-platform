@@ -1,6 +1,7 @@
 import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
+import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
 // Lazy load components
@@ -86,7 +87,7 @@ function App() {
         <OAuthTokenHandler>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              {/* Landing Page */}
+              {/* Public Routes - No authentication required */}
               <Route path="/" element={<LandingPageNew />} />
               <Route path="/landing-old" element={<LandingPage />} />
 
@@ -97,26 +98,64 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
-              {/* Onboarding */}
-              <Route path="/onboarding/role-selection" element={<RoleSelection />} />
-              <Route path="/onboarding/jobseeker" element={<JobSeekerOnboarding />} />
-              <Route path="/onboarding/recruiter" element={<RecruiterOnboarding />} />
+              {/* Onboarding - Requires authentication */}
+              <Route path="/onboarding/role-selection" element={
+                <ProtectedRoute>
+                  <RoleSelection />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding/jobseeker" element={
+                <ProtectedRoute>
+                  <JobSeekerOnboarding />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding/recruiter" element={
+                <ProtectedRoute>
+                  <RecruiterOnboarding />
+                </ProtectedRoute>
+              } />
 
-              {/* AI Interview */}
-              <Route path="/interview/:interviewId/ready" element={<InterviewReadiness />} />
-              <Route path="/interview/:interviewId" element={<AIInterview />} />
-              <Route path="/interview/:interviewId/results" element={<InterviewResults />} />
+              {/* AI Interview - Requires authentication */}
+              <Route path="/interview/:interviewId/ready" element={
+                <ProtectedRoute redirectTo="/">
+                  <InterviewReadiness />
+                </ProtectedRoute>
+              } />
+              <Route path="/interview/:interviewId" element={
+                <ProtectedRoute redirectTo="/">
+                  <AIInterview />
+                </ProtectedRoute>
+              } />
+              <Route path="/interview/:interviewId/results" element={
+                <ProtectedRoute redirectTo="/">
+                  <InterviewResults />
+                </ProtectedRoute>
+              } />
 
-              {/* Public Profile (accessible by both roles) */}
+              {/* Public Profile (accessible by both roles, but requires login) */}
               <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
-              {/* Dashboards */}
-              <Route path="/jobseeker/*" element={<JobSeekerDashboard />} />
-              <Route path="/recruiter/*" element={<RecruiterDashboard />} />
+              {/* Job Seeker Dashboard - Requires jobseeker role */}
+              <Route path="/jobseeker/*" element={
+                <ProtectedRoute requiredRole="jobseeker">
+                  <JobSeekerDashboard />
+                </ProtectedRoute>
+              } />
+
+              {/* Recruiter Dashboard - Requires recruiter role */}
+              <Route path="/recruiter/*" element={
+                <ProtectedRoute requiredRole="recruiter">
+                  <RecruiterDashboard />
+                </ProtectedRoute>
+              } />
 
               {/* Admin Portal */}
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/*" element={<AdminDashboard />} />
+              <Route path="/admin/*" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
             </Routes>
           </Suspense>
         </OAuthTokenHandler>
@@ -126,4 +165,3 @@ function App() {
 }
 
 export default App;
-

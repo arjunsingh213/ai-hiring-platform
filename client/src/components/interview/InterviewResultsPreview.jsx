@@ -7,7 +7,7 @@ const InterviewResultsPreview = ({ results, onContinue }) => {
 
     // Handle both data structures (direct from API vs nested data property)
     const { interview, candidate, job, scoring, strengths, weaknesses, recommendations, areasToImprove, codingResults } = results.data || results || {};
-    
+
     // Recommendations fallback
     const currentRecommendations = recommendations || areasToImprove || [];
 

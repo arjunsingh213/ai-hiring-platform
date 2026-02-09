@@ -1,0 +1,190 @@
+[
+  {
+    "requirements": {
+      "skills": [
+        "TensorFlow",
+        "PyTorch",
+        "Scikit-learn",
+        "Pandas",
+        "NumPy",
+        "Spark",
+        "AWS / Azure / GCP",
+        "Familiarity with Docker",
+        "Kubernetes",
+        "and REST APIs."
+      ],
+      "minExperience": 0,
+      "maxExperience": 2,
+      "education": [
+        "Bachelor's in Technology"
+      ],
+      "certifications": []
+    },
+    "jobDetails": {
+      "salary": {
+        "min": 400000,
+        "max": 500000,
+        "currency": "INR",
+        "period": "yearly"
+      },
+      "type": "full-time",
+      "location": "Hyderabad, Telangana",
+      "remote": false,
+      "benefits": []
+    },
+    "applicationSettings": {
+      "requireResume": true,
+      "questionsRequired": []
+    },
+    "interviewPipeline": {
+      "settings": {
+        "requirePlatformInterview": false,
+        "autoRejectBelowScore": null,
+        "autoAdvanceAboveScore": 70,
+        "allowReschedule": true,
+        "maxAttempts": 1,
+        "expiryDays": 7,
+        "notifyOnCompletion": true,
+        "sendFeedbackToCandidate": false
+      },
+      "pipelineType": "custom",
+      "rounds": [
+        {
+          "codingConfig": {
+            "difficulty": "medium",
+            "languages": [],
+            "problemCount": 2,
+            "topics": [],
+            "timePerProblem": 20,
+            "allowCodeExecution": true
+          },
+          "questionConfig": {
+            "difficultyDistribution": {
+              "easy": 20,
+              "medium": 60,
+              "hard": 20
+            },
+            "questionCount": 5,
+            "categories": [
+              "conceptual",
+              "practical"
+            ],
+            "focusSkills": [
+              "TensorFlow",
+              "PyTorch",
+              "Scikit-learn",
+              "Pandas",
+              "NumPy",
+              "AWS / Azure / GCP"
+            ]
+          },
+          "assessmentConfig": {
+            "questionCount": 20,
+            "duration": 30,
+            "passingScore": 60,
+            "topics": [],
+            "randomize": true,
+            "assessmentTypes": [
+              "technical"
+            ]
+          },
+          "scoring": {
+            "passingScore": 60,
+            "weightage": 100
+          },
+          "roundNumber": 1,
+          "roundType": "screening",
+          "title": "Screening Round",
+          "description": "Technical knowledge interview",
+          "duration": 15,
+          "isAIEnabled": true,
+          "isRequired": true,
+          "_id": "697b1636813105ab1526f751"
+        },
+        {
+          "codingConfig": {
+            "difficulty": "medium",
+            "languages": [
+              "JavaScript",
+              "Python"
+            ],
+            "problemCount": 1,
+            "topics": [
+              "arrays",
+              "strings",
+              "dynamic_programming"
+            ],
+            "timePerProblem": 25,
+            "allowCodeExecution": true
+          },
+          "questionConfig": {
+            "difficultyDistribution": {
+              "easy": 20,
+              "medium": 60,
+              "hard": 20
+            },
+            "questionCount": 5,
+            "categories": [],
+            "focusSkills": []
+          },
+          "assessmentConfig": {
+            "questionCount": 20,
+            "duration": 30,
+            "passingScore": 60,
+            "topics": [],
+            "randomize": true,
+            "assessmentTypes": [
+              "technical"
+            ]
+          },
+          "scoring": {
+            "passingScore": 60,
+            "weightage": 100
+          },
+          "roundNumber": 2,
+          "roundType": "dsa",
+          "title": "DSA/Algorithms Round",
+          "description": "Technical knowledge interview",
+          "duration": 30,
+          "isAIEnabled": true,
+          "isRequired": true,
+          "_id": "697b1636813105ab1526f752"
+        }
+      ]
+    },
+    "aiGenerated": {
+      "suggestedSkills": [],
+      "matchingCandidates": []
+    },
+    "_id": "697b15fd813105ab1526f74f",
+    "recruiterId": "697b14a9cd5193eac2d9a892",
+    "title": "Machine Learning Engineer",
+    "description": "Design, develop, and deploy machine learning models for production use.\n\nBuild and maintain end-to-end ML pipelines including data preprocessing, training, and inference.\n\nCollaborate with Data Scientists and Software Engineers to integrate ML models into applications.\n\nOptimize models for performance, scalability, and accuracy.\n\nMonitor deployed models and retrain them to maintain performance over time.\n\nImplement MLOps practices for versioning, CI/CD, and model monitoring.\n\nEnsure data quality, security, and compliance in ML systems.",
+    "status": "active",
+    "views": 29,
+    "applicants": [
+      {
+        "userId": "697b2140cb7314e1f9bef81a",
+        "status": "rejected",
+        "interviewId": "697b3f99d8e1023c407e854f",
+        "interviewCompleted": false,
+        "answers": [],
+        "_id": "697b3f95d8e1023c407e8547",
+        "appliedAt": "2026-01-29T11:08:05.167Z",
+        "rejectionReason": "You have not cleared the interview quetions."
+      },
+      {
+        "userId": "697b421972588e332b01c8c3",
+        "status": "interviewing",
+        "interviewId": "6982fb22f73b0ddaf2946eb4",
+        "interviewCompleted": false,
+        "answers": [],
+        "_id": "6982fb1cf73b0ddaf2946eab",
+        "appliedAt": "2026-02-04T07:54:04.956Z"
+      }
+    ],
+    "createdAt": "2026-01-29T08:10:37.535Z",
+    "updatedAt": "2026-02-04T12:36:37.279Z",
+    "__v": 12
+  }
+]

@@ -121,6 +121,14 @@ const InterviewReadiness = ({
             }
         } catch (error) {
             console.error('Error fetching interview:', error);
+
+            // SECURITY: If unauthorized or forbidden, redirect to landing/signup
+            if (error.status === 401 || error.status === 403 || error.code === 'FORBIDDEN') {
+                toast.error('Access denied. You do not have permission to view this interview.');
+                navigate('/');
+                return;
+            }
+
             toast.error('Failed to load interview details');
         } finally {
             setLoading(false);

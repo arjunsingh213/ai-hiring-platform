@@ -6,6 +6,7 @@ const Resume = require('../models/Resume');
 const User = require('../models/User');
 const unstructuredParser = require('../services/resume/unstructuredParser');
 const aiService = require('../services/ai/aiService');
+const { userAuth, requireOwnership } = require('../middleware/userAuth');
 
 const cloudinary = require('../config/cloudinary');
 
@@ -45,10 +46,10 @@ async function uploadToCloudinary(buffer, filename) {
     });
 }
 
-// Upload and parse resume
-router.post('/upload', upload.single('resume'), async (req, res) => {
+// Upload and parse resume - PROTECTED: Jobseeker only
+router.post('/upload', userAuth, upload.single('resume'), async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId; // Secure: Use authenticated user ID
 
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
@@ -171,21 +172,31 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
     }
 });
 
-// Get resume by ID
-router.get('/:id', async (req, res) => {
+// Get resume by ID - PROTECTED
+router.get('/:id', userAuth, async (req, res) => {
     try {
         const resume = await Resume.findById(req.params.id);
         if (!resume) {
             return res.status(404).json({ success: false, error: 'Resume not found' });
         }
+
+        // SECURITY: Only owner or recruiter can view resume
+        if (resume.userId.toString() !== req.userId.toString() && req.user.role !== 'recruiter') {
+            return res.status(403).json({
+                success: false,
+                error: 'Access denied. You do not have permission to view this resume.',
+                code: 'FORBIDDEN'
+            });
+        }
+
         res.json({ success: true, data: resume });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Get resume by user ID
-router.get('/user/:userId', async (req, res) => {
+// Get resume by user ID - PROTECTED
+router.get('/user/:userId', userAuth, requireOwnership('userId'), async (req, res) => {
     try {
         const resume = await Resume.findOne({ userId: req.params.userId });
         if (!resume) {

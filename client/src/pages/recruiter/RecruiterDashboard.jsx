@@ -12,6 +12,7 @@ import RecruiterMessages from './RecruiterMessages';
 import RecruiterSettings from './RecruiterSettings';
 import HiringPipelinePage from './HiringPipelinePage';
 import OnboardingPortal from '../jobseeker/OnboardingPortal';
+import LeaderboardPage from '../jobseeker/LeaderboardPage';
 import './RecruiterDashboard.css';
 
 const RecruiterDashboard = () => {
@@ -23,8 +24,7 @@ const RecruiterDashboard = () => {
                 <Routes>
                     <Route path="/" element={<Navigate to="home" replace />} />
                     <Route path="home" element={<RecruiterHome />} />
-                    {/* Redirect old candidates route to applications (Talent Pipeline) */}
-                    <Route path="candidates" element={<Navigate to="/recruiter/applications" replace />} />
+                    <Route path="candidates" element={<LeaderboardPage />} />
                     <Route path="applications" element={<RecruiterApplicationsPage />} />
                     <Route path="hiring-pipeline" element={<HiringPipelinePage />} />
                     <Route path="onboarding/:hiringId" element={<OnboardingPortal />} />
