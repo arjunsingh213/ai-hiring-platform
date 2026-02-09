@@ -13,13 +13,7 @@ const passport = require('./config/passport');
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.io
-const io = initializeSocket(server);
-
-// Connect to MongoDB
-connectDB();
-
-// Middleware - CORS configuration
+// --- Consolidated CORS Configuration (Must be first) ---
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -36,28 +30,36 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        // Normalize origin by removing trailing slash for comparison
         const normalizedOrigin = origin.replace(/\/$/, "");
 
-        const isAllowed = allowedOrigins.some(allowed => {
-            const normalizedAllowed = allowed.replace(/\/$/, "");
-            return normalizedOrigin === normalizedAllowed;
-        });
+        // Match explicit list OR any froscel subdomain
+        const isAllowed = allowedOrigins.some(allowed => allowed.replace(/\/$/, "") === normalizedOrigin) ||
+            normalizedOrigin.match(/^https?:\/\/([a-z0-9-]+\.)?froscel\.(com|xyz)$/i) ||
+            (process.env.CLIENT_URL && normalizedOrigin === process.env.CLIENT_URL.replace(/\/$/, ""));
 
-        // Also allow any froscel subdomains as a fallback
-        const isFroscel = normalizedOrigin.match(/^https?:\/\/([a-z0-9-]+\.)?froscel\.(com|xyz)$/i);
-
-        if (isAllowed || isFroscel || (process.env.CLIENT_URL && normalizedOrigin === process.env.CLIENT_URL.replace(/\/$/, ""))) {
+        if (isAllowed) {
             callback(null, true);
         } else {
-            console.log('CORS blocked origin:', origin);
+            console.log('CORS blocked:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    optionsSuccessStatus: 200
 }));
+
+// Global preflight handler
+app.options('*', cors());
+// -------------------------------------------------------
+
+// Initialize Socket.io
+const io = initializeSocket(server);
+
+// Connect to MongoDB
+connectDB();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
