@@ -50,8 +50,6 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
-// Global preflight handler
-app.options('(.*)', cors());
 // -------------------------------------------------------
 
 // Initialize Socket.io
