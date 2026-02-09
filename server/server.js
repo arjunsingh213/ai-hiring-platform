@@ -27,6 +27,8 @@ const allowedOrigins = [
     'https://ai-hiring-platform-sooly.vercel.app',
     'https://froscel.com',
     'https://www.froscel.com',
+    'https://froscel.xyz',
+    'https://www.froscel.xyz',
     process.env.CLIENT_URL
 ].filter(Boolean);
 
@@ -92,6 +94,7 @@ app.use('/api/code', require('./routes/codeExecutionRoutes'));
 app.use('/api/job-interview', require('./routes/jobInterview'));
 app.use('/api/companies', require('./routes/companyRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/challenges', require('./routes/challengeRoutes'));
 
 // Admin Review System
 app.use('/api/admin', require('./routes/adminRoutes'));
