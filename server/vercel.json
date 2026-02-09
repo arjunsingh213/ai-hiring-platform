@@ -12,6 +12,16 @@
             "dest": "/uploads/$1"
         },
         {
+            "src": "/api/(.*)",
+            "headers": {
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Origin": "https://www.froscel.xyz",
+                "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
+                "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+            },
+            "dest": "server.js"
+        },
+        {
             "src": "/(.*)",
             "dest": "server.js"
         }

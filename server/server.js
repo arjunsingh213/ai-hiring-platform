@@ -28,16 +28,26 @@ const allowedOrigins = [
     'https://froscel.com',
     'https://www.froscel.com',
     'https://froscel.xyz',
-    'https://www.froscel.xyz',
-    process.env.CLIENT_URL
-].filter(Boolean);
+    'https://www.froscel.xyz'
+];
 
 app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.some(allowed => origin.includes(allowed))) {
+        // Normalize origin by removing trailing slash for comparison
+        const normalizedOrigin = origin.replace(/\/$/, "");
+
+        const isAllowed = allowedOrigins.some(allowed => {
+            const normalizedAllowed = allowed.replace(/\/$/, "");
+            return normalizedOrigin === normalizedAllowed;
+        });
+
+        // Also allow any froscel subdomains as a fallback
+        const isFroscel = normalizedOrigin.match(/^https?:\/\/([a-z0-9-]+\.)?froscel\.(com|xyz)$/i);
+
+        if (isAllowed || isFroscel || (process.env.CLIENT_URL && normalizedOrigin === process.env.CLIENT_URL.replace(/\/$/, ""))) {
             callback(null, true);
         } else {
             console.log('CORS blocked origin:', origin);
@@ -46,7 +56,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
