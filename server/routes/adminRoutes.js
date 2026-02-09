@@ -1698,4 +1698,119 @@ router.get('/:id/activity', adminAuth, requirePermission('manage_admins'), async
     }
 });
 
+// ==================== AI USAGE MANAGEMENT ====================
+
+/**
+ * GET /api/admin/ai/stats
+ * Get global AI usage statistics
+ */
+router.get('/ai/stats', adminAuth, requirePermission('view_analytics'), async (req, res) => {
+    try {
+        const aiUsageService = require('../services/ai/aiUsageService');
+        const stats = await aiUsageService.getGlobalStats();
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch AI statistics'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/ai/activity
+ * Get recent AI activity logs
+ */
+router.get('/ai/activity', adminAuth, requirePermission('view_analytics'), async (req, res) => {
+    try {
+        const { page = 1, limit = 20, model, purpose, status, userId } = req.query;
+        const AIUsage = require('../models/AIUsage');
+
+        const query = {};
+        if (model) query.model = model;
+        if (purpose) query.purpose = purpose;
+        if (status) query.status = status;
+        if (userId) query.userId = userId;
+
+        const [logs, total] = await Promise.all([
+            AIUsage.find(query)
+                .populate('userId', 'profile.name email')
+                .sort({ timestamp: -1 })
+                .skip((page - 1) * limit)
+                .limit(parseInt(limit))
+                .lean(),
+            AIUsage.countDocuments(query)
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                logs,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch AI activity'
+        });
+    }
+});
+
+/**
+ * PATCH /api/admin/users/:userId/ai-limit
+ * Update user AI token limit
+ */
+router.patch('/users/:userId/ai-limit', adminAuth, requirePermission('manage_users'), async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { limit } = req.body;
+
+        if (limit === undefined || limit < 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Valid limit is required'
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(userId, {
+            $set: { 'aiUsage.tokenLimit': limit }
+        }, { new: true });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        await auditLog(req, 'update_user_ai_limit', 'user', user._id, {
+            newValue: limit,
+            reason: req.body.reason
+        });
+
+        res.json({
+            success: true,
+            message: 'AI limit updated successfully',
+            data: {
+                userId: user._id,
+                newLimit: user.aiUsage.tokenLimit
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update AI limit'
+        });
+    }
+});
+
 module.exports = router;

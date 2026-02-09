@@ -124,11 +124,11 @@ router.get('/check-status/:userId', async (req, res) => {
  */
 router.post('/validate-answer', async (req, res) => {
     try {
-        const { question, answer } = req.body;
+        const { question, answer, userId } = req.body;
 
         console.log('Validating answer:', answer.substring(0, 50) + '...');
         // 1. Strict Validation using Gemini
-        const validation = await geminiService.validateAnswer(currentQuestion.question, answer);
+        const validation = await geminiService.validateAnswer(question, answer, { userId });
         if (!validation.valid) {
             return res.json({
                 success: true,
@@ -171,6 +171,7 @@ router.post('/generate-blueprint', async (req, res) => {
 router.post('/start', async (req, res) => {
     try {
         const {
+            userId,
             parsedResume,
             desiredRole,
             experienceLevel,
@@ -260,7 +261,13 @@ router.post('/start', async (req, res) => {
 
         // Generate first question using AI with rich context
         // Switch to Gemini as requested by user (consistent with adaptive questions)
-        const firstQuestion = await geminiService.generateAdaptiveQuestion(questionContext);
+        let firstQuestion;
+        try {
+            firstQuestion = await geminiService.generateAdaptiveQuestion(questionContext, [], { userId });
+        } catch (error) {
+            console.warn('[INTERVIEW] First question generation failed, using fallback:', error.message);
+            firstQuestion = "To start off, could you tell me about your most significant project or achievement related to " + (desiredRole || 'this role') + "?";
+        }
 
         // Add round context to the question
         const questionWithContext = {
@@ -432,6 +439,7 @@ ${experienceLevel === 'fresher' ? '⚠️ REMINDER: FRESHER = SIMPLE CONCEPTUAL 
 router.post('/next', async (req, res) => {
     try {
         const {
+            userId,
             currentQuestion,
             answer,
             history,
@@ -441,8 +449,16 @@ router.post('/next', async (req, res) => {
             blueprint
         } = req.body;
 
+        if (!currentQuestion || !currentQuestion.question) {
+            console.warn('[INTERVIEW] Missing currentQuestion or question text in request body');
+            return res.status(400).json({
+                success: false,
+                error: 'Missing question context. Please refresh and try again.'
+            });
+        }
+
         // 1. Strict Validation using Gemini
-        const validation = await geminiService.validateAnswer(currentQuestion.question, answer);
+        const validation = await geminiService.validateAnswer(currentQuestion.question, answer, { userId });
         if (!validation.valid) {
             return res.json({
                 success: true,
@@ -528,11 +544,11 @@ router.post('/next', async (req, res) => {
         console.log(`[INTERVIEW] Generating adaptive question with history (${updatedHistory.length} previous Q&A)`);
         let nextQuestion;
         try {
-            nextQuestion = await geminiService.generateAdaptiveQuestion(questionContext, updatedHistory);
+            nextQuestion = await geminiService.generateAdaptiveQuestion(questionContext, updatedHistory, { userId });
         } catch (geminiError) {
             console.warn(`[INTERVIEW] Gemini failed (${geminiError.message}). FAILING OVER TO DEEPSEEK/LLAMA...`);
             try {
-                nextQuestion = await deepseekService.generateContextualQuestion(questionContext);
+                nextQuestion = await deepseekService.generateContextualQuestion(questionContext, { userId });
                 console.log('[INTERVIEW] DeepSeek fallback successful');
             } catch (deepseekError) {
                 console.error('[INTERVIEW] DeepSeek fallback failed too! Using hardcoded fallback.');
@@ -618,11 +634,13 @@ router.post('/generate-questions', async (req, res) => {
         `;
 
         try {
+            const { userId } = req.body;
             // Generate All Questions using DeepSeek-R1
             const generatedQuestions = await deepseekService.generateInterviewQuestions(
                 resumeSummary,
                 desiredRole || 'Software Engineer',
-                experienceLevel || 'Intern/Junior'
+                experienceLevel || 'Intern/Junior',
+                { userId }
             );
 
             console.log('DeepSeek generated', generatedQuestions.length, 'questions');
@@ -726,7 +744,7 @@ router.post('/submit', async (req, res) => {
                 jobTitle: desiredRole || 'Software Developer',
                 jobDescription: 'General position',
                 requiredSkills: parsedResume?.skills || []
-            });
+            }, { userId });
 
             // Check if Gemini returned a valid evaluation
             if (!evaluation || evaluation.overallScore === undefined) {
@@ -742,7 +760,7 @@ router.post('/submit', async (req, res) => {
                     jobTitle: desiredRole || 'Software Developer',
                     jobDescription: 'General position',
                     requiredSkills: parsedResume?.skills || []
-                }, blueprint);
+                }, blueprint, { userId });
                 console.log('[SUBMIT] DeepSeek evaluation successful, score:', evaluation.overallScore);
             } catch (deepseekError) {
                 console.error('[SUBMIT] Both AI evaluations failed, using rule-based:', deepseekError.message);
