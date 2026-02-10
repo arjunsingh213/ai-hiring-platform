@@ -42,6 +42,7 @@ const upload = multer({
  */
 router.post('/parse', upload.single('resume'), async (req, res) => {
     try {
+        const { userId } = req.body;
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'No resume file provided' });
         }
@@ -119,7 +120,7 @@ router.post('/parse', upload.single('resume'), async (req, res) => {
         // Try to parse resume using DeepSeek-R1
         let parsedResume;
         try {
-            parsedResume = await deepseekService.parseResume(resumeText);
+            parsedResume = await deepseekService.parseResume(resumeText, { userId });
             console.log('DeepSeek parsed resume successfully, skills:', parsedResume?.skills?.length || 0);
         } catch (aiError) {
             console.error('AI parsing failed, using rule-based extraction:', aiError.message);
@@ -205,7 +206,7 @@ function extractBasicInfo(text) {
  */
 router.post('/parse-text', async (req, res) => {
     try {
-        const { resumeText } = req.body;
+        const { resumeText, userId } = req.body;
 
         if (!resumeText || resumeText.trim().length < 50) {
             return res.status(400).json({
@@ -215,7 +216,7 @@ router.post('/parse-text', async (req, res) => {
         }
 
         // Parse resume using AI
-        const parsedResume = await openRouterService.parseResume(resumeText);
+        const parsedResume = await deepseekService.parseResume(resumeText, { userId });
 
         res.json({
             success: true,
@@ -260,18 +261,18 @@ async function extractPDFWithPdfjs(buffer) {
 
 /**
  * GET /api/resume/skill-suggestions
- * Get skill suggestions based on prefix (debounced, using gemini-2.5-flash-lite)
+ * Get skill suggestions based on prefix (debounced, using gemini-2.5-flash)
  */
 router.get('/skill-suggestions', async (req, res) => {
     try {
-        const { prefix, domain = 'technology' } = req.query;
+        const { prefix, domain = 'technology', userId } = req.query;
 
         if (!prefix || prefix.length < 2) {
             return res.json({ success: true, data: { suggestions: [] } });
         }
 
         // Use Gemini for skill suggestions (debounced internally)
-        const suggestions = await geminiService.getSkillSuggestions(prefix, domain);
+        const suggestions = await geminiService.getSkillSuggestions(prefix, domain, { userId });
 
         res.json({
             success: true,
@@ -285,11 +286,11 @@ router.get('/skill-suggestions', async (req, res) => {
 
 /**
  * POST /api/resume/classify
- * Classify resume into domain/role type (using gemini-2.5-flash-lite)
+ * Classify resume into domain/role type (using gemini-2.5-flash)
  */
 router.post('/classify', async (req, res) => {
     try {
-        const { resumeText } = req.body;
+        const { resumeText, userId } = req.body;
 
         if (!resumeText || resumeText.length < 50) {
             return res.json({
@@ -305,7 +306,7 @@ router.post('/classify', async (req, res) => {
         }
 
         // Use Gemini for classification
-        const classification = await geminiService.classifyResume(resumeText);
+        const classification = await geminiService.classifyResume(resumeText, { userId });
 
         res.json({
             success: true,

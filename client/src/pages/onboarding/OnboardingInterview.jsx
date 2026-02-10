@@ -6,6 +6,7 @@ import CodeIDE from '../../components/CodeIDE';
 import InterviewProctor from '../../components/InterviewProctor';
 import RoundInfoPage from '../../components/interview/RoundInfoPage';
 import InterviewResultsPreview from '../../components/interview/InterviewResultsPreview';
+import FeedbackModal from '../../components/FeedbackModal';
 import './OnboardingInterview.css';
 
 const OnboardingInterview = ({
@@ -93,6 +94,7 @@ const OnboardingInterview = ({
 
     const [currentInterviewId, setCurrentInterviewId] = useState(null);
     const [finalViolations, setFinalViolations] = useState([]); // Store violations at interview submit for later upload
+    const [showFeedback, setShowFeedback] = useState(false);
 
     // Handle violations from InterviewProctor - accumulate for entire interview
     const handleViolationLog = useCallback((violations) => {
@@ -542,6 +544,7 @@ const OnboardingInterview = ({
         try {
             setLoading(true);
             const response = await api.post('/onboarding-interview/start', {
+                userId,
                 parsedResume,
                 desiredRole,
                 experienceLevel,
@@ -617,6 +620,7 @@ const OnboardingInterview = ({
         try {
             // Call next endpoint which handles validation AND generation
             const response = await api.post('/onboarding-interview/next', {
+                userId, // Pass userId for tracking
                 currentQuestion: currentQ,
                 answer: textToSubmit.trim(),
                 history: answers, // Send previous answers for context
@@ -868,6 +872,13 @@ const OnboardingInterview = ({
         // Use await to ensure upload finishes before showing completion screen
         await finalizeVideoRecording();
         setCompleted(true);
+
+        // Show feedback modal - only if not already shown for this session
+        const feedbackShown = localStorage.getItem(`feedback_onboarding_${userId}`);
+        if (!feedbackShown) {
+            setShowFeedback(true);
+            localStorage.setItem(`feedback_onboarding_${userId}`, 'true');
+        }
     };
 
     // Skip coding test
@@ -1328,6 +1339,14 @@ const OnboardingInterview = ({
                             : '🔍 Evaluating your responses...'}
                     </p>
                 </div>
+            )}
+
+            {showFeedback && (
+                <FeedbackModal
+                    featureId="onboarding"
+                    onClose={() => setShowFeedback(false)}
+                    userId={userId}
+                />
             )}
         </div>
     );

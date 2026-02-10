@@ -111,6 +111,27 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+/* Internal Scrollbar for Candidates */
+.candidates-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.candidates-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.candidates-list::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 10px;
+}
+
+[data-theme="dark"] .candidates-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .candidate-card {

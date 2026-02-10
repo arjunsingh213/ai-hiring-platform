@@ -78,7 +78,7 @@ router.post('/start', userAuth, async (req, res) => {
                         description: job.description,
                         requirements: job.requirements
                     } : {}
-                });
+                }, { userId });
             } catch (aiError) {
                 console.log('Gemini service unavailable, using fallback questions:', aiError.message);
             }
@@ -172,7 +172,8 @@ router.post('/:interviewId/response', userAuth, async (req, res) => {
                 console.log(`[VALIDATION] Checking answer for Q${questionIndex + 1}: "${answer.substring(0, 50)}..."`);
                 const validation = await geminiService.validateAnswer(
                     question.question,
-                    answer
+                    answer,
+                    { userId: req.userId }
                 );
 
                 if (!validation.valid) {
@@ -281,7 +282,8 @@ INSTRUCTIONS:
 
                     const nextQuestionText = await geminiService.generateAdaptiveQuestion(
                         systemInstruction + `\n\nJOB CONTEXT:\n${jobDescriptionSummary}\n\nHISTORY (${history.length} qs so far):\n${JSON.stringify(history)}\n\nGenerate the next question:`,
-                        history
+                        history,
+                        { userId: req.userId, purpose: 'adaptive_followup' }
                     );
 
                     const nextQuestion = {
@@ -442,7 +444,8 @@ router.post('/:interviewId/complete', userAuth, async (req, res) => {
                     jobTitle: job?.title || 'Position',
                     jobDescription: job?.description || '',
                     requiredSkills: job?.requirements?.skills || []
-                }
+                },
+                { userId: req.userId }
             );
         } catch (evalError) {
             console.error('AI evaluation failed, using rule-based:', evalError.message);
@@ -481,7 +484,7 @@ router.post('/:interviewId/complete', userAuth, async (req, res) => {
                 job: job ? { title: job.title, company: job.company } : null,
                 scores: overallEvaluation,
                 questionsAndAnswers: questionsAndAnswers
-            });
+            }, { userId: req.userId });
             if (aiReport) recruiterReport = { ...recruiterReport, ...aiReport };
         } catch (reportError) {
             console.error('Report generation failed, using fallback:', reportError.message);
@@ -692,7 +695,8 @@ Description: ${job?.description?.substring(0, 500) || 'Not provided'}
                     // Generate first question for new round
                     const nextQText = await geminiService.generateAdaptiveQuestion(
                         jobDescriptionSummary + `\n\nROUND: ${nextRound.roundType}`,
-                        [] // No previous answers for this round
+                        [], // No previous answers for this round
+                        { userId: req.userId, purpose: 'round_generation' }
                     );
 
                     nextRoundQuestion = {

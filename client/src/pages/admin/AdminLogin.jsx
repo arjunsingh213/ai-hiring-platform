@@ -47,6 +47,12 @@ const AdminLogin = () => {
             localStorage.setItem('adminToken', data.data.token);
             localStorage.setItem('adminInfo', JSON.stringify(data.data.admin));
 
+            // Standard auth keys for ProtectedRoute and api utility
+            localStorage.setItem('token', data.data.token);
+            localStorage.setItem('userId', data.data.admin.id);
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('loginTimestamp', Date.now().toString());
+
             // Check if password reset required
             if (data.data.admin.mustResetPassword) {
                 navigate('/admin/reset-password');

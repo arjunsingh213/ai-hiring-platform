@@ -1,7 +1,9 @@
 const geminiRouter = require('./services/ai/geminiRouter');
+const connectDB = require('./config/database');
 require('dotenv').config();
 
 async function testBurst() {
+    await connectDB();
     console.log('🚀 Starting Robust Burst Test: Firing 3 simultaneous requests...');
     const startTime = Date.now();
 

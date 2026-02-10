@@ -16,8 +16,16 @@ import LeaderboardPage from '../jobseeker/LeaderboardPage';
 import './RecruiterDashboard.css';
 
 const RecruiterDashboard = () => {
+    const [isCollapsed, setIsCollapsed] = React.useState(localStorage.getItem('sidebar-collapsed') === 'true');
+
+    React.useEffect(() => {
+        const handleToggle = (e) => setIsCollapsed(e.detail);
+        window.addEventListener('sidebar-toggle', handleToggle);
+        return () => window.removeEventListener('sidebar-toggle', handleToggle);
+    }, []);
+
     return (
-        <div className="recruiter-dashboard">
+        <div className="recruiter-dashboard" style={{ '--sidebar-width': isCollapsed ? '80px' : '240px' }}>
             <RecruiterSidebar />
             <TopNav />
             <div className="recruiter-main">

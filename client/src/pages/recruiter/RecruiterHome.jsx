@@ -7,6 +7,7 @@ import UserProfileLink from '../../components/UserProfileLink';
 import CommentInput from '../../components/CommentInput';
 import { CardSkeleton } from '../../components/Skeleton';
 import SparklineChart from '../../components/SparklineChart';
+import FeedbackModal from '../../components/FeedbackModal';
 import '../jobseeker/HomeFeed.css';
 
 
@@ -112,6 +113,7 @@ const RecruiterHome = () => {
         totalApplicants: 0,
         interviewsScheduled: 0
     });
+    const [showFeedback, setShowFeedback] = useState(false);
 
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = storedUser._id || storedUser.id || localStorage.getItem('userId');
@@ -163,6 +165,13 @@ const RecruiterHome = () => {
                 totalApplicants,
                 interviewsScheduled: 0
             });
+
+            // Trigger feedback for recruiter dashboard
+            const feedbackShown = localStorage.getItem(`feedback_recruiter_${userId}`);
+            if (!feedbackShown) {
+                setShowFeedback(true);
+                localStorage.setItem(`feedback_recruiter_${userId}`, 'true');
+            }
         } catch (error) {
             console.error('Error fetching stats:', error);
         }
@@ -686,6 +695,14 @@ const RecruiterHome = () => {
                     )}
                 </aside>
             </div>
+
+            {showFeedback && (
+                <FeedbackModal
+                    featureId="recruiter-dashboard"
+                    onClose={() => setShowFeedback(false)}
+                    userId={userId}
+                />
+            )}
         </div>
     );
 };

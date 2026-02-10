@@ -3,12 +3,16 @@
    Premium soft glass vertical panel
    ═══════════════════════════════════════════════════════════════ */
 
+:root {
+    --sidebar-width: 240px;
+}
+
 .sidebar {
     position: fixed;
     left: 16px;
     top: 16px;
     bottom: 16px;
-    width: 240px;
+    width: var(--sidebar-width);
     background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
@@ -16,11 +20,18 @@
     border-radius: 18px;
     padding: 20px;
     z-index: 1000;
-    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow:
         0 4px 24px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     animation: slideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed {
+    --sidebar-width: 80px;
+    padding: 20px 12px;
 }
 
 .sidebar::before {
@@ -36,12 +47,17 @@
 
 /* Sidebar Header - Logo Area */
 .sidebar-header {
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    gap: 12px;
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
     gap: 0;
 }
 
@@ -132,6 +148,44 @@
 .nav-item span {
     position: relative;
     z-index: 1;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 12px;
+}
+
+.sidebar.collapsed .nav-item span {
+    display: none;
+    opacity: 0;
+}
+
+/* Toggle Button */
+.sidebar-toggle {
+    margin-top: auto;
+    background: none;
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 10px;
+    width: 100%;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.45);
+    color: #0F172A;
+}
+
+.sidebar.collapsed .sidebar-toggle svg {
+    transform: rotate(180deg);
 }
 
 /* ═══════════════════════════════════════════════════════════════

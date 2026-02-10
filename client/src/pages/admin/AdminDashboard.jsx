@@ -8,7 +8,9 @@ import InterviewQueue from './InterviewQueue';
 import InterviewDetail from './InterviewDetail';
 import AuditLogs from './AuditLogs';
 import UserControl from './UserControl';
-import ManageAdmins from './ManageAdmins';
+import AdminAdmins from './ManageAdmins';
+import AdminFeedbacks from './AdminFeedbacks';
+import AIUsageDashboard from './AIUsageDashboard';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -116,16 +118,25 @@ const AdminDashboard = () => {
                     </NavLink>
 
                     <NavLink to="/admin/audit-logs" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                            <line x1="16" y1="13" x2="8" y2="13" />
-                            <line x1="16" y1="17" x2="8" y2="17" />
-                            <polyline points="10 9 9 9 8 9" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                         </svg>
                         <span>Audit Logs</span>
                     </NavLink>
-
+                    <NavLink to="/admin/feedbacks" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span>Feedbacks</span>
+                    </NavLink>
+                    <NavLink to="/admin/ai-usage" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                            <line x1="12" y1="22.08" x2="12" y2="12" />
+                        </svg>
+                        <span>AI Token Usage</span>
+                    </NavLink>
                     {adminInfo?.role === 'super_admin' && (
                         <NavLink to="/admin/admins" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -167,7 +178,9 @@ const AdminDashboard = () => {
                     <Route path="flagged" element={<InterviewQueue flaggedOnly />} />
                     <Route path="users" element={<UserControl />} />
                     <Route path="audit-logs" element={<AuditLogs />} />
-                    <Route path="admins" element={<ManageAdmins />} />
+                    <Route path="admins" element={<AdminAdmins />} />
+                    <Route path="feedbacks" element={<AdminFeedbacks />} />
+                    <Route path="ai-usage" element={<AIUsageDashboard />} />
                 </Routes>
             </main>
         </div>

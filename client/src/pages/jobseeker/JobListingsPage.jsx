@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import './JobListingsPage.css';
 
 const JobListingsPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const toast = useToast();
+    const queryParams = new URLSearchParams(location.search);
+    const jobIdFromUrl = queryParams.get('id');
+
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [showMobileDetails, setShowMobileDetails] = useState(false); // NEW: For mobile job details modal
@@ -47,9 +51,21 @@ const JobListingsPage = () => {
             if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
 
             const response = await api.get(`/jobs?${params.toString()}`);
-            setJobs(response.data || []);
-            if (response.data?.length > 0 && !selectedJob) {
-                setSelectedJob(response.data[0]);
+            const fetchedJobs = response.data || [];
+            setJobs(fetchedJobs);
+
+            if (fetchedJobs.length > 0) {
+                if (jobIdFromUrl) {
+                    const targetJob = fetchedJobs.find(j => j._id === jobIdFromUrl);
+                    if (targetJob) {
+                        setSelectedJob(targetJob);
+                        setShowMobileDetails(true);
+                    } else if (!selectedJob) {
+                        setSelectedJob(fetchedJobs[0]);
+                    }
+                } else if (!selectedJob) {
+                    setSelectedJob(fetchedJobs[0]);
+                }
             }
         } catch (error) {
             console.error('Error fetching jobs:', error);

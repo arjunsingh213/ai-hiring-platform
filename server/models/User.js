@@ -556,6 +556,22 @@ const userSchema = new mongoose.Schema({
     testingMode: {
         type: Boolean,
         default: true // Bypass authentication
+    },
+
+    // ==================== AI USAGE LIMITS ====================
+    aiUsage: {
+        tokenLimit: {
+            type: Number,
+            default: 100000 // Default 100k tokens
+        },
+        totalTokensUsed: {
+            type: Number,
+            default: 0
+        },
+        lastResetDate: {
+            type: Date,
+            default: Date.now
+        }
     }
 }, {
     timestamps: true

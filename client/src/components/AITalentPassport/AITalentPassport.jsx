@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import FeedbackModal from '../FeedbackModal';
 import './AITalentPassport.css';
 
 /**
@@ -7,6 +8,23 @@ import './AITalentPassport.css';
  * Uses SVG icons and clean data visualization
  */
 const AITalentPassport = ({ passport, userName }) => {
+    const [showFeedback, setShowFeedback] = useState(false);
+    const userId = localStorage.getItem('userId');
+
+    useEffect(() => {
+        if (passport && passport.isActive && userId) {
+            const feedbackShown = localStorage.getItem(`feedback_atp_${userId}`);
+            if (!feedbackShown) {
+                // Show after a slight delay to let user see the passport first
+                const timer = setTimeout(() => {
+                    setShowFeedback(true);
+                    localStorage.setItem(`feedback_atp_${userId}`, 'true');
+                }, 3000);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [passport, userId]);
+
     if (!passport || !passport.isActive) {
         return (
             <div className="atp-container">
@@ -297,6 +315,14 @@ const AITalentPassport = ({ passport, userName }) => {
                         </div>
                     )}
                 </div>
+            )}
+
+            {showFeedback && (
+                <FeedbackModal
+                    featureId="atp"
+                    onClose={() => setShowFeedback(false)}
+                    userId={userId}
+                />
             )}
         </div>
     );

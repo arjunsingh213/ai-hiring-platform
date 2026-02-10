@@ -5,7 +5,7 @@
  * 
  * Model Assignments:
  * - gemini-2.5-flash: Interview questions, answer evaluation, recruiter reports
- * - gemini-2.5-flash-lite: Skill suggestions, resume classification (high RPM)
+ * - gemini-2.5-flash: Skill suggestions, resume classification (high RPM)
  * - gemini-2.5-flash: ATP synthesis, career roadmaps (post-interview)
  * - text-embedding-004: Semantic matching (embeddings)
  */
@@ -54,9 +54,10 @@ class GeminiService {
     /**
      * Generate interview questions using Gemini 2.5 Flash
      * @param {Object} context - Interview context (resume, role, type)
+     * @param {Object} options - API call options (userId, etc.)
      * @returns {Array} Generated questions
      */
-    async generateInterviewQuestions(context) {
+    async generateInterviewQuestions(context, options = {}) {
         const { parsedResume, role, interviewType = 'technical', jobContext = {}, experienceLevel = 'entry' } = context;
 
         const skills = parsedResume?.skills?.join(', ') || 'general skills';
@@ -118,7 +119,8 @@ Return ONLY the JSON array, no additional text.`;
         try {
             const response = await this._callWithCacheAndRateLimit('interview_questions', prompt, {
                 temperature: 0.8,
-                maxTokens: 2048
+                maxTokens: 2048,
+                ...options
             });
 
             if (!response) {
@@ -143,9 +145,10 @@ Return ONLY the JSON array, no additional text.`;
      * Validate if an answer is relevant and not gibberish
      * @param {string} question - The question asked
      * @param {string} answer - The candidate's answer
+     * @param {Object} options - API call options (userId, etc.)
      * @returns {Object} { valid: boolean, message: string }
      */
-    async validateAnswer(question, answer) {
+    async validateAnswer(question, answer, options = {}) {
         if (!answer || answer.trim().length < 2) {
             return { valid: false, message: 'Answer is too short.' };
         }
@@ -169,7 +172,8 @@ Return JSON:
         try {
             const response = await this._callWithCacheAndRateLimit('validate_answer', prompt, {
                 temperature: 0.1,
-                maxTokens: 100
+                maxTokens: 100,
+                ...options
             });
 
             if (!response) return { valid: true }; // Allow on error
@@ -190,9 +194,10 @@ Return JSON:
      * Can accept either a pre-built prompt string or a context object
      * @param {string|Object} promptOrContext - Pre-built prompt string OR context object
      * @param {Array} history - Optional conversation history (if using prompt string)
+     * @param {Object} options - API call options (userId, etc.)
      * @returns {string} The next question text
      */
-    async generateAdaptiveQuestion(promptOrContext, history = []) {
+    async generateAdaptiveQuestion(promptOrContext, history = [], options = {}) {
         let prompt;
 
         // Check if we received a pre-built prompt string
@@ -238,7 +243,8 @@ Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a l
             console.log(`[GeminiService] Generating adaptive question via Gemini...`);
             const response = await this._callWithCacheAndRateLimit('adaptive_followup', prompt, {
                 temperature: 0.7,
-                maxTokens: 2048 // Increased to ensure no truncation
+                maxTokens: 2048, // Increased to ensure no truncation
+                ...options
             });
 
             if (!response) {
@@ -309,7 +315,7 @@ Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a l
     /**
      * Evaluate all interview answers holistically
      */
-    async evaluateAnswers(questionsAndAnswers, jobContext = {}) {
+    async evaluateAnswers(questionsAndAnswers, jobContext = {}, options = {}) {
         const qaText = questionsAndAnswers.map((qa, i) =>
             `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer || '(no answer)'}`
         ).join('\n\n');
@@ -355,7 +361,8 @@ Return ONLY the JSON.`;
         try {
             const response = await this._callWithCacheAndRateLimit('answer_evaluation', prompt, {
                 temperature: 0.5,
-                maxTokens: 2048
+                maxTokens: 2048,
+                ...options
             });
 
             if (!response) {
@@ -377,7 +384,7 @@ Return ONLY the JSON.`;
     /**
      * Generate recruiter summary report
      */
-    async generateRecruiterReport(interviewData) {
+    async generateRecruiterReport(interviewData, options = {}) {
         const { candidate, job, scores, questionsAndAnswers } = interviewData;
 
         const prompt = `Generate a professional recruiter summary report for:
@@ -406,7 +413,8 @@ Return ONLY JSON.`;
 
         try {
             const response = await this._callWithCacheAndRateLimit('recruiter_reports', prompt, {
-                temperature: 0.4
+                temperature: 0.4,
+                ...options
             });
 
             if (!response) {
@@ -427,7 +435,7 @@ Return ONLY JSON.`;
     /**
      * Skill suggestions using Gemini Flash Lite (high RPM, debounced)
      */
-    async getSkillSuggestions(prefix, domain = 'technology') {
+    async getSkillSuggestions(prefix, domain = 'technology', options = {}) {
         // Check prefix cache first
         const cached = this.cache.getPrefix(prefix);
         if (cached) {
@@ -450,7 +458,8 @@ Return ONLY the JSON array.`;
 
             const response = await this.router.callGemini('skill_suggestions', prompt, {
                 temperature: 0.3,
-                maxTokens: 256
+                maxTokens: 256,
+                ...options
             });
 
             if (!response) return [];
@@ -475,7 +484,7 @@ Return ONLY the JSON array.`;
     /**
      * Resume classification using Gemini Flash Lite
      */
-    async classifyResume(resumeText) {
+    async classifyResume(resumeText, options = {}) {
         const prompt = `Classify this resume into domain and role type.
 
 RESUME TEXT:
@@ -494,7 +503,8 @@ Return ONLY JSON.`;
 
         try {
             const response = await this._callWithCacheAndRateLimit('resume_classification', prompt, {
-                temperature: 0.3
+                temperature: 0.3,
+                ...options
             });
 
             if (!response) {
@@ -515,17 +525,17 @@ Return ONLY JSON.`;
     /**
      * Generate embeddings for semantic matching
      */
-    async generateEmbedding(text, taskType = 'resume_jd_matching') {
-        return this.router.generateEmbedding(text, taskType);
+    async generateEmbedding(text, taskType = 'resume_jd_matching', options = {}) {
+        return this.router.generateEmbedding(text, taskType, options);
     }
 
     /**
      * Calculate semantic similarity between two texts
      */
-    async calculateSimilarity(text1, text2) {
+    async calculateSimilarity(text1, text2, options = {}) {
         const [embedding1, embedding2] = await Promise.all([
-            this.generateEmbedding(text1),
-            this.generateEmbedding(text2)
+            this.generateEmbedding(text1, 'similarity_detection', options),
+            this.generateEmbedding(text2, 'similarity_detection', options)
         ]);
 
         if (!embedding1 || !embedding2) {
@@ -549,7 +559,7 @@ Return ONLY JSON.`;
     /**
      * ATP Synthesis using Gemini (post-interview analytics)
      */
-    async synthesizeATP(userData) {
+    async synthesizeATP(userData, options = {}) {
         const { scores, skills, interviews, behavioralData } = userData;
 
         const prompt = `Synthesize an AI Talent Passport score for this candidate:
@@ -581,7 +591,8 @@ Return ONLY JSON.`;
 
         try {
             const response = await this._callWithCacheAndRateLimit('atp_synthesis', prompt, {
-                temperature: 0.5
+                temperature: 0.5,
+                ...options
             });
 
             if (!response) {
@@ -602,7 +613,7 @@ Return ONLY JSON.`;
     /**
      * Generate a coding problem using Gemini
      */
-    async generateCodingProblem(language, skillLevel = 'easy', skills = []) {
+    async generateCodingProblem(language, skillLevel = 'easy', skills = [], options = {}) {
         console.log('[GeminiService] Generating coding problem...');
 
         const prompt = `Generate a coding problem for a ${skillLevel} level interview in ${language}.
@@ -634,7 +645,8 @@ IF SKILL LEVEL IS 'FRESHER', 'ENTRY' or 'EASY':
         try {
             const response = await this._callWithCacheAndRateLimit('interview_questions', prompt, {
                 temperature: 0.7,
-                maxTokens: 2048
+                maxTokens: 2048,
+                ...options
             });
 
             if (!response) {
@@ -713,7 +725,7 @@ IF SKILL LEVEL IS 'FRESHER', 'ENTRY' or 'EASY':
     /**
      * Evaluate code solution using Gemini
      */
-    async evaluateCodeSolution(code, problem, language, output, passed) {
+    async evaluateCodeSolution(code, problem, language, output, passed, options = {}) {
         // Check for empty or minimal code
         const codeWithoutComments = code
             .replace(/\/\/.*$/gm, '')
@@ -764,7 +776,8 @@ Return ONLY JSON:
 
         try {
             const response = await this._callWithCacheAndRateLimit('answer_evaluation', prompt, {
-                temperature: 0.5
+                temperature: 0.5,
+                ...options
             });
 
             if (!response) throw new Error('No response from Gemini');
@@ -790,7 +803,7 @@ Return ONLY JSON:
     /**
      * Generate MCQ assessment questions based on Job Description
      */
-    async generateAssessmentQuestions(types, count, jobContext) {
+    async generateAssessmentQuestions(types, count, jobContext, options = {}) {
         const actualQuestionCount = Math.min(count, 15);
 
         const prompt = `Generate exactly ${actualQuestionCount} MCQ questions for a job assessment.
@@ -833,7 +846,8 @@ JSON Format:
         try {
             const response = await this._callWithCacheAndRateLimit('assessment_questions', prompt, {
                 temperature: 0.7,
-                maxTokens: 3000
+                maxTokens: 3000,
+                ...options
             });
 
             if (!response) {

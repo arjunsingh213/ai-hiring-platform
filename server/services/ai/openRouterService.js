@@ -131,6 +131,9 @@ class OpenRouterService {
      * Make API call to OpenRouter
      */
     async callModel(model, messages, apiKey, options = {}) {
+        const aiUsageService = require('./aiUsageService');
+        const startTime = Date.now();
+
         try {
             const response = await axios.post(this.baseUrl, {
                 model,
@@ -147,9 +150,40 @@ class OpenRouterService {
                 }
             });
 
+            // Log usage
+            const usage = response.data.usage;
+            if (usage) {
+                await aiUsageService.logUsage({
+                    userId: options.userId,
+                    model: model,
+                    purpose: options.purpose || 'general',
+                    inputTokens: usage.prompt_tokens,
+                    outputTokens: usage.completion_tokens,
+                    status: 'success',
+                    metadata: {
+                        latency: Date.now() - startTime,
+                        provider: 'OpenRouter'
+                    }
+                });
+            }
+
             return response.data.choices[0].message.content;
         } catch (error) {
             console.error(`OpenRouter API error (${model}):`, error.response?.data || error.message);
+
+            // Log failure
+            await aiUsageService.logUsage({
+                userId: options.userId,
+                model: model,
+                purpose: options.purpose || 'general',
+                status: 'failed',
+                errorMessage: error.message,
+                metadata: {
+                    latency: Date.now() - startTime,
+                    provider: 'OpenRouter'
+                }
+            });
+
             throw new Error(`AI model call failed: ${error.message}`);
         }
     }
@@ -162,7 +196,7 @@ class OpenRouterService {
      * 3. meta-llama/llama-3.3-70b-instruct:free
      * 4. meta-llama/llama-3.2-3b-instruct (paid, no :free suffix)
      */
-    async parseResume(resumeText, isHtml = false) {
+    async parseResume(resumeText, isHtml = false, options = {}) {
         const contentType = isHtml ? 'HTML' : 'Text';
 
         const prompt = `You are an expert resume parser. Extract structured information from the following resume ${contentType}.
@@ -241,7 +275,7 @@ RULES:
                     model,
                     [{ role: 'user', content: prompt }],
                     this.apiKeys.llama,
-                    { temperature: 0.2, maxTokens: 1500 }
+                    { ...options, temperature: 0.2, maxTokens: 1500 }
                 );
 
                 const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -321,7 +355,7 @@ RULES:
     /**
      * Match resume to job description using Gemma 2 9B
      */
-    async matchResumeToJD(resumeData, jobDescription, jobRequirements) {
+    async matchResumeToJD(resumeData, jobDescription, jobRequirements, options = {}) {
         const prompt = `You are an expert recruiter AI. Analyze how well this candidate matches the job requirements.
 
 JOB DESCRIPTION:
@@ -359,7 +393,7 @@ Score 0-100. Return ONLY valid JSON.`;
                 this.models.jdMatching,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.llama,
-                { temperature: 0.4 }
+                { ...options, temperature: 0.4 }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -388,7 +422,7 @@ Score 0-100. Return ONLY valid JSON.`;
      * Generate adaptive interview questions using Qwen3 235B
      * Questions are based on job description, skills, roles, and responsibilities
      */
-    async generateAdaptiveQuestions(context) {
+    async generateAdaptiveQuestions(context, options = {}) {
         const { resumeData, jobDescription, jobTitle, jobRequirements, matchScore, previousAnswers, interviewType } = context;
 
         let previousContext = '';
@@ -462,7 +496,12 @@ Return ONLY valid JSON:
                 this.models.questionGeneration,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.qwen,
-                { temperature: 0.8, maxTokens: 2048 }
+                {
+                    ...options,
+                    temperature: 0.8,
+                    maxTokens: 2048,
+                    purpose: 'question_generation'
+                }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -480,7 +519,7 @@ Return ONLY valid JSON:
     /**
      * Evaluate answer using Qwen3 235B
      */
-    async evaluateAnswer(question, answer, context) {
+    async evaluateAnswer(question, answer, context, options = {}) {
         const { jobTitle, expectedTopics, difficulty, interviewType } = context;
 
         const prompt = `You are an expert interviewer evaluating a candidate's response.
@@ -517,7 +556,11 @@ Score each metric 0-100. Return ONLY valid JSON.`;
                 this.models.answerEvaluation,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.qwen,
-                { temperature: 0.5 }
+                {
+                    ...options,
+                    temperature: 0.5,
+                    purpose: 'answer_evaluation'
+                }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -549,7 +592,7 @@ Score each metric 0-100. Return ONLY valid JSON.`;
      * Uses Qwen3 235B for comprehensive analysis
      * This should give LOW scores to rubbish/gibberish answers
      */
-    async evaluateAllAnswers(questionsAndAnswers, jobContext) {
+    async evaluateAllAnswers(questionsAndAnswers, jobContext, options = {}) {
         const { jobTitle, jobDescription, requiredSkills } = jobContext;
 
         const qaFormatted = questionsAndAnswers.map((qa, i) =>
@@ -598,7 +641,7 @@ BE STRICT AND HONEST. Return ONLY valid JSON.`;
                 this.models.answerEvaluation,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.qwen,
-                { temperature: 0.3 } // Lower temp for more consistent evaluation
+                { ...options, purpose: 'holistic_evaluation' }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -616,7 +659,7 @@ BE STRICT AND HONEST. Return ONLY valid JSON.`;
     /**
      * Quick scoring using Mistral 7B (fast)
      */
-    async quickScore(question, answer) {
+    async quickScore(question, answer, options = {}) {
         const prompt = `Rate this interview answer quickly.
 
 Q: ${question}
@@ -630,7 +673,7 @@ Return JSON with score 0-100:
                 this.models.fastScoring,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.mistral,
-                { temperature: 0.3, maxTokens: 100 }
+                { ...options, purpose: 'quick_scoring' }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -647,7 +690,7 @@ Return JSON with score 0-100:
     /**
      * Generate comprehensive recruiter report using Gemma 2 9B
      */
-    async generateRecruiterReport(interviewData) {
+    async generateRecruiterReport(interviewData, options = {}) {
         const {
             candidate,
             job,
@@ -720,7 +763,7 @@ Be objective and professional. Return ONLY valid JSON.`;
                 this.models.recruiterReport,
                 [{ role: 'user', content: prompt }],
                 this.apiKeys.llama,
-                { temperature: 0.6, maxTokens: 2048 }
+                { ...options, purpose: 'recruiter_report' }
             );
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);

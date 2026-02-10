@@ -35,17 +35,20 @@ router.post('/', userAuth, requireRole('recruiter'), async (req, res) => {
 // Get all jobs (with filters)
 router.get('/', async (req, res) => {
     try {
-        const { skills, type, location, experienceLevel, status } = req.query;
+        const { skills, type, location, experienceLevel, status, domain } = req.query;
         const query = {};
 
         if (skills) query['requirements.skills'] = { $in: skills.split(',') };
         if (type) query['jobDetails.type'] = type;
         if (location) query['jobDetails.location'] = new RegExp(location, 'i');
         if (experienceLevel) query['requirements.experienceLevel'] = experienceLevel;
+        if (domain) query.domain = domain;
         if (status) query.status = status;
         else query.status = 'active'; // Default to active jobs
 
-        const jobs = await Job.find(query).populate('recruiterId').sort({ createdAt: -1 });
+        const jobs = await Job.find(query)
+            .populate('recruiterId', 'profile.name profile.company profile.photo')
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: jobs, count: jobs.length });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });

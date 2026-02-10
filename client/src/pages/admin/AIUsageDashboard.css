@@ -1,0 +1,296 @@
+/* ==================== AI USAGE DASHBOARD (REDESIGNED) ==================== */
+
+.ai-usage-container {
+    padding: 0;
+    color: #f8fafc;
+}
+
+.ai-usage-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+}
+
+/* Stats Cards - Matching Admin Portal */
+.ai-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.ai-stat-card {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(20px);
+}
+
+.ai-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Colors for stats matching the main dashboard */
+.ai-stat-icon.total {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.ai-stat-icon.tokens {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.ai-stat-icon.input {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.ai-stat-icon.output {
+    background: rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+}
+
+.ai-stat-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.ai-stat-content h3 {
+    color: #f8fafc;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ai-stat-content p {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin: 4px 0 0;
+}
+
+/* Charts Section */
+.ai-charts-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .ai-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ai-chart-card {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 24px;
+    backdrop-filter: blur(20px);
+}
+
+.ai-chart-card h3 {
+    color: #f8fafc;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 24px;
+}
+
+/* Activity Feed - Table Style matching Admin */
+.ai-activity-section {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+}
+
+.ai-section-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-section-header h3 {
+    color: #f8fafc;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ai-table-wrapper {
+    overflow-x: auto;
+}
+
+.ai-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ai-table th {
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 24px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.ai-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Badges and Tags */
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ai-badge.success {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.ai-badge.failed {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.ai-tag {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: capitalize;
+}
+
+.ai-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-user-info .name {
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+.ai-user-info .email {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Rate Card Improvements */
+.ai-stat-card.rate-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+    padding: 16px;
+}
+
+.ai-stat-content.rates {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+    gap: 8px;
+}
+
+.rate-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.rate-item .label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rate-item .value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-top: 4px;
+}
+
+/* Filters Style */
+.ai-filters {
+    display: flex;
+    gap: 12px;
+}
+
+.ai-filters select {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.ai-filters select:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.ai-filters select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.ai-user-usage-section .ai-table td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 768px) {
+    .ai-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .ai-filters {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .ai-filters select {
+        flex: 1;
+        min-width: 120px;
+    }
+}

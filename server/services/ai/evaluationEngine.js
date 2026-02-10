@@ -58,6 +58,9 @@ const DIMENSIONS = {
  * Call OpenRouter API
  */
 async function callAI(messages, options = {}) {
+    const aiUsageService = require('./aiUsageService');
+    const startTime = Date.now();
+
     if (!MODELS.LLAMA.key) {
         throw new Error('Missing OpenRouter API key');
     }
@@ -78,9 +81,36 @@ async function callAI(messages, options = {}) {
             timeout: 60000
         });
 
+        // Log usage
+        const usage = response.data.usage;
+        if (usage) {
+            await aiUsageService.logUsage({
+                userId: options.userId,
+                model: MODELS.LLAMA.name,
+                purpose: options.purpose || 'interview_evaluation',
+                inputTokens: usage.prompt_tokens,
+                outputTokens: usage.completion_tokens,
+                status: 'success',
+                metadata: {
+                    latency: Date.now() - startTime,
+                    provider: 'OpenRouter'
+                }
+            });
+        }
+
         return response.data.choices[0].message.content;
     } catch (error) {
         console.error('[EVAL] AI call failed:', error.response?.data || error.message);
+
+        // Log failure
+        await aiUsageService.logUsage({
+            userId: options.userId,
+            model: MODELS.LLAMA.name,
+            purpose: options.purpose || 'interview_evaluation',
+            status: 'failed',
+            errorMessage: error.message
+        });
+
         throw error;
     }
 }

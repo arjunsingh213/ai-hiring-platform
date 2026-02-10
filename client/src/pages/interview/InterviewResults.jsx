@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import Skeleton, { CardSkeleton } from '../../components/Skeleton';
+import FeedbackModal from '../../components/FeedbackModal';
 import './InterviewResults.css';
 
 const InterviewResults = () => {
@@ -13,6 +14,7 @@ const InterviewResults = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [expandedQuestion, setExpandedQuestion] = useState(null);
     const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'jobseeker');
+    const [showFeedback, setShowFeedback] = useState(false);
 
     useEffect(() => {
         fetchResults();
@@ -35,6 +37,13 @@ const InterviewResults = () => {
             setError(err.error || 'Failed to load results');
         } finally {
             setLoading(false);
+
+            // Trigger feedback if it's a domain interview and not shown yet
+            const userId = localStorage.getItem('userId');
+            if (userId && !localStorage.getItem(`feedback_domain_${interviewId}`)) {
+                setShowFeedback(true);
+                localStorage.setItem(`feedback_domain_${interviewId}`, 'true');
+            }
         }
     };
 
@@ -405,6 +414,14 @@ const InterviewResults = () => {
                         Browse More Jobs
                     </button>
                 </div>
+            )}
+
+            {showFeedback && (
+                <FeedbackModal
+                    featureId="domain-interview"
+                    onClose={() => setShowFeedback(false)}
+                    userId={localStorage.getItem('userId')}
+                />
             )}
         </div>
     );

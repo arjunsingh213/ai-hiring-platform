@@ -85,37 +85,59 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/auth', require('./routes/authOAuth')); // OAuth routes
-app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/resumes', require('./routes/resumeRoutes'));
-app.use('/api/interviews', require('./routes/interviewRoutes'));
-app.use('/api/jobs', require('./routes/jobRoutes'));
-app.use('/api/messages', require('./routes/messageRoutes'));
-app.use('/api/posts', require('./routes/postRoutes'));
-app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api/profiles', require('./routes/profileRoutes'));
-app.use('/api/hiring', require('./routes/hiring'));
-app.use('/api/hiring', require('./routes/documents'));
-app.use('/api/resume', require('./routes/resumeParser'));
-app.use('/api/onboarding-interview', require('./routes/onboardingInterview'));
-app.use('/api/code', require('./routes/codeExecutionRoutes'));
-app.use('/api/job-interview', require('./routes/jobInterview'));
-app.use('/api/companies', require('./routes/companyRoutes'));
-app.use('/api/contact', require('./routes/contactRoutes'));
-app.use('/api/challenges', require('./routes/challengeRoutes'));
+const authRoutes = require('./routes/authRoutes');
+const authOAuthRoutes = require('./routes/authOAuth'); // Added back OAuth routes
+const feedbackRoutes = require('./routes/feedbackRoutes');
+const userRoutes = require('./routes/userRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
+const resumeParserRoutes = require('./routes/resumeParser');
+const interviewRoutes = require('./routes/interviewRoutes');
+const onboardingInterviewRoutes = require('./routes/onboardingInterview');
+const documentRoutes = require('./routes/documents');
+const hiringRoutes = require('./routes/hiring');
+const notificationRoutes = require('./routes/notificationRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const postRoutes = require('./routes/postRoutes');
+const talentPassportRoutes = require('./routes/talentPassportRoutes');
+const jobInterviewRoutes = require('./routes/jobInterview');
+const companyRoutes = require('./routes/companyRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const codeExecutionRoutes = require('./routes/codeExecutionRoutes');
+const challengeRoutes = require('./routes/challengeRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // Added adminRoutes
+const adminSetupRoutes = require('./routes/adminSetup'); // Added adminSetupRoutes
+
+app.use('/api/auth', authRoutes);
+app.use('/api/auth', authOAuthRoutes); // OAuth routes
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/resume', resumeRoutes); // Changed from /api/resumes
+app.use('/api/parse-resume', resumeParserRoutes); // Changed from /api/resume
+app.use('/api/interviews', interviewRoutes); // Fixed: must match frontend API calls
+app.use('/api/onboarding-interview', onboardingInterviewRoutes);
+app.use('/api/documents', documentRoutes); // Changed from /api/hiring
+app.use('/api/hiring', hiringRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/talent-passport', talentPassportRoutes);
+app.use('/api/job-interview', jobInterviewRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/code', codeExecutionRoutes);
+app.use('/api/challenges', challengeRoutes);
 
 // Admin Review System
-app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/admin', adminRoutes);
 
 // Admin Setup (for Vercel deployments - protected by secret)
-app.use('/api/admin-setup', require('./routes/adminSetup'));
-
-// AI Talent Passport
-app.use('/api/talent-passport', require('./routes/talentPassportRoutes'));
-
-// User Settings (Account, Privacy, Security, Notifications)
-app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/admin-setup', adminSetupRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

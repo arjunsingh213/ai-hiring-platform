@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import InterviewPipelineConfig from '../../components/InterviewPipelineConfig';
+import FeedbackModal from '../../components/FeedbackModal';
 import './JobPostingPage.css';
 
 const JobPostingPage = () => {
@@ -34,6 +35,7 @@ const JobPostingPage = () => {
     const [showPipelineModal, setShowPipelineModal] = useState(false);
     const [createdJobId, setCreatedJobId] = useState(null);
     const [savingPipeline, setSavingPipeline] = useState(false);
+    const [showFeedback, setShowFeedback] = useState(false);
 
     // Interview Pipeline Configuration
     const [interviewPipeline, setInterviewPipeline] = useState({
@@ -155,7 +157,14 @@ const JobPostingPage = () => {
             });
             toast.success('Interview pipeline configured! 🎉');
             setShowPipelineModal(false);
-            setTimeout(() => navigate('/recruiter/my-jobs'), 1000);
+
+            // Trigger feedback for job post
+            const feedbackShown = localStorage.getItem(`feedback_jobpost_${userId}`);
+            if (!feedbackShown) {
+                setShowFeedback(true);
+            } else {
+                setTimeout(() => navigate('/recruiter/my-jobs'), 1000);
+            }
         } catch (error) {
             console.error('Error saving pipeline:', error);
             toast.error('Failed to save pipeline. Please try again.');
@@ -168,7 +177,14 @@ const JobPostingPage = () => {
     const handleSkipPipeline = () => {
         toast.info('You can configure the interview pipeline later from My Jobs.');
         setShowPipelineModal(false);
-        navigate('/recruiter/my-jobs');
+
+        // Trigger feedback for job post even if skipped
+        const feedbackShown = localStorage.getItem(`feedback_jobpost_${userId}`);
+        if (!feedbackShown) {
+            setShowFeedback(true);
+        } else {
+            navigate('/recruiter/my-jobs');
+        }
     };
 
     return (
@@ -440,9 +456,20 @@ const JobPostingPage = () => {
                     </div>
                 </div>
             )}
+
+            {showFeedback && (
+                <FeedbackModal
+                    featureId="job-post"
+                    onClose={() => {
+                        setShowFeedback(false);
+                        localStorage.setItem(`feedback_jobpost_${userId}`, 'true');
+                        navigate('/recruiter/my-jobs');
+                    }}
+                    userId={userId}
+                />
+            )}
         </div>
     );
 };
 
 export default JobPostingPage;
-

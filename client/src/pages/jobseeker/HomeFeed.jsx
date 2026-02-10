@@ -6,6 +6,7 @@ import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
 import TopCandidatesSidebar from '../../components/TopCandidatesSidebar';
 import { CardSkeleton } from '../../components/Skeleton';
+import FeedbackModal from '../../components/FeedbackModal';
 import './HomeFeed.css';
 
 // SVG Icons Component
@@ -108,6 +109,9 @@ const HomeFeed = () => {
     const [skillInput, setSkillInput] = useState('');
     const [expandedATP, setExpandedATP] = useState(null); // Track which ATP post is expanded
     const [atpData, setAtpData] = useState({}); // Cache ATP data by userId
+    const [recommendedJobs, setRecommendedJobs] = useState([]);
+    const [jobsLoading, setJobsLoading] = useState(false);
+    const [showFeedback, setShowFeedback] = useState(false);
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
 
@@ -115,16 +119,33 @@ const HomeFeed = () => {
         fetchUser();
         fetchActivities();
         fetchQuickStats();
+        fetchJobs(); // Call fetchJobs here
     }, [activeTab]);
+
+    const fetchJobs = async () => {
+        setJobsLoading(true);
+        try {
+            // Fetch latest active jobs regardless of domain for now
+            const res = await api.get('/jobs?limit=5');
+            setRecommendedJobs(res.data || []);
+        } catch (error) {
+            console.error('Error fetching jobs:', error);
+        } finally {
+            setJobsLoading(false);
+        }
+    };
 
     const fetchUser = async () => {
         try {
             if (userId) {
                 const response = await api.get(`/users/${userId}`);
-                setUser(response.data?.data || response.data);
+                const userData = response.data?.data || response.data;
+                setUser(userData);
             }
+            fetchJobs();
         } catch (error) {
             console.error('Error fetching user:', error);
+            fetchJobs();
         }
     };
 
@@ -138,6 +159,12 @@ const HomeFeed = () => {
             setActivities([]);
         } finally {
             setLoading(false);
+
+            // Trigger feedback for home feed
+            if (userId && !localStorage.getItem(`feedback_home_${userId}`)) {
+                setShowFeedback(true);
+                localStorage.setItem(`feedback_home_${userId}`, 'true');
+            }
         }
     };
 
@@ -783,6 +810,55 @@ const HomeFeed = () => {
                 <aside className="feed-sidebar">
                     <TopCandidatesSidebar jobDomains={user?.jobSeekerProfile?.jobDomains} />
 
+                    {/* Recommended Jobs Card */}
+                    <div className="sidebar-card recommended-jobs-card">
+                        <div className="sidebar-card-header">
+                            <div className="header-icon jobs-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                                    <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                                </svg>
+                            </div>
+                            <h3>Latest Opportunities</h3>
+                        </div>
+
+                        <div className="recommended-jobs-list">
+                            {jobsLoading ? (
+                                <div className="jobs-loading-skeleton">
+                                    {[1, 2, 3].map(i => <div key={i} className="job-skeleton-item" />)}
+                                </div>
+                            ) : recommendedJobs.length > 0 ? (
+                                recommendedJobs.map((job) => (
+                                    <div className="job-item-sidebar" onClick={() => navigate(`/jobseeker/jobs?id=${job._id}`)}>
+                                        <div className="job-info-mini">
+                                            <h4 className="job-title-mini">{job.title}</h4>
+                                            <span className="job-type-mini">{job.jobDetails?.type || 'Full-time'}</span>
+                                        </div>
+                                        <div className="job-meta-mini">
+                                            <span className="job-company-mini-secondary">
+                                                {job.company?.name || job.recruiterId?.profile?.company || 'Top Company'}
+                                            </span>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M9 18l6-6-6-6" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="empty-jobs-state">
+                                    <p>No new jobs posted yet.</p>
+                                    <button className="btn-text-only" onClick={() => navigate('/jobseeker/jobs')}>Explore Jobs</button>
+                                </div>
+                            )}
+                        </div>
+                        {recommendedJobs.length > 0 && (
+                            <button className="view-all-jobs-btn" onClick={() => navigate('/jobseeker/jobs')}>
+                                View All Openings
+                                {Icons.arrow}
+                            </button>
+                        )}
+                    </div>
+
                     {/* Quick Profile Check Card */}
                     {user && (
                         <div className="sidebar-card quick-profile-card">
@@ -845,50 +921,34 @@ const HomeFeed = () => {
                             ) : (
                                 <div className="no-score-state">
                                     <p>Complete an AI interview to get your talent score!</p>
-                                    <a href="/jobseeker/interviews" className="take-interview-btn">
-                                        Take Interview
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M5 12h14M12 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
+                                    <button
+                                        className="take-interview-btn-premium"
+                                        onClick={() => navigate('/jobseeker/interviews')}
+                                    >
+                                        <div className="btn-content">
+                                            <div className="btn-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                                                    <path d="M10 8l6 4-6 4V8z" />
+                                                </svg>
+                                            </div>
+                                            <span>Take Interview Now</span>
+                                        </div>
+                                    </button>
                                 </div>
                             )}
                         </div>
                     )}
-
-                    {/* Top Skills Card */}
-                    <div className="sidebar-card top-skills-card">
-                        <div className="sidebar-card-header">
-                            <div className="header-icon">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                                </svg>
-                            </div>
-                            <h3>Top Skills</h3>
-                        </div>
-                        <div className="skills-grid">
-                            {[
-                                { name: 'React.js', demand: 95, count: '2.4k' },
-                                { name: 'Python', demand: 90, count: '2.1k' },
-                                { name: 'Machine Learning', demand: 85, count: '1.8k' },
-                                { name: 'Node.js', demand: 80, count: '1.5k' },
-                                { name: 'Data Science', demand: 75, count: '1.2k' }
-                            ].map((skill, idx) => (
-                                <div key={idx} className="trending-skill-item">
-                                    <span className="skill-name">{skill.name}</span>
-                                    <div className="skill-demand">
-                                        <div className="demand-bar">
-                                            <div className="demand-fill" style={{ width: `${skill.demand}%` }} />
-                                        </div>
-                                        <span className="demand-count">{skill.count}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </aside>
             </div>
 
+            {showFeedback && (
+                <FeedbackModal
+                    featureId="home-feed"
+                    onClose={() => setShowFeedback(false)}
+                    userId={userId}
+                />
+            )}
             {/* Achievement Modal */}
             <AnimatePresence>
                 {showAchievementModal && (

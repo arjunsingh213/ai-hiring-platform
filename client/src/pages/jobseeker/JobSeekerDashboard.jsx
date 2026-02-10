@@ -14,8 +14,16 @@ import LeaderboardPage from './LeaderboardPage';
 import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
+    const [isCollapsed, setIsCollapsed] = React.useState(localStorage.getItem('sidebar-collapsed') === 'true');
+
+    React.useEffect(() => {
+        const handleToggle = (e) => setIsCollapsed(e.detail);
+        window.addEventListener('sidebar-toggle', handleToggle);
+        return () => window.removeEventListener('sidebar-toggle', handleToggle);
+    }, []);
+
     return (
-        <div className="dashboard">
+        <div className="dashboard" style={{ '--sidebar-width': isCollapsed ? '80px' : '240px' }}>
             <Sidebar />
             <TopNav />
             <div className="dashboard-main">

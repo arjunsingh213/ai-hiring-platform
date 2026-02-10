@@ -14,6 +14,9 @@ const {
     adminRateLimiter
 } = require('../middleware/adminAuth');
 
+const AIUsage = require('../models/AIUsage');
+const aiUsageService = require('../services/ai/aiUsageService');
+
 // ==================== AUTHENTICATION ====================
 
 /**
@@ -494,7 +497,64 @@ router.get('/dashboard/trends', adminAuth, async (req, res) => {
             error: 'Failed to fetch trends'
         });
     }
-})
+});
+
+// ==================== AI MONITORING ====================
+
+/**
+ * GET /api/admin/ai/stats
+ * Get comprehensive AI usage statistics
+ */
+router.get('/ai/stats', adminAuth, requirePermission('view_audit_logs'), async (req, res) => {
+    try {
+        const stats = await aiUsageService.getGlobalStats();
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        console.error('AI stats error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch AI statistics'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/ai/activity
+ * Get recent AI activity logs with filters
+ */
+router.get('/ai/activity', adminAuth, requirePermission('view_audit_logs'), async (req, res) => {
+    try {
+        const { limit = 20, model, purpose, status, userId } = req.query;
+
+        const query = {};
+        if (model) query.model = { $regex: model, $options: 'i' };
+        if (purpose) query.purpose = purpose;
+        if (status) query.status = status;
+        if (userId) query.userId = userId;
+
+        const logs = await AIUsage.find(query)
+            .sort({ timestamp: -1 })
+            .limit(parseInt(limit))
+            .populate('userId', 'profile.name email')
+            .lean();
+
+        res.json({
+            success: true,
+            data: {
+                logs
+            }
+        });
+    } catch (error) {
+        console.error('AI activity error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch AI activity'
+        });
+    }
+});
 
 /**
  * GET /api/admin/interviews/pending

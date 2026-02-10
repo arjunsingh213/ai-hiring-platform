@@ -199,6 +199,8 @@ class GeminiRouter {
      * Internal helper to call a specific model with retries
      */
     async _tryCallModel(modelKey, prompt, options) {
+        const aiUsageService = require('./aiUsageService');
+        const startTime = Date.now();
         const model = this.models[modelKey];
         const maxRetries = options.retries || 3;
         const apiKey = process.env.GEMINI_API_KEY;
@@ -232,11 +234,43 @@ class GeminiRouter {
                 const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!text) throw new Error('No response content');
 
+                // Log usage
+                const usage = response.data.usageMetadata;
+                if (usage) {
+                    await aiUsageService.logUsage({
+                        userId: options.userId,
+                        model: model.name,
+                        purpose: options.purpose || 'general',
+                        inputTokens: usage.promptTokenCount,
+                        outputTokens: usage.candidatesTokenCount,
+                        status: 'success',
+                        metadata: {
+                            latency: Date.now() - startTime,
+                            provider: 'Gemini'
+                        }
+                    });
+                }
+
                 console.log(`[GeminiRouter] ${modelKey} call successful`);
                 return text;
             } catch (error) {
                 const status = error.response?.status;
                 const errorData = error.response?.data;
+
+                // Log failure
+                if (attempt === maxRetries) {
+                    await aiUsageService.logUsage({
+                        userId: options.userId,
+                        model: model.name,
+                        purpose: options.purpose || 'general',
+                        status: 'failed',
+                        errorMessage: error.message,
+                        metadata: {
+                            latency: Date.now() - startTime,
+                            provider: 'Gemini'
+                        }
+                    });
+                }
 
                 if (status === 429) {
                     console.error(`[GeminiRouter] 429 Rate Limited:`, JSON.stringify(errorData));
@@ -261,12 +295,17 @@ class GeminiRouter {
     /**
      * Generate embeddings using Gemini Embedding model
      */
-    async generateEmbedding(text, taskType = 'resume_jd_matching') {
+    async generateEmbedding(text, taskType = 'resume_jd_matching', options = {}) {
         return this._executeWithLock(async () => {
+            const aiUsageService = require('./aiUsageService');
+            const startTime = Date.now();
             const model = this.models.EMBEDDING;
             const apiKey = process.env.GEMINI_API_KEY;
 
-            if (!this.canMakeRequest('EMBEDDING')) return null;
+            if (!this.canMakeRequest('EMBEDDING')) {
+                console.warn('[GeminiRouter] RPM limit reached for EMBEDDING');
+                return null;
+            }
 
             try {
                 this.recordRequest('EMBEDDING');
@@ -277,11 +316,45 @@ class GeminiRouter {
                         content: { parts: [{ text }] },
                         taskType: taskType === 'similarity_detection' ? 'SIMILARITY' : 'RETRIEVAL_DOCUMENT'
                     },
-                    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+                    { headers: { 'Content-Type': 'application/json' }, timeout: options.timeout || 15000 }
                 );
+
+                // Log usage (embeddings usually have 1 token per ~4 chars but Gemini returns usageMetadata)
+                const usage = response.data.usageMetadata;
+                if (usage) {
+                    await aiUsageService.logUsage({
+                        userId: options.userId,
+                        model: model.name,
+                        purpose: taskType,
+                        inputTokens: usage.promptTokenCount,
+                        outputTokens: usage.candidatesTokenCount || 0,
+                        status: 'success',
+                        metadata: {
+                            latency: Date.now() - startTime,
+                            provider: 'Gemini',
+                            type: 'embedding'
+                        }
+                    });
+                }
+
                 return response.data.embedding?.values || null;
             } catch (error) {
                 console.error('[GeminiRouter] Embedding error:', error.message);
+
+                // Log failure
+                await aiUsageService.logUsage({
+                    userId: options.userId,
+                    model: model.name,
+                    purpose: taskType,
+                    status: 'failed',
+                    errorMessage: error.message,
+                    metadata: {
+                        latency: Date.now() - startTime,
+                        provider: 'Gemini',
+                        type: 'embedding'
+                    }
+                });
+
                 return null;
             }
         });

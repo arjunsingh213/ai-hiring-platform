@@ -20,6 +20,12 @@ const jobSchema = new mongoose.Schema({
         industry: String
     },
 
+    domain: {
+        type: String,
+        required: false,
+        index: true
+    },
+
     description: {
         type: String,
         required: true

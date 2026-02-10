@@ -37,6 +37,9 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  * Base function to call OpenRouter
  */
 async function callOpenRouter(messages, modelConfig, options = {}) {
+    const aiUsageService = require('./aiUsageService');
+    const startTime = Date.now();
+
     if (!modelConfig.key) {
         throw new Error(`Missing API Key for model: ${modelConfig.name}. Please set OPENROUTER_API_KEY in your .env file.`);
     }
@@ -59,11 +62,42 @@ async function callOpenRouter(messages, modelConfig, options = {}) {
             timeout: 60000  // 60 second timeout
         });
 
+        // Log Usage
+        const usage = response.data.usage;
+        if (usage) {
+            await aiUsageService.logUsage({
+                userId: options.userId,
+                model: modelConfig.name,
+                purpose: options.purpose || 'deepseek_job_matching',
+                inputTokens: usage.prompt_tokens,
+                outputTokens: usage.completion_tokens,
+                status: 'success',
+                metadata: {
+                    latency: Date.now() - startTime,
+                    provider: 'DeepSeek/OpenRouter'
+                }
+            });
+        }
+
         return response.data.choices[0].message.content;
     } catch (error) {
         const errorMsg = error.response?.data?.error?.message || error.message;
         const status = error.response?.status;
         console.error(`[AI] Model ${modelConfig.name} failed (${status}): ${errorMsg}`);
+
+        // Log Failure
+        await aiUsageService.logUsage({
+            userId: options.userId,
+            model: modelConfig.name,
+            purpose: options.purpose || 'deepseek_job_matching',
+            status: 'failed',
+            errorMessage: errorMsg,
+            metadata: {
+                latency: Date.now() - startTime,
+                provider: 'DeepSeek/OpenRouter'
+            }
+        });
+
         const enhancedError = new Error(`AI Call Failed (${modelConfig.name}): ${errorMsg}`);
         enhancedError.status = status;
         throw enhancedError;
@@ -134,7 +168,9 @@ function detectProgrammingLanguages(skills) {
     if (!skills || !Array.isArray(skills)) return [];
 
     const detected = [];
-    const skillsLower = skills.map(s => s.toLowerCase().trim());
+    const skillsLower = skills
+        .filter(s => s && typeof s === 'string')
+        .map(s => s.toLowerCase().trim());
 
     // Short language names that need exact matching (to avoid false positives)
     const shortLanguages = ['c', 'r', 'go'];
@@ -174,8 +210,9 @@ function detectProgrammingLanguages(skills) {
  * @param {string} language - Programming language
  * @param {string} skillLevel - easy, medium, hard
  * @param {Array} skills - User's skills from resume
+ * @param {Object} options - API options (userId, etc.)
  */
-async function generateCodingProblem(language, skillLevel = 'easy', skills = []) {
+async function generateCodingProblem(language, skillLevel = 'easy', skills = [], options = {}) {
     console.log('🔵 [AI] generateCodingProblem called');
     console.log('🔵 [AI] Parameters:', { language, skillLevel, skillsCount: skills.length });
 
@@ -206,7 +243,7 @@ Make the problem practical and relevant to real-world scenarios. Include 3-4 tes
         const response = await callDeepSeek([
             { role: 'system', content: 'You are a coding interview expert. Always respond with valid JSON only, no markdown formatting.' },
             { role: 'user', content: prompt }
-        ]);
+        ], options);
 
         console.log('🔵 [AI] Raw response length:', response?.length);
 
@@ -231,7 +268,7 @@ Make the problem practical and relevant to real-world scenarios. Include 3-4 tes
 /**
  * Evaluate code solution using DeepSeek-R1
  */
-async function evaluateCodeSolution(code, problem, language, output, passed) {
+async function evaluateCodeSolution(code, problem, language, output, passed, options = {}) {
     // Check for empty or minimal code (just comments/template)
     const codeWithoutComments = code
         .replace(/\/\/.*$/gm, '') // Remove single-line comments
@@ -294,7 +331,7 @@ Provide evaluation as JSON:
         const response = await callDeepSeek([
             { role: 'system', content: 'You are a strict code review expert. Score fairly but harshly. Respond with valid JSON only.' },
             { role: 'user', content: prompt }
-        ]);
+        ], options);
 
         let cleanResponse = response
             .replace(/```json\n?/g, '')
@@ -436,7 +473,7 @@ public class Solution {
 /**
  * Generate personalized interview questions using DeepSeek-R1 (Legacy Batch Mode)
  */
-async function generateInterviewQuestions(resumeText, role, experienceLevel) {
+async function generateInterviewQuestions(resumeText, role, experienceLevel, options = {}) {
     const prompt = `You are an expert technical interviewer. Generate 10 personalized interview questions based STRICTLY on the candidate's resume and desired role.
     
     Role: ${role}
@@ -462,7 +499,7 @@ async function generateInterviewQuestions(resumeText, role, experienceLevel) {
         const response = await callDeepSeek([
             { role: 'system', content: 'You are a strict technical interviewer using DeepSeek-R1 model for deep reasoning. Return only valid JSON.' },
             { role: 'user', content: prompt }
-        ]);
+        ], options);
 
         let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const parsed = JSON.parse(cleanResponse);
@@ -480,7 +517,7 @@ async function generateInterviewQuestions(resumeText, role, experienceLevel) {
 /**
  * Generate a SINGLE personalized interview question based on history
  */
-async function generateNextQuestion(resumeText, role, experienceLevel, history = []) {
+async function generateNextQuestion(resumeText, role, experienceLevel, history = [], options = {}) {
     const questionCount = history.length + 1;
     const isTechnical = questionCount <= 5; // First 5 technical, last 5 behavioral
 
@@ -562,7 +599,7 @@ async function generateNextQuestion(resumeText, role, experienceLevel, history =
         const response = await callDeepSeek([
             { role: 'system', content: 'You are an adaptive technical interviewer. Return valid JSON only.' },
             { role: 'user', content: prompt }
-        ]);
+        ], options);
 
         return extractJson(response);
     } catch (error) {
@@ -612,13 +649,13 @@ async function callDeepSeek(messages, options = {}) {
 /**
  * Generate contextual question using rich prompt (for adaptive interviews)
  */
-async function generateContextualQuestion(contextPrompt) {
+async function generateContextualQuestion(contextPrompt, options = {}) {
     try {
         console.log('[AI] Generating contextual question with adaptive prompt');
         const response = await callDeepSeek([
             { role: 'system', content: 'You are an expert technical interviewer. Generate specific, personalized interview questions. Return ONLY the question text, no preamble.' },
             { role: 'user', content: contextPrompt }
-        ]);
+        ], options);
 
         // Return just the question text (trimmed)
         return response.trim();
@@ -633,7 +670,7 @@ async function generateContextualQuestion(contextPrompt) {
  * Validates answer - ONLY blocks gibberish and completely off-topic responses
  * Wrong technical answers are ALLOWED - the final evaluation will score them appropriately
  */
-async function validateAnswer(question, answer) {
+async function validateAnswer(question, answer, options = {}) {
     // Minimum length check
     if (!answer || answer.trim().length < 5) {
         return { valid: false, message: "Please provide a longer response." };
@@ -673,7 +710,7 @@ Return JSON:
         const response = await callDeepSeek([
             { role: 'system', content: 'You are lenient. Allow wrong answers through. Only block gibberish and off-topic. Return JSON.' },
             { role: 'user', content: prompt }
-        ]);
+        ], options);
 
         return extractJson(response);
         return { valid: true }; // Fail open
@@ -687,7 +724,7 @@ Return JSON:
 /**
  * Parse resume text into structured JSON using DeepSeek-R1
  */
-async function parseResume(resumeText) {
+async function parseResume(resumeText, options = {}) {
     if (!resumeText || resumeText.length < 50) {
         throw new Error('Resume text too short');
     }
@@ -737,7 +774,7 @@ async function parseResume(resumeText) {
         const response = await callDeepSeek([
             { role: 'system', content: 'You are a precise JSON extractor. Return only valid JSON.' },
             { role: 'user', content: prompt }
-        ]);
+        ], options);
 
         return extractJson(response);
     } catch (error) {
@@ -750,7 +787,7 @@ async function parseResume(resumeText) {
  * Evaluate ALL answers using the NEW multi-dimensional evaluation engine
  * Results go to admin for review - AI only scores, doesn't decide
  */
-async function evaluateAllAnswers(questionsAndAnswers, jobContext, blueprint = null) {
+async function evaluateAllAnswers(questionsAndAnswers, jobContext, blueprint = null, options = {}) {
     const { jobTitle, jobDescription, requiredSkills } = jobContext;
 
     // Import evaluation engine

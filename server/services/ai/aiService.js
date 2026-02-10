@@ -22,16 +22,16 @@ class AIService {
      * Parse resume text to structured data
      * Uses: Llama 3.2 3B (FREE)
      */
-    async parseResume(resumeText) {
-        return this.openRouter.parseResume(resumeText);
+    async parseResume(resumeText, options = {}) {
+        return this.openRouter.parseResume(resumeText, options);
     }
 
     /**
      * Match resume to job description
      * Uses: Gemma 2 9B
      */
-    async matchResumeToJD(resumeData, jobDescription, jobRequirements) {
-        return this.openRouter.matchResumeToJD(resumeData, jobDescription, jobRequirements);
+    async matchResumeToJD(resumeData, jobDescription, jobRequirements, options = {}) {
+        return this.openRouter.matchResumeToJD(resumeData, jobDescription, jobRequirements, options);
     }
 
     /**
@@ -39,7 +39,7 @@ class AIService {
      * Uses: Qwen3 235B
      * Questions are based on job description, skills, roles, and responsibilities
      */
-    async generateInterviewQuestions(resumeData, interviewType, jobContext = {}) {
+    async generateInterviewQuestions(resumeData, interviewType, jobContext = {}, options = {}) {
         const context = {
             resumeData,
             interviewType,
@@ -50,14 +50,14 @@ class AIService {
             previousAnswers: []
         };
 
-        return this.openRouter.generateAdaptiveQuestions(context);
+        return this.openRouter.generateAdaptiveQuestions(context, options);
     }
 
     /**
      * Generate adaptive follow-up question
      * Uses: Qwen3 235B
      */
-    async generateAdaptiveQuestion(interview, previousQA) {
+    async generateAdaptiveQuestion(interview, previousQA, options = {}) {
         const context = {
             resumeData: interview.resumeData || {},
             jobTitle: interview.job?.title || 'Position',
@@ -67,7 +67,7 @@ class AIService {
             interviewType: interview.interviewType
         };
 
-        const questions = await this.openRouter.generateAdaptiveQuestions(context);
+        const questions = await this.openRouter.generateAdaptiveQuestions(context, options);
         return questions[0] || null;
     }
 
@@ -75,9 +75,9 @@ class AIService {
      * Evaluate interview response
      * Uses: Qwen3 235B (detailed) + Mistral 7B (quick)
      */
-    async evaluateResponse(question, answer, interviewType, context = {}) {
+    async evaluateResponse(question, answer, interviewType, context = {}, options = {}) {
         // Get quick score first (fast feedback)
-        const quickResult = await this.openRouter.quickScore(question, answer);
+        const quickResult = await this.openRouter.quickScore(question, answer, options);
 
         // Get detailed evaluation
         const detailedResult = await this.openRouter.evaluateAnswer(question, answer, {
@@ -85,7 +85,7 @@ class AIService {
             expectedTopics: context.expectedTopics || [],
             difficulty: context.difficulty || 'medium',
             interviewType
-        });
+        }, options);
 
         return {
             ...detailedResult,
@@ -99,8 +99,8 @@ class AIService {
      * Evaluate ALL answers holistically at the end of interview
      * Uses: Qwen3 235B for comprehensive analysis
      */
-    async evaluateAllAnswers(questionsAndAnswers, jobContext) {
-        return this.openRouter.evaluateAllAnswers(questionsAndAnswers, jobContext);
+    async evaluateAllAnswers(questionsAndAnswers, jobContext, options = {}) {
+        return this.openRouter.evaluateAllAnswers(questionsAndAnswers, jobContext, options);
     }
 
     /**
@@ -142,8 +142,8 @@ class AIService {
      * Generate comprehensive recruiter report
      * Uses: Gemma 2 9B
      */
-    async generateRecruiterReport(interviewData) {
-        return this.openRouter.generateRecruiterReport(interviewData);
+    async generateRecruiterReport(interviewData, options = {}) {
+        return this.openRouter.generateRecruiterReport(interviewData, options);
     }
 
     /**
