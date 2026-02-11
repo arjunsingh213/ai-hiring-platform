@@ -52,8 +52,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
+    justify-content: flex-start !important;
+    gap: 0 !important;
 }
 
 .sidebar.collapsed .sidebar-header {
@@ -62,15 +62,18 @@
 }
 
 .sidebar-logo {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
     border-radius: 8px;
+    flex-shrink: 0;
 }
 
 .sidebar-header h2 {
-    font-size: 1.1rem;
-    margin: 0;
+    font-size: 1.15rem;
+    margin: 0 !important;
+    margin-left: -8px !important;
+    /* Aggressive overlap */
     background: linear-gradient(135deg, #007DFF 0%, #4CC8FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

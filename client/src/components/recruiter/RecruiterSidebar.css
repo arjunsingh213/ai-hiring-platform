@@ -8,19 +8,26 @@
     left: 20px;
     top: 20px;
     bottom: 20px;
-    width: 260px;
+    width: 240px;
+    /* Reduced from 260px */
     background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
     border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 24px;
-    padding: 28px;
+    padding: 20px;
+    /* Reduced from 28px */
     z-index: var(--z-fixed);
     transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow:
         0 4px 24px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     animation: slideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.recruiter-sidebar.collapsed {
+    width: 80px;
+    padding: 20px 12px;
 }
 
 .recruiter-sidebar::before {
@@ -36,25 +43,29 @@
 
 /* Sidebar Header */
 .sidebar-header {
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 0;
+    justify-content: flex-start !important;
+    gap: 0 !important;
 }
 
 .sidebar-logo {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    /* Slightly smaller for better balance */
+    height: 40px;
     object-fit: contain;
     border-radius: 8px;
+    flex-shrink: 0;
 }
 
 .sidebar-header h2 {
-    font-size: 1.35rem;
-    margin: 0;
+    font-size: 1.25rem;
+    margin: 0 !important;
+    margin-left: -8px !important;
+    /* Aggressive overlap to counteract image whitespace */
     background: linear-gradient(135deg, #007DFF 0%, #4CC8FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -74,14 +85,16 @@
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    border-radius: 14px;
+    gap: 12px;
+    padding: 10px 14px;
+    /* Reduced padding */
+    border-radius: 12px;
     color: #475569;
     transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
     text-decoration: none;
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: 0.85rem;
+    /* Reduced font size */
     position: relative;
     overflow: hidden;
     border: 1px solid transparent;
@@ -118,8 +131,9 @@
 /* Icons */
 .nav-item svg {
     flex-shrink: 0;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    /* Reduced from 22px */
+    height: 20px;
     position: relative;
     z-index: 1;
     transition: transform 0.2s ease;
@@ -127,6 +141,49 @@
 
 .nav-item:hover svg {
     transform: scale(1.05);
+}
+
+.nav-item span {
+    position: relative;
+    z-index: 1;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.recruiter-sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 12px;
+}
+
+.recruiter-sidebar.collapsed .nav-item span {
+    display: none;
+    opacity: 0;
+}
+
+/* Toggle Button */
+.sidebar-toggle {
+    margin-top: auto;
+    background: none;
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 10px;
+    width: 100%;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.45);
+    color: #0F172A;
+}
+
+.recruiter-sidebar.collapsed .sidebar-toggle svg {
+    transform: rotate(180deg);
 }
 
 .nav-item span {
@@ -144,6 +201,10 @@
         width: 72px;
         padding: 20px 12px;
         border-radius: 20px;
+    }
+
+    .sidebar.collapsed {
+        width: 72px;
     }
 
     .sidebar-header h2 {
@@ -173,7 +234,7 @@
         right: 0;
         top: auto;
         bottom: 0;
-        width: 100%;
+        width: 100% !important;
         height: 72px;
         padding: 8px 16px;
         border-radius: 0;
@@ -182,6 +243,7 @@
         background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(40px);
         animation: none;
+        transform: none !important;
     }
 
     .recruiter-sidebar::before {
