@@ -11,17 +11,59 @@ const AITalentPassport = ({ passport, userName }) => {
     const [showFeedback, setShowFeedback] = useState(false);
     const userId = localStorage.getItem('userId');
 
+    const [interactions, setInteractions] = useState(0);
+    const [scrolledToBottom, setScrolledToBottom] = useState(false);
+    const containerRef = React.useRef(null);
+
     useEffect(() => {
         if (passport && passport.isActive && userId) {
             const feedbackShown = localStorage.getItem(`feedback_atp_${userId}`);
-            if (!feedbackShown) {
-                // Show after a slight delay to let user see the passport first
-                const timer = setTimeout(() => {
-                    setShowFeedback(true);
-                    localStorage.setItem(`feedback_atp_${userId}`, 'true');
-                }, 3000);
-                return () => clearTimeout(timer);
+            if (feedbackShown) return;
+
+            // 1. Dwell Time (30s)
+            const dwellTimer = setTimeout(() => {
+                checkTrigger('time');
+            }, 30000);
+
+            // 2. Scroll tracking
+            const handleScroll = () => {
+                if (containerRef.current) {
+                    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+                    if (scrollTop + clientHeight >= scrollHeight - 50) {
+                        setScrolledToBottom(true);
+                        checkTrigger('scroll');
+                    }
+                }
+            };
+
+            const container = containerRef.current;
+            if (container) {
+                container.addEventListener('scroll', handleScroll);
             }
+
+            return () => {
+                clearTimeout(dwellTimer);
+                if (container) {
+                    container.removeEventListener('scroll', handleScroll);
+                }
+            };
+        }
+    }, [passport, userId]);
+
+    const checkTrigger = (type) => {
+        // We only trigger if ALL conditions are met: 30s dwell + Scroll bottom + 1 interaction
+        // Note: Since state updates are async, we might need a more robust way to check, 
+        // but for now we'll trigger when the LAST condition is met.
+    };
+
+    // Use a separate effect to watch conditions
+    useEffect(() => {
+        if (passport && passport.isActive && userId) {
+            const feedbackShown = localStorage.getItem(`feedback_atp_${userId}`);
+            if (feedbackShown) return;
+
+            const timeSpent = true; // This effect only runs if component stays mounted
+            // We'll use a timer to set a "ready" state for time
         }
     }, [passport, userId]);
 
@@ -64,8 +106,44 @@ const AITalentPassport = ({ passport, userName }) => {
         });
     };
 
+    const [timeReady, setTimeReady] = useState(false);
+
+    useEffect(() => {
+        if (passport && passport.isActive && userId) {
+            const feedbackShown = localStorage.getItem(`feedback_atp_${userId}`);
+            if (feedbackShown) return;
+
+            const timer = setTimeout(() => setTimeReady(true), 30000);
+            return () => clearTimeout(timer);
+        }
+    }, [passport, userId]);
+
+    useEffect(() => {
+        if (timeReady && scrolledToBottom && interactions >= 1) {
+            const feedbackShown = localStorage.getItem(`feedback_atp_${userId}`);
+            if (!feedbackShown) {
+                setShowFeedback(true);
+                localStorage.setItem(`feedback_atp_${userId}`, 'true');
+            }
+        }
+    }, [timeReady, scrolledToBottom, interactions, userId]);
+
+    const handleInteraction = () => {
+        setInteractions(prev => prev + 1);
+    };
+
     return (
-        <div className="atp-container">
+        <div
+            className="atp-container"
+            ref={containerRef}
+            onScroll={(e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                if (scrollTop + clientHeight >= scrollHeight - 50) {
+                    setScrolledToBottom(true);
+                }
+            }}
+            onClick={handleInteraction}
+        >
             {/* Header */}
             <div className="atp-header">
                 <div className="atp-header-left">

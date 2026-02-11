@@ -122,6 +122,18 @@ const RecruiterHome = () => {
         fetchPosts();
         fetchStats();
         fetchUser();
+
+        const handleUpdate = () => {
+            fetchUser();
+            fetchStats();
+        };
+
+        window.addEventListener('profile-updated', handleUpdate);
+        window.addEventListener('user-updated', handleUpdate);
+        return () => {
+            window.removeEventListener('profile-updated', handleUpdate);
+            window.removeEventListener('user-updated', handleUpdate);
+        };
     }, []);
 
     const fetchUser = async () => {
@@ -520,7 +532,7 @@ const RecruiterHome = () => {
                                 {user?.profile?.photo ? (
                                     <img src={user.profile.photo} alt="" />
                                 ) : (
-                                    <div className="avatar-placeholder">
+                                    <div className="avatar-placeholder premium">
                                         {user?.profile?.name?.charAt(0) || 'R'}
                                     </div>
                                 )}
@@ -600,41 +612,61 @@ const RecruiterHome = () => {
                 {/* Right Sidebar */}
                 <aside className="feed-sidebar">
                     {/* Quick Stats Card */}
-                    <div className="sidebar-card">
+                    <div className="sidebar-card premium-stats-container">
                         <div className="sidebar-card-header">
                             <div className="header-icon">{Icons.briefcase}</div>
                             <h3>Quick Stats</h3>
                         </div>
-                        <div className="stats-grid">
+                        <div className="quick-stats-vertical">
                             <div
-                                className="stat-item clickable"
+                                className="quick-stat-card premium clickable"
                                 onClick={() => navigate('/recruiter/my-jobs')}
                             >
-                                <div className="stat-row">
-                                    <span className="stat-number primary">{stats.activeJobs}</span>
-                                    <SparklineChart data={[2, 3, 1, 4, 3, 5, stats.activeJobs || 1]} color="primary" height={24} />
+                                <div className="quick-stat-icon applications">
+                                    {Icons.briefcase}
                                 </div>
-                                <span className="stat-label">Active Jobs</span>
+                                <div className="quick-stat-content">
+                                    <div className="stat-main">
+                                        <span className="quick-stat-number">{stats.activeJobs}</span>
+                                        <SparklineChart data={[2, 4, 3, 5, 4, 6, stats.activeJobs || 1]} color="primary" height={20} />
+                                    </div>
+                                    <span className="quick-stat-label">Active Jobs</span>
+                                    <span className="stat-trend positive">+2 this week</span>
+                                </div>
                             </div>
+
                             <div
-                                className="stat-item clickable"
-                                onClick={() => navigate('/recruiter/talent-pipeline')}
+                                className="quick-stat-card premium clickable"
+                                onClick={() => navigate('/recruiter/applications')}
                             >
-                                <div className="stat-row">
-                                    <span className="stat-number accent">{stats.totalApplicants}</span>
-                                    <SparklineChart data={[5, 8, 12, 9, 15, 11, stats.totalApplicants || 1]} color="purple" height={24} />
+                                <div className="quick-stat-icon interviews">
+                                    {Icons.users}
                                 </div>
-                                <span className="stat-label">Applicants</span>
+                                <div className="quick-stat-content">
+                                    <div className="stat-main">
+                                        <span className="quick-stat-number">{stats.totalApplicants}</span>
+                                        <SparklineChart data={[10, 15, 12, 18, 22, 25, stats.totalApplicants || 1]} color="purple" height={20} />
+                                    </div>
+                                    <span className="quick-stat-label">Applicants</span>
+                                    <span className="stat-trend positive">+12% vs last week</span>
+                                </div>
                             </div>
+
                             <div
-                                className="stat-item clickable"
-                                onClick={() => navigate('/recruiter/talent-pipeline')}
+                                className="quick-stat-card premium clickable"
+                                onClick={() => navigate('/recruiter/applications')}
                             >
-                                <div className="stat-row">
-                                    <span className="stat-number success">{stats.interviewsScheduled}</span>
-                                    <SparklineChart data={[1, 2, 1, 3, 2, 4, stats.interviewsScheduled || 1]} color="success" height={24} />
+                                <div className="quick-stat-icon success">
+                                    {Icons.calendar}
                                 </div>
-                                <span className="stat-label">Interviews</span>
+                                <div className="quick-stat-content">
+                                    <div className="stat-main">
+                                        <span className="quick-stat-number">{stats.interviewsScheduled}</span>
+                                        <SparklineChart data={[1, 3, 2, 4, 3, 5, stats.interviewsScheduled || 1]} color="success" height={20} />
+                                    </div>
+                                    <span className="quick-stat-label">Interviews</span>
+                                    <span className="stat-trend neutral">Steady trend</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -657,7 +689,7 @@ const RecruiterHome = () => {
                             </button>
                             <button
                                 className="quick-action-btn"
-                                onClick={() => navigate('/recruiter/talent-pipeline')}
+                                onClick={() => navigate('/recruiter/applications')}
                             >
                                 {Icons.users}
                                 <span>View Pipeline</span>
@@ -685,7 +717,7 @@ const RecruiterHome = () => {
                                 <p className="company-name">{user.recruiterProfile?.companyName || 'Company'}</p>
                                 <p className="company-domain">{user.recruiterProfile?.companyDomain}</p>
                             </div>
-                            <a href={`/profile/${userId}`} className="profile-cta">
+                            <a href="/recruiter/profile" className="profile-cta">
                                 View Profile
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M5 12h14M12 5l7 7-7 7" />

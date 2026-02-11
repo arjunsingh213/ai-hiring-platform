@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import '../jobseeker/MessagingPage.css';
 
 const RecruiterMessages = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [conversations, setConversations] = useState([]);
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -163,6 +164,18 @@ const RecruiterMessages = () => {
         return null;
     };
 
+    const handleProfileClick = (e, targetUserId) => {
+        e.stopPropagation();
+        if (targetUserId) {
+            navigate(`/profile/${targetUserId}`);
+        }
+    };
+
+    const getOtherUserId = (conversation) => {
+        return conversation?.otherUser?._id ||
+            conversation?.participants?.find(p => p !== userId);
+    };
+
     return (
         <div className="messaging-page">
             {/* Conversations Sidebar */}
@@ -187,7 +200,12 @@ const RecruiterMessages = () => {
                                     className="conversation-item active"
                                     style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))' }}
                                 >
-                                    <div className="user-avatar">
+                                    <div
+                                        className="user-avatar"
+                                        onClick={(e) => handleProfileClick(e, pendingUser._id)}
+                                        style={{ cursor: 'pointer' }}
+                                        title="View Profile"
+                                    >
                                         {pendingUser.photo ? (
                                             <img
                                                 src={pendingUser.photo}
@@ -221,7 +239,12 @@ const RecruiterMessages = () => {
                                     className={`conversation-item ${selectedConversation?._id === conv._id ? 'active' : ''}`}
                                     onClick={() => handleSelectConversation(conv)}
                                 >
-                                    <div className="user-avatar">
+                                    <div
+                                        className="user-avatar"
+                                        onClick={(e) => handleProfileClick(e, getOtherUserId(conv))}
+                                        style={{ cursor: 'pointer' }}
+                                        title="View Profile"
+                                    >
                                         {conv.otherUser?.profile?.photo ? (
                                             <img
                                                 src={conv.otherUser.profile.photo}
@@ -262,7 +285,15 @@ const RecruiterMessages = () => {
                     <>
                         {/* Chat Header */}
                         <div className="chat-header">
-                            <div className="user-info">
+                            <div
+                                className="user-info"
+                                onClick={(e) => {
+                                    const otherId = selectedConversation ? getOtherUserId(selectedConversation) : pendingUser?._id;
+                                    handleProfileClick(e, otherId);
+                                }}
+                                style={{ cursor: 'pointer' }}
+                                title="View Profile"
+                            >
                                 <div className="user-avatar">
                                     {getDisplayPhoto() ? (
                                         <img

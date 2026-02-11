@@ -376,6 +376,22 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+[data-theme="dark"] .input,
+[data-theme="dark"] textarea.input {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .input:focus {
+    border-color: #6366F1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+[data-theme="dark"] label {
+    color: #94A3B8;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SETTINGS MODALS
    ═══════════════════════════════════════════════════════════════ */

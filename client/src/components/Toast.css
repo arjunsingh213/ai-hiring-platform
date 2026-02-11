@@ -15,11 +15,20 @@
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: white;
+    /* Fallback */
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-out 3.5s forwards;
+    z-index: 10000;
+}
+
+[data-theme="dark"] .toast {
+    background: #1e293b;
+    border-color: #334155;
+    color: white;
 }
 
 .toast-icon {

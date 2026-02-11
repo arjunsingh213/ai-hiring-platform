@@ -3,14 +3,14 @@ import Cropper from 'react-easy-crop';
 import { useToast } from './Toast';
 import './ImageCropModal.css';
 
-const ImageCropModal = ({ image, onComplete, onCancel, aspectRatio = 1, cropShape = 'round', title = 'Crop Image' }) => {
+const ImageCropModal = ({ imageSrc, onCropComplete, onClose, aspectRatio = 1, cropShape = 'round', title = 'Crop Image' }) => {
     const toast = useToast();
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [quality, setQuality] = useState(0.8);
 
-    const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    const onCropChangeComplete = useCallback((croppedArea, croppedAreaPixels) => {
         setCroppedAreaPixels(croppedAreaPixels);
     }, []);
 
@@ -19,6 +19,7 @@ const ImageCropModal = ({ image, onComplete, onCancel, aspectRatio = 1, cropShap
             const image = new Image();
             image.addEventListener('load', () => resolve(image));
             image.addEventListener('error', (error) => reject(error));
+            image.setAttribute('crossOrigin', 'anonymous');
             image.src = url;
         });
 
@@ -59,18 +60,20 @@ const ImageCropModal = ({ image, onComplete, onCancel, aspectRatio = 1, cropShap
 
     const handleCrop = async () => {
         try {
+            if (!croppedAreaPixels) return;
+
             let currentQuality = quality;
-            let croppedBlob = await getCroppedImg(image, croppedAreaPixels, currentQuality);
+            let croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels, currentQuality);
 
             // Reduce quality until file size is under 50KB for photos, 100KB for banners
             const maxSize = aspectRatio > 1 ? 100000 : 50000;
             while (croppedBlob.size > maxSize && currentQuality > 0.1) {
                 currentQuality -= 0.1;
-                croppedBlob = await getCroppedImg(image, croppedAreaPixels, currentQuality);
+                croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels, currentQuality);
             }
 
             console.log('Final blob size:', croppedBlob.size, 'bytes');
-            onComplete(croppedBlob);
+            onCropComplete(croppedBlob);
         } catch (error) {
             console.error('Error cropping image:', error);
             toast.error('Failed to crop image. Please try again.');
@@ -82,19 +85,19 @@ const ImageCropModal = ({ image, onComplete, onCancel, aspectRatio = 1, cropShap
             <div className="crop-modal">
                 <div className="crop-modal-header">
                     <h2>{title}</h2>
-                    <button className="close-btn" onClick={onCancel}>×</button>
+                    <button className="close-btn" onClick={onClose}>×</button>
                 </div>
 
                 <div className="crop-container" style={{ height: '400px', position: 'relative' }}>
                     <Cropper
-                        image={image}
+                        image={imageSrc}
                         crop={crop}
                         zoom={zoom}
                         aspect={aspectRatio}
                         cropShape={cropShape}
                         showGrid={false}
                         onCropChange={setCrop}
-                        onCropComplete={onCropComplete}
+                        onCropComplete={onCropChangeComplete}
                         onZoomChange={setZoom}
                     />
                 </div>
@@ -129,7 +132,7 @@ const ImageCropModal = ({ image, onComplete, onCancel, aspectRatio = 1, cropShap
                 </div>
 
                 <div className="crop-actions">
-                    <button className="btn btn-secondary" onClick={onCancel}>
+                    <button className="btn btn-secondary" onClick={onClose}>
                         Cancel
                     </button>
                     <button className="btn btn-primary" onClick={handleCrop}>

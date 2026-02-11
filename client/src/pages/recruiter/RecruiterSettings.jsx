@@ -1,51 +1,146 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 import '../jobseeker/SettingsPage.css';
 import ContactForm from '../../components/ContactForm';
 
 const RecruiterSettings = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('account');
+    const toast = useToast();
+    const userId = localStorage.getItem('userId');
+    const [activeTab, setActiveTab] = useState('profile');
+    const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(true);
+
+    const [formData, setFormData] = useState({
+        profile: {
+            name: '',
+            headline: '',
+            bio: '',
+            location: '',
+            photo: ''
+        },
+        recruiterProfile: {
+            companyName: '',
+            position: '',
+            industry: '',
+            companyWebsite: '',
+            location: ''
+        }
+    });
+
+    useEffect(() => {
+        if (userId) {
+            fetchUserData();
+        }
+    }, [userId]);
+
+    const fetchUserData = async () => {
+        try {
+            setFetching(true);
+            const response = await api.get(`/users/${userId}`);
+            const user = response.data?.data || response.data;
+            if (user) {
+                setFormData({
+                    profile: {
+                        name: user.profile?.name || '',
+                        headline: user.profile?.headline || '',
+                        bio: user.profile?.bio || '',
+                        location: user.profile?.location || '',
+                        photo: user.profile?.photo || ''
+                    },
+                    recruiterProfile: {
+                        companyName: user.recruiterProfile?.companyName || '',
+                        position: user.recruiterProfile?.position || '',
+                        industry: user.recruiterProfile?.industry || '',
+                        companyWebsite: user.recruiterProfile?.companyWebsite || '',
+                        location: user.recruiterProfile?.location || user.profile?.location || ''
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            toast.error('Failed to load profile data');
+        } finally {
+            setFetching(false);
+        }
+    };
+
+    const handleInputChange = (section, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [section]: {
+                ...prev[section],
+                [field]: value
+            }
+        }));
+    };
+
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            const response = await api.put(`/users/${userId}`, formData);
+            if (response.success || response.data?.success) {
+                window.dispatchEvent(new CustomEvent('profile-updated'));
+                toast.success('Profile updated successfully');
+                // Refresh local storage if needed or just rely on state
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            toast.error(error.response?.data?.error || 'Failed to update profile');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLogout = () => {
-        // Clear ALL auth data for a complete logout
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
         localStorage.removeItem('userRole');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('user');
         localStorage.removeItem('loginTimestamp');
-
-        // Use window.location.href to ensure a clean state redirect
         window.location.href = '/';
     };
+
+    if (fetching) {
+        return (
+            <div className="settings-page">
+                <div className="settings-header">
+                    <h1>Settings</h1>
+                    <p className="text-muted">Loading your settings...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="settings-page">
             <div className="settings-header">
                 <h1>Settings</h1>
-                <p className="text-muted">Manage your recruiter account</p>
+                <p className="text-muted">Manage your recruiter profile and account</p>
             </div>
 
             <div className="settings-container">
                 <div className="settings-sidebar card">
                     <button
-                        className={`settings-tab ${activeTab === 'account' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('account')}
+                        className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('profile')}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" strokeWidth="2" />
-                            <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" />
+                            <circle cx="12" cy="7" r="4" />
                         </svg>
-                        Account
+                        Profile
                     </button>
                     <button
                         className={`settings-tab ${activeTab === 'company' ? 'active' : ''}`}
                         onClick={() => setActiveTab('company')}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-                            <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="currentColor" strokeWidth="2" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" />
+                            <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" />
                         </svg>
                         Company
                     </button>
@@ -53,8 +148,8 @@ const RecruiterSettings = () => {
                         className={`settings-tab ${activeTab === 'notifications' ? 'active' : ''}`}
                         onClick={() => setActiveTab('notifications')}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" strokeWidth="2" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" />
                         </svg>
                         Notifications
                     </button>
@@ -62,30 +157,56 @@ const RecruiterSettings = () => {
                         className={`settings-tab ${activeTab === 'support' ? 'active' : ''}`}
                         onClick={() => setActiveTab('support')}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" stroke="currentColor" strokeWidth="2" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" />
                         </svg>
                         Support
                     </button>
                 </div>
 
                 <div className="settings-content card">
-                    {activeTab === 'account' && (
+                    {activeTab === 'profile' && (
                         <div className="settings-section">
-                            <h2>Account Settings</h2>
-                            <div className="setting-item">
-                                <div>
-                                    <h4>Email Address</h4>
-                                    <p className="text-muted">Update your email address</p>
-                                </div>
-                                <button className="btn btn-secondary btn-sm">Change Email</button>
+                            <h2>Profile Information</h2>
+                            <div className="form-group">
+                                <label>Full Name</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={formData.profile.name}
+                                    onChange={(e) => handleInputChange('profile', 'name', e.target.value)}
+                                    placeholder="Your Name"
+                                />
                             </div>
-                            <div className="setting-item">
-                                <div>
-                                    <h4>Password</h4>
-                                    <p className="text-muted">Change your password</p>
-                                </div>
-                                <button className="btn btn-secondary btn-sm">Change Password</button>
+                            <div className="form-group">
+                                <label>Headline</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={formData.profile.headline}
+                                    onChange={(e) => handleInputChange('profile', 'headline', e.target.value)}
+                                    placeholder="e.g. Senior Technical Recruiter at TechFlow"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Bio</label>
+                                <textarea
+                                    className="input"
+                                    rows="4"
+                                    value={formData.profile.bio}
+                                    onChange={(e) => handleInputChange('profile', 'bio', e.target.value)}
+                                    placeholder="Tell others about yourself..."
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Location</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={formData.profile.location}
+                                    onChange={(e) => handleInputChange('profile', 'location', e.target.value)}
+                                    placeholder="e.g. San Francisco, CA"
+                                />
                             </div>
                         </div>
                     )}
@@ -93,26 +214,45 @@ const RecruiterSettings = () => {
                     {activeTab === 'company' && (
                         <div className="settings-section">
                             <h2>Company Information</h2>
-                            <div className="setting-item">
-                                <div>
-                                    <h4>Company Name</h4>
-                                    <p className="text-muted">Your company name</p>
-                                </div>
-                                <button className="btn btn-secondary btn-sm">Edit</button>
+                            <div className="form-group">
+                                <label>Company Name</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={formData.recruiterProfile.companyName}
+                                    onChange={(e) => handleInputChange('recruiterProfile', 'companyName', e.target.value)}
+                                    placeholder="Company Name"
+                                />
                             </div>
-                            <div className="setting-item">
-                                <div>
-                                    <h4>Company Website</h4>
-                                    <p className="text-muted">Your company website URL</p>
-                                </div>
-                                <button className="btn btn-secondary btn-sm">Edit</button>
+                            <div className="form-group">
+                                <label>Your Position</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={formData.recruiterProfile.position}
+                                    onChange={(e) => handleInputChange('recruiterProfile', 'position', e.target.value)}
+                                    placeholder="e.g. Hiring Manager"
+                                />
                             </div>
-                            <div className="setting-item">
-                                <div>
-                                    <h4>Verification Status</h4>
-                                    <p className="text-muted">Company verification status</p>
-                                </div>
-                                <span className="badge">Pending</span>
+                            <div className="form-group">
+                                <label>Industry</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={formData.recruiterProfile.industry}
+                                    onChange={(e) => handleInputChange('recruiterProfile', 'industry', e.target.value)}
+                                    placeholder="e.g. Technology"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Company Website</label>
+                                <input
+                                    type="url"
+                                    className="input"
+                                    value={formData.recruiterProfile.companyWebsite}
+                                    onChange={(e) => handleInputChange('recruiterProfile', 'companyWebsite', e.target.value)}
+                                    placeholder="https://example.com"
+                                />
                             </div>
                         </div>
                     )}
@@ -152,7 +292,11 @@ const RecruiterSettings = () => {
                     )}
 
                     <div className="settings-actions">
-                        <button className="btn btn-primary">Save Changes</button>
+                        {(activeTab === 'profile' || activeTab === 'company') && (
+                            <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        )}
                         <button className="btn btn-danger" onClick={handleLogout}>Logout</button>
                     </div>
                 </div>
@@ -162,3 +306,4 @@ const RecruiterSettings = () => {
 };
 
 export default RecruiterSettings;
+

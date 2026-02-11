@@ -37,8 +37,8 @@ const Header = () => {
                 {/* Logo */}
                 <Link to="/" className={styles.logo}>
                     <img
-                        src={froscelLogo}
-                        alt="Froscel Logo"
+                        src="/logo.png"
+                        alt="Logo"
                         className={styles.logoIcon}
                     />
                     <span className={styles.logoText}>Froscel</span>

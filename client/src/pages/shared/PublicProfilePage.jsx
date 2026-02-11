@@ -4,11 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import FollowButton from '../../components/FollowButton';
 import UserProfileLink from '../../components/UserProfileLink';
+import ImageCropModal from '../../components/ImageCropModal';
+import { useToast } from '../../components/Toast';
 import './PublicProfilePage.css';
-import './PublicProfileDarkFix.css';
+
 
 // Icons
 const Icons = {
+    arrowLeft: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+    ),
     verified: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M9 12L11 14L15 10M12 3L14.5 5.5H18.5V9.5L21 12L18.5 14.5V18.5H14.5L12 21L9.5 18.5H5.5V14.5L3 12L5.5 9.5V5.5H9.5L12 3Z" fill="#6366F1" stroke="#6366F1" strokeWidth="2" />
@@ -91,12 +98,19 @@ const Icons = {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 20V10M12 20V4M6 20V14" />
         </svg>
+    ),
+    camera: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" />
+            <circle cx="12" cy="13" r="4" />
+        </svg>
     )
 };
 
 const PublicProfilePage = () => {
     const { userId } = useParams();
     const navigate = useNavigate();
+    const toast = useToast();
     const [user, setUser] = useState(null);
     const [posts, setPosts] = useState([]);
     const [jobs, setJobs] = useState([]);
@@ -105,25 +119,44 @@ const PublicProfilePage = () => {
     const [mutualConnections, setMutualConnections] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [loading, setLoading] = useState(true);
+
+    // Image Upload States
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [imageType, setImageType] = useState(null); // 'photo' or 'banner'
+    const [selectedImage, setSelectedImage] = useState(null);
+
     const currentUserId = localStorage.getItem('userId');
-    const isOwnProfile = userId === currentUserId;
+    const currentUserRole = localStorage.getItem('userRole');
+
+    // Resolve profile user ID (either from params or current user)
+    const profileUserId = userId || currentUserId;
+    const isOwnProfile = profileUserId === currentUserId;
 
     useEffect(() => {
-        fetchProfile();
-        fetchStats();
-        fetchPosts();
-        if (currentUserId && !isOwnProfile) {
-            fetchMutualConnections();
+        // Initialize theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }, []);
+
+    useEffect(() => {
+        if (profileUserId) {
+            fetchProfile();
+            fetchStats();
+            fetchPosts();
+            if (currentUserId && !isOwnProfile) {
+                fetchMutualConnections();
+            }
         }
-    }, [userId]);
+    }, [profileUserId]);
 
     const fetchProfile = async () => {
         try {
-            const response = await api.get(`/profiles/${userId}?currentUserId=${currentUserId || ''}`);
+            const response = await api.get(`/profile/${profileUserId}?currentUserId=${currentUserId || ''}`);
+            console.log('User Data:', response.user);
             setUser(response.user);
             setIsFollowing(response.isFollowing || false);
             if (response.user?.role === 'recruiter') {
-                fetchRecruiterJobs();
+                fetchRecruiterJobs(response.user._id);
             }
         } catch (error) {
             console.error('Error fetching profile:', error);
@@ -133,9 +166,9 @@ const PublicProfilePage = () => {
         }
     };
 
-    const fetchRecruiterJobs = async () => {
+    const fetchRecruiterJobs = async (uid) => {
         try {
-            const response = await api.get(`/jobs/recruiter/${userId}`);
+            const response = await api.get(`/jobs/recruiter/${uid}`);
             const jobsData = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
             setJobs(jobsData);
         } catch (error) {
@@ -145,7 +178,7 @@ const PublicProfilePage = () => {
 
     const fetchStats = async () => {
         try {
-            const response = await api.get(`/profiles/${userId}/stats`);
+            const response = await api.get(`/profile/${profileUserId}/stats`);
             setStats(response || { followers: 0, following: 0, posts: 0 });
         } catch (error) {
             console.error('Error fetching stats:', error);
@@ -154,7 +187,7 @@ const PublicProfilePage = () => {
 
     const fetchPosts = async () => {
         try {
-            const response = await api.get(`/profiles/${userId}/posts`);
+            const response = await api.get(`/profile/${profileUserId}/posts`);
             setPosts(Array.isArray(response.posts) ? response.posts : []);
         } catch (error) {
             console.error('Error fetching posts:', error);
@@ -163,7 +196,7 @@ const PublicProfilePage = () => {
 
     const fetchMutualConnections = async () => {
         try {
-            const response = await api.get(`/profiles/${userId}/mutual-connections?currentUserId=${currentUserId}`);
+            const response = await api.get(`/profile/${profileUserId}/mutual-connections?currentUserId=${currentUserId}`);
             setMutualConnections(Array.isArray(response.mutualConnections) ? response.mutualConnections : []);
         } catch (error) {
             console.error('Error fetching mutual connections:', error);
@@ -174,6 +207,60 @@ const PublicProfilePage = () => {
         const userRole = localStorage.getItem('userRole');
         const messagePath = userRole === 'recruiter' ? '/recruiter/messages' : '/jobseeker/messages';
         navigate(messagePath, { state: { selectedUser: user } });
+    };
+
+    // Image Upload Handlers
+    const handleImageSelect = (e, type) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                setSelectedImage(reader.result);
+                setImageType(type);
+                setShowImageModal(true);
+            });
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleImageCrop = async (croppedImageBlob) => {
+        try {
+            const formData = new FormData();
+            // Backend expects 'photo' or 'banner' field name
+            formData.append(imageType === 'photo' ? 'photo' : 'banner', croppedImageBlob);
+
+            // Endpoints are /users/upload-photo and /users/upload-banner
+            const endpoint = imageType === 'photo'
+                ? `/users/upload-photo`
+                : `/users/upload-banner`;
+
+            const response = await api.post(endpoint, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (response.success) {
+                toast.success(`${imageType === 'photo' ? 'Profile photo' : 'Banner'} updated successfully`);
+                fetchProfile(); // Refresh profile data
+                setShowImageModal(false);
+                setSelectedImage(null);
+                setImageType(null);
+
+                // Update local storage if it's the current user's photo
+                if (imageType === 'photo' && isOwnProfile) {
+                    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    const photoUrl = response.data?.photoUrl;
+                    if (photoUrl) {
+                        storedUser.profile = { ...storedUser.profile, photo: photoUrl };
+                        localStorage.setItem('user', JSON.stringify(storedUser));
+                        // Trigger an event to update other components like Navbar
+                        window.dispatchEvent(new Event('user-updated'));
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Failed to update image');
+        }
     };
 
     const getTimeAgo = (date) => {
@@ -222,15 +309,58 @@ const PublicProfilePage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <div className="profile-banner"></div>
+                {!isOwnProfile && (
+                    <button
+                        className="profile-back-btn"
+                        onClick={() => navigate(-1)}
+                        title="Go Back"
+                    >
+                        {Icons.arrowLeft}
+                    </button>
+                )}
+
+                {/* Banner Section with Edit Button */}
+                <div
+                    className="profile-banner"
+                    style={
+                        (user.profile?.banner || user.jobSeekerProfile?.bannerImage) ?
+                            { backgroundImage: `url(${user.profile?.banner || user.jobSeekerProfile?.bannerImage})` } :
+                            {}
+                    }
+                >
+                    {isOwnProfile && (
+                        <label className="edit-banner-btn" title="Update Banner">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageSelect(e, 'banner')}
+                                style={{ display: 'none' }}
+                            />
+                            {Icons.camera} Edit Cover
+                        </label>
+                    )}
+                </div>
 
                 <div className="profile-header-body">
                     <div className="profile-avatar-section">
-                        <div className="profile-avatar">
+                        <div className="public-profile-avatar">
                             {user.profile?.photo ? (
                                 <img src={user.profile.photo} alt={displayName} />
                             ) : (
                                 <span>{displayName.charAt(0)}</span>
+                            )}
+
+                            {/* Avatar Edit Button */}
+                            {isOwnProfile && (
+                                <label className="edit-avatar-btn" title="Update Profile Photo">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleImageSelect(e, 'photo')}
+                                        style={{ display: 'none' }}
+                                    />
+                                    {Icons.camera}
+                                </label>
                             )}
                         </div>
                     </div>
@@ -295,7 +425,7 @@ const PublicProfilePage = () => {
                                 </button>
                             </>
                         ) : (
-                            <button className="btn btn-primary" onClick={() => navigate(isRecruiter ? '/recruiter/profile' : '/jobseeker/profile')}>
+                            <button className="btn btn-primary" onClick={() => navigate(isRecruiter ? '/recruiter/settings' : '/jobseeker/settings')}>
                                 {Icons.edit} Edit Profile
                             </button>
                         )}
@@ -416,7 +546,9 @@ const PublicProfilePage = () => {
                                             <h3>Skills</h3>
                                             <div className="skills-grid">
                                                 {user.jobSeekerProfile.skills.map((skill, idx) => (
-                                                    <span key={idx} className="skill-chip">{skill}</span>
+                                                    <span key={idx} className="skill-chip">
+                                                        {typeof skill === 'object' ? skill.name : skill}
+                                                    </span>
                                                 ))}
                                             </div>
                                         </div>
@@ -639,19 +771,45 @@ const PublicProfilePage = () => {
                         </div>
                     )}
 
-                    {/* Talent Score (Job Seekers) */}
-                    {isJobSeeker && user.aiTalentPassport?.talentScore > 0 && (
+                    {/* Talent Score (Visible to Job Seekers if they have it, and Recruiters always) */}
+                    {(isJobSeeker && user.aiTalentPassport?.talentScore > 0) || (currentUserRole === 'recruiter' && isJobSeeker) ? (
                         <div className="sidebar-card talent-card">
                             <h4>AI Talent Score</h4>
-                            <div className="talent-display">
-                                <div className="talent-score">{user.aiTalentPassport.talentScore}</div>
-                                <span className="talent-max">/100</span>
-                            </div>
-                            <p className="talent-rank">Top {Math.max(1, 100 - (user.aiTalentPassport.globalPercentile || 0))}% globally</p>
+                            {user.aiTalentPassport?.talentScore > 0 ? (
+                                <>
+                                    <div className="talent-display">
+                                        <div className="talent-score">{user.aiTalentPassport.talentScore}</div>
+                                        <span className="talent-max">/100</span>
+                                    </div>
+                                    <p className="talent-rank">Top {Math.max(1, 100 - (user.aiTalentPassport.globalPercentile || 0))}% globally</p>
+                                </>
+                            ) : (
+                                <div className="talent-empty">
+                                    <div className="talent-icon-placeholder">{Icons.star}</div>
+                                    <p>Assessment Pending</p>
+                                    <span className="talent-note">Candidate hasn't taken the AI assessment yet.</span>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    ) : null}
                 </aside>
             </div>
+
+            {/* Image Crop Modal */}
+            <AnimatePresence>
+                {showImageModal && (
+                    <ImageCropModal
+                        imageSrc={selectedImage}
+                        aspectRatio={imageType === 'photo' ? 1 : 4}
+                        onCropComplete={handleImageCrop}
+                        onClose={() => {
+                            setShowImageModal(false);
+                            setSelectedImage(null);
+                            setImageType(null);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

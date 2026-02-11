@@ -13,6 +13,7 @@ import RecruiterSettings from './RecruiterSettings';
 import HiringPipelinePage from './HiringPipelinePage';
 import OnboardingPortal from '../jobseeker/OnboardingPortal';
 import LeaderboardPage from '../jobseeker/LeaderboardPage';
+import PublicProfilePage from '../shared/PublicProfilePage';
 import './RecruiterDashboard.css';
 
 const RecruiterDashboard = () => {
@@ -32,6 +33,7 @@ const RecruiterDashboard = () => {
                 <Routes>
                     <Route path="/" element={<Navigate to="home" replace />} />
                     <Route path="home" element={<RecruiterHome />} />
+                    <Route path="profile" element={<PublicProfilePage />} />
                     <Route path="candidates" element={<LeaderboardPage />} />
                     <Route path="applications" element={<RecruiterApplicationsPage />} />
                     <Route path="hiring-pipeline" element={<HiringPipelinePage />} />

@@ -1,11 +1,9 @@
-/* Features.module.css - Pixaai-Inspired Design */
+/* Features.module.css - Premium Windows Slider */
 .features {
-    padding: 5rem 2rem 6rem;
-    background:
-        radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.06) 1px, transparent 0),
-        linear-gradient(180deg, #FFFFFF 0%, #FAFBFF 100%);
-    background-size: 32px 32px, 100% 100%;
-    position: relative;
+    padding: 6rem 2rem 8rem;
+    background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 70%),
+        #FFFFFF;
+    overflow: hidden;
 }
 
 .container {
@@ -15,31 +13,33 @@
 
 .header {
     text-align: center;
-    margin-bottom: 4rem;
+    margin-bottom: 5rem;
 }
 
 .label {
     display: inline-flex;
     padding: 0.5rem 1.25rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
     color: #6366F1;
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(99, 102, 241, 0.08);
     border-radius: 100px;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
 }
 
 .title {
-    font-size: 3.25rem;
+    font-size: 3.5rem;
     font-weight: 800;
     line-height: 1.1;
     color: #0F172A;
-    letter-spacing: -0.02em;
-    margin: 0 0 1.25rem;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
 }
 
 .gradient {
-    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -47,147 +47,309 @@
 
 .subtitle {
     font-size: 1.25rem;
-    line-height: 1.7;
+    line-height: 1.6;
     color: #64748B;
-    max-width: 700px;
-    margin: 0 auto !important;
-    text-align: center !important;
+    max-width: 650px;
+    margin: 0 auto;
 }
 
-/* Grid Layout */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-}
-
-.card {
+/* macOS Window Module */
+.windowContainer {
     position: relative;
-    background: white;
-    border-radius: 24px;
+    background: #0F172A;
+    border-radius: 32px;
+    box-shadow:
+        0 40px 100px -20px rgba(0, 0, 0, 0.4),
+        0 20px 50px -10px rgba(0, 0, 0, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
-    border: 1px solid rgba(99, 102, 241, 0.08);
-    box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.04),
-        0 0 0 1px rgba(99, 102, 241, 0.05);
-    transition: all 0.4s ease;
+    width: 100%;
+    aspect-ratio: 16/9;
+    display: flex;
+    flex-direction: column;
 }
 
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 40%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.08), transparent);
-    pointer-events: none;
-    transition: left 0.8s ease;
-}
-
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow:
-        0 20px 60px rgba(99, 102, 241, 0.15),
-        0 0 0 1px rgba(99, 102, 241, 0.1);
-    border-color: rgba(99, 102, 241, 0.2);
-}
-
-.card:hover::before {
-    left: 100%;
-}
-
-.cardInner {
-    padding: 2.25rem;
-}
-
-.iconWrapper {
-    width: 56px;
-    height: 56px;
+.macOSFrame {
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-}
-
-.icon {
-    font-size: 1.5rem;
-}
-
-.cardTitle {
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #0F172A;
-    margin: 0 0 0.75rem;
-}
-
-.cardDescription {
-    font-size: 1rem;
-    line-height: 1.7;
-    color: #64748B;
-    margin: 0 0 1.75rem;
-}
-
-.imagePreview {
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     position: relative;
-    border-radius: 16px;
-    overflow: hidden;
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    aspect-ratio: 16/10;
 }
 
-.imagePreview img {
+.trafficLights {
+    display: flex;
+    gap: 8px;
+}
+
+.red,
+.yellow,
+.green {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.red {
+    background: #FF5F57;
+}
+
+.yellow {
+    background: #FFBD2E;
+}
+
+.green {
+    background: #28C840;
+}
+
+.windowTitle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.05em;
+}
+
+.windowBody {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.slideContent {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+/* Edge-to-Edge Background Image */
+.heroImageWrapper {
+    position: absolute;
+    inset: 0;
+    background: #020617;
+    z-index: 1;
+}
+
+.heroImage {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    opacity: 0.8;
 }
 
-.card:hover .imagePreview img {
-    transform: scale(1.05);
+.imageOverlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(15, 23, 42, 0.4) 100%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, transparent 40%, transparent 60%, rgba(15, 23, 42, 0.8) 100%);
+    z-index: 2;
 }
 
-/* Responsive */
-@media (max-width: 992px) {
-    .grid {
+/* Floating Info Overlays */
+.contentOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.topOverlay {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.centerOverlay {
+    align-self: center;
+    text-align: center;
+    max-width: 600px;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(24px);
+    padding: 40px;
+    border-radius: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+}
+
+.bottomOverlay {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Left Panel: Candidate */
+.candidateCard {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.candidateText {
+    display: flex;
+    flex-direction: column;
+}
+
+.candidateName {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: white;
+}
+
+.candidateRole {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Center Column: Feature Info */
+.badge {
+    display: inline-flex;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 100px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.featureTitle {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.03em;
+    margin-bottom: 12px;
+}
+
+.featureDesc {
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+/* Right Panel: Metrics */
+.metricBlock {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px 24px;
+    min-width: 220px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.metricHeader {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.metricLabel {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.metricValue {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.01em;
+}
+
+.trendLineWrapper {
+    height: 24px;
+    width: 100%;
+}
+
+.trendSvg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* Pagination */
+.pagination {
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.dot {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.4s ease;
+}
+
+.activeDot {
+    background: #6366F1;
+    width: 60px;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1100px) {
+    .slideContent {
         grid-template-columns: 1fr;
-        max-width: 600px;
+        padding: 30px;
+        gap: 24px;
+        overflow-y: auto;
+    }
+
+    .windowContainer {
+        aspect-ratio: auto;
+        min-height: 700px;
+    }
+
+    .sideInfo,
+    .metricsPanel {
+        justify-content: center;
+    }
+
+    .candidateCard,
+    .metricBlock {
+        max-width: 400px;
         margin: 0 auto;
     }
 }
 
 @media (max-width: 768px) {
-    .features {
-        padding: 5rem 1rem;
-    }
-
     .title {
-        font-size: 2.25rem;
+        font-size: 2.5rem;
     }
 
-    .subtitle {
-        font-size: 1.0625rem;
+    .windowContainer {
+        border-radius: 24px;
     }
 
-    .cardInner {
-        padding: 1.75rem;
-    }
-}
-
-@media (max-width: 420px) {
-    .title {
-        font-size: 1.875rem;
-    }
-
-    .iconWrapper {
-        width: 48px;
-        height: 48px;
-    }
-
-    .cardInner {
-        padding: 1.5rem;
+    .windowBody {
+        padding-bottom: 20px;
     }
 }

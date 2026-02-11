@@ -1,6 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { container, item, cardHover, sectionReveal } from '../animations/animations';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import styles from './Features.module.css';
 
 // Import assets from existing landing assets folder
@@ -11,97 +10,180 @@ import recruiterReportImg from '../../landing/assets/recruiter-report-1200x700.w
 
 const features = [
     {
-        icon: '🎯',
+        id: 'passport',
         title: 'AI Talent Passport',
         description: 'Candidates build verified skill portfolios through AI assessments. Recruiters access portable credentials with confidence.',
         image: passportImg,
-        color: '#0090FF'
+        color: '#0090FF',
+        metric: {
+            value: '98%',
+            label: 'Match Accuracy',
+            trend: [20, 40, 35, 50, 45, 60, 55, 70]
+        }
     },
     {
-        icon: '🛡️',
+        id: 'proctoring',
         title: 'Advanced Proctoring',
-        description: 'AI monitors face presence, detects multiple people, tracks tab switching, and records violations with timestamps for review.',
+        description: 'AI monitors face presence, detects multiple people, tracks tab switching, and records violations with timestamps.',
         image: workSampleImg,
-        color: '#10B981'
+        color: '#10B981',
+        metric: {
+            value: '0.2s',
+            label: 'Threat Detection',
+            trend: [60, 50, 55, 40, 45, 30, 35, 20]
+        }
     },
     {
-        icon: '💻',
+        id: 'code',
         title: 'Live Code Evaluation',
         description: 'In-browser Monaco Editor with real execution in 9+ languages including Python, Java, C++, Go, and TypeScript.',
         image: codeIdeImg,
-        color: '#6366F1'
+        color: '#6366F1',
+        metric: {
+            value: '94/100',
+            label: 'Code Quality',
+            trend: [30, 45, 40, 60, 55, 75, 70, 85]
+        }
     },
     {
-        icon: '🤖',
+        id: 'interview',
         title: 'Adaptive AI Interviews',
-        description: 'Dynamic questions that adapt to candidate responses. Fair assessments with detailed performance insights for recruiters.',
+        description: 'Dynamic questions that adapt to candidate responses. Fair assessments with detailed performance insights.',
         image: recruiterReportImg,
-        color: '#F59E0B'
+        color: '#F59E0B',
+        metric: {
+            value: '12ms',
+            label: 'Response Latency',
+            trend: [50, 45, 48, 30, 25, 15, 10, 12]
+        }
     }
 ];
 
+const FeatureSlider = () => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+
+    const nextSlide = useCallback(() => {
+        setCurrentIndex((prev) => (prev + 1) % features.length);
+    }, []);
+
+    useEffect(() => {
+        if (isPaused) return;
+        const interval = setInterval(nextSlide, 4500);
+        return () => clearInterval(interval);
+    }, [isPaused, nextSlide]);
+
+    const activeFeature = features[currentIndex];
+
+    // Spline-like calm easing
+    const transition = {
+        duration: 0.8,
+        ease: [0.4, 0, 0.2, 1]
+    };
+
+    return (
+        <div
+            className={styles.windowContainer}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+        >
+            {/* macOS Window Frame */}
+            <div className={styles.macOSFrame}>
+                <div className={styles.trafficLights}>
+                    <div className={styles.red}></div>
+                    <div className={styles.yellow}></div>
+                    <div className={styles.green}></div>
+                </div>
+                <div className={styles.windowTitle}>Feature Insights — Preview</div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className={styles.windowBody}>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeFeature.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={transition}
+                        className={styles.slideContent}
+                    >
+                        {/* Edge-to-Edge Background Image */}
+                        <div className={styles.heroImageWrapper}>
+                            <img src={activeFeature.image} alt={activeFeature.title} className={styles.heroImage} />
+                            <div className={styles.imageOverlay}></div>
+                        </div>
+
+                        {/* Floating Info Overlays */}
+                        <div className={styles.contentOverlay}>
+                            {/* Center: Feature Info */}
+                            <div className={styles.centerOverlay}>
+                                <div className={styles.badge} style={{ color: activeFeature.color, borderColor: `${activeFeature.color}40`, backgroundColor: `${activeFeature.color}15` }}>
+                                    Feature Overview
+                                </div>
+                                <h3 className={styles.featureTitle}>{activeFeature.title}</h3>
+                                <p className={styles.featureDesc}>{activeFeature.description}</p>
+                            </div>
+
+                            {/* Bottom Right: Metrics */}
+                            <div className={styles.bottomOverlay}>
+                                <div className={styles.metricBlock}>
+                                    <div className={styles.metricHeader}>
+                                        <span className={styles.metricLabel}>{activeFeature.metric.label}</span>
+                                        <span className={styles.metricValue}>{activeFeature.metric.value}</span>
+                                    </div>
+                                    <div className={styles.trendLineWrapper}>
+                                        <svg viewBox="0 0 100 30" className={styles.trendSvg}>
+                                            <motion.path
+                                                d={`M ${activeFeature.metric.trend.map((v, i) => `${i * 14.28},${30 - (v / 100) * 30}`).join(' L ')}`}
+                                                fill="none"
+                                                stroke={activeFeature.color}
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                initial={{ pathLength: 0 }}
+                                                animate={{ pathLength: 1 }}
+                                                transition={{ duration: 1, delay: 0.2 }}
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+
+            {/* Pagination */}
+            <div className={styles.pagination}>
+                {features.map((_, idx) => (
+                    <button
+                        key={idx}
+                        className={`${styles.dot} ${idx === currentIndex ? styles.activeDot : ''}`}
+                        onClick={() => setCurrentIndex(idx)}
+                        aria-label={`Slide ${idx + 1}`}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const Features = () => {
     return (
-        <section id="features" className={styles.features} aria-labelledby="features-heading">
+        <section id="features" className={styles.features}>
             <div className={styles.container}>
-                {/* Section Header */}
-                <motion.div
-                    className={styles.header}
-                    variants={sectionReveal}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, amount: 0.2 }}
-                >
-                    <span className={styles.label}>Features</span>
-                    <h2 id="features-heading" className={styles.title}>
-                        AI-powered platform to<br />
-                        <span className={styles.gradient}>match talent with opportunity</span>
+                <div className={styles.header}>
+                    <span className={styles.label}>Advanced Capabilities</span>
+                    <h2 className={styles.title}>
+                        Enterprise-grade <span className={styles.gradient}>Recruitment Intelligence</span>
                     </h2>
                     <p className={styles.subtitle}>
-                        Whether you're finding your next role or building your dream team,
-                        our AI-driven platform creates fair, efficient, and verified connections.
+                        Proprietary AI models precision-tuned for identifying elite engineering talent
+                        and building high-performance teams.
                     </p>
-                </motion.div>
+                </div>
 
-                {/* Feature Cards */}
-                <motion.div
-                    className={styles.grid}
-                    variants={container}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, amount: 0.1 }}
-                >
-                    {features.map((feature, index) => (
-                        <motion.div
-                            key={feature.title}
-                            className={styles.card}
-                            variants={item}
-                            initial="rest"
-                            whileHover="hover"
-                        >
-                            <motion.div
-                                className={styles.cardInner}
-                                variants={cardHover}
-                            >
-                                <div
-                                    className={styles.iconWrapper}
-                                    style={{ background: `${feature.color}15` }}
-                                >
-                                    <span className={styles.icon}>{feature.icon}</span>
-                                </div>
-                                <h3 className={styles.cardTitle}>{feature.title}</h3>
-                                <p className={styles.cardDescription}>{feature.description}</p>
-                                <div className={styles.imagePreview}>
-                                    <img
-                                        src={feature.image}
-                                        alt={`${feature.title} - Platform screenshot`}
-                                        loading="lazy"
-                                    />
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    ))}
-                </motion.div>
+                <FeatureSlider />
             </div>
         </section>
     );

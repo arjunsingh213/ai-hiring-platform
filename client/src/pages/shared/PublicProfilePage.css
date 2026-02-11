@@ -45,13 +45,39 @@
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
     border: 1px solid #E8EDF4;
     margin-bottom: 20px;
+    position: relative;
+}
+
+.profile-back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #1e293b;
+    transition: all 0.2s ease;
+}
+
+.profile-back-btn:hover {
+    transform: scale(1.1);
+    background: white;
+    color: #6366F1;
 }
 
 .profile-banner {
     height: 180px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6B8DD6 100%);
-    background-size: 200% 200%;
-    animation: gradientMove 8s ease infinite;
+    background-size: cover;
+    background-position: center;
     position: relative;
 }
 
@@ -88,7 +114,7 @@
     z-index: 2;
 }
 
-.profile-avatar {
+.public-profile-avatar {
     width: 120px;
     height: 120px;
     border-radius: 50%;
@@ -97,17 +123,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    position: relative;
     box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
 }
 
-.profile-avatar img {
+.public-profile-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 50%;
 }
 
-.profile-avatar span {
+.public-profile-avatar span {
     font-size: 48px;
     font-weight: 700;
     color: white;
@@ -1038,4 +1065,197 @@
         grid-template-columns: 1fr;
         gap: 8px;
     }
+
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .profile-page {
+    background-color: var(--bg-dark);
+}
+
+[data-theme="dark"] .profile-header-card,
+[data-theme="dark"] .content-card,
+[data-theme="dark"] .sidebar-card,
+[data-theme="dark"] .stat-box {
+    background: #1E293B;
+    /* Slate 800 */
+    border-color: #334155;
+    /* Slate 700 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Text Colors */
+[data-theme="dark"] .profile-name-block h1 {
+    color: #F8FAFC;
+    /* Slate 50 */
+}
+
+[data-theme="dark"] .profile-headline,
+[data-theme="dark"] .profile-company,
+[data-theme="dark"] .about-text,
+[data-theme="dark"] .profile-meta .meta-tag,
+[data-theme="dark"] .stat-label,
+[data-theme="dark"] .info-label,
+[data-theme="dark"] .detail-label,
+[data-theme="dark"] .job-company-name,
+[data-theme="dark"] .job-meta,
+[data-theme="dark"] .job-details p {
+    color: #94A3B8;
+    /* Slate 400 */
+}
+
+[data-theme="dark"] .content-card h3,
+[data-theme="dark"] .sidebar-card h4,
+[data-theme="dark"] .info-value,
+[data-theme="dark"] .detail-value,
+[data-theme="dark"] .job-content h4,
+[data-theme="dark"] .job-details h4,
+[data-theme="dark"] .author-name {
+    color: #E2E8F0;
+    /* Slate 200 */
+}
+
+[data-theme="dark"] .profile-company svg,
+[data-theme="dark"] .profile-meta svg {
+    color: #818CF8;
+    /* Indigo 400 */
+}
+
+/* Stats */
+[data-theme="dark"] .stat-box {
+    background: #0F172A;
+    /* Slate 900 */
+}
+
+[data-theme="dark"] .stat-box.highlight {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .stat-number {
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Tabs */
+[data-theme="dark"] .profile-tabs {
+    background: #0F172A;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .profile-tab {
+    color: #94A3B8;
+}
+
+[data-theme="dark"] .profile-tab:hover {
+    background: #1E293B;
+    color: #F8FAFC;
+}
+
+/* Item Lists */
+[data-theme="dark"] .info-item,
+[data-theme="dark"] .job-preview-item,
+[data-theme="dark"] .post-preview-item,
+[data-theme="dark"] .post-full-item,
+[data-theme="dark"] .job-full-item {
+    background: #0F172A;
+    border: 1px solid #334155;
+}
+
+[data-theme="dark"] .job-preview-item:hover,
+[data-theme="dark"] .job-full-item:hover {
+    background: #1E293B;
+    border-color: #6366F1;
+}
+
+[data-theme="dark"] .meta-tag {
+    background: #0F172A;
+    color: #94A3B8;
+    border: 1px solid #334155;
+}
+
+/* Buttons */
+[data-theme="dark"] .btn-secondary {
+    background: #0F172A;
+    border-color: #334155;
+    color: #F8FAFC;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    border-color: #818CF8;
+    color: #818CF8;
+}
+
+[data-theme="dark"] .link-btn {
+    color: #818CF8;
+}
+
+[data-theme="dark"] .empty-text {
+    color: #64748B;
+}
+
+/* ATP / Talent Score */
+[data-theme="dark"] .talent-card .talent-score {
+    color: #F8FAFC;
+}
+
+[data-theme="dark"] .talent-card .talent-max {
+    color: #64748B;
+}
+
+/* Edit Buttons */
+.edit-banner-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.edit-banner-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-2px);
+}
+
+.edit-avatar-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: #6366F1;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.edit-avatar-btn:hover {
+    transform: scale(1.1);
+    background: #4F46E5;
+}
+
+.edit-avatar-btn svg {
+    width: 16px;
+    height: 16px;
 }

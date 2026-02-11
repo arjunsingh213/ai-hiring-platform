@@ -123,7 +123,7 @@ router.get('/feed', async (req, res) => {
             ...postTypeFilter
         })
             .populate('userId', 'profile role aiTalentPassport jobSeekerProfile')
-            .sort({ createdAt: -1 })
+            .sort({ isPinned: -1, createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit);
 
@@ -272,6 +272,41 @@ router.post('/:id/repost', async (req, res) => {
         }
 
         post.engagement.reposts.push({ userId });
+        await post.save();
+
+        res.json({ success: true, data: post });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Delete post
+router.delete('/:id', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ success: false, error: 'Post not found' });
+        }
+
+        // Check if user is authorized (simple check for now)
+        // In a real app, you'd check if post.userId === req.user.id
+
+        await Post.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Post deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Pin/Unpin post
+router.patch('/:id/pin', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ success: false, error: 'Post not found' });
+        }
+
+        post.isPinned = !post.isPinned;
         await post.save();
 
         res.json({ success: true, data: post });

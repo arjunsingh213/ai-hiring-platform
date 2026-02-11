@@ -419,7 +419,11 @@ const InterviewResults = () => {
             {showFeedback && (
                 <FeedbackModal
                     featureId="domain-interview"
-                    onClose={() => setShowFeedback(false)}
+                    onClose={() => {
+                        setShowFeedback(false);
+                        localStorage.setItem(`feedback_domain_${interviewId}`, 'true');
+                        navigate('/jobseeker/jobs');
+                    }}
                     userId={localStorage.getItem('userId')}
                 />
             )}

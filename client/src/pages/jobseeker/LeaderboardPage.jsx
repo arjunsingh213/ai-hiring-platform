@@ -8,27 +8,26 @@ import './LeaderboardPage.css';
 
 const Icons = {
     trophy: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 9H4.5C3.67 9 3 8.33 3 7.5V4.5C3 3.67 3.67 3 4.5 3H6M18 9H19.5C20.33 9 21 8.33 21 7.5V4.5C21 3.67 20.33 3 19.5 3H18M6 3H18V10C18 13.31 15.31 16 12 16C8.69 16 6 13.31 6 10V3Z" />
             <path d="M12 16V21M8 21H16" />
         </svg>
     ),
     search: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />
         </svg>
     ),
     sparkle: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.4 7.2h7.6l-6.15 4.47 2.35 7.13-6.2-4.5-6.2 4.5 2.35-7.13-6.15-4.47h7.6z" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
     )
 };
 
 const Podium = ({ topCandidates, activeDomain }) => {
     // topCandidates should be top 3 [rank1, rank2, rank3]
-    // We reorder for layout: rank2, rank1, rank3
     const displayOrder = [topCandidates[1], topCandidates[0], topCandidates[2]];
 
     return (
@@ -36,20 +35,20 @@ const Podium = ({ topCandidates, activeDomain }) => {
             {displayOrder.map((cand, idx) => {
                 if (!cand) return <div key={idx} className="podium-spot empty" />;
                 const actualRank = displayOrder.indexOf(cand) === 0 ? 2 : (displayOrder.indexOf(cand) === 1 ? 1 : 3);
-                const rankClass = actualRank === 1 ? 'gold' : (actualRank === 2 ? 'silver' : 'bronze');
 
                 return (
                     <motion.div
                         key={cand._id}
-                        initial={{ opacity: 0, y: 50 }}
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: actualRank * 0.1, duration: 0.6 }}
-                        className={`podium-spot ${rankClass}`}
+                        transition={{
+                            delay: actualRank * 0.1,
+                            duration: 0.7,
+                            ease: [0.4, 0, 0.2, 1]
+                        }}
+                        className={`podium-spot rank-${actualRank}`}
                     >
                         <div className="avatar-wrapper">
-                            <div className="rank-crown">
-                                {actualRank === 1 ? Icons.sparkle : null}
-                            </div>
                             <div className="avatar">
                                 {cand.profile?.photo ? (
                                     <img src={cand.profile.photo} alt="" />
@@ -57,14 +56,12 @@ const Podium = ({ topCandidates, activeDomain }) => {
                                     <span>{cand.profile?.name?.charAt(0)}</span>
                                 )}
                             </div>
+                            <div className="rank-badge">{actualRank}</div>
                         </div>
                         <div className="info">
                             <h3 className="name">{cand.profile?.name || 'Top Candidate'}</h3>
-                            <span className="score">{cand.aiTalentPassport?.talentScore}% Score</span>
-                            <span className="domain-label">{(activeDomain.name || activeDomain).toUpperCase()}</span>
-                        </div>
-                        <div className="pedestal">
-                            <span className="rank-num">{actualRank}</span>
+                            <span className="score">{cand.aiTalentPassport?.talentScore}%</span>
+                            <span className="domain-label">{(activeDomain.name || activeDomain)}</span>
                         </div>
                     </motion.div>
                 );
@@ -168,13 +165,14 @@ const LeaderboardPage = () => {
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
                     className="headline-group"
                 >
                     <div className="trophy-badge">
                         {Icons.trophy}
                     </div>
                     <h1>Neural Talent Spotlight</h1>
-                    <p>Verified ranking of top talent based on AI assessment engine metrics.</p>
+                    <p>Verified ranking of top talent across neural assessment metrics.</p>
                 </motion.div>
             </div>
 
@@ -233,14 +231,18 @@ const LeaderboardPage = () => {
                                         <motion.tr
                                             key={candidate._id}
                                             layout
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ delay: index * 0.03 }}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.98 }}
+                                            transition={{
+                                                delay: index * 0.04,
+                                                duration: 0.6,
+                                                ease: [0.4, 0, 0.2, 1]
+                                            }}
                                             className="talent-row"
                                         >
                                             <td className="rank-col">
-                                                <span className="rank-bubble">#{index + 4}</span>
+                                                <span className="rank-number">{index + 4}</span>
                                             </td>
                                             <td className="candidate-col">
                                                 <div className="profile-mini">
@@ -268,7 +270,7 @@ const LeaderboardPage = () => {
                                                         className="metric-fill"
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${candidate.aiTalentPassport?.talentScore || 0}%` }}
-                                                        transition={{ duration: 1, ease: 'easeOut' }}
+                                                        transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] }}
                                                     />
                                                 </div>
                                             </td>

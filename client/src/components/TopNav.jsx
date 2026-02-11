@@ -14,6 +14,9 @@ const TopNav = () => {
 
     useEffect(() => {
         fetchUser();
+        const handleUpdate = () => fetchUser();
+        window.addEventListener('profile-updated', handleUpdate);
+        return () => window.removeEventListener('profile-updated', handleUpdate);
     }, []);
 
     const fetchUser = async () => {

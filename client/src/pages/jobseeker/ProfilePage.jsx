@@ -120,6 +120,7 @@ const ProfilePage = () => {
             setIsEditing(false);
             setActiveSection(null);
             await fetchUser();
+            window.dispatchEvent(new CustomEvent('profile-updated'));
             toast.success('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
@@ -165,6 +166,7 @@ const ProfilePage = () => {
             setShowCropModal(false);
             setSelectedImage(null);
             await fetchUser();
+            window.dispatchEvent(new CustomEvent('profile-updated'));
             toast.success(`${cropType === 'banner' ? 'Banner' : 'Photo'} uploaded successfully!`);
         } catch (error) {
             console.error('Error uploading:', error);

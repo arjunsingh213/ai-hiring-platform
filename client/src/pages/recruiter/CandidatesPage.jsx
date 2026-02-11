@@ -153,7 +153,12 @@ const CandidatesPage = () => {
                 {selectedCandidate ? (
                     <>
                         <div className="job-header">
-                            <div className="company-logo">
+                            <div
+                                className="company-logo"
+                                onClick={() => navigate(`/profile/${selectedCandidate.userId || selectedCandidate._id}`)}
+                                style={{ cursor: 'pointer' }}
+                                title="View Profile"
+                            >
                                 {selectedCandidate.photo ? (
                                     <img src={selectedCandidate.photo} alt={selectedCandidate.name} style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover' }} />
                                 ) : (
@@ -165,7 +170,13 @@ const CandidatesPage = () => {
                                 )}
                             </div>
                             <div className="job-title-section">
-                                <h1>{selectedCandidate.name}</h1>
+                                <h1
+                                    onClick={() => navigate(`/profile/${selectedCandidate.userId || selectedCandidate._id}`)}
+                                    style={{ cursor: 'pointer' }}
+                                    title="View Profile"
+                                >
+                                    {selectedCandidate.name}
+                                </h1>
                                 <p className="company-info">
                                     {selectedCandidate.profession} • Applied to: {selectedCandidate.jobTitle}
                                 </p>

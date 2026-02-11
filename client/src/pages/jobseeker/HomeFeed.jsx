@@ -7,6 +7,7 @@ import UserProfileLink from '../../components/UserProfileLink';
 import TopCandidatesSidebar from '../../components/TopCandidatesSidebar';
 import { CardSkeleton } from '../../components/Skeleton';
 import FeedbackModal from '../../components/FeedbackModal';
+import SparklineChart from '../../components/SparklineChart';
 import './HomeFeed.css';
 
 // SVG Icons Component
@@ -87,6 +88,30 @@ const Icons = {
             <path d="M8 17C8 15.3431 9.79086 14 12 14C14.2091 14 16 15.3431 16 17" stroke="currentColor" strokeWidth="1.5" />
             <path d="M15 6H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
+    ),
+    more: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="19" r="1" />
+        </svg>
+    ),
+    trash: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+        </svg>
+    ),
+    pin: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+            <circle cx="12" cy="10" r="3" />
+        </svg>
+    ),
+    link: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+        </svg>
     )
 };
 
@@ -112,16 +137,13 @@ const HomeFeed = () => {
     const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [jobsLoading, setJobsLoading] = useState(false);
     const [showFeedback, setShowFeedback] = useState(false);
+    const [activePostMenu, setActivePostMenu] = useState(null); // ID of the post whose menu is open
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
 
-    useEffect(() => {
-        fetchUser();
-        fetchActivities();
-        fetchQuickStats();
-        fetchJobs(); // Call fetchJobs here
-    }, [activeTab]);
 
+
+    // Define data fetching functions
     const fetchJobs = async () => {
         setJobsLoading(true);
         try {
@@ -142,10 +164,9 @@ const HomeFeed = () => {
                 const userData = response.data?.data || response.data;
                 setUser(userData);
             }
-            fetchJobs();
+            // fetchJobs(); // Called in separate effect to avoid double fetching or dependency issues
         } catch (error) {
             console.error('Error fetching user:', error);
-            fetchJobs();
         }
     };
 
@@ -159,14 +180,10 @@ const HomeFeed = () => {
             setActivities([]);
         } finally {
             setLoading(false);
-
-            // Trigger feedback for home feed
-            if (userId && !localStorage.getItem(`feedback_home_${userId}`)) {
-                setShowFeedback(true);
-                localStorage.setItem(`feedback_home_${userId}`, 'true');
-            }
         }
     };
+
+
 
     // Fetch real stats from API
     const fetchQuickStats = async () => {
@@ -191,6 +208,31 @@ const HomeFeed = () => {
         }
     };
 
+    // Initial data fetch
+    useEffect(() => {
+        fetchUser();
+        fetchJobs();
+        fetchQuickStats();
+
+        const handleUpdate = () => {
+            fetchUser();
+            fetchQuickStats();
+        };
+        window.addEventListener('profile-updated', handleUpdate);
+        window.addEventListener('user-updated', handleUpdate);
+        return () => {
+            window.removeEventListener('profile-updated', handleUpdate);
+            window.removeEventListener('user-updated', handleUpdate);
+        };
+    }, [userId]);
+
+    // Fetch activities when tab or user changes
+    useEffect(() => {
+        if (user) {
+            fetchActivities();
+        }
+    }, [activeTab, user]);
+
     const handleUpvote = async (postId) => {
         try {
             await api.post(`/posts/${postId}/like`, { userId });
@@ -199,6 +241,19 @@ const HomeFeed = () => {
             console.error('Error upvoting:', error);
         }
     };
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const handleScroll = () => {
+            if (window.scrollY > 300) {
+                setHasScrolled(true);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [userId]);
 
     const handleShare = async (postId) => {
         try {
@@ -219,6 +274,53 @@ const HomeFeed = () => {
             toast.error(error.response?.data?.error || 'Failed to join challenge');
         }
     };
+
+    const handleDeletePost = async (postId) => {
+        if (!window.confirm('Are you sure you want to delete this post?')) return;
+        try {
+            await api.delete(`/posts/${postId}`);
+            setActivities(activities.filter(a => a._id !== postId));
+            toast.success('Post deleted');
+            setActivePostMenu(null);
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            toast.error('Failed to delete post');
+        }
+    };
+
+    const handlePinPost = async (postId) => {
+        try {
+            const res = await api.patch(`/posts/${postId}/pin`);
+            const updatedPost = res.data?.data || res.data;
+            setActivities(activities.map(a => a._id === postId ? { ...a, isPinned: updatedPost.isPinned } : a));
+            toast.success(updatedPost.isPinned ? 'Post pinned to top' : 'Post unpinned');
+            setActivePostMenu(null);
+        } catch (error) {
+            console.error('Error pinning post:', error);
+            toast.error('Failed to update pin status');
+        }
+    };
+
+    const handleCopyLink = async (postId) => {
+        try {
+            await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
+            toast.success('Link copied to clipboard!');
+            setActivePostMenu(null);
+        } catch (error) {
+            toast.error('Failed to copy link');
+        }
+    };
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (activePostMenu && !e.target.closest('.post-menu-container')) {
+                setActivePostMenu(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [activePostMenu]);
 
     const addSkill = () => {
         if (skillInput.trim() && !achievementForm.skills.includes(skillInput.trim())) {
@@ -362,11 +464,20 @@ const HomeFeed = () => {
                 {/* Card Header */}
                 <div className="activity-header">
                     <div className="activity-user">
-                        <div className="activity-avatar">
+                        <div
+                            className="activity-avatar"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const userId = activity.userId?._id || activity.userId;
+                                if (userId) navigate(`/profile/${userId}`);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                            title="View Profile"
+                        >
                             {activity.userId?.profile?.photo ? (
                                 <img src={activity.userId.profile.photo} alt="" />
                             ) : (
-                                <div className="avatar-placeholder">
+                                <div className="avatar-placeholder premium">
                                     {activity.userId?.profile?.name?.charAt(0) || 'U'}
                                 </div>
                             )}
@@ -384,6 +495,38 @@ const HomeFeed = () => {
                         </div>
                     </div>
                     <span className="activity-time">{getTimeAgo(activity.createdAt)}</span>
+
+                    {/* Three-dot menu */}
+                    <div className="post-menu-container">
+                        <button
+                            className="post-menu-trigger"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setActivePostMenu(activePostMenu === activity._id ? null : activity._id);
+                            }}
+                        >
+                            {Icons.more}
+                        </button>
+
+                        {activePostMenu === activity._id && (
+                            <div className="post-options-dropdown" onClick={(e) => e.stopPropagation()}>
+                                {(activity.userId?._id === userId || activity.userId === userId) && (
+                                    <button className="post-option delete" onClick={() => handleDeletePost(activity._id)}>
+                                        {Icons.trash}
+                                        <span>Delete Post</span>
+                                    </button>
+                                )}
+                                <button className={`post-option ${activity.isPinned ? 'pinned' : ''}`} onClick={() => handlePinPost(activity._id)}>
+                                    {Icons.pin}
+                                    <span>{activity.isPinned ? 'Unpin Post' : 'Pin Post'}</span>
+                                </button>
+                                <button className="post-option" onClick={() => handleCopyLink(activity._id)}>
+                                    {Icons.link}
+                                    <span>Copy Link</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Card Content */}
@@ -681,6 +824,7 @@ const HomeFeed = () => {
                 </div>
             </div>
 
+
             {/* Tabs */}
             <div className="activity-tabs">
                 <button
@@ -701,63 +845,60 @@ const HomeFeed = () => {
                 />
             </div>
 
-            {/* Quick Stats Row - Dashboard Summary */}
+            {/* Quick Stats Row */}
             <div className="quick-stats-row">
                 <div className="quick-stat-card" onClick={() => navigate('/jobseeker/jobs?tab=applied')}>
                     <div className="quick-stat-icon applications">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
                         </svg>
                     </div>
                     <div className="quick-stat-content">
-                        <span className="quick-stat-number">
-                            {quickStats.applications}
-                        </span>
+                        <span className="quick-stat-number">{quickStats.applications}</span>
                         <span className="quick-stat-label">Applications</span>
                     </div>
                 </div>
 
                 <div className="quick-stat-card" onClick={() => navigate('/jobseeker/interviews')}>
                     <div className="quick-stat-icon interviews">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <rect x="2" y="2" width="20" height="8" rx="2" />
+                            <rect x="2" y="14" width="20" height="8" rx="2" />
+                            <line x1="6" y1="6" x2="6" y2="6.01" />
+                            <line x1="6" y1="18" x2="6" y2="18.01" />
                         </svg>
                     </div>
                     <div className="quick-stat-content">
-                        <span className="quick-stat-number">
-                            {quickStats.interviews}
-                        </span>
+                        <span className="quick-stat-number">{quickStats.interviews}</span>
                         <span className="quick-stat-label">Interviews</span>
                     </div>
                 </div>
 
-                <div className="quick-stat-card">
+                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/profile')}>
                     <div className="quick-stat-icon views">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                         </svg>
                     </div>
                     <div className="quick-stat-content">
-                        <span className="quick-stat-number">
-                            {quickStats.profileViews || user?.profileViews || 0}
-                        </span>
+                        <span className="quick-stat-number">{quickStats.profileViews}</span>
                         <span className="quick-stat-label">Profile Views</span>
                     </div>
                 </div>
 
-                <div className="quick-stat-card" onClick={() => navigate('/jobseeker/profile?tab=atp')}>
+                <div className="quick-stat-card highlighted" onClick={() => navigate('/jobseeker/profile?tab=talent-passport')}>
                     <div className="quick-stat-icon matches">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                            <path d="M22 4L12 14.01l-3-3" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
                     </div>
                     <div className="quick-stat-content">
-                        <span className="quick-stat-number">
-                            {user?.aiTalentPassport?.talentScore || 0}
-                        </span>
+                        <span className="quick-stat-number">{user?.aiTalentPassport?.talentScore || 0}</span>
                         <span className="quick-stat-label">Talent Score</span>
                     </div>
                 </div>
@@ -942,6 +1083,8 @@ const HomeFeed = () => {
                 </aside>
             </div>
 
+            {/* Scroll and dwell time tracking for engagement-based feedback */}
+
             {showFeedback && (
                 <FeedbackModal
                     featureId="home-feed"
@@ -1076,6 +1219,7 @@ const HomeFeed = () => {
                                                 placeholder={achievementForm.type === 'challenge' ? "Describe the challenge and what participants need to do..." : "Tell others about your achievement..."}
                                                 rows="3"
                                                 value={achievementForm.description}
+
                                                 onChange={(e) => setAchievementForm({ ...achievementForm, description: e.target.value })}
                                             />
                                         </div>

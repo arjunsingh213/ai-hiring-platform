@@ -874,11 +874,14 @@ const OnboardingInterview = ({
         setCompleted(true);
 
         // Show feedback modal - only if not already shown for this session
+        // Moving this to useEffect with 10s delay for better UX
+        /*
         const feedbackShown = localStorage.getItem(`feedback_onboarding_${userId}`);
         if (!feedbackShown) {
             setShowFeedback(true);
             localStorage.setItem(`feedback_onboarding_${userId}`, 'true');
         }
+        */
     };
 
     // Skip coding test

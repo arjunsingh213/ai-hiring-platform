@@ -381,7 +381,16 @@ const RecruiterApplicationsPage = () => {
                                 className={`applicant-item card ${selectedApplicant === item ? 'active' : ''}`}
                                 onClick={() => setSelectedApplicant(item)}
                             >
-                                <div className="applicant-avatar">
+                                <div
+                                    className="applicant-avatar"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const userId = item.applicant?.userId?._id || item.applicant?.userId;
+                                        if (userId) navigate(`/profile/${userId}`);
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                    title="View Profile"
+                                >
                                     {photo ? (
                                         <img src={photo} alt={name} />
                                     ) : (
@@ -439,7 +448,15 @@ const RecruiterApplicationsPage = () => {
                             <>
                                 {/* Header */}
                                 <div className="applicant-header card">
-                                    <div className="header-left">
+                                    <div
+                                        className="header-left"
+                                        style={{ cursor: 'pointer' }}
+                                        title="View Full Profile"
+                                        onClick={() => {
+                                            const userId = selectedApplicant.applicant?.userId?._id || selectedApplicant.applicant?.userId;
+                                            if (userId) navigate(`/profile/${userId}`);
+                                        }}
+                                    >
                                         <div className="large-avatar">
                                             {photo ? (
                                                 <img src={photo} alt={name} />

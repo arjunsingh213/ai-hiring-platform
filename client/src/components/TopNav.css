@@ -2,8 +2,7 @@
 .top-nav {
     position: fixed;
     top: 16px;
-    left: 270px;
-    /* Aligned with sidebar */
+    left: calc(var(--sidebar-width, 240px) + 24px);
     right: 16px;
     height: 58px;
     background: var(--glass-bg);
