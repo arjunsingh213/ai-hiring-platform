@@ -1371,6 +1371,8 @@
 @media (max-width: 768px) {
     .feed-layout {
         grid-template-columns: 1fr !important;
+        align-items: stretch !important;
+        /* Ensure content stretches horizontally */
     }
 
     .feed-sidebar {
@@ -1379,20 +1381,30 @@
 
     .activity-content-area {
         padding-right: 0 !important;
+        width: 100% !important;
+    }
+
+    .activities-list {
+        width: 100% !important;
+        align-items: stretch !important;
     }
 }
 
 @media (max-width: 640px) {
     .activity-feed {
-        padding: 0 4px 30px;
-        /* Reduced from 12px to 4px for maximum width */
+        padding: 0 4px 30px !important;
+        /* Minimal side padding */
+        width: 100% !important;
     }
 
     .activity-feed-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
+        padding: 16px 12px !important;
     }
+
+    /* ... rest of existing overrides ... */
 
     .activity-feed-header h1 {
         font-size: 1.65rem;
@@ -1885,8 +1897,11 @@
 /* Tablet (768px) */
 @media (max-width: 768px) {
     .activity-feed {
-        padding: 16px 12px 0;
+        padding: 16px 0 0 !important;
+        /* Remove large side padding */
     }
+
+    /* ... rest of existing overrides ... */
 
     .activity-feed-header h1 {
         font-size: 1.5rem;
@@ -1949,7 +1964,8 @@
 /* Mobile (480px) */
 @media (max-width: 480px) {
     .activity-feed {
-        padding: 12px 8px 0;
+        padding: 12px 0 0 !important;
+        /* Zero side padding */
     }
 
     .activity-feed-header {
