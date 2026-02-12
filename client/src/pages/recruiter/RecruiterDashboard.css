@@ -25,21 +25,7 @@
     }
 }
 
-@media (max-width: 768px) {
-    .recruiter-main {
-        margin-left: 0;
-        margin-top: 80px;
-        margin-bottom: 80px;
-        padding: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .recruiter-main {
-        margin-top: 74px;
-        padding: 12px;
-    }
-}
+/* Mobile media queries removed - now managed globally in index.css */
 
 @keyframes fadeUp {
     from {

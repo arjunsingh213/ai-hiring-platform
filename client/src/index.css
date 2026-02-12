@@ -886,8 +886,8 @@ textarea.input {
   .dashboard-main,
   .recruiter-main {
     margin-left: 0 !important;
-    padding: 85px 4px 100px 4px !important;
-    /* Reduced from 8px to 4px */
+    padding: 72px 4px 96px 4px !important;
+    /* 72px top clears TopNav, 96px bottom clears MobileNav */
     min-height: 100vh;
     width: 100%;
   }
