@@ -870,6 +870,71 @@ textarea.input {
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
   }
+
+  /* Global Layout Overrides for Mobile Nav */
+  .sidebar,
+  .recruiter-sidebar {
+    display: none !important;
+  }
+
+  .top-nav {
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+  }
+
+  .dashboard-main,
+  .recruiter-main {
+    margin-left: 0 !important;
+    padding: 85px 8px 100px 8px !important;
+    /* Reduced from 15px to 8px for more space */
+    min-height: 100vh;
+    width: 100%;
+    /* Ensure it fills width */
+  }
+
+  .activity-feed-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 15px !important;
+  }
+
+  .header-actions {
+    width: 100% !important;
+    display: flex !important;
+    gap: 10px !important;
+  }
+
+  .header-actions button {
+    flex: 1 !important;
+    font-size: 0.8rem !important;
+    padding: 8px !important;
+  }
+
+  .quick-stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .feed-layout {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .feed-sidebar {
+    display: none !important;
+    /* Hide right sidebar on mobile to prioritize feed */
+  }
+
+  .profile-grid-container {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .profile-sidebar {
+    width: 100% !important;
+    position: static !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════

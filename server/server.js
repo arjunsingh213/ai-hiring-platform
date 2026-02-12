@@ -40,7 +40,6 @@ app.use(cors({
         if (isAllowed) {
             callback(null, true);
         } else {
-            console.log('CORS blocked:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -109,6 +108,8 @@ const codeExecutionRoutes = require('./routes/codeExecutionRoutes');
 const challengeRoutes = require('./routes/challengeRoutes');
 const adminRoutes = require('./routes/adminRoutes'); // Added adminRoutes
 const adminSetupRoutes = require('./routes/adminSetup'); // Added adminSetupRoutes
+const skillNodeRoutes = require('./routes/skillNodeRoutes');
+const challengeAdminRoutes = require('./routes/challengeAdminRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', authOAuthRoutes); // OAuth routes
@@ -138,6 +139,12 @@ app.use('/api/admin', adminRoutes);
 
 // Admin Setup (for Vercel deployments - protected by secret)
 app.use('/api/admin-setup', adminSetupRoutes);
+
+// Skill Nodes
+app.use('/api/skill-nodes', skillNodeRoutes);
+
+// Challenge Admin
+app.use('/api/admin/challenges', challengeAdminRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

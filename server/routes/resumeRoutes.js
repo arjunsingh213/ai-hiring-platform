@@ -166,6 +166,83 @@ router.post('/upload', userAuth, upload.single('resume'), async (req, res) => {
             data: resume,
             message: 'Resume uploaded and analyzed successfully'
         });
+
+        // BACKGROUND: Create SkillNodes from parsed data
+        // We do this in background (after response theoretically, but here await is fine for safety)
+        try {
+            const SkillNode = require('../models/SkillNode');
+            const { classifySkill } = require('./skillNodeRoutes'); // Import utility
+
+            const skillsToSync = new Map();
+
+            // 1. programmingLanguages
+            if (parsedData.skillCategories.programmingLanguages) {
+                parsedData.skillCategories.programmingLanguages.forEach(s => {
+                    const name = typeof s === 'string' ? s : s.name;
+                    if (name) skillsToSync.set(name.toLowerCase(), { name, domain: 'Software Engineering' });
+                });
+            }
+            // 2. frameworks
+            if (parsedData.skillCategories.frameworks) {
+                parsedData.skillCategories.frameworks.forEach(s => {
+                    const name = typeof s === 'string' ? s : s.name;
+                    if (name) skillsToSync.set(name.toLowerCase(), { name, domain: 'Software Engineering' });
+                });
+            }
+            // 3. databases
+            if (parsedData.skillCategories.databases) {
+                parsedData.skillCategories.databases.forEach(s => {
+                    const name = typeof s === 'string' ? s : s.name;
+                    if (name) skillsToSync.set(name.toLowerCase(), { name, domain: 'Software Engineering' });
+                });
+            }
+            // 4. tools (Others)
+            if (parsedData.skillCategories.tools) {
+                parsedData.skillCategories.tools.forEach(s => {
+                    const name = typeof s === 'string' ? s : s.name;
+                    if (name) skillsToSync.set(name.toLowerCase(), { name, domain: 'Others' });
+                });
+            }
+            // 5. Flat skills list (if not categorised)
+            if (parsedData.skills && parsedData.skills.length > 0) {
+                parsedData.skills.forEach(s => {
+                    const name = typeof s === 'string' ? s : s.name;
+                    if (name && !skillsToSync.has(name.toLowerCase())) {
+                        skillsToSync.set(name.toLowerCase(), {
+                            name,
+                            domain: classifySkill ? classifySkill(name) : 'Others'
+                        });
+                    }
+                });
+            }
+
+            for (const [key, skillData] of skillsToSync) {
+                try {
+                    await SkillNode.findOneAndUpdate(
+                        { userId, skillNameNormalized: key },
+                        {
+                            $setOnInsert: {
+                                userId,
+                                skillName: skillData.name,
+                                skillNameNormalized: key,
+                                domainCategory: skillData.domain,
+                                level: 0,
+                                xp: 0,
+                                source: 'resume',
+                                verifiedStatus: 'not_verified'
+                            }
+                        },
+                        { upsert: true, new: true }
+                    );
+                } catch (err) {
+                    console.error(`Status: Skipped duplicate skill ${key}`);
+                }
+            }
+            console.log(`[Resume] Synced ${skillsToSync.size} skill nodes for user ${userId}`);
+
+        } catch (skillErr) {
+            console.error('[Resume] SkillNode creation failed:', skillErr);
+        }
     } catch (error) {
         console.error('[Resume] Upload error:', error);
         res.status(500).json({ success: false, error: error.message });

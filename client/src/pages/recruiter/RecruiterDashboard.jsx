@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import RecruiterSidebar from '../../components/recruiter/RecruiterSidebar';
+import MobileNav from '../../components/MobileNav';
 import TopNav from '../../components/TopNav';
 import RecruiterHome from './RecruiterHome';
 // CandidatesPage removed - merged into RecruiterApplicationsPage (Talent Pipeline)
@@ -45,6 +46,7 @@ const RecruiterDashboard = () => {
                     <Route path="settings" element={<RecruiterSettings />} />
                 </Routes>
             </div>
+            <MobileNav />
         </div>
     );
 };

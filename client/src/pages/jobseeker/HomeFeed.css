@@ -1368,9 +1368,24 @@
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
 
+@media (max-width: 768px) {
+    .feed-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .feed-sidebar {
+        display: none !important;
+    }
+
+    .activity-content-area {
+        padding-right: 0 !important;
+    }
+}
+
 @media (max-width: 640px) {
     .activity-feed {
-        padding: 0 12px 30px;
+        padding: 0 4px 30px;
+        /* Reduced from 12px to 4px for maximum width */
     }
 
     .activity-feed-header {
@@ -1390,11 +1405,14 @@
 
     .activity-tabs {
         padding: 4px;
+        width: 100% !important;
+        justify-content: space-around;
     }
 
     .tab-btn {
         padding: 10px 14px;
         font-size: 0.875rem;
+        flex: 1;
     }
 
     .activity-card {

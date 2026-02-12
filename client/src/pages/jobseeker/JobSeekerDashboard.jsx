@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from '../../components/jobseeker/Sidebar';
+import MobileNav from '../../components/MobileNav';
 import TopNav from '../../components/TopNav';
 import HomeFeed from './HomeFeed';
 import ProfilePage from './ProfilePage';
@@ -40,6 +41,7 @@ const JobSeekerDashboard = () => {
                     <Route path="settings" element={<SettingsPage />} />
                 </Routes>
             </div>
+            <MobileNav />
         </div>
     );
 };

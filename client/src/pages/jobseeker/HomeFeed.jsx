@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import UserProfileLink from '../../components/UserProfileLink';
 import TopCandidatesSidebar from '../../components/TopCandidatesSidebar';
+import ChallengesTab from '../../components/challenges/ChallengesTab';
 import { CardSkeleton } from '../../components/Skeleton';
 import FeedbackModal from '../../components/FeedbackModal';
 import SparklineChart from '../../components/SparklineChart';
@@ -839,9 +840,18 @@ const HomeFeed = () => {
                 >
                     Recruiter Feed
                 </button>
+                <button
+                    className={`tab-btn ${activeTab === 'challenges' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('challenges')}
+                >
+                    Challenges
+                </button>
                 <div
                     className="tab-indicator"
-                    style={{ transform: `translateX(${activeTab === 'recruiter' ? '100%' : '0'})` }}
+                    style={{
+                        width: '33.33%',
+                        transform: `translateX(${activeTab === 'jobseeker' ? '0' : activeTab === 'recruiter' ? '100%' : '200%'})`
+                    }}
                 />
             </div>
 
@@ -909,7 +919,9 @@ const HomeFeed = () => {
             <div className="feed-layout">
                 {/* Feed Content */}
                 <div className="activity-content-area">
-                    {loading ? (
+                    {activeTab === 'challenges' ? (
+                        <ChallengesTab />
+                    ) : loading ? (
                         <div className="loading-state skeleton-loading">
                             <CardSkeleton />
                             <CardSkeleton />

@@ -22,8 +22,8 @@ class AIService {
      * Parse resume text to structured data
      * Uses: Llama 3.2 3B (FREE)
      */
-    async parseResume(resumeText, options = {}) {
-        return this.openRouter.parseResume(resumeText, options);
+    async parseResume(resumeText, isHtml = false, options = {}) {
+        return this.openRouter.parseResume(resumeText, isHtml, options);
     }
 
     /**
