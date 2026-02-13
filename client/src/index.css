@@ -381,6 +381,14 @@ body {
   min-height: 100vh;
 }
 
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding-top: 72px;
+    padding-bottom: 96px;
+  }
+}
+
+
 /* Soft ambient background effect */
 body::before {
   content: '';

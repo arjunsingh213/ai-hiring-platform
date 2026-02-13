@@ -13,6 +13,23 @@
     overflow: hidden;
 }
 
+@media (max-width: 768px) {
+    .activity-feed {
+        padding-top: 72px;
+        padding-bottom: 96px;
+    }
+
+    .activity-feed-header {
+        margin-bottom: var(--spacing-md);
+        padding-bottom: var(--spacing-sm);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+    }
+}
+
+
 /* Header Refinement */
 .activity-feed-header {
     display: flex;
