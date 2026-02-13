@@ -143,10 +143,14 @@ const FeedbackModal = ({
 
     const handleSubmit = async () => {
         setSubmitting(true);
+        const ratingValues = Object.values(responses);
+        const averageRating = ratingValues.reduce((a, b) => a + b, 0) / (ratingValues.length || 1);
+
         try {
             await api.post('/feedback', {
                 featureId,
-                responses,
+                rating: Math.round(averageRating),
+                responses, // Sending detailed responses too in case backend wants to log them (schema might ignore it but it's safe)
                 insights: selectedInsights,
                 comment
             });

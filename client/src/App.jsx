@@ -77,6 +77,15 @@ const OAuthTokenHandler = ({ children }) => {
     }
   }, [location, navigate]);
 
+  // Check for token in URL parameters synchronously to prevent race conditions
+  // (ProtectedRoute would run before useEffect stores the token)
+  const params = new URLSearchParams(location.search);
+  const tokenParam = params.get('token');
+
+  if (tokenParam) {
+    return <LoadingFallback />;
+  }
+
   return children;
 };
 
