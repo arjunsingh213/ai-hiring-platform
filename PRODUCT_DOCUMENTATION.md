@@ -751,7 +751,7 @@ The AI Hiring Platform with AI Talent Passport addresses fundamental limitations
 |--------|----------|-------------|
 | POST | /api/auth/signup | Registration |
 | POST | /api/auth/login | Authentication |
-| POST | /api/resumes/upload | Resume upload |
+| POST | /api/resume/upload | Resume upload |
 | POST | /api/interviews/start | Start interview |
 | GET | /api/talent-passport/:userId | Get ATP |
 | POST | /api/jobs | Create job |

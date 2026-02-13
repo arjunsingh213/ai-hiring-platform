@@ -167,9 +167,9 @@ The platform uses a modern, premium design system:
 - `GET /api/users/role/jobseekers` - Get all job seekers
 
 ### Resumes
-- `POST /api/resumes/upload` - Upload & parse resume
-- `GET /api/resumes/:id` - Get resume
-- `GET /api/resumes/user/:userId` - Get user's resume
+- `POST /api/resume/upload` - Upload & parse resume
+- `GET /api/resume/:id` - Get resume
+- `GET /api/resume/user/:userId` - Get user's resume
 
 ### Interviews
 - `POST /api/interviews/start` - Start AI interview
