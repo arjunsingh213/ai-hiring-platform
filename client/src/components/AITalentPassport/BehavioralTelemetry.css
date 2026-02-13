@@ -1,0 +1,102 @@
+.atp-telemetry-container {
+    background: var(--atp-surface);
+    border: 1px solid var(--atp-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.atp-telemetry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    align-items: center;
+}
+
+.telemetry-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.telemetry-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--atp-text-main);
+    margin: 0;
+}
+
+.telemetry-subtitle {
+    font-size: 0.75rem;
+    color: var(--atp-text-muted);
+}
+
+.telemetry-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.telemetry-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--atp-border);
+}
+
+.telemetry-label {
+    font-size: 0.85rem;
+    color: var(--atp-text-muted);
+}
+
+.telemetry-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.telemetry-trait {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+}
+
+.telemetry-trait.good {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--atp-success);
+}
+
+.telemetry-trait.average {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--atp-warning);
+}
+
+.atp-proof-strip {
+    display: flex;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--atp-border);
+}
+
+.proof-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.proof-item.verified {
+    color: var(--atp-success);
+}
+
+@media (max-width: 768px) {
+    .atp-telemetry-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -27,6 +27,7 @@
     "mammoth": "^1.11.0",
     "mongoose": "^9.0.1",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.11",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
@@ -35,7 +36,7 @@
     "pdfjs-dist": "^3.11.174",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
-    "socket.io": "^4.8.1",
+    "socket.io": "^4.8.3",
     "speakeasy": "^2.0.0",
     "unpdf": "^1.4.0",
     "unstructured-client": "^0.30.2"

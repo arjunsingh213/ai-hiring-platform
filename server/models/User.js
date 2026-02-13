@@ -489,10 +489,57 @@ const userSchema = new mongoose.Schema({
             gaps: [String]
         }],
 
+        // ==================== DOMAIN-SPECIFIC SCORES ====================
+        domainScores: [{
+            domain: { type: String, required: true }, // e.g., "Computer Science", "Data Science"
+            domainScore: { type: Number, default: 0, min: 0, max: 100 },
+            skills: [{
+                skillName: String,
+                score: { type: Number, default: 0, min: 0, max: 100 },
+                level: { type: Number, default: 1, min: 1, max: 5 }, // 1=Basic → 5=Expert
+                xp: { type: Number, default: 0, min: 0 },
+                validationScore: { type: Number, default: 0, min: 0, max: 100 },
+                riskIndex: { type: Number, default: 0, min: 0, max: 100 },
+                recencyScore: { type: Number, default: 100, min: 0, max: 100 },
+                confidence: { type: Number, default: 0, min: 0, max: 100 },
+                lastAssessedAt: { type: Date, default: Date.now },
+                challengePerformance: { type: Number, default: 0 },
+                interviewPerformance: { type: Number, default: 0 },
+                projectValidation: { type: Number, default: 0 }
+            }],
+            marketReadinessScore: { type: Number, default: 0, min: 0, max: 100 },
+            domainStabilityIndex: { type: Number, default: 0, min: 0, max: 100 },
+            riskAdjustedATP: { type: Number, default: 0, min: 0, max: 100 },
+            lastUpdated: { type: Date, default: Date.now }
+        }],
+
+        // ==================== COGNITIVE METRICS (Interview-Derived) ====================
+        cognitiveMetrics: {
+            technicalAccuracy: { type: Number, default: 0, min: 0, max: 100 },
+            communicationClarity: { type: Number, default: 0, min: 0, max: 100 },
+            problemDecomposition: { type: Number, default: 0, min: 0, max: 100 },
+            conceptDepth: { type: Number, default: 0, min: 0, max: 100 },
+            codeQuality: { type: Number, default: 0, min: 0, max: 100 },
+            lastEvaluatedAt: Date,
+            evaluationCount: { type: Number, default: 0 }
+        },
+
+        // ==================== SKILL HISTORY AUDIT TRAIL ====================
+        interviewSkillHistory: [{
+            source: { type: String, enum: ['interview', 'challenge', 'project', 'decay'] },
+            sourceId: mongoose.Schema.Types.ObjectId,
+            skillName: String,
+            domain: String,
+            xpDelta: Number,
+            scoreDelta: Number,
+            detail: String, // e.g., "Answered Python question correctly"
+            timestamp: { type: Date, default: Date.now }
+        }],
+
         // Passport Versioning
         version: {
             type: String,
-            default: 'v1.0'
+            default: 'v2.0'
         },
         lastUpdated: {
             type: Date,

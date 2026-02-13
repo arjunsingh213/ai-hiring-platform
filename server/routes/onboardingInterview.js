@@ -14,6 +14,8 @@ const User = require('../models/User');
 const Interview = require('../models/Interview');
 const cloudinary = require('../config/cloudinary');
 const multer = require('multer');
+const { calculateAttemptRisk, applyRiskSuppression } = require('../utils/riskEngine');
+const { emitSkillUpdate, emitDomainUpdate, emitCognitiveUpdate } = require('../utils/atpEmitter');
 
 // Configure multer for video uploads (in memory)
 const videoUpload = multer({
@@ -918,11 +920,226 @@ router.post('/submit', async (req, res) => {
                 console.error('Failed to create Interview document:', interviewError);
             }
 
-            // ==================== AI TALENT PASSPORT UPDATE - DISABLED ====================
-            // NOTE: ATP update is INTENTIONALLY DISABLED for onboarding/domain interviews.
-            // The ATP score should ONLY be updated when completing JOB-SPECIFIC interviews,
-            // not during the initial onboarding interview. Job interviews will update ATP
-            // through the talentPassportRoutes.js endpoints.
+            // ==================== AI TALENT PASSPORT UPDATE - ENABLED ====================
+            // Updates ATP in real-time after interview completion:
+            // 1) Per-question skill XP based on performance
+            // 2) Cognitive metrics from evaluation breakdown
+            // 3) Domain-level skill scores
+            // 4) Skill history audit trail
+            try {
+                const SkillNode = require('../models/SkillNode');
+                const atpUser = await User.findById(userId);
+
+                if (atpUser) {
+                    // --- 1. Update cognitive metrics ---
+                    if (!atpUser.aiTalentPassport.cognitiveMetrics) {
+                        atpUser.aiTalentPassport.cognitiveMetrics = {};
+                    }
+                    const cm = atpUser.aiTalentPassport.cognitiveMetrics;
+                    const prevCount = cm.evaluationCount || 0;
+                    // Running average across all interviews
+                    const blend = (prev, curr) => prevCount > 0
+                        ? Math.round((prev * prevCount + curr) / (prevCount + 1))
+                        : Math.round(curr);
+
+                    cm.technicalAccuracy = blend(cm.technicalAccuracy || 0, evaluation.technicalScore || 0);
+                    cm.communicationClarity = blend(cm.communicationClarity || 0, evaluation.communication || 0);
+                    cm.problemDecomposition = blend(cm.problemDecomposition || 0, evaluation.relevance || 0);
+                    cm.conceptDepth = blend(cm.conceptDepth || 0, evaluation.confidence || 0);
+                    cm.codeQuality = blend(cm.codeQuality || 0, evaluation.technicalScore || 0);
+                    cm.lastEvaluatedAt = new Date();
+                    cm.evaluationCount = prevCount + 1;
+
+                    // --- 2. Per-question skill XP update ---
+                    const userSkillNodes = await SkillNode.find({ userId });
+                    const userSkills = atpUser.jobSeekerProfile?.skills?.map(s => s.name?.toLowerCase()) || [];
+                    const userDomains = atpUser.jobSeekerProfile?.jobDomains || [];
+                    const skillHistory = [];
+
+                    // Difficulty weight map
+                    const difficultyWeight = { easy: 1, medium: 2, hard: 3, extreme: 5 };
+
+                    for (let i = 0; i < questionsAndAnswers.length; i++) {
+                        const qa = questionsAndAnswers[i];
+                        const qScore = evaluation.questionAnalysis?.[i]?.score || 0;
+                        const qDifficulty = qa.difficulty || 'medium';
+                        const weight = difficultyWeight[qDifficulty] || 2;
+
+                        // Performance threshold — only award XP for score >= 50
+                        if (qScore < 50) continue;
+
+                        // Confidence multiplier: score mapped to 0.5-1.5
+                        const confidenceMultiplier = 0.5 + (qScore / 100);
+
+                        // XP = Difficulty Weight × Performance Score × Confidence Multiplier / 10
+                        const xpGain = Math.round(weight * qScore * confidenceMultiplier / 10);
+
+                        // Try to match question to a skill (by category or detected skill in question text)
+                        const questionText = (qa.question || '').toLowerCase();
+                        const category = (qa.category || '').toLowerCase();
+
+                        // Find matching SkillNodes by checking if skill name appears in question
+                        for (const node of userSkillNodes) {
+                            const skillLower = node.skillName.toLowerCase();
+                            if (questionText.includes(skillLower) || category.includes(skillLower)) {
+                                // Update SkillNode XP
+                                node.xp = (node.xp || 0) + xpGain;
+                                node.lastChallengeAt = new Date();
+                                await node.save();
+
+                                skillHistory.push({
+                                    source: 'interview',
+                                    sourceId: typeof newInterview !== 'undefined' ? newInterview._id : null,
+                                    skillName: node.skillName,
+                                    domain: node.domainCategory,
+                                    xpDelta: xpGain,
+                                    scoreDelta: Math.round(qScore * 0.5),
+                                    detail: `Interview Q${i + 1}: "${qa.question?.substring(0, 60)}..." (Score: ${qScore})`,
+                                    timestamp: new Date()
+                                });
+                            }
+                        }
+                    }
+
+                    // --- 3. Update domain-level ATP scores ---
+                    if (!atpUser.aiTalentPassport.domainScores) {
+                        atpUser.aiTalentPassport.domainScores = [];
+                    }
+
+                    for (const domain of userDomains) {
+                        let domainEntry = atpUser.aiTalentPassport.domainScores.find(
+                            d => d.domain === domain
+                        );
+                        if (!domainEntry) {
+                            atpUser.aiTalentPassport.domainScores.push({
+                                domain,
+                                domainScore: 0,
+                                skills: [],
+                                lastUpdated: new Date()
+                            });
+                            domainEntry = atpUser.aiTalentPassport.domainScores[
+                                atpUser.aiTalentPassport.domainScores.length - 1
+                            ];
+                        }
+
+                        // Sync skills from SkillNodes in this domain
+                        const domainNodes = userSkillNodes.filter(n => n.domainCategory === domain);
+                        for (const node of domainNodes) {
+                            let skillEntry = domainEntry.skills.find(
+                                s => s.skillName.toLowerCase() === node.skillName.toLowerCase()
+                            );
+                            if (!skillEntry) {
+                                domainEntry.skills.push({
+                                    skillName: node.skillName,
+                                    score: 0, level: 1, xp: node.xp || 0,
+                                    validationScore: 0, riskIndex: 0,
+                                    recencyScore: 100, confidence: 0,
+                                    lastAssessedAt: new Date(),
+                                    challengePerformance: 0,
+                                    interviewPerformance: 0,
+                                    projectValidation: 0
+                                });
+                                skillEntry = domainEntry.skills[domainEntry.skills.length - 1];
+                            }
+
+                            // Update interview performance for this skill
+                            skillEntry.interviewPerformance = Math.min(100,
+                                Math.max(skillEntry.interviewPerformance || 0, evaluation.technicalScore || 0)
+                            );
+                            skillEntry.xp = node.xp || 0;
+                            skillEntry.level = Math.min(5, Math.max(1, (node.level || 0) + 1));
+                            skillEntry.riskIndex = node.riskScore || 0;
+                            skillEntry.confidence = Math.round(
+                                (skillEntry.challengePerformance * 0.4 +
+                                    skillEntry.interviewPerformance * 0.5 +
+                                    skillEntry.projectValidation * 0.1) || 0
+                            );
+                            skillEntry.recencyScore = 100; // Just assessed
+                            skillEntry.lastAssessedAt = new Date();
+
+                            // Skill Score = Challenge×40% + Interview×50% + Project×10%
+                            skillEntry.score = Math.round(
+                                (skillEntry.challengePerformance || 0) * 0.4 +
+                                (skillEntry.interviewPerformance || 0) * 0.5 +
+                                (skillEntry.projectValidation || 0) * 0.1
+                            );
+                        }
+
+                        // Recalculate domain score (average of all skill scores)
+                        if (domainEntry.skills.length > 0) {
+                            domainEntry.domainScore = Math.round(
+                                domainEntry.skills.reduce((sum, s) => sum + (s.score || 0), 0) /
+                                domainEntry.skills.length
+                            );
+                            // Risk-adjusted ATP = domainScore * (1 - avg risk / 100)
+                            const avgRisk = domainEntry.skills.reduce((sum, s) => sum + (s.riskIndex || 0), 0) /
+                                domainEntry.skills.length;
+                            domainEntry.riskAdjustedATP = Math.round(domainEntry.domainScore * (1 - avgRisk / 100));
+                            domainEntry.domainStabilityIndex = Math.round(100 - avgRisk);
+                            domainEntry.marketReadinessScore = Math.round(
+                                domainEntry.domainScore * 0.6 + cm.technicalAccuracy * 0.2 + cm.communicationClarity * 0.2
+                            );
+                        }
+                        domainEntry.lastUpdated = new Date();
+                    }
+
+                    // --- 4. Append skill history ---
+                    if (!atpUser.aiTalentPassport.interviewSkillHistory) {
+                        atpUser.aiTalentPassport.interviewSkillHistory = [];
+                    }
+                    atpUser.aiTalentPassport.interviewSkillHistory.push(...skillHistory);
+
+                    // Update overall ATP scores
+                    atpUser.aiTalentPassport.communicationScore = cm.communicationClarity;
+                    atpUser.aiTalentPassport.problemSolvingScore = cm.problemDecomposition;
+                    atpUser.aiTalentPassport.lastUpdated = new Date();
+
+                    // Recalculate talentScore weighted average
+                    const ds = atpUser.aiTalentPassport.domainScore || 0;
+                    const cs = cm.communicationClarity || 0;
+                    const ps = cm.problemDecomposition || 0;
+                    const prof = atpUser.aiTalentPassport.professionalismScore || 0;
+                    const gd = atpUser.aiTalentPassport.gdScore || 50;
+                    atpUser.aiTalentPassport.talentScore = Math.min(100, Math.round(
+                        ds * 0.25 + cs * 0.20 + ps * 0.25 + prof * 0.20 + gd * 0.10
+                    ));
+
+                    await atpUser.save();
+                    console.log(`[ATP] Updated ATP for user ${userId} with ${skillHistory.length} skill entries`);
+
+                    // --- 5. Emit WebSocket events for real-time frontend updates ---
+                    try {
+                        // Emit cognitive metrics update
+                        emitCognitiveUpdate(userId, {
+                            technicalAccuracy: cm.technicalAccuracy,
+                            communicationClarity: cm.communicationClarity,
+                            problemDecomposition: cm.problemDecomposition,
+                            conceptDepth: cm.conceptDepth,
+                            codeQuality: cm.codeQuality
+                        });
+
+                        // Emit domain updates for each affected domain
+                        for (const domain of userDomains) {
+                            const de = atpUser.aiTalentPassport.domainScores.find(d => d.domain === domain);
+                            if (de) {
+                                emitDomainUpdate(userId, domain, de.domainScore, de.riskAdjustedATP);
+                                // Emit individual skill updates
+                                for (const sk of de.skills) {
+                                    emitSkillUpdate(userId, sk.skillName, domain, {
+                                        xp: sk.xp, level: sk.level,
+                                        score: sk.score, confidence: sk.confidence,
+                                        riskIndex: sk.riskIndex
+                                    });
+                                }
+                            }
+                        }
+                    } catch (wsErr) {
+                        console.log('[ATP-WS] WebSocket emission failed (non-blocking):', wsErr.message);
+                    }
+                }
+            } catch (atpError) {
+                console.error('[ATP] Failed to update ATP (non-blocking):', atpError.message);
+            }
             // ==================== END ATP UPDATE ====================
         } catch (dbError) {
             console.error('Failed to save to DB (continuing anyway):', dbError);

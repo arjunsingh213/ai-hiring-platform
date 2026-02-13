@@ -6,6 +6,7 @@ import FollowButton from '../../components/FollowButton';
 import UserProfileLink from '../../components/UserProfileLink';
 import ImageCropModal from '../../components/ImageCropModal';
 import { useToast } from '../../components/Toast';
+import AITalentPassport from '../../components/AITalentPassport/AITalentPassport';
 import './PublicProfilePage.css';
 
 
@@ -119,6 +120,7 @@ const PublicProfilePage = () => {
     const [mutualConnections, setMutualConnections] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [loading, setLoading] = useState(true);
+    const [verifiedProjects, setVerifiedProjects] = useState([]);
 
     // Image Upload States
     const [showImageModal, setShowImageModal] = useState(false);
@@ -143,11 +145,23 @@ const PublicProfilePage = () => {
             fetchProfile();
             fetchStats();
             fetchPosts();
+            fetchVerifiedProjects();
             if (currentUserId && !isOwnProfile) {
                 fetchMutualConnections();
             }
         }
     }, [profileUserId]);
+
+    const fetchVerifiedProjects = async () => {
+        try {
+            const res = await api.get(`/projects/user/${profileUserId}`);
+            if (res.data?.success) {
+                setVerifiedProjects(res.data.data || []);
+            }
+        } catch (err) {
+            console.log('No verified projects yet');
+        }
+    };
 
     const fetchProfile = async () => {
         try {
@@ -469,13 +483,13 @@ const PublicProfilePage = () => {
 
             {/* Tabs */}
             <div className="profile-tabs">
-                {['overview', 'posts', ...(isRecruiter ? ['jobs'] : []), 'about'].map(tab => (
+                {['overview', ...(isJobSeeker ? ['talent-passport'] : []), 'posts', ...(isRecruiter ? ['jobs'] : []), 'about'].map(tab => (
                     <button
                         key={tab}
                         className={`profile-tab ${activeTab === tab ? 'active' : ''}`}
                         onClick={() => setActiveTab(tab)}
                     >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tab === 'talent-passport' ? 'Talent Passport' : tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </button>
                 ))}
             </div>
@@ -594,6 +608,21 @@ const PublicProfilePage = () => {
                                         </div>
                                     )}
                                 </>
+                            )}
+
+                            {/* Talent Passport Tab */}
+                            {activeTab === 'talent-passport' && isJobSeeker && (
+                                <AITalentPassport
+                                    passport={user?.aiTalentPassport}
+                                    userName={displayName}
+                                    userPhoto={user?.profile?.photo}
+                                    userDomain={user?.jobSeekerProfile?.domain || user?.jobSeekerProfile?.desiredRole}
+                                    userId={user?._id}
+                                    viewMode={currentUserRole === 'recruiter' ? 'recruiter' : 'candidate'}
+                                    jobDomains={user?.jobSeekerProfile?.jobDomains || []}
+                                    verifiedProjects={verifiedProjects}
+                                    skillHistory={user?.aiTalentPassport?.interviewSkillHistory || []}
+                                />
                             )}
 
                             {/* Posts Tab */}

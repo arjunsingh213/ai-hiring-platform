@@ -1,0 +1,47 @@
+.atp-score-ring-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.atp-score-ring-svg {
+    transform: rotate(-90deg);
+}
+
+.atp-ring-track {
+    stroke: var(--atp-border);
+}
+
+.atp-ring-progress {
+    filter: drop-shadow(0 0 8px currentColor);
+}
+
+.atp-score-content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.atp-score-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--atp-text-main);
+    line-height: 1;
+}
+
+.atp-score-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--atp-text-muted);
+    margin-top: 4px;
+}
+
+[data-theme='light'] .atp-ring-track {
+    stroke: rgba(0, 0, 0, 0.05);
+}

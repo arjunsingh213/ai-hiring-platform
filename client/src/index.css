@@ -379,13 +379,31 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   min-height: 100vh;
+  /* ATP System Design Tokens */
+  --atp-bg-dark: #0f172a;
+  --atp-bg-light: #ffffff;
+  --atp-surface-dark: rgba(30, 41, 59, 0.7);
+  --atp-surface-light: rgba(248, 250, 252, 0.9);
+  --atp-border-dark: rgba(255, 255, 255, 0.1);
+  --atp-border-light: rgba(0, 0, 0, 0.08);
+  --atp-glow-primary: 0 0 20px rgba(0, 125, 255, 0.3);
+  --atp-success: #10b981;
+  --atp-warning: #f59e0b;
+  --atp-risk: #ef4444;
+  --atp-text-main: var(--text-primary);
+  --atp-text-muted: var(--text-muted);
 }
 
-@media (max-width: 768px) {
-  .dashboard-main {
-    padding-top: 72px;
-    padding-bottom: 96px;
-  }
+[data-theme='light'] :root {
+  --atp-surface: var(--atp-surface-light);
+  --atp-border: var(--atp-border-light);
+  --atp-bg: var(--atp-bg-light);
+}
+
+[data-theme='dark'] :root {
+  --atp-surface: var(--atp-surface-dark);
+  --atp-border: var(--atp-border-dark);
+  --atp-bg: var(--atp-bg-dark);
 }
 
 

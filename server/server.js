@@ -143,6 +143,10 @@ app.use('/api/admin-setup', adminSetupRoutes);
 // Skill Nodes
 app.use('/api/skill-nodes', skillNodeRoutes);
 
+// Verified Projects (ATP)
+const projectRoutes = require('./routes/projectRoutes');
+app.use('/api/projects', projectRoutes);
+
 // Challenge Admin
 app.use('/api/admin/challenges', challengeAdminRoutes);
 
@@ -193,6 +197,14 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`📡 Socket.io initialized`);
         console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+        // Initialize skill decay cron job
+        try {
+            const { scheduleSkillDecay } = require('./jobs/skillDecay');
+            scheduleSkillDecay();
+        } catch (err) {
+            console.log('⚠️ Skill decay cron not started:', err.message);
+        }
     });
 }
 

@@ -17,6 +17,7 @@ const ProfilePage = () => {
     const [showCropModal, setShowCropModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [cropType, setCropType] = useState('photo'); // 'photo' or 'banner'
+    const [verifiedProjects, setVerifiedProjects] = useState([]);
 
     // Tab navigation for Profile vs AI Talent Passport
     const [activeTab, setActiveTab] = useState('profile');
@@ -54,7 +55,19 @@ const ProfilePage = () => {
 
     useEffect(() => {
         fetchUser();
+        fetchVerifiedProjects();
     }, []);
+
+    const fetchVerifiedProjects = async () => {
+        try {
+            const res = await api.get(`/projects/user/${userId}`);
+            if (res.data?.success) {
+                setVerifiedProjects(res.data.data || []);
+            }
+        } catch (err) {
+            console.log('No verified projects yet');
+        }
+    };
 
     const fetchUser = async () => {
         try {
@@ -408,6 +421,15 @@ const ProfilePage = () => {
                 <AITalentPassport
                     passport={user?.aiTalentPassport}
                     userName={user?.profile?.name}
+                    userPhoto={user?.profile?.photo}
+                    userDomain={user?.jobSeekerProfile?.domain || user?.jobSeekerProfile?.desiredRole}
+                    userId={user?._id}
+                    viewMode="candidate"
+                    jobDomains={user?.jobSeekerProfile?.jobDomains || []}
+                    verifiedProjects={verifiedProjects}
+                    skillHistory={user?.aiTalentPassport?.interviewSkillHistory || []}
+                    resumeSkills={user?.jobSeekerProfile?.skills || []}
+                    onSubmitProject={(proj) => setVerifiedProjects(prev => [...prev, proj])}
                 />
             ) : activeTab === 'resume' ? (
                 <ResumeSkillIntelligence

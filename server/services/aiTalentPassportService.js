@@ -6,6 +6,7 @@
 
 const User = require('../models/User');
 const Interview = require('../models/Interview');
+const SkillNode = require('../models/SkillNode');
 const geminiService = require('./ai/geminiService'); // For ATP synthesis
 
 class AITalentPassportService {
@@ -23,6 +24,9 @@ class AITalentPassportService {
                 userId,
                 status: 'completed'
             }).sort({ completedAt: -1 });
+
+            // Fetch all skill nodes for this user
+            const skillNodes = await SkillNode.find({ userId });
 
             const scores = {
                 talentScore: 0,
@@ -65,8 +69,14 @@ class AITalentPassportService {
                     scores.domainScore = Math.max(scores.domainScore, totalTechnical / count);
                     scores.communicationScore = Math.max(scores.communicationScore, totalCommunication / count);
                     scores.problemSolvingScore = totalProblemSolving / count;
-                    scores.talentScore += (scores.problemSolvingScore * 0.25); // 25% weight
                 }
+            }
+
+            // Calculate Domain Score from SkillNodes (aggregated level/XP)
+            if (skillNodes.length > 0) {
+                const totalSkillScore = skillNodes.reduce((acc, node) => acc + (node.level * 25), 0);
+                const avgSkillScore = totalSkillScore / skillNodes.length;
+                scores.domainScore = Math.round((scores.domainScore + avgSkillScore) / 2);
             }
 
             // GD Score (placeholder for future feature)
@@ -102,12 +112,17 @@ class AITalentPassportService {
             score += 10;
         }
 
+        // Penalty for proctoring flags (Anti-Cheat Layer)
+        if (user.interviewStatus?.proctoringFlags?.length > 0) {
+            score -= Math.min(40, user.interviewStatus.proctoringFlags.length * 5);
+        }
+
         // Bonus for multiple completed interviews
         if (interviews.length > 0) {
             score += Math.min(10, interviews.length * 2);
         }
 
-        return Math.min(100, score);
+        return Math.max(0, Math.min(100, score));
     }
 
     /**
