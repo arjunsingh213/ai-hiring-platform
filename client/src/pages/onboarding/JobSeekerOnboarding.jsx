@@ -208,7 +208,7 @@ const JobSeekerOnboarding = () => {
                                     // Try to fetch full resume data to recover specific skills
                                     try {
                                         console.log(`[INTERVIEW] Fetching full resume data from ID: ${userData.resume}`);
-                                        const resumeResponse = await api.get(`/resumes/${userData.resume}`);
+                                        const resumeResponse = await api.get(`/resume/${userData.resume}`);
                                         if (resumeResponse.success && resumeResponse.data?.parsedData) {
                                             const recoveredResume = resumeResponse.data.parsedData;
                                             console.log(`[INTERVIEW] Recovered ${recoveredResume.skills?.length || 0} skills from resume`);
@@ -742,7 +742,7 @@ const JobSeekerOnboarding = () => {
                     const resumeFormData = new FormData();
                     resumeFormData.append('resume', resumeFile);
                     resumeFormData.append('userId', userId);
-                    const resumeResponse = await api.post('/resumes/upload', resumeFormData, {
+                    const resumeResponse = await api.post('/resume/upload', resumeFormData, {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     console.log('Resume uploaded successfully');

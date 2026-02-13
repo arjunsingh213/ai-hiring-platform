@@ -75,7 +75,7 @@ const ResumeUploadFirst = ({ onComplete, onSwitchToManual }) => {
                 });
             }, 200);
 
-            const response = await api.post('/resumes/upload', formData, {
+            const response = await api.post('/resume/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
