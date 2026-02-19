@@ -87,11 +87,6 @@ router.get('/user/:userId', async (req, res) => {
         const { userId } = req.params;
         const { status } = req.query;
 
-        let query = { userId };
-        if (status && status !== 'all') {
-            query.status = status;
-        }
-
         const projects = await VerifiedProject.find(query)
             .sort({ createdAt: -1 })
             .lean();
@@ -196,89 +191,83 @@ router.post('/:id/review', async (req, res) => {
         project.isOriginal = isOriginal !== undefined ? isOriginal :
             (analysisData.originalityScore > 50 ? true : project.isOriginal);
 
-        // If approved and original, update ATP
+        // If approved and original, update ATP Impact metrics
         if (action === 'approved' && project.isOriginal !== false) {
-            // Use GitHub analysis ATP impact if available, else calculate from complexity
             const complexityWeight = { low: 5, medium: 10, high: 20 };
             const impactScore = analysisData.atpImpactEstimate || complexityWeight[project.complexity] || 10;
             project.atpImpactScore = impactScore;
             project.atpImpactApplied = true;
 
-            // Update user's ATP domain scores — project validation component
+            // Update user's ATP domain scores
             const user = await User.findById(project.userId);
             if (user && user.aiTalentPassport) {
-                // Find or create matching domain score entry
-                let domainEntry = user.aiTalentPassport.domainScores?.find(
-                    d => d.domain === project.domain
-                );
+                if (!user.aiTalentPassport.domainScores) {
+                    user.aiTalentPassport.domainScores = [];
+                }
 
+                let domainEntry = user.aiTalentPassport.domainScores.find(d => d.domain === project.domain);
                 if (!domainEntry) {
-                    if (!user.aiTalentPassport.domainScores) {
-                        user.aiTalentPassport.domainScores = [];
-                    }
                     user.aiTalentPassport.domainScores.push({
                         domain: project.domain,
                         domainScore: 0,
                         skills: [],
                         lastUpdated: new Date()
                     });
-                    domainEntry = user.aiTalentPassport.domainScores[
-                        user.aiTalentPassport.domainScores.length - 1
-                    ];
+                    domainEntry = user.aiTalentPassport.domainScores[user.aiTalentPassport.domainScores.length - 1];
                 }
 
-                // Use detected tech stack from analysis or submitted tech stack
                 const techStackToUse = (analysisData.techStackDetected?.length > 0)
                     ? analysisData.techStackDetected
                     : project.techStack;
 
-                // Update project validation score for matching tech stack skills
-                for (const tech of techStackToUse) {
-                    let skillEntry = domainEntry.skills.find(
-                        s => s.skillName.toLowerCase() === tech.toLowerCase()
-                    );
-                    if (skillEntry) {
-                        skillEntry.projectValidation = Math.min(100,
-                            (skillEntry.projectValidation || 0) + impactScore
-                        );
-                        // Recalculate skill score
-                        skillEntry.score = Math.round(
-                            (skillEntry.challengePerformance || 0) * 0.4 +
-                            (skillEntry.interviewPerformance || 0) * 0.5 +
-                            (skillEntry.projectValidation || 0) * 0.1
-                        );
-                        skillEntry.lastAssessedAt = new Date();
+                if (techStackToUse && techStackToUse.length > 0) {
+                    for (const tech of techStackToUse) {
+                        let skillEntry = domainEntry.skills.find(s => s.skillName.toLowerCase() === tech.toLowerCase());
+                        if (skillEntry) {
+                            skillEntry.projectValidation = Math.min(100, (skillEntry.projectValidation || 0) + impactScore);
+                            skillEntry.score = Math.round(
+                                (skillEntry.challengePerformance || 0) * 0.4 +
+                                (skillEntry.interviewPerformance || 0) * 0.5 +
+                                (skillEntry.projectValidation || 0) * 0.1
+                            );
+                            skillEntry.lastAssessedAt = new Date();
+                        }
                     }
                 }
 
-                // Log to history
                 if (!user.aiTalentPassport.interviewSkillHistory) {
                     user.aiTalentPassport.interviewSkillHistory = [];
                 }
                 user.aiTalentPassport.interviewSkillHistory.push({
                     source: 'project',
                     sourceId: project._id,
-                    skillName: techStackToUse.join(', '),
+                    skillName: Array.isArray(techStackToUse) ? techStackToUse.join(', ') : 'N/A',
                     domain: project.domain,
                     xpDelta: impactScore,
                     scoreDelta: impactScore,
-                    detail: `Project approved: ${project.title} (${project.complexity} complexity, originality: ${analysisData.originalityScore || 'N/A'})`,
+                    detail: `Project approved: ${project.title}`,
                     timestamp: new Date()
                 });
 
                 user.aiTalentPassport.lastUpdated = new Date();
                 await user.save();
-
-                // Emit WebSocket event for real-time frontend update
-                emitProjectUpdate(
-                    project.userId.toString(),
-                    project._id.toString(),
-                    'approved',
-                    impactScore
-                );
             }
+        }
+
+        // ALWAYS save the project status regardless of action
+        await project.save();
+
+        // Emit WebSocket updates AFTER successful save
+        if (action === 'approved') {
+            console.log(`[ProjectReview] Emitting approved update for user ${project.userId}`);
+            emitProjectUpdate(
+                project.userId.toString(),
+                project._id.toString(),
+                'approved',
+                project.atpImpactScore || 0
+            );
         } else if (action === 'rejected') {
-            // Emit rejection notification
+            console.log(`[ProjectReview] Emitting rejected update for user ${project.userId}`);
             emitProjectUpdate(
                 project.userId.toString(),
                 project._id.toString(),
@@ -287,11 +276,9 @@ router.post('/:id/review', async (req, res) => {
             );
         }
 
-        await project.save();
-
         res.json({
             success: true,
-            message: `Project ${action}`,
+            message: `Project ${action} successfully`,
             data: project
         });
     } catch (err) {

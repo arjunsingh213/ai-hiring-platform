@@ -7,6 +7,7 @@ import { JOB_DOMAINS } from '../../data/validationData';
 import { ProfileSkeleton } from '../../components/Skeleton';
 import ResumeSkillIntelligence from '../../components/profile/ResumeSkillIntelligence';
 import './ProfilePage.css';
+import { getSocket, joinUserRoom, disconnectSocket } from '../../services/socketService';
 
 const ProfilePage = () => {
     const toast = useToast();
@@ -56,12 +57,40 @@ const ProfilePage = () => {
     useEffect(() => {
         fetchUser();
         fetchVerifiedProjects();
-    }, []);
+
+        if (userId) {
+            const socket = getSocket();
+            joinUserRoom(userId);
+
+            const handleUpdate = (data) => {
+                console.log('[Profile] Received update:', data);
+                if (data.type === 'project_update' || data.type === 'domain_update') {
+                    console.log('[Profile] Processing update:', data.type);
+                    fetchVerifiedProjects();
+                    fetchUser();
+                    window.dispatchEvent(new CustomEvent('profile-updated'));
+                    toast.success('Profile updated based on recent activity!');
+                }
+            };
+
+            socket.on('atp_update', handleUpdate);
+
+            return () => {
+                socket.off('atp_update', handleUpdate);
+                // Do not disconnect here if other components share the socket, 
+                // but for now, let's keep it persistent or manage lifecycle better.
+                // If we disconnect, AITalentPassport will lose connection too.
+                // So we REMOVE disconnectSocket() from cleanup.
+            };
+        }
+    }, [userId]);
 
     const fetchVerifiedProjects = async () => {
         try {
             const res = await api.get(`/projects/user/${userId}`);
+            console.log('[Profile] Fetch projects response:', res.data);
             if (res.data?.success) {
+                console.log(`[Profile] Setting ${res.data.data?.length || 0} projects`);
                 setVerifiedProjects(res.data.data || []);
             }
         } catch (err) {

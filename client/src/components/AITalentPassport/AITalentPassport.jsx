@@ -6,7 +6,7 @@ import {
     AreaChart, Area, Legend
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import io from 'socket.io-client';
+import { getSocket, joinUserRoom } from '../../services/socketService';
 import './AITalentPassport.css';
 
 /* ═══════════════════════════════════════════════════
@@ -48,22 +48,20 @@ const AITalentPassport = ({
     // WebSocket listener for real-time ATP updates
     useEffect(() => {
         if (!userId) return;
-        const socketUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SOCKET_URL)
-            || 'http://localhost:5000';
-        const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
 
-        socket.emit('join', userId);
+        const socket = getSocket();
+        joinUserRoom(userId);
 
-        socket.on('atp_update', (data) => {
+        const handleLiveUpdate = (data) => {
             console.log('[ATP-WS] Live update received:', data.type);
             setLiveUpdate(data);
-            // Auto-dismiss after 5 seconds
             setTimeout(() => setLiveUpdate(null), 5000);
-        });
+        };
+
+        socket.on('atp_update', handleLiveUpdate);
 
         return () => {
-            socket.off('atp_update');
-            socket.close();
+            socket.off('atp_update', handleLiveUpdate);
         };
     }, [userId]);
 
@@ -185,6 +183,13 @@ const AITalentPassport = ({
     // Approved projects
     const approvedProjects = verifiedProjects.filter(p => p.status === 'approved');
     const pendingProjects = verifiedProjects.filter(p => p.status === 'pending');
+
+    console.log('[ATP] Render Props:', {
+        total: verifiedProjects.length,
+        approved: approvedProjects.length,
+        pending: pendingProjects.length,
+        rawStatuses: verifiedProjects.map(p => p.status)
+    });
 
     return (
         <div className={`atp-v2 ${isRecruiter ? 'atp-v2--recruiter' : 'atp-v2--candidate'}`}>
