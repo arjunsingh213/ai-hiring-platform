@@ -184,13 +184,6 @@ const AITalentPassport = ({
     const approvedProjects = verifiedProjects.filter(p => p.status === 'approved');
     const pendingProjects = verifiedProjects.filter(p => p.status === 'pending');
 
-    console.log('[ATP] Render Props:', {
-        total: verifiedProjects.length,
-        approved: approvedProjects.length,
-        pending: pendingProjects.length,
-        rawStatuses: verifiedProjects.map(p => p.status)
-    });
-
     return (
         <div className={`atp-v2 ${isRecruiter ? 'atp-v2--recruiter' : 'atp-v2--candidate'}`}>
 

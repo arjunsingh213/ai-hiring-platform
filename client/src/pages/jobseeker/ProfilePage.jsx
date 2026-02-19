@@ -88,9 +88,7 @@ const ProfilePage = () => {
     const fetchVerifiedProjects = async () => {
         try {
             const res = await api.get(`/projects/user/${userId}`);
-            console.log('[Profile] Fetch projects response:', res.data);
             if (res.data?.success) {
-                console.log(`[Profile] Setting ${res.data.data?.length || 0} projects`);
                 setVerifiedProjects(res.data.data || []);
             }
         } catch (err) {
