@@ -28,6 +28,11 @@ const MODELS = {
     CHIMERA: {
         name: 'deepseek/deepseek-r1',
         key: process.env.OPENROUTER_CHIMERA_KEY || process.env.DEEPSEEK_API_KEY
+    },
+    // Final FREE fallback
+    TRINITY: {
+        name: 'arcee-ai/trinity-large-preview:free',
+        key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY
     }
 };
 
@@ -642,8 +647,8 @@ function extractJson(text) {
  * Main AI call function - Uses Llama 3.1 as primary (free tier)
  */
 async function callDeepSeek(messages, options = {}) {
-    // Use free-tier models in order: Llama -> Mistral -> Gemma
-    return callWithFallback(messages, [MODELS.LLAMA, MODELS.MISTRAL, MODELS.GEMMA], options);
+    // Use free-tier models in order: Llama -> Mistral -> Gemma -> Trinity
+    return callWithFallback(messages, [MODELS.LLAMA, MODELS.MISTRAL, MODELS.GEMMA, MODELS.TRINITY], options);
 }
 
 /**

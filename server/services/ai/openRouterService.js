@@ -9,8 +9,8 @@
  * - Llama 3.2 3B: Fast Scoring
  */
 
+
 const axios = require('axios');
-const geminiService = require('./geminiService');
 
 class OpenRouterService {
     constructor() {
@@ -24,7 +24,8 @@ class OpenRouterService {
             answerEvaluation: 'meta-llama/llama-3.2-3b-instruct:free',
             fastScoring: 'meta-llama/llama-3.2-3b-instruct:free',
             recruiterReport: 'meta-llama/llama-3.2-3b-instruct:free',
-            skillExtraction: 'meta-llama/llama-3.2-3b-instruct:free' // Dedicated for skill extraction
+            skillExtraction: 'meta-llama/llama-3.2-3b-instruct:free', // Dedicated for skill extraction
+            fallback: 'arcee-ai/trinity-large-preview:free' // Global FREE fallback model
         };
 
         // API Keys from environment
@@ -184,6 +185,12 @@ class OpenRouterService {
                 }
             });
 
+            // Handle automatic fallback if a fallback model is available and hasn't been used yet
+            if (options.useFallback !== false && this.models.fallback && model !== this.models.fallback) {
+                console.log(`[OpenRouter] Call to ${model} failed. Trying fallback model: ${this.models.fallback}`);
+                return this.callModel(this.models.fallback, messages, apiKey, { ...options, useFallback: false });
+            }
+
             throw new Error(`AI model call failed: ${error.message}`);
         }
     }
@@ -263,7 +270,8 @@ RULES:
             this.models.resumeParsing,                    // Primary: llama-3.2-3b-instruct:free
             'meta-llama/llama-3.1-405b-instruct:free',   // Fallback 1
             'meta-llama/llama-3.3-70b-instruct:free',    // Fallback 2
-            'meta-llama/llama-3.2-3b-instruct'           // Fallback 3: Paid version (no :free)
+            this.models.fallback,                        // Fallback 3: Trinity Large Preview Free
+            'meta-llama/llama-3.2-3b-instruct'           // Fallback 4: Paid version (no :free)
         ];
 
         for (let i = 0; i < fallbackModels.length; i++) {
@@ -308,6 +316,7 @@ RULES:
                 if (i === fallbackModels.length - 1) {
                     console.log('[Resume] All Llama models failed. Falling back to Gemini 2.0 Flash...');
                     try {
+                        const geminiService = require('./geminiService');
                         // Use Gemini Router directly via Service to get REASONING model
                         // Task 'resume_parsing' defaults to REASONING (gemini-2.0-flash)
                         const geminiResponse = await geminiService.router.callGemini('resume_parsing', prompt, {

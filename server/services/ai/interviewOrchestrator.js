@@ -15,6 +15,10 @@ const MODELS = {
     LLAMA: {
         name: 'meta-llama/llama-3.2-3b-instruct:free',  // FREE tier model
         key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY
+    },
+    FALLBACK: {
+        name: 'arcee-ai/trinity-large-preview:free',
+        key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY
     }
 };
 
@@ -206,7 +210,7 @@ async function callAI(messages, options = {}) {
 
     try {
         const response = await axios.post(OPENROUTER_URL, {
-            model: MODELS.LLAMA.name,
+            model: options.model || MODELS.LLAMA.name,
             messages,
             temperature: options.temperature || 0.4,
             max_tokens: options.max_tokens || 2048
@@ -225,7 +229,7 @@ async function callAI(messages, options = {}) {
         if (usage) {
             await aiUsageService.logUsage({
                 userId: options.userId,
-                model: MODELS.LLAMA.name,
+                model: options.model || MODELS.LLAMA.name,
                 purpose: options.purpose || 'interview_orchestration',
                 inputTokens: usage.prompt_tokens,
                 outputTokens: usage.completion_tokens,
@@ -240,15 +244,21 @@ async function callAI(messages, options = {}) {
         return response.data.choices[0].message.content;
     } catch (error) {
         console.error('AI call failed:', error.response?.data || error.message);
-        
+
         // Log failure
         await aiUsageService.logUsage({
             userId: options.userId,
-            model: MODELS.LLAMA.name,
+            model: options.model || MODELS.LLAMA.name,
             purpose: options.purpose || 'interview_orchestration',
             status: 'failed',
             errorMessage: error.message
         });
+
+        // Handle fallback
+        if (!options.isFallback && MODELS.FALLBACK.name) {
+            console.log(`[ORCHESTRATOR] Primary model failed. Trying fallback: ${MODELS.FALLBACK.name}`);
+            return callAI(messages, { ...options, model: MODELS.FALLBACK.name, isFallback: true });
+        }
 
         throw error;
     }

@@ -36,19 +36,63 @@ class GeminiService {
         // Check if should use fallback due to rate limiting
         const modelKey = this.router.taskModelMap[taskType] || 'REASONING';
         if (this.rateLimiter.shouldUseFallback(modelKey)) {
-            console.log(`[GeminiService] Rate limit critical for ${modelKey}, returning null for fallback`);
-            return null;
+            console.log(`[GeminiService] Rate limit critical for ${modelKey}, falling back to OpenRouter`);
+            return this._callOpenRouterFallback(taskType, prompt, options);
         }
 
-        // Make API call
-        const result = await this.router.callGemini(taskType, prompt, options);
+        try {
+            // Make API call
+            const result = await this.router.callGemini(taskType, prompt, options);
 
-        // Cache successful result
-        if (result) {
+            // If result is null (router-level failure), try OpenRouter fallback
+            if (!result) {
+                console.log(`[GeminiService] Gemini Router returned null for ${taskType}, trying OpenRouter fallback`);
+                return this._callOpenRouterFallback(taskType, prompt, options);
+            }
+
+            // Cache successful result
             this.cache.set(taskType, prompt, result);
+            return result;
+        } catch (error) {
+            console.error(`[GeminiService] Gemini call error for ${taskType}:`, error.message);
+            // On hard error (like 429 that escaped the router check), try OpenRouter fallback
+            return this._callOpenRouterFallback(taskType, prompt, options);
         }
+    }
 
-        return result;
+    /**
+     * Fallback to OpenRouter when Gemini is unavailable
+     */
+    async _callOpenRouterFallback(taskType, prompt, options = {}) {
+        const openRouterService = require('./openRouterService');
+        const mapping = {
+            'interview_questions': 'questionGeneration',
+            'validate_answer': 'fastScoring',
+            'adaptive_followup': 'questionGeneration',
+            'answer_evaluation': 'answerEvaluation',
+            'recruiter_reports': 'recruiterReport',
+            'skill_suggestions': 'skillExtraction',
+            'resume_classification': 'resumeParsing',
+            'atp_synthesis': 'recruiterReport'
+        };
+
+        const modelKey = mapping[taskType] || 'fallback';
+        const model = openRouterService.models[modelKey];
+        const apiKey = openRouterService.apiKeys.llama; // Use Llama key as default for OpenRouter
+
+        console.log(`[GeminiService] [FALLBACK] Routing ${taskType} to OpenRouter (${model})`);
+
+        try {
+            const messages = [{ role: 'user', content: prompt }];
+            const result = await openRouterService.callModel(model, messages, apiKey, {
+                ...options,
+                purpose: `fallback_${taskType}`
+            });
+            return result;
+        } catch (error) {
+            console.error(`[GeminiService] [FALLBACK] OpenRouter also failed:`, error.message);
+            return null; // Both failed
+        }
     }
 
     /**
@@ -248,8 +292,8 @@ Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a l
             });
 
             if (!response) {
-                console.log('[GeminiService] No response from Gemini, throwing for fallback');
-                throw new Error('Gemini Rate Limited');
+                console.log('[GeminiService] No response from Gemini/OpenRouter, throwing for hard failure');
+                throw new Error('AI Service Unavailable (Both Gemini and OpenRouter failed)');
             }
 
             console.log('[GeminiService] RAW Response:', response);
