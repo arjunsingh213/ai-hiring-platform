@@ -62,8 +62,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// Handle preflight globally and explicitly
-app.options('*', cors(corsOptions));
+// Handle preflight globally and explicitly (Express 5 uses (.*) for wildcards)
+app.options('(.*)', cors(corsOptions));
 // -------------------------------------------------------
 
 // Initialize Socket.io
