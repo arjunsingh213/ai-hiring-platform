@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-// uuid is loaded via dynamic import() inside handlers to support ESM-only versions
+const crypto = require('crypto');
 const VideoRoom = require('../models/VideoRoom');
 const Job = require('../models/Job');
 const User = require('../models/User');
@@ -60,9 +60,8 @@ router.post('/', userAuth, requireRole('recruiter'), async (req, res) => {
 
         const recruiter = await User.findById(req.userId);
 
-        // Generate room code (dynamic import for ESM compatibility)
-        const { v4: uuidv4 } = await import('uuid');
-        const roomCode = uuidv4().split('-')[0].toUpperCase();
+        // Generate room code using Node.js built-in (no uuid dependency needed)
+        const roomCode = crypto.randomUUID().split('-')[0].toUpperCase();
 
         // Build participants array
         const participants = [
