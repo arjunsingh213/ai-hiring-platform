@@ -57,6 +57,12 @@ const InterviewRoom = () => {
     // Timer
     const [elapsedTime, setElapsedTime] = useState(0);
 
+    // Lobby / Admission State
+    const [isAdmitted, setIsAdmitted] = useState(false);
+    const [isWaiting, setIsWaiting] = useState(false);
+    const [waitingList, setWaitingList] = useState([]); // For recruiters to see who's waiting
+    const [admissionStatus, setAdmissionStatus] = useState(null); // 'granted', 'denied'
+
     // ── Refs ──
     const socketRef = useRef(null);
     const localStreamRef = useRef(null);
@@ -121,16 +127,22 @@ const InterviewRoom = () => {
                 setMyDisplayName(displayName);
                 console.log('[InterviewRoom] My display name:', displayName, 'role:', myRole, 'from', myParticipant ? 'room data' : 'localStorage');
 
-                // 2. Get local media
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 1280, height: 720, facingMode: 'user' },
-                    audio: { echoCancellation: true, noiseSuppression: true }
-                });
-                localStreamRef.current = stream;
-                // Attach immediately if ref is available
-                if (localVideoRef.current) {
-                    localVideoRef.current.srcObject = stream;
-                    localVideoRef.current.play().catch(() => { });
+                // 2. Get local media IMMEDIATELY for preview (lobby)
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 1280, height: 720, facingMode: 'user' },
+                        audio: { echoCancellation: true, noiseSuppression: true }
+                    });
+                    localStreamRef.current = stream;
+                    // Attach immediately if ref is available
+                    if (localVideoRef.current) {
+                        localVideoRef.current.srcObject = stream;
+                        localVideoRef.current.play().catch(() => { });
+                    }
+                } catch (err) {
+                    console.error('[InterviewRoom] Media error:', err);
+                    // Continue without media for now (or show warning)
                 }
 
                 // 3. Join via API (result is already unwrapped by interceptor)
@@ -161,6 +173,39 @@ const InterviewRoom = () => {
                         name: displayName,
                         accessToken: joinResult.data?.accessToken || result.accessToken
                     });
+                });
+
+                // --- Lobby / Admission Events ---
+                socket.on('waiting-for-admission', ({ message }) => {
+                    setIsWaiting(true);
+                    setIsAdmitted(false);
+                    console.log('[InterviewRoom] ⏳ In lobby:', message);
+                });
+
+                socket.on('admission-granted', ({ message }) => {
+                    setIsWaiting(false);
+                    setIsAdmitted(true);
+                    setAdmissionStatus('granted');
+                    console.log('[InterviewRoom] ✅ Admitted to room:', message);
+                });
+
+                socket.on('admission-denied', ({ message }) => {
+                    setIsWaiting(false);
+                    setIsAdmitted(false);
+                    setAdmissionStatus('denied');
+                    setError(message);
+                    setStatus('error');
+                    console.log('[InterviewRoom] ❌ Admission denied:', message);
+                });
+
+                socket.on('admission-request', (request) => {
+                    // Recruiter sees this
+                    setWaitingList(prev => [...prev.filter(r => r.socketId !== request.socketId), request]);
+                    console.log('[InterviewRoom] 🔔 Admission request from:', request.name);
+                });
+
+                socket.on('waiting-list-update', ({ waiting }) => {
+                    setWaitingList(waiting);
                 });
 
                 socket.on('connect_error', (err) => {
@@ -264,12 +309,20 @@ const InterviewRoom = () => {
                     const pc = peerConnectionsRef.current.get(from);
                     if (pc && candidate) {
                         try {
-                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                            // Signaling state must NOT be closed
+                            if (pc.signalingState !== 'closed') {
+                                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                            }
                         } catch (err) {
                             console.error('[WebRTC] ICE candidate error:', err.message);
                         }
                     }
                 });
+
+                // Auto-admit recruiters to the 'live' room visually
+                if (myRole === 'recruiter' || myRole === 'panelist') {
+                    setIsAdmitted(true);
+                }
 
                 // 9. Media events
                 socket.on('participant-audio-toggled', ({ socketId, enabled }) => {
@@ -395,7 +448,14 @@ const InterviewRoom = () => {
     }, [status]);
 
     // ═══ WEBRTC PEER CONNECTION ═══
-    const createPeerConnection = (socketId, isInitiator, participantInfo) => {
+    const createPeerConnection = (socketId, isInitiator, participantInfo = {}) => {
+        // Deduplication: prevent creating duplicate connections for same person
+        if (peerConnectionsRef.current.has(socketId)) {
+            console.log(`[WebRTC] PC already exists for ${socketId}, reusing...`);
+            return peerConnectionsRef.current.get(socketId);
+        }
+
+        console.log(`[WebRTC] Creating PC for ${participantInfo.name || socketId} (Initiator: ${isInitiator})`);
         const pc = new RTCPeerConnection(ICE_SERVERS);
         peerConnectionsRef.current.set(socketId, pc);
 
@@ -408,6 +468,7 @@ const InterviewRoom = () => {
 
         // Handle remote tracks
         pc.ontrack = (event) => {
+            console.log(`[WebRTC] Got remote track from ${socketId}:`, event.track.kind);
             const [remoteStream] = event.streams;
             setRemoteStreams(prev => {
                 const updated = new Map(prev);
@@ -428,9 +489,28 @@ const InterviewRoom = () => {
 
         pc.oniceconnectionstatechange = () => {
             console.log(`[WebRTC] ICE state for ${socketId}:`, pc.iceConnectionState);
+            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                // Potential cleanup logic or retry
+            }
         };
 
-        // Create offer if initiator
+        // Handle negotiation needed
+        pc.onnegotiationneeded = async () => {
+            if (!isInitiator) return; // Only initiator handles first offer
+            try {
+                console.log(`[WebRTC] Negotiation needed for ${socketId}`);
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                socketRef.current?.emit('offer', {
+                    to: socketId,
+                    offer: pc.localDescription
+                });
+            } catch (err) {
+                console.error('[WebRTC] Negotiation error:', err);
+            }
+        };
+
+        // Create initial offer if initiator
         if (isInitiator) {
             pc.createOffer()
                 .then(offer => pc.setLocalDescription(offer))
@@ -440,10 +520,26 @@ const InterviewRoom = () => {
                         offer: pc.localDescription
                     });
                 })
-                .catch(err => console.error('[WebRTC] Offer error:', err));
+                .catch(err => console.error('[WebRTC] Initial offer error:', err));
         }
 
         return pc;
+    };
+
+    // ═══ LOBBY ACTIONS (Recruiter Only) ═══
+    const admitCandidate = (targetSocketId) => {
+        socketRef.current?.emit('admit-participant', { roomCode, targetSocketId });
+        setWaitingList(prev => prev.filter(p => p.socketId !== targetSocketId));
+    };
+
+    const denyCandidate = (targetSocketId) => {
+        socketRef.current?.emit('deny-participant', { roomCode, targetSocketId });
+        setWaitingList(prev => prev.filter(p => p.socketId !== targetSocketId));
+    };
+
+    const admitAll = () => {
+        socketRef.current?.emit('admit-all', { roomCode });
+        setWaitingList([]);
     };
 
     // ═══ MEDIA CONTROLS ═══
@@ -664,8 +760,98 @@ const InterviewRoom = () => {
 
     const userInfo = getUserInfo();
 
+    // ── Denied Screen ──
+    if (admissionStatus === 'denied') {
+        return (
+            <div className="interview-room">
+                <div className="ir-waiting-screen">
+                    <div style={{ fontSize: '48px' }}>🚫</div>
+                    <div className="ir-waiting-text">Admission Denied</div>
+                    <div className="ir-waiting-subtext">{error || 'The host has declined your request to join this session.'}</div>
+                    <button onClick={() => navigate(-1)} className="ir-back-btn">Go Back</button>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Lobby Screen (Waiting for Admission) ──
+    if (isWaiting && !isAdmitted) {
+        return (
+            <div className="interview-room">
+                <div className="ir-lobby-container">
+                    <div className="ir-lobby-preview">
+                        <video
+                            ref={el => {
+                                if (el && localStreamRef.current) {
+                                    el.srcObject = localStreamRef.current;
+                                    el.play().catch(() => { });
+                                }
+                            }}
+                            autoPlay playsInline muted className="mirror"
+                        />
+                        {!videoEnabled && (
+                            <div className="ir-video-off-overlay">
+                                <div className="ir-avatar">{myDisplayName.charAt(0).toUpperCase()}</div>
+                            </div>
+                        )}
+                        <div className="ir-lobby-controls">
+                            <button className={`ir-control-btn-lobby ${!audioEnabled ? 'muted' : ''}`} onClick={toggleAudio}>
+                                {audioEnabled ? '🎤' : '🔇'}
+                            </button>
+                            <button className={`ir-control-btn-lobby ${!videoEnabled ? 'muted' : ''}`} onClick={toggleVideo}>
+                                {videoEnabled ? '📹' : '📷'}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="ir-lobby-info">
+                        <h2 className="ir-waiting-text">Ready to join?</h2>
+                        <p className="ir-waiting-subtext">Waiting for the host to let you in...</p>
+                        <div className="ir-lobby-user-card">
+                            <div className="ir-avatar-sm">{myDisplayName.charAt(0).toUpperCase()}</div>
+                            <span>{myDisplayName} (Candidate)</span>
+                        </div>
+                        <div className="ir-waiting-spinner" style={{ margin: '24px auto' }}></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // If not admitted and not waiting (initial state), show loading
+    if (!isAdmitted && status !== 'error' && status !== 'loading') {
+        return (
+            <div className="interview-room">
+                <div className="ir-waiting-screen">
+                    <div className="ir-waiting-spinner"></div>
+                    <div className="ir-waiting-text">Connecting to Server...</div>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="interview-room">
+            {/* ── Admission Requests (Recruiter Only) ── */}
+            {userRole === 'recruiter' && waitingList.length > 0 && (
+                <div className="ir-admission-banner">
+                    <div className="ir-admission-list">
+                        {waitingList.map(request => (
+                            <div key={request.socketId} className="ir-admission-item">
+                                <span className="ir-admission-text">
+                                    <strong>{request.name}</strong> wants to join the interview
+                                </span>
+                                <div className="ir-admission-actions">
+                                    <button className="deny-btn" onClick={() => denyCandidate(request.socketId)}>Deny</button>
+                                    <button className="admit-btn" onClick={() => admitCandidate(request.socketId)}>Admit</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {waitingList.length > 1 && (
+                        <button className="admit-all-btn" onClick={admitAll}>Admit All ({waitingList.length})</button>
+                    )}
+                </div>
+            )}
+
             {/* ── Top Bar ── */}
             <div className="ir-topbar">
                 <div className="ir-topbar-left">
@@ -1123,25 +1309,27 @@ const InterviewRoom = () => {
             </div>
 
             {/* ── End Call Modal ── */}
-            {showEndModal && (
-                <div className="ir-end-modal-overlay" onClick={() => setShowEndModal(false)}>
-                    <div className="ir-end-modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>End Interview?</h3>
-                        <p>
-                            {userRole === 'recruiter'
-                                ? 'This will end the interview for all participants. The recording and transcript will be saved.'
-                                : 'You will leave the interview room. The recruiter may continue the session.'}
-                        </p>
-                        <div className="ir-end-modal-actions">
-                            <button className="cancel-btn" onClick={() => setShowEndModal(false)}>Cancel</button>
-                            <button className="end-btn" onClick={() => handleEndCallConfirmed(true)}>
-                                {userRole === 'recruiter' ? 'End Interview' : 'Leave Room'}
-                            </button>
+            {
+                showEndModal && (
+                    <div className="ir-end-modal-overlay" onClick={() => setShowEndModal(false)}>
+                        <div className="ir-end-modal" onClick={(e) => e.stopPropagation()}>
+                            <h3>End Interview?</h3>
+                            <p>
+                                {userRole === 'recruiter'
+                                    ? 'This will end the interview for all participants. The recording and transcript will be saved.'
+                                    : 'You will leave the interview room. The recruiter may continue the session.'}
+                            </p>
+                            <div className="ir-end-modal-actions">
+                                <button className="cancel-btn" onClick={() => setShowEndModal(false)}>Cancel</button>
+                                <button className="end-btn" onClick={() => handleEndCallConfirmed(true)}>
+                                    {userRole === 'recruiter' ? 'End Interview' : 'Leave Room'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

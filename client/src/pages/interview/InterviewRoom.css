@@ -1635,3 +1635,239 @@
         font-size: 12px;
     }
 }
+
+/* ── Lobby / Waiting Room ── */
+.ir-lobby-container {
+    max-width: 900px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    padding: 40px;
+    height: 100vh;
+    animation: fadeIn 0.5s ease;
+}
+
+.ir-lobby-preview {
+    flex: 1.2;
+    position: relative;
+    width: 500px;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ir-lobby-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ir-lobby-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 10;
+}
+
+.ir-control-btn-lobby {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.ir-control-btn-lobby:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+}
+
+.ir-control-btn-lobby.muted {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+.ir-lobby-info {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+}
+
+.ir-lobby-user-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    margin-top: 12px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ir-avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 15px;
+}
+
+/* ── Admission Banner (Recruiter) ── */
+.ir-admission-banner {
+    position: absolute;
+    top: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    min-width: 450px;
+    background: #12121e;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes slideDown {
+    from {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.ir-admission-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ir-admission-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.ir-admission-text {
+    font-size: 14px;
+    color: #f0f0f5;
+    line-height: 1.4;
+}
+
+.ir-admission-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.ir-admission-actions button {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ir-admission-actions .admit-btn {
+    background: #10b981;
+    color: white;
+}
+
+.ir-admission-actions .admit-btn:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.ir-admission-actions .deny-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.ir-admission-actions .deny-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+.admit-all-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.admit-all-btn:hover {
+    background: rgba(99, 102, 241, 0.15);
+    color: white;
+}
+
+/* ── Back button ── */
+.ir-back-btn {
+    margin-top: 24px;
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: none;
+    background: #6366f1;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.ir-back-btn:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

@@ -106,14 +106,47 @@ const getIO = () => {
 const setupVideoRoomNamespace = (io) => {
     const videoNs = io.of('/video-room');
 
-    // Track active rooms: { roomCode: { participants: Map<socketId, { userId, role, name }> } }
+    // Track active rooms
+    // { roomCode: { participants: Map<socketId, info>, waitingList: Map<socketId, info> } }
     const activeRooms = new Map();
+
+    const getOrCreateRoom = (roomCode) => {
+        if (!activeRooms.has(roomCode)) {
+            activeRooms.set(roomCode, { participants: new Map(), waitingList: new Map() });
+        }
+        return activeRooms.get(roomCode);
+    };
+
+    // Evict stale connections for same userId across participants + waitingList
+    const evictStaleConnections = (room, roomCode, userId, currentSocketId, socket) => {
+        for (const [sid, p] of room.participants.entries()) {
+            if (p.userId === userId && sid !== currentSocketId) {
+                console.log(`[VideoRoom] Evicting stale participant: ${p.name} (${sid})`);
+                room.participants.delete(sid);
+                socket.to(roomCode).emit('participant-left', {
+                    socketId: sid, name: p.name, userId: p.userId
+                });
+                const oldSocket = videoNs.sockets.get(sid);
+                if (oldSocket) oldSocket.disconnect(true);
+            }
+        }
+        for (const [sid, p] of room.waitingList.entries()) {
+            if (p.userId === userId && sid !== currentSocketId) {
+                console.log(`[VideoRoom] Evicting stale waiting entry: ${p.name} (${sid})`);
+                room.waitingList.delete(sid);
+                const oldSocket = videoNs.sockets.get(sid);
+                if (oldSocket) oldSocket.disconnect(true);
+            }
+        }
+    };
 
     videoNs.on('connection', (socket) => {
         console.log('[VideoRoom] ✅ Socket connected:', socket.id, 'transport:', socket.conn?.transport?.name);
-        console.log('[VideoRoom] Handshake:', { auth: socket.handshake?.auth, origin: socket.handshake?.headers?.origin });
 
-        // ─── Join Video Room ───
+        // ─────────────────────────────────────────────────
+        // JOIN ROOM — Lobby / Waiting Room logic
+        // Recruiters auto-join. Candidates go to waiting list.
+        // ─────────────────────────────────────────────────
         socket.on('join-room', ({ roomCode, userId, role, name, accessToken }) => {
             console.log(`[VideoRoom] 🚪 ${name} (${role}) joining room ${roomCode}, socketId: ${socket.id}`);
 
@@ -123,52 +156,183 @@ const setupVideoRoomNamespace = (io) => {
             socket.userRole = role;
             socket.userName = name;
 
-            // Track in active rooms
-            if (!activeRooms.has(roomCode)) {
-                activeRooms.set(roomCode, { participants: new Map() });
-            }
-            const room = activeRooms.get(roomCode);
+            const room = getOrCreateRoom(roomCode);
+            evictStaleConnections(room, roomCode, userId, socket.id, socket);
 
-            // ─── Evict stale connections for the same userId ───
-            // (handles page refresh / duplicate tabs)
-            for (const [existingSocketId, existingParticipant] of room.participants.entries()) {
-                if (existingParticipant.userId === userId && existingSocketId !== socket.id) {
-                    console.log(`[VideoRoom] Evicting stale connection for ${name}: ${existingSocketId}`);
-                    room.participants.delete(existingSocketId);
-                    // Tell others the old socket left
-                    socket.to(roomCode).emit('participant-left', {
-                        socketId: existingSocketId,
-                        name: existingParticipant.name,
-                        userId: existingParticipant.userId
+            // Recruiters/panelists auto-admit
+            if (role === 'recruiter' || role === 'panelist') {
+                room.participants.set(socket.id, { userId, role, name, socketId: socket.id });
+
+                console.log(`[VideoRoom] ✅ Auto-admitted ${name} (${role}). Room has ${room.participants.size} participants.`);
+
+                // Notify others
+                socket.to(roomCode).emit('participant-joined', {
+                    userId, role, name, socketId: socket.id,
+                    participantCount: room.participants.size
+                });
+
+                // Send existing participants to this joiner
+                const existing = Array.from(room.participants.values())
+                    .filter(p => p.socketId !== socket.id);
+                socket.emit('room-participants', { participants: existing, roomCode });
+
+                // Send any currently waiting candidates
+                const waiting = Array.from(room.waitingList.values());
+                if (waiting.length > 0) {
+                    socket.emit('waiting-list', { waiting, roomCode });
+                }
+            } else {
+                // Candidate goes to waiting list
+                room.waitingList.set(socket.id, { userId, role, name, socketId: socket.id });
+                console.log(`[VideoRoom] ⏳ ${name} added to waiting list. ${room.waitingList.size} waiting.`);
+
+                // Tell the candidate they are in the lobby
+                socket.emit('waiting-for-admission', {
+                    roomCode,
+                    message: 'Waiting for the host to let you in...',
+                    position: room.waitingList.size
+                });
+
+                // Notify all recruiters/panelists that someone is waiting
+                room.participants.forEach((p, sid) => {
+                    if (p.role === 'recruiter' || p.role === 'panelist') {
+                        videoNs.to(sid).emit('admission-request', {
+                            socketId: socket.id,
+                            userId, name, role,
+                            waitingCount: room.waitingList.size
+                        });
+                    }
+                });
+            }
+        });
+
+        // ─────────────────────────────────────────────────
+        // ADMIT PARTICIPANT — Recruiter admits a waiting candidate
+        // ─────────────────────────────────────────────────
+        socket.on('admit-participant', ({ roomCode, targetSocketId }) => {
+            if (socket.userRole !== 'recruiter' && socket.userRole !== 'panelist') return;
+
+            const room = activeRooms.get(roomCode);
+            if (!room) return;
+
+            const candidate = room.waitingList.get(targetSocketId);
+            if (!candidate) {
+                console.log(`[VideoRoom] Admit failed — socket ${targetSocketId} not in waiting list`);
+                return;
+            }
+
+            // Move from waiting to participants
+            room.waitingList.delete(targetSocketId);
+            room.participants.set(targetSocketId, candidate);
+
+            console.log(`[VideoRoom] ✅ ${candidate.name} admitted by ${socket.userName}. Room: ${room.participants.size} active, ${room.waitingList.size} waiting.`);
+
+            // Tell the admitted candidate
+            videoNs.to(targetSocketId).emit('admission-granted', {
+                roomCode,
+                message: `You have been admitted by ${socket.userName}`
+            });
+
+            // Send existing participants to the newly admitted candidate
+            const existing = Array.from(room.participants.values())
+                .filter(p => p.socketId !== targetSocketId);
+            videoNs.to(targetSocketId).emit('room-participants', {
+                participants: existing,
+                roomCode
+            });
+
+            // Notify all other participants that this person joined
+            const targetSocket = videoNs.sockets.get(targetSocketId);
+            if (targetSocket) {
+                targetSocket.to(roomCode).emit('participant-joined', {
+                    userId: candidate.userId,
+                    role: candidate.role,
+                    name: candidate.name,
+                    socketId: targetSocketId,
+                    participantCount: room.participants.size
+                });
+            }
+
+            // Update waiting list for all recruiters
+            room.participants.forEach((p, sid) => {
+                if (p.role === 'recruiter' || p.role === 'panelist') {
+                    videoNs.to(sid).emit('waiting-list-update', {
+                        waiting: Array.from(room.waitingList.values()),
+                        roomCode
                     });
-                    // Force-disconnect the old socket
-                    const oldSocket = videoNs.sockets.get(existingSocketId);
-                    if (oldSocket) oldSocket.disconnect(true);
+                }
+            });
+        });
+
+        // ─────────────────────────────────────────────────
+        // DENY PARTICIPANT — Recruiter denies a waiting candidate
+        // ─────────────────────────────────────────────────
+        socket.on('deny-participant', ({ roomCode, targetSocketId }) => {
+            if (socket.userRole !== 'recruiter' && socket.userRole !== 'panelist') return;
+
+            const room = activeRooms.get(roomCode);
+            if (!room) return;
+
+            const candidate = room.waitingList.get(targetSocketId);
+            if (!candidate) return;
+
+            room.waitingList.delete(targetSocketId);
+            console.log(`[VideoRoom] ❌ ${candidate.name} denied by ${socket.userName}`);
+
+            // Notify the denied candidate
+            videoNs.to(targetSocketId).emit('admission-denied', {
+                roomCode,
+                message: 'The host has declined your request to join'
+            });
+
+            // Update waiting list for recruiters
+            room.participants.forEach((p, sid) => {
+                if (p.role === 'recruiter' || p.role === 'panelist') {
+                    videoNs.to(sid).emit('waiting-list-update', {
+                        waiting: Array.from(room.waitingList.values()),
+                        roomCode
+                    });
+                }
+            });
+        });
+
+        // ─────────────────────────────────────────────────
+        // ADMIT ALL — Recruiter admits all waiting candidates
+        // ─────────────────────────────────────────────────
+        socket.on('admit-all', ({ roomCode }) => {
+            if (socket.userRole !== 'recruiter' && socket.userRole !== 'panelist') return;
+            const room = activeRooms.get(roomCode);
+            if (!room) return;
+
+            const waitingEntries = Array.from(room.waitingList.entries());
+            for (const [sid, candidate] of waitingEntries) {
+                room.waitingList.delete(sid);
+                room.participants.set(sid, candidate);
+
+                videoNs.to(sid).emit('admission-granted', {
+                    roomCode,
+                    message: `You have been admitted by ${socket.userName}`
+                });
+
+                const existing = Array.from(room.participants.values())
+                    .filter(p => p.socketId !== sid);
+                videoNs.to(sid).emit('room-participants', { participants: existing, roomCode });
+
+                const targetSocket = videoNs.sockets.get(sid);
+                if (targetSocket) {
+                    targetSocket.to(roomCode).emit('participant-joined', {
+                        userId: candidate.userId, role: candidate.role,
+                        name: candidate.name, socketId: sid,
+                        participantCount: room.participants.size
+                    });
                 }
             }
 
-            room.participants.set(socket.id, { userId, role, name, socketId: socket.id });
-
-            console.log(`[VideoRoom] Room ${roomCode} now has ${room.participants.size} participants:`,
-                Array.from(room.participants.values()).map(p => `${p.name} (${p.socketId})`));
-
-            // Notify others in room
-            socket.to(roomCode).emit('participant-joined', {
-                userId,
-                role,
-                name,
-                socketId: socket.id,
-                participantCount: room.participants.size
-            });
-
-            // Send current participants to the joiner
-            const currentParticipants = Array.from(room.participants.values())
-                .filter(p => p.socketId !== socket.id);
-            console.log(`[VideoRoom] Sending ${currentParticipants.length} existing participants to ${name}:`,
-                currentParticipants.map(p => p.name));
-            socket.emit('room-participants', {
-                participants: currentParticipants,
-                roomCode
+            // Clear waiting list for recruiters
+            room.participants.forEach((p, sid) => {
+                if (p.role === 'recruiter' || p.role === 'panelist') {
+                    videoNs.to(sid).emit('waiting-list-update', { waiting: [], roomCode });
+                }
             });
         });
 
@@ -505,19 +669,34 @@ const setupVideoRoomNamespace = (io) => {
             if (socket.roomCode) {
                 const room = activeRooms.get(socket.roomCode);
                 if (room) {
-                    const participant = room.participants.get(socket.id);
-                    room.participants.delete(socket.id);
+                    // 1. Check if they were an active participant
+                    if (room.participants.has(socket.id)) {
+                        room.participants.delete(socket.id);
+                        socket.to(socket.roomCode).emit('participant-left', {
+                            userId: socket.userId,
+                            socketId: socket.id,
+                            name: socket.userName,
+                            role: socket.userRole,
+                            participantCount: room.participants.size
+                        });
+                    }
 
-                    socket.to(socket.roomCode).emit('participant-left', {
-                        userId: socket.userId,
-                        socketId: socket.id,
-                        name: socket.userName,
-                        role: socket.userRole,
-                        participantCount: room.participants.size
-                    });
+                    // 2. Check if they were in the waiting list
+                    if (room.waitingList.has(socket.id)) {
+                        room.waitingList.delete(socket.id);
+                        // Notify recruiters that a waiting participant left
+                        room.participants.forEach((p, sid) => {
+                            if (p.role === 'recruiter' || p.role === 'panelist') {
+                                videoNs.to(sid).emit('waiting-list-update', {
+                                    waiting: Array.from(room.waitingList.values()),
+                                    roomCode: socket.roomCode
+                                });
+                            }
+                        });
+                    }
 
                     // Clean up empty rooms
-                    if (room.participants.size === 0) {
+                    if (room.participants.size === 0 && room.waitingList.size === 0) {
                         activeRooms.delete(socket.roomCode);
                     }
                 }
