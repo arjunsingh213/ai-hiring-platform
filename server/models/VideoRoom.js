@@ -273,8 +273,8 @@ videoRoomSchema.index({ status: 1 });
 // Pre-save: generate room code if not present
 videoRoomSchema.pre('save', async function () {
     if (!this.roomCode) {
-        const { v4: uuidv4 } = require('uuid');
-        this.roomCode = uuidv4().split('-')[0].toUpperCase(); // e.g. "A1B2C3D4"
+        const crypto = require('crypto');
+        this.roomCode = crypto.randomUUID().split('-')[0].toUpperCase(); // e.g. "A1B2C3D4"
     }
 });
 
