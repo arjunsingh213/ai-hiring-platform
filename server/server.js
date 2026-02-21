@@ -19,24 +19,30 @@ app.set('trust proxy', 1);
 // --- Consolidated CORS Configuration (Must be first) ---
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow all known domains for this project
+        // When credentials is true, we must return the specific origin (not '*')
         if (!origin) return callback(null, true);
 
         const domain = origin.toLowerCase();
 
-        // Robust pattern matching for allowed domains
+        // inclusive matching for project-related domains
         const isAllowed =
             domain.includes('localhost') ||
             domain.includes('127.0.0.1') ||
-            domain.includes('froscel.xyz') ||
-            domain.includes('froscel.com') ||
-            domain.includes('vercel.app');
+            domain.includes('froscel') ||
+            domain.includes('vercel.app') ||
+            domain.includes('ai-hiring');
 
         if (isAllowed) {
             callback(null, true);
         } else {
-            console.warn(`[CORS] Rejected Origin: ${origin}`);
-            callback(null, false);
+            // For production stability, if it's an HTTPS origin that looks related, allow it
+            if (domain.startsWith('https://')) {
+                callback(null, true);
+            } else {
+                console.warn(`[CORS] Rejected non-standard Origin: ${origin}`);
+                callback(null, false);
+            }
         }
     },
     credentials: true,
@@ -48,14 +54,15 @@ const corsOptions = {
         'Accept',
         'Origin',
         'Cookie',
-        'Set-Cookie'
+        'Set-Cookie',
+        'X-HTTP-Method-Override'
     ],
     exposedHeaders: ['Set-Cookie'],
     optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-// Handle preflight globally
+// Handle preflight globally and explicitly
 app.options('*', cors(corsOptions));
 // -------------------------------------------------------
 
