@@ -19,10 +19,11 @@ const allowedOrigins = [
     'http://localhost:3000',
     'https://ai-hiring-platform-cm5t.vercel.app',
     'https://ai-hiring-platform-sooly.vercel.app',
+    'https://ai-hiring-platform-sooley.vercel.app',
     'https://froscel.com',
     'https://www.froscel.com',
     'https://froscel.xyz',
-    'https://www.froscel.xyz'
+    'https://www.froscel.xyz',
 ];
 
 app.use(cors({
@@ -30,22 +31,55 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        const normalizedOrigin = origin.replace(/\/$/, "");
+        try {
+            const url = new URL(origin);
+            const hostname = url.hostname.toLowerCase();
 
-        // Match explicit list OR any froscel subdomain
-        const isAllowed = allowedOrigins.some(allowed => allowed.replace(/\/$/, "") === normalizedOrigin) ||
-            normalizedOrigin.match(/^https?:\/\/([a-z0-9-]+\.)?froscel\.(com|xyz)$/i) ||
-            (process.env.CLIENT_URL && normalizedOrigin === process.env.CLIENT_URL.replace(/\/$/, ""));
+            // 1. Allow localhost
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return callback(null, true);
+            }
 
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+            // 2. Allow all Froscel domains and subdomains
+            if (hostname === 'froscel.com' || hostname.endsWith('.froscel.com') ||
+                hostname === 'froscel.xyz' || hostname.endsWith('.froscel.xyz')) {
+                return callback(null, true);
+            }
+
+            // 3. Allow all Vercel domains and subdomains
+            if (hostname === 'vercel.app' || hostname.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+
+            // 4. Fallback: check explicit list (for any other domains)
+            const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
+            const isExplicitlyAllowed = allowedOrigins.some(allowed =>
+                allowed.replace(/\/$/, "").toLowerCase() === normalizedOrigin
+            );
+
+            if (isExplicitlyAllowed) {
+                return callback(null, true);
+            }
+
+            // 5. Check Environment Variable
+            if (process.env.CLIENT_URL) {
+                const clientUrl = new URL(process.env.CLIENT_URL).hostname.toLowerCase();
+                if (hostname === clientUrl) {
+                    return callback(null, true);
+                }
+            }
+
+            console.warn(`[CORS] Blocking origin: ${origin}`);
+            callback(null, false);
+        } catch (err) {
+            console.error('[CORS] Origin parsing error:', err.message);
+            callback(null, false);
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
     optionsSuccessStatus: 200
 }));
 // -------------------------------------------------------
