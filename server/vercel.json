@@ -6,25 +6,6 @@
             "use": "@vercel/node"
         }
     ],
-    "headers": [
-        {
-            "source": "/(.*)",
-            "headers": [
-                {
-                    "key": "Access-Control-Allow-Credentials",
-                    "value": "true"
-                },
-                {
-                    "key": "Access-Control-Allow-Methods",
-                    "value": "GET,DELETE,PATCH,POST,PUT,OPTIONS"
-                },
-                {
-                    "key": "Access-Control-Allow-Headers",
-                    "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Origin, Cookie"
-                }
-            ]
-        }
-    ],
     "routes": [
         {
             "src": "/uploads/(.*)",
@@ -32,7 +13,12 @@
         },
         {
             "src": "/(.*)",
-            "dest": "server.js"
+            "dest": "server.js",
+            "headers": {
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET,DELETE,PATCH,POST,PUT,OPTIONS",
+                "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Origin, Cookie"
+            }
         }
     ]
 }
