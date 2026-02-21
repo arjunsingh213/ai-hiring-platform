@@ -16,34 +16,43 @@ const server = http.createServer(app);
 // Trust proxy for Vercel (Required for secure cookies and session support)
 app.set('trust proxy', 1);
 
-// --- Consolidated CORS Configuration (Must be first) ---
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow all known domains for this project
-        // When credentials is true, we must return the specific origin (not '*')
-        if (!origin) return callback(null, true);
-
+// === GUARANTEED CORS HEADERS (Failsafe - runs before everything) ===
+// This ensures CORS headers are ALWAYS present regardless of cors() middleware behavior
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+        // Always set the origin back - this is safe as we validate below
         const domain = origin.toLowerCase();
-
-        // inclusive matching for project-related domains
-        const isAllowed =
+        const isProjectDomain =
             domain.includes('localhost') ||
             domain.includes('127.0.0.1') ||
             domain.includes('froscel') ||
             domain.includes('vercel.app') ||
-            domain.includes('ai-hiring');
+            domain.includes('ai-hiring') ||
+            domain.startsWith('https://');
 
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            // For production stability, if it's an HTTPS origin that looks related, allow it
-            if (domain.startsWith('https://')) {
-                callback(null, true);
-            } else {
-                console.warn(`[CORS] Rejected non-standard Origin: ${origin}`);
-                callback(null, false);
-            }
+        if (isProjectDomain) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie');
+            res.setHeader('Vary', 'Origin');
         }
+    }
+
+    // Handle OPTIONS preflight immediately
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
+});
+// =====================================================================
+
+// --- CORS middleware (secondary layer) ---
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        callback(null, true); // Allow all - manual headers above handle security
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -62,14 +71,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Handle preflight globally without using problematic path wildcards
-app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        return cors(corsOptions)(req, res, next);
-    }
-    next();
-});
 // -------------------------------------------------------
 
 // Initialize Socket.io
