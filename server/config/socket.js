@@ -5,13 +5,22 @@ let io;
 const initializeSocket = (server) => {
     io = socketIO(server, {
         cors: {
-            origin: [
-                'http://localhost:5173',
-                process.env.CLIENT_URL,
-                'https://ai-hiring-platform-cm5t.vercel.app',
-                'https://froscel.com',
-                'https://www.froscel.com'
-            ].filter(Boolean),
+            origin: function (origin, callback) {
+                if (!origin) return callback(null, true);
+                const domain = origin.toLowerCase();
+                const isAllowed =
+                    domain.includes('localhost') ||
+                    domain.includes('127.0.0.1') ||
+                    domain.includes('froscel.xyz') ||
+                    domain.includes('froscel.com') ||
+                    domain.includes('vercel.app');
+
+                if (isAllowed) {
+                    callback(null, true);
+                } else {
+                    callback(null, false);
+                }
+            },
             methods: ['GET', 'POST'],
             credentials: true
         }

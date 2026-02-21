@@ -13,75 +13,50 @@ const passport = require('./config/passport');
 const app = express();
 const server = http.createServer(app);
 
-// --- Consolidated CORS Configuration (Must be first) ---
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://ai-hiring-platform-cm5t.vercel.app',
-    'https://ai-hiring-platform-sooly.vercel.app',
-    'https://ai-hiring-platform-sooley.vercel.app',
-    'https://froscel.com',
-    'https://www.froscel.com',
-    'https://froscel.xyz',
-    'https://www.froscel.xyz',
-];
+// Trust proxy for Vercel (Required for secure cookies and session support)
+app.set('trust proxy', 1);
 
-app.use(cors({
+// --- Consolidated CORS Configuration (Must be first) ---
+const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        try {
-            const url = new URL(origin);
-            const hostname = url.hostname.toLowerCase();
+        const domain = origin.toLowerCase();
 
-            // 1. Allow localhost
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return callback(null, true);
-            }
+        // Robust pattern matching for allowed domains
+        const isAllowed =
+            domain.includes('localhost') ||
+            domain.includes('127.0.0.1') ||
+            domain.includes('froscel.xyz') ||
+            domain.includes('froscel.com') ||
+            domain.includes('vercel.app');
 
-            // 2. Allow all Froscel domains and subdomains
-            if (hostname === 'froscel.com' || hostname.endsWith('.froscel.com') ||
-                hostname === 'froscel.xyz' || hostname.endsWith('.froscel.xyz')) {
-                return callback(null, true);
-            }
-
-            // 3. Allow all Vercel domains and subdomains
-            if (hostname === 'vercel.app' || hostname.endsWith('.vercel.app')) {
-                return callback(null, true);
-            }
-
-            // 4. Fallback: check explicit list (for any other domains)
-            const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
-            const isExplicitlyAllowed = allowedOrigins.some(allowed =>
-                allowed.replace(/\/$/, "").toLowerCase() === normalizedOrigin
-            );
-
-            if (isExplicitlyAllowed) {
-                return callback(null, true);
-            }
-
-            // 5. Check Environment Variable
-            if (process.env.CLIENT_URL) {
-                const clientUrl = new URL(process.env.CLIENT_URL).hostname.toLowerCase();
-                if (hostname === clientUrl) {
-                    return callback(null, true);
-                }
-            }
-
-            console.warn(`[CORS] Blocking origin: ${origin}`);
-            callback(null, false);
-        } catch (err) {
-            console.error('[CORS] Origin parsing error:', err.message);
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Rejected Origin: ${origin}`);
             callback(null, false);
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cookie'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Cookie',
+        'Set-Cookie'
+    ],
     exposedHeaders: ['Set-Cookie'],
     optionsSuccessStatus: 200
-}));
+};
+
+app.use(cors(corsOptions));
+// Handle preflight globally
+app.options('*', cors(corsOptions));
 // -------------------------------------------------------
 
 // Initialize Socket.io
