@@ -602,21 +602,19 @@ const RecruiterApplicationsPage = () => {
                                                                 </>
                                                             )}
                                                         </motion.button>
-                                                        {scheduledInterview.status !== 'completed' && (
-                                                            <motion.button
-                                                                className="action-btn"
-                                                                onClick={() => { setRescheduleRoomCode(scheduledInterview.roomCode); setShowScheduleModal(true); }}
-                                                                whileHover={{ scale: 1.05 }}
-                                                                whileTap={{ scale: 0.95 }}
-                                                                initial={{ opacity: 0, y: 10 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                transition={{ duration: 0.2, delay: 0.1 }}
-                                                                style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '8px 12px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                                                            >
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.69-13.51L3 7.5" /></svg>
-                                                                Reschedule
-                                                            </motion.button>
-                                                        )}
+                                                        <motion.button
+                                                            className="action-btn"
+                                                            onClick={() => { setRescheduleRoomCode(scheduledInterview.roomCode); setShowScheduleModal(true); }}
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ duration: 0.2, delay: 0.1 }}
+                                                            style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '8px 12px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                                        >
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.69-13.51L3 7.5" /></svg>
+                                                            Reschedule
+                                                        </motion.button>
                                                     </>
                                                 ) : (
                                                     <motion.button
