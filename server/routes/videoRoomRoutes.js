@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 const VideoRoom = require('../models/VideoRoom');
 const Job = require('../models/Job');
 const User = require('../models/User');
@@ -61,7 +61,7 @@ router.post('/', userAuth, requireRole('recruiter'), async (req, res) => {
         const recruiter = await User.findById(req.userId);
 
         // Generate room code
-        const roomCode = crypto.randomUUID().split('-')[0].toUpperCase();
+        const roomCode = uuidv4().split('-')[0].toUpperCase();
 
         // Build participants array
         const participants = [
