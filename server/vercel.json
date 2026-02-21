@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "installCommand": "npm install && npm install uuid@9.0.1",
     "builds": [
         {
             "src": "server.js",
