@@ -101,21 +101,25 @@ const InterviewRoom = () => {
         const initRoom = async () => {
             try {
                 // 1. Fetch room data
-                const response = await api.get(`/video-rooms/${roomCode}`);
-                const data = response.data || response;
-                setRoomData(data.data);
-                setUserRole(data.userRole);
-                setNotes(data.data?.notes || []);
-                setTranscript(data.data?.transcript || []);
+                // NOTE: api interceptor already unwraps response.data, so result IS the JSON body
+                const result = await api.get(`/video-rooms/${roomCode}`);
+                // result = { success, data: roomDocument, userRole, accessToken }
+                const roomDoc = result.data;   // The actual room document
+                const myRole = result.userRole; // 'recruiter' | 'candidate' | 'panelist'
+                setRoomData(roomDoc);
+                setUserRole(myRole);
+                setNotes(roomDoc?.notes || []);
+                setTranscript(roomDoc?.transcript || []);
+                console.log('[InterviewRoom] Room loaded, my role:', myRole, 'room status:', roomDoc?.status);
 
                 // Extract current user's display name from room participants (DB name)
                 const myUserId = JSON.parse(localStorage.getItem('user') || '{}')._id || localStorage.getItem('userId');
-                const myParticipant = data.data?.participants?.find(
+                const myParticipant = roomDoc?.participants?.find(
                     p => (p.userId === myUserId || p.userId?._id === myUserId)
                 );
                 const displayName = myParticipant?.name || JSON.parse(localStorage.getItem('user') || '{}').profile?.name || 'User';
                 setMyDisplayName(displayName);
-                console.log('[InterviewRoom] My display name:', displayName, 'from', myParticipant ? 'room data' : 'localStorage');
+                console.log('[InterviewRoom] My display name:', displayName, 'role:', myRole, 'from', myParticipant ? 'room data' : 'localStorage');
 
                 // 2. Get local media
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -129,9 +133,8 @@ const InterviewRoom = () => {
                     localVideoRef.current.play().catch(() => { });
                 }
 
-                // 3. Join via API
-                const joinRes = await api.post(`/video-rooms/${roomCode}/join`);
-                const joinData = joinRes.data || joinRes;
+                // 3. Join via API (result is already unwrapped by interceptor)
+                const joinResult = await api.post(`/video-rooms/${roomCode}/join`);
 
                 // 4. Connect socket — strip /api from API URL since socket namespace is on root
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -144,7 +147,7 @@ const InterviewRoom = () => {
                     auth: {
                         token: localStorage.getItem('token'),
                         userId: myUserId,
-                        role: data.userRole
+                        role: myRole
                     }
                 });
                 socketRef.current = socket;
@@ -154,9 +157,9 @@ const InterviewRoom = () => {
                     socket.emit('join-room', {
                         roomCode,
                         userId: myUserId,
-                        role: data.userRole,
+                        role: myRole,
                         name: displayName,
-                        accessToken: joinData.data?.accessToken || data.accessToken
+                        accessToken: joinResult.data?.accessToken || result.accessToken
                     });
                 });
 
@@ -342,8 +345,8 @@ const InterviewRoom = () => {
                 setStatus('ready');
 
                 // Start timer if room is live
-                if (data.data?.status === 'live' && data.data?.startedAt) {
-                    const elapsed = Math.floor((Date.now() - new Date(data.data.startedAt).getTime()) / 1000);
+                if (roomDoc?.status === 'live' && roomDoc?.startedAt) {
+                    const elapsed = Math.floor((Date.now() - new Date(roomDoc.startedAt).getTime()) / 1000);
                     setElapsedTime(elapsed);
                 }
 
