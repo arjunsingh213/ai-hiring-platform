@@ -1,0 +1,502 @@
+/* ═══════════════════════════════════════════════════════════════
+   FROSCEL INTERVIEW ROOM™ — Post-Interview Report Styles
+   Premium intelligence dashboard for recruiter review
+   ═══════════════════════════════════════════════════════════════ */
+
+.interview-report {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: var(--text-primary, #1a1a2e);
+}
+
+/* ─── Header ─── */
+.report-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    border-radius: 16px;
+    padding: 32px;
+    color: white;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.report-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 70%);
+    border-radius: 50%;
+}
+
+.report-header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.report-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 8px;
+}
+
+.report-header .report-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+.report-header .report-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ─── Score Cards Row ─── */
+.report-score-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.score-card {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.score-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.score-card .score-value {
+    font-size: 36px;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.score-card .score-label {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.score-card.recommendation {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+.score-card.recommendation .score-value {
+    background: none;
+    -webkit-text-fill-color: white;
+    font-size: 20px;
+    text-transform: capitalize;
+}
+
+.score-card.recommendation .score-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ─── Section Cards ─── */
+.report-section {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.report-section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ─── Executive Summary ─── */
+.executive-summary {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #374151;
+    background: #f8f9fe;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #6366f1;
+}
+
+/* ─── Competency Grid ─── */
+.competency-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.competency-item {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+}
+
+.competency-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.competency-item-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.competency-score {
+    font-size: 18px;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.competency-score.high {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.competency-score.medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.competency-score.low {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.competency-bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.competency-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+}
+
+.competency-evidence {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.competency-evidence li {
+    margin: 4px 0;
+}
+
+/* ─── Technical Assessment ─── */
+.tech-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.skill-tag {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.skill-tag.verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.skill-tag.gap {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ─── Key Quotes ─── */
+.quote-card {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 12px 0;
+    border-left: 3px solid #6366f1;
+}
+
+.quote-card.concerning {
+    border-left-color: #ef4444;
+}
+
+.quote-card.positive {
+    border-left-color: #10b981;
+}
+
+.quote-text {
+    font-style: italic;
+    font-size: 14px;
+    color: #374151;
+    margin: 0 0 8px;
+}
+
+.quote-context {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* ─── Integrity Section ─── */
+.integrity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.integrity-badge.green {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.integrity-badge.yellow {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.integrity-badge.red {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ─── Validation Panel ─── */
+.validation-panel {
+    background: linear-gradient(135deg, #f8f9fe, #ede9fe);
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 24px;
+    border: 2px solid #c7d2fe;
+}
+
+.validation-panel h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.validation-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.validation-btn {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.validation-btn.accept {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.validation-btn.edit {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.validation-btn.reject {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.validation-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.validation-comments {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #c7d2fe;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    resize: vertical;
+    margin-top: 12px;
+    font-family: inherit;
+}
+
+.override-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.override-input label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 4px;
+}
+
+.override-input input,
+.override-input select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* ─── Follow-up Section ─── */
+.followup-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.followup-list li {
+    padding: 10px 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 14px;
+    border-left: 3px solid #6366f1;
+}
+
+/* ─── Loading State ─── */
+.report-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: 16px;
+}
+
+.report-loading .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+    .report-score-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .competency-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .override-inputs {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .report-score-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .interview-report {
+        padding: 12px;
+    }
+
+    .report-header {
+        padding: 20px;
+    }
+
+    .report-header h1 {
+        font-size: 22px;
+    }
+}
+
+/* ─── Dark Theme ─── */
+[data-theme="dark"] .interview-report,
+.dark .interview-report {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .report-section,
+.dark .report-section {
+    background: #1e1e2e;
+    border-color: #2d2d44;
+}
+
+[data-theme="dark"] .score-card,
+.dark .score-card {
+    background: #1e1e2e;
+    border-color: #2d2d44;
+}
+
+[data-theme="dark"] .competency-item,
+.dark .competency-item {
+    background: #16162a;
+    border-color: #2d2d44;
+}
+
+[data-theme="dark"] .executive-summary,
+.dark .executive-summary {
+    background: #16162a;
+    color: #d1d5db;
+}
+
+[data-theme="dark"] .quote-card,
+.dark .quote-card {
+    background: #16162a;
+}

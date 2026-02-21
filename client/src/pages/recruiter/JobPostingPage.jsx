@@ -35,6 +35,7 @@ const JobPostingPage = () => {
     const [showPipelineModal, setShowPipelineModal] = useState(false);
     const [createdJobId, setCreatedJobId] = useState(null);
     const [savingPipeline, setSavingPipeline] = useState(false);
+    const [modalStep, setModalStep] = useState(1); // 1: Config, 2: Overview
     const [showFeedback, setShowFeedback] = useState(false);
 
     // Interview Pipeline Configuration
@@ -148,6 +149,11 @@ const JobPostingPage = () => {
 
     // Step 2: Save pipeline configuration
     const handleSavePipeline = async () => {
+        if (modalStep === 1) {
+            setModalStep(2);
+            return;
+        }
+
         if (!createdJobId) return;
 
         setSavingPipeline(true);
@@ -155,7 +161,7 @@ const JobPostingPage = () => {
             await api.put(`/jobs/${createdJobId}`, {
                 interviewPipeline: interviewPipeline
             });
-            toast.success('Interview pipeline configured! 🎉');
+            toast.success('Job published successfully! 🎉');
             setShowPipelineModal(false);
 
             // Trigger feedback for job post
@@ -422,36 +428,122 @@ const JobPostingPage = () => {
                         </div>
 
                         <div className="pipeline-modal-body">
-                            <InterviewPipelineConfig
-                                value={interviewPipeline}
-                                onChange={setInterviewPipeline}
-                                jobSkills={formData.skills.split(',').map(s => s.trim()).filter(s => s)}
-                            />
+                            {modalStep === 1 ? (
+                                <InterviewPipelineConfig
+                                    value={interviewPipeline}
+                                    onChange={setInterviewPipeline}
+                                    jobSkills={formData.skills.split(',').map(s => s.trim()).filter(s => s)}
+                                />
+                            ) : (
+                                <div className="job-overview-section">
+                                    <div className="overview-header">
+                                        <h3>Review Job Posting</h3>
+                                        <p>Check all details before publishing this job to the platform.</p>
+                                    </div>
+
+                                    <div className="overview-grid">
+                                        <div className="overview-card">
+                                            <h4>General Info</h4>
+                                            <div className="overview-item">
+                                                <label>Title:</label>
+                                                <span>{formData.title}</span>
+                                            </div>
+                                            <div className="overview-item">
+                                                <label>Type:</label>
+                                                <span className="capitalize">{formData.type}</span>
+                                            </div>
+                                            <div className="overview-item">
+                                                <label>Location:</label>
+                                                <span>{formData.location} {formData.remote && '(Remote)'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="overview-card">
+                                            <h4>Requirements</h4>
+                                            <div className="overview-item">
+                                                <label>Skills:</label>
+                                                <span>{formData.skills}</span>
+                                            </div>
+                                            <div className="overview-item">
+                                                <label>Experience:</label>
+                                                <span>{formData.minExperience || 0} - {formData.maxExperience || 10} years</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="overview-card full-width">
+                                            <h4>Interview Journey</h4>
+                                            <div className="pipeline-mini-preview">
+                                                {interviewPipeline.rounds.map((round, idx) => (
+                                                    <div key={idx} className="mini-round">
+                                                        <span className="round-idx">{idx + 1}</span>
+                                                        <div className="round-details">
+                                                            <div className="round-top">
+                                                                <span className="round-name">{round.title}</span>
+                                                                <span className={`round-badge ${round.type === 'AI' ? 'ai' : 'human'}`}>
+                                                                    {round.type === 'AI' ? 'AI' : 'Human'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="round-meta">{round.duration} min • {round.roundType}</div>
+                                                        </div>
+                                                        {idx < interviewPipeline.rounds.length - 1 && <div className="mini-connector" />}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="pipeline-modal-footer">
-                            <button
-                                type="button"
-                                className="btn btn-ghost"
-                                onClick={handleSkipPipeline}
-                            >
-                                Skip for Now
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={handleSavePipeline}
-                                disabled={savingPipeline}
-                            >
-                                {savingPipeline ? 'Saving...' : (
-                                    <>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        Save & Publish Job
-                                    </>
+                            <div className="footer-left">
+                                {modalStep === 2 && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost"
+                                        onClick={() => setModalStep(1)}
+                                    >
+                                        Back to Edit
+                                    </button>
                                 )}
-                            </button>
+                            </div>
+                            <div className="footer-right">
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost"
+                                    onClick={handleSkipPipeline}
+                                    style={{ marginRight: 'var(--spacing-md)' }}
+                                >
+                                    Skip for Now
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={handleSavePipeline}
+                                    disabled={savingPipeline}
+                                >
+                                    {savingPipeline ? 'Publishing...' : (
+                                        <>
+                                            {modalStep === 1 ? (
+                                                <>
+                                                    Next: Review & Overview
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '6px' }}>
+                                                        <line x1="5" y1="12" x2="19" y2="12" />
+                                                        <polyline points="12 5 19 12 12 19" />
+                                                    </svg>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                    Confirm & Publish Job
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

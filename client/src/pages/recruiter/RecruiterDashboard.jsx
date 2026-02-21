@@ -15,6 +15,8 @@ import HiringPipelinePage from './HiringPipelinePage';
 import OnboardingPortal from '../jobseeker/OnboardingPortal';
 import LeaderboardPage from '../jobseeker/LeaderboardPage';
 import PublicProfilePage from '../shared/PublicProfilePage';
+import InterviewRoom from '../interview/InterviewRoom';
+import InterviewReport from './InterviewReport';
 import './RecruiterDashboard.css';
 
 const RecruiterDashboard = () => {
@@ -44,6 +46,8 @@ const RecruiterDashboard = () => {
                     <Route path="analytics" element={<RecruiterAnalytics />} />
                     <Route path="messages" element={<RecruiterMessages />} />
                     <Route path="settings" element={<RecruiterSettings />} />
+                    <Route path="interview-room/:roomCode" element={<InterviewRoom />} />
+                    <Route path="interview-report/:roomCode" element={<InterviewReport />} />
                 </Routes>
             </div>
             <MobileNav />

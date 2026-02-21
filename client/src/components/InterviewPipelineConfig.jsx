@@ -27,6 +27,10 @@ const Icons = {
     arrowDown: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>,
     x: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
     plus: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
+    video: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>,
+    mapPin: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
+    coffee: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" /><line x1="6" y1="1" x2="6" y2="4" /><line x1="10" y1="1" x2="10" y2="4" /><line x1="14" y1="1" x2="14" y2="4" /></svg>,
+    activity: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
 };
 
 // Pipeline preset templates with domain-aware defaults
@@ -154,18 +158,27 @@ const PIPELINE_PRESETS = {
     }
 };
 
-// Round type options for custom builder
-const ROUND_TYPES = [
-    { value: 'screening', label: 'Screening', icon: Icons.clipboard, description: 'Quick initial assessment' },
-    { value: 'technical', label: 'Technical Interview', icon: Icons.bulb, description: 'Technical knowledge interview' },
-    { value: 'coding', label: 'Coding Challenge', icon: Icons.code, description: 'Live coding challenge' },
-    { value: 'dsa', label: 'DSA/Algorithms', icon: Icons.hash, description: 'Algorithms & data structures' },
-    { value: 'hr', label: 'HR/Behavioral', icon: Icons.users, description: 'Culture fit & soft skills' },
-    { value: 'assessment', label: 'Assessment', icon: Icons.fileText, description: 'MCQ/Written test' },
-    { value: 'system_design', label: 'System Design', icon: Icons.layers, description: 'Architecture discussion' },
-    { value: 'portfolio_review', label: 'Portfolio Review', icon: Icons.palette, description: 'Work sample evaluation' },
-    { value: 'group_discussion', label: 'Group Discussion', icon: Icons.messageCircle, description: 'Team collaboration assessment' }
+// Round Category & Type options
+const AI_ROUND_TYPES = [
+    { value: 'screening', label: 'AI Screening', icon: Icons.clipboard, description: 'Quick initial AI screening' },
+    { value: 'technical', label: 'AI Technical', icon: Icons.bulb, description: 'Direct AI technical interview' },
+    { value: 'coding', label: 'AI Coding Challenge', icon: Icons.code, description: 'AI-monitored coding task' },
+    { value: 'dsa', label: 'AI DSA/Algorithms', icon: Icons.hash, description: 'Algorithms & data structures' },
+    { value: 'hr', label: 'AI HR/Behavioral', icon: Icons.users, description: 'AI behavioral assessment' },
+    { value: 'assessment', label: 'AI Assessment', icon: Icons.fileText, description: 'AI-generated MCQ test' },
+    { value: 'custom_ai', label: 'Custom AI Round', icon: Icons.zap, description: 'Domain-based custom AI round' }
 ];
+
+const HUMAN_ROUND_TYPES = [
+    { value: 'in_person', label: 'In-Person Interview', icon: Icons.mapPin, description: 'Face-to-face office meeting' },
+    { value: 'video', label: 'Video Interview', icon: Icons.video, description: 'Remote video call discussion' },
+    { value: 'panel', label: 'Panel Discussion', icon: Icons.users, description: 'Multi-interviewer round' },
+    { value: 'technical_deep_dive', label: 'Technical Deep Dive', icon: Icons.bulb, description: 'Expert technical evaluation' },
+    { value: 'hr_discussion', label: 'HR Discussion', icon: Icons.coffee, description: 'Culture fit & deal closure' },
+    { value: 'managerial', label: 'Managerial Round', icon: Icons.activity, description: 'Hiring manager assessment' }
+];
+
+const ROUND_TYPES = [...AI_ROUND_TYPES, ...HUMAN_ROUND_TYPES];
 
 // DSA topics for coding rounds
 const DSA_TOPICS = [
@@ -188,6 +201,7 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
     });
     const [expandedRound, setExpandedRound] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
+    const [showAddMenu, setShowAddMenu] = useState(false);
 
     // Track if we've done initial sync from value prop
     const [hasSynced, setHasSynced] = useState(false);
@@ -199,50 +213,45 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
             return;
         }
 
-        // Don't re-sync if we've already synced and the rounds match
-        if (hasSynced && rounds.length === value.rounds.length) {
+        // Deep matching to prevent loop
+        const roundsMatch = JSON.stringify(rounds) === JSON.stringify(value.rounds);
+        const presetMatch = selectedPreset === value.pipelineType;
+        const settingsMatch = JSON.stringify(settings) === JSON.stringify(value.settings);
+
+        if (hasSynced && roundsMatch && presetMatch && settingsMatch) {
             return;
         }
 
-        console.log('[PIPELINE CONFIG] Syncing from saved pipeline:', value.pipelineType, 'with', value.rounds?.length, 'rounds');
-        console.log('[PIPELINE CONFIG] First round type:', value.rounds?.[0]?.roundType);
 
-        // Set preset type
-        if (value.pipelineType) {
-            setSelectedPreset(value.pipelineType);
-        } else {
-            // If no pipelineType but has rounds, it's custom
-            setSelectedPreset('custom');
-        }
-
-        // Set rounds
-        setRounds(value.rounds);
-
-        // Set settings if provided
-        if (value.settings) {
-            setSettings(prev => ({ ...prev, ...value.settings }));
-        }
+        // Set states without triggering global sync back to parent
+        if (value.pipelineType) setSelectedPreset(value.pipelineType);
+        if (value.rounds) setRounds(value.rounds);
+        if (value.settings) setSettings(prev => ({ ...prev, ...value.settings }));
 
         setHasSynced(true);
     }, [value]);
 
-    // Update parent when config changes
-    useEffect(() => {
+    // Helper to notify parent
+    const notifyChange = (updatedPreset, updatedRounds, updatedSettings) => {
         onChange({
-            pipelineType: selectedPreset,
-            rounds,
-            settings
+            pipelineType: updatedPreset || selectedPreset,
+            rounds: updatedRounds || rounds,
+            settings: updatedSettings || settings
         });
-    }, [selectedPreset, rounds, settings]);
+    };
 
     // Handle preset selection
     const handlePresetChange = (presetKey) => {
         setSelectedPreset(presetKey);
         const preset = PIPELINE_PRESETS[presetKey];
+        let newRounds = rounds;
+
         if (presetKey !== 'custom') {
             // Apply preset rounds with job skills
-            const presetRounds = preset.rounds.map(round => ({
+            newRounds = preset.rounds.map(round => ({
                 ...round,
+                type: 'AI', // Presets are AI by default
+                isAIEnabled: true,
                 questionConfig: round.questionConfig ? {
                     ...round.questionConfig,
                     focusSkills: jobSkills.slice(0, 5)
@@ -252,44 +261,93 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                     languages: ['JavaScript', 'Python', 'Java'] // Default languages
                 } : undefined
             }));
-            setRounds(presetRounds);
+            setRounds(newRounds);
         }
+        notifyChange(presetKey, newRounds, settings);
     };
 
-    // Add new round (for custom)
-    const addRound = (roundType = 'technical') => {
-        const roundInfo = ROUND_TYPES.find(r => r.value === roundType);
-        const newRound = {
-            roundNumber: rounds.length + 1,
-            roundType,
-            title: `${roundInfo?.label || 'Interview'} Round`,
-            description: roundInfo?.description || '',
-            duration: 30,
-            isAIEnabled: true,
-            isRequired: true,
-            questionConfig: ['technical', 'hr', 'behavioral', 'screening'].includes(roundType) ? {
+    // Toggle between AI and HUMAN for a specific round
+    const toggleRoundType = (index) => {
+        const updatedRounds = [...rounds];
+        const currentRound = updatedRounds[index];
+        const isCurrentlyAI = currentRound.type === 'AI';
+        const newMode = isCurrentlyAI ? 'HUMAN' : 'AI';
+
+        // Get matching type info
+        const roundInfo = ROUND_TYPES.find(r => r.value === currentRound.roundType);
+
+        updatedRounds[index] = {
+            ...currentRound,
+            type: newMode,
+            isAIEnabled: newMode === 'AI',
+            // Update configs for the new mode if needed
+            questionConfig: (newMode === 'AI' && ['technical', 'hr', 'behavioral', 'screening', 'custom_ai'].includes(currentRound.roundType)) ? {
                 questionCount: 5,
                 categories: ['conceptual', 'practical'],
                 focusSkills: jobSkills.slice(0, 5)
             } : undefined,
-            codingConfig: ['coding', 'dsa'].includes(roundType) ? {
+            humanConfig: newMode === 'HUMAN' ? {
+                location: '',
+                meetingLink: '',
+                interviewerNotes: '',
+                criteria: [],
+                scorecardTemplate: 'standard'
+            } : undefined
+        };
+        setRounds(updatedRounds);
+        notifyChange(selectedPreset, updatedRounds, settings);
+    };
+
+    // Add new round (for custom)
+    const addRound = (roundType = 'technical', mode = 'AI') => {
+        const roundInfo = ROUND_TYPES.find(r => r.value === roundType);
+        const isHuman = mode === 'HUMAN';
+        console.log('[PIPELINE] Adding round:', roundType, mode);
+
+        const newRound = {
+            roundNumber: rounds.length + 1,
+            roundType,
+            type: mode, // AI | HUMAN
+            title: `${roundInfo?.label || 'Interview'} Round`,
+            description: roundInfo?.description || '',
+            duration: 30,
+            isAIEnabled: !isHuman,
+            isRequired: true,
+            // AI specific configs
+            questionConfig: (mode === 'AI' && ['technical', 'hr', 'behavioral', 'screening', 'custom_ai'].includes(roundType)) ? {
+                questionCount: 5,
+                categories: ['conceptual', 'practical'],
+                focusSkills: jobSkills.slice(0, 5)
+            } : undefined,
+            codingConfig: (mode === 'AI' && ['coding', 'dsa'].includes(roundType)) ? {
                 difficulty: 'medium',
                 problemCount: 2,
                 topics: ['arrays', 'strings'],
                 languages: ['JavaScript', 'Python'],
                 timePerProblem: 25
             } : undefined,
-            assessmentConfig: roundType === 'assessment' ? {
+            assessmentConfig: (mode === 'AI' && roundType === 'assessment') ? {
                 questionCount: 20,
                 duration: 30,
                 passingScore: 60,
                 randomize: true,
-                assessmentTypes: ['technical']  // Default to technical
+                assessmentTypes: ['technical']
+            } : undefined,
+            // Human specific configs
+            humanConfig: isHuman ? {
+                location: '',
+                meetingLink: '',
+                interviewerNotes: '',
+                criteria: [],
+                scorecardTemplate: 'standard'
             } : undefined,
             scoring: { passingScore: 60, weightage: 100 }
         };
-        setRounds([...rounds, newRound]);
+        const newRounds = [...rounds, newRound];
+        setRounds(newRounds);
         setExpandedRound(rounds.length);
+        setShowAddMenu(false);
+        notifyChange(selectedPreset, newRounds, settings);
     };
 
     // Remove round
@@ -300,9 +358,9 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
         }));
         setRounds(updatedRounds);
         setExpandedRound(null);
+        notifyChange(selectedPreset, updatedRounds, settings);
     };
 
-    // Update round config
     const updateRound = (index, field, value) => {
         const updatedRounds = [...rounds];
 
@@ -319,28 +377,38 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
         }
         // Handle roundType change - initialize proper config for the type
         else if (field === 'roundType') {
+            const isHuman = HUMAN_ROUND_TYPES.some(h => h.value === value);
             updatedRounds[index] = {
                 ...updatedRounds[index],
                 roundType: value,
+                type: isHuman ? 'HUMAN' : 'AI',
+                isAIEnabled: !isHuman,
                 title: ROUND_TYPES.find(r => r.value === value)?.label + ' Round',
                 // Initialize configs based on round type
-                questionConfig: ['technical', 'hr', 'behavioral', 'screening'].includes(value) ? {
+                questionConfig: (!isHuman && ['technical', 'hr', 'behavioral', 'screening', 'custom_ai'].includes(value)) ? {
                     questionCount: 5,
                     categories: ['conceptual', 'practical'],
                     focusSkills: jobSkills.slice(0, 5)
                 } : undefined,
-                codingConfig: ['coding', 'dsa'].includes(value) ? {
+                codingConfig: (!isHuman && ['coding', 'dsa'].includes(value)) ? {
                     difficulty: 'medium',
                     problemCount: 2,
                     topics: ['arrays', 'strings'],
                     languages: ['JavaScript', 'Python'],
                     timePerProblem: 25
                 } : undefined,
-                assessmentConfig: value === 'assessment' ? {
+                assessmentConfig: (!isHuman && value === 'assessment') ? {
                     questionCount: 20,
                     passingScore: 60,
                     randomize: true,
-                    assessmentTypes: ['technical']  // Default to technical
+                    assessmentTypes: ['technical']
+                } : undefined,
+                humanConfig: isHuman ? {
+                    location: '',
+                    meetingLink: '',
+                    interviewerNotes: '',
+                    criteria: [],
+                    scorecardTemplate: 'standard'
                 } : undefined
             };
         }
@@ -348,6 +416,7 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
             updatedRounds[index] = { ...updatedRounds[index], [field]: value };
         }
         setRounds(updatedRounds);
+        notifyChange(selectedPreset, updatedRounds, settings);
     };
 
     // Move round up/down
@@ -364,6 +433,7 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
         });
 
         setRounds(updatedRounds);
+        notifyChange(selectedPreset, updatedRounds, settings);
     };
 
     return (
@@ -416,9 +486,57 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                     })}
                     {selectedPreset === 'custom' && (
                         <div className="timeline-item add-round">
-                            <button className="add-round-btn" onClick={() => addRound()}>
-                                <span>+</span>
-                            </button>
+                            <div className={`add-round-dropdown ${showAddMenu ? 'active' : ''}`}>
+                                <button
+                                    className="add-round-btn"
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('[PIPELINE] Add Round button clicked, current menu state:', !showAddMenu);
+                                        setShowAddMenu(!showAddMenu);
+                                    }}
+                                >
+                                    <span>+</span>
+                                </button>
+                                <div className="add-round-menu">
+                                    <div className="menu-section">
+                                        <label>AI Rounds</label>
+                                        {AI_ROUND_TYPES.map(type => (
+                                            <div
+                                                key={type.value}
+                                                className="menu-item"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    addRound(type.value, 'AI');
+                                                }}
+                                            >
+                                                <span className="item-icon">{type.icon}</span>
+                                                <span className="item-label">{type.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="menu-divider" />
+                                    <div className="menu-section">
+                                        <label>Human Rounds</label>
+                                        {HUMAN_ROUND_TYPES.map(type => (
+                                            <div
+                                                key={type.value}
+                                                className="menu-item"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    addRound(type.value, 'HUMAN');
+                                                }}
+                                            >
+                                                <span className="item-icon">{type.icon}</span>
+                                                <span className="item-label">{type.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                             <span className="timeline-label">Add Round</span>
                         </div>
                     )}
@@ -440,7 +558,7 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <span className="round-number">Round {round.roundNumber}</span>
                                 <span className="round-title">{round.title}</span>
                                 <span className="round-meta">
-                                    {round.duration} min • {round.isAIEnabled ? <><span className="ai-badge">{Icons.cpu}</span> AI</> : <><span className="manual-badge">{Icons.user}</span> Manual</>}
+                                    {round.duration} min • {round.type === 'AI' ? <><span className="ai-badge">{Icons.cpu}</span> AI</> : <><span className="manual-badge">{Icons.user}</span> Human</>}
                                 </span>
                             </div>
                             <div className="round-actions">
@@ -500,21 +618,30 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                             onChange={(e) => updateRound(index, 'roundType', e.target.value)}
                                             className="input"
                                         >
-                                            {ROUND_TYPES.map(type => (
-                                                <option key={type.value} value={type.value}>
-                                                    {type.icon} {type.label}
-                                                </option>
-                                            ))}
+                                            <optgroup label="AI Rounds">
+                                                {AI_ROUND_TYPES.map(type => (
+                                                    <option key={type.value} value={type.value}>
+                                                        {type.label}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                            <optgroup label="Human Rounds">
+                                                {HUMAN_ROUND_TYPES.map(type => (
+                                                    <option key={type.value} value={type.value}>
+                                                        {type.label}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
                                         </select>
                                     </div>
                                     <div className="config-field">
-                                        <label className="checkbox-label">
+                                        <label className="checkbox-label" style={{ cursor: 'pointer' }}>
                                             <input
                                                 type="checkbox"
-                                                checked={round.isAIEnabled}
-                                                onChange={(e) => updateRound(index, 'isAIEnabled', e.target.checked)}
+                                                checked={round.type === 'AI'}
+                                                onChange={() => toggleRoundType(index)}
                                             />
-                                            AI-Powered Evaluation
+                                            {round.type === 'AI' ? 'AI-Powered Evaluation' : 'Human-Led Evaluation'}
                                         </label>
                                     </div>
                                 </div>
@@ -714,6 +841,76 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Human specific config */}
+                                {round.type === 'HUMAN' && round.humanConfig && (
+                                    <div className="human-config">
+                                        <h4><span className="config-icon">{Icons.user}</span> Human Interview Setup</h4>
+                                        <div className="config-row">
+                                            <div className="config-field">
+                                                <label>Location / Office Address</label>
+                                                <input
+                                                    type="text"
+                                                    value={round.humanConfig.location}
+                                                    onChange={(e) => updateRound(index, 'humanConfig.location', e.target.value)}
+                                                    className="input"
+                                                    placeholder="Office address for in-person"
+                                                />
+                                            </div>
+                                            <div className="config-field">
+                                                <label>Meeting / Video Link</label>
+                                                <input
+                                                    type="text"
+                                                    value={round.humanConfig.meetingLink}
+                                                    onChange={(e) => updateRound(index, 'humanConfig.meetingLink', e.target.value)}
+                                                    className="input"
+                                                    placeholder="Zoom/Google Meet link"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="config-field full-width">
+                                            <label>Interviewer Internal Notes</label>
+                                            <textarea
+                                                value={round.humanConfig.interviewerNotes}
+                                                onChange={(e) => updateRound(index, 'humanConfig.interviewerNotes', e.target.value)}
+                                                className="input"
+                                                rows="3"
+                                                placeholder="Instructions for the interviewer..."
+                                            />
+                                        </div>
+                                        <div className="config-field full-width">
+                                            <label>Evaluation Criteria</label>
+                                            <div className="criteria-input">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add criterion (e.g., Problem Solving, Teamwork)"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const val = e.target.value.trim();
+                                                            if (val) {
+                                                                const current = round.humanConfig.criteria || [];
+                                                                updateRound(index, 'humanConfig.criteria', [...current, val]);
+                                                                e.target.value = '';
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="input"
+                                                />
+                                                <div className="criteria-tags">
+                                                    {(round.humanConfig.criteria || []).map((c, ci) => (
+                                                        <span key={ci} className="criteria-tag">
+                                                            {c}
+                                                            <button onClick={() => {
+                                                                const filtered = round.humanConfig.criteria.filter((_, i) => i !== ci);
+                                                                updateRound(index, 'humanConfig.criteria', filtered);
+                                                            }}>×</button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -755,7 +952,14 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <input
                                     type="checkbox"
                                     checked={settings.requirePlatformInterview}
-                                    onChange={(e) => setSettings({ ...settings, requirePlatformInterview: e.target.checked })}
+                                    onChange={(e) => {
+                                        const val = e.target.checked;
+                                        setSettings(prev => {
+                                            const next = { ...prev, requirePlatformInterview: val };
+                                            notifyChange(selectedPreset, rounds, next);
+                                            return next;
+                                        });
+                                    }}
                                 />
                                 Require platform interview before job interview
                             </label>
@@ -767,7 +971,14 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <input
                                     type="number"
                                     value={settings.autoRejectBelowScore || ''}
-                                    onChange={(e) => setSettings({ ...settings, autoRejectBelowScore: e.target.value ? parseInt(e.target.value) : null })}
+                                    onChange={(e) => {
+                                        const val = e.target.value ? parseInt(e.target.value) : null;
+                                        setSettings(prev => {
+                                            const next = { ...prev, autoRejectBelowScore: val };
+                                            notifyChange(selectedPreset, rounds, next);
+                                            return next;
+                                        });
+                                    }}
                                     className="input"
                                     placeholder="e.g., 40"
                                     min="0"
@@ -779,7 +990,14 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <input
                                     type="number"
                                     value={settings.autoAdvanceAboveScore || ''}
-                                    onChange={(e) => setSettings({ ...settings, autoAdvanceAboveScore: e.target.value ? parseInt(e.target.value) : null })}
+                                    onChange={(e) => {
+                                        const val = e.target.value ? parseInt(e.target.value) : null;
+                                        setSettings(prev => {
+                                            const next = { ...prev, autoAdvanceAboveScore: val };
+                                            notifyChange(selectedPreset, rounds, next);
+                                            return next;
+                                        });
+                                    }}
                                     className="input"
                                     placeholder="e.g., 70"
                                     min="0"
@@ -793,7 +1011,14 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <label>Max attempts per round</label>
                                 <select
                                     value={settings.maxAttempts}
-                                    onChange={(e) => setSettings({ ...settings, maxAttempts: parseInt(e.target.value) })}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        setSettings(prev => {
+                                            const next = { ...prev, maxAttempts: val };
+                                            notifyChange(selectedPreset, rounds, next);
+                                            return next;
+                                        });
+                                    }}
                                     className="input"
                                 >
                                     <option value={1}>1 attempt</option>
@@ -806,7 +1031,14 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <input
                                     type="number"
                                     value={settings.expiryDays}
-                                    onChange={(e) => setSettings({ ...settings, expiryDays: parseInt(e.target.value) })}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        setSettings(prev => {
+                                            const next = { ...prev, expiryDays: val };
+                                            notifyChange(selectedPreset, rounds, next);
+                                            return next;
+                                        });
+                                    }}
                                     className="input"
                                     min="1"
                                     max="30"
@@ -819,7 +1051,14 @@ const InterviewPipelineConfig = ({ value, onChange, jobSkills = [] }) => {
                                 <input
                                     type="checkbox"
                                     checked={settings.allowReschedule}
-                                    onChange={(e) => setSettings({ ...settings, allowReschedule: e.target.checked })}
+                                    onChange={(e) => {
+                                        const val = e.target.checked;
+                                        setSettings(prev => {
+                                            const next = { ...prev, allowReschedule: val };
+                                            notifyChange(selectedPreset, rounds, next);
+                                            return next;
+                                        });
+                                    }}
                                 />
                                 Allow candidates to reschedule
                             </label>

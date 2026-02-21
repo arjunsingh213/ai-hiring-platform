@@ -102,7 +102,10 @@ const jobSchema = new mongoose.Schema({
             roundNumber: { type: Number, required: true },
             roundType: {
                 type: String,
-                enum: ['screening', 'technical', 'coding', 'dsa', 'hr', 'assessment', 'system_design', 'behavioral', 'portfolio_review', 'group_discussion'],
+                enum: [
+                    'screening', 'technical', 'coding', 'dsa', 'hr', 'assessment', 'system_design', 'behavioral', 'portfolio_review', 'group_discussion',
+                    'in_person', 'video', 'panel', 'technical_deep_dive', 'hr_discussion', 'managerial'
+                ],
                 required: true
             },
             title: { type: String, required: true },
@@ -171,11 +174,16 @@ const jobSchema = new mongoose.Schema({
             sendFeedbackToCandidate: { type: Boolean, default: false }
         },
 
-        // Domain-specific presets (auto-applied based on job domain)
         domainPreset: {
             type: String,
             enum: ['engineering', 'data_science', 'design', 'product', 'marketing', 'sales', 'hr', 'finance', 'general']
-        }
+        },
+
+        // NEW: Dynamic Rounds Reference (Hybrid Pipeline)
+        pipelineRounds: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Round'
+        }]
     },
 
     // Applicants

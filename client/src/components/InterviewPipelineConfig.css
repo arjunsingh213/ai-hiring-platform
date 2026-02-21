@@ -1,10 +1,9 @@
-/* Interview Pipeline Configuration Component Styles */
 .interview-pipeline-config {
-    background: var(--bg-secondary);
+    background: var(--bg-soft);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     margin-top: var(--spacing-lg);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border);
 }
 
 /* Header */
@@ -38,8 +37,8 @@
 
 .preset-card {
     position: relative;
-    background: var(--bg-primary);
-    border: 2px solid var(--border-color);
+    background: var(--bg-base);
+    border: 2px solid var(--glass-border);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     cursor: pointer;
@@ -56,8 +55,8 @@
 .preset-card.active {
     border-color: var(--preset-color, var(--primary));
     background: linear-gradient(135deg,
-            color-mix(in srgb, var(--preset-color, var(--primary)) 5%, var(--bg-primary)),
-            var(--bg-primary));
+            color-mix(in srgb, var(--preset-color, var(--primary)) 10%, var(--bg-base)),
+            var(--bg-base));
 }
 
 .preset-icon {
@@ -107,8 +106,8 @@
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-lg) 0;
-    overflow-x: auto;
     flex-wrap: wrap;
+    /* Changed from overflow-x: auto to wrap only to avoid clipping menu */
 }
 
 .timeline-item {
@@ -176,7 +175,7 @@
     width: 56px;
     height: 56px;
     background: var(--bg-tertiary);
-    border: 2px dashed var(--border-color);
+    border: 2px dashed var(--glass-border);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -193,6 +192,87 @@
     background: var(--bg-secondary);
 }
 
+/* Add Round Dropdown Menu */
+.add-round-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.add-round-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    /* Changed from bottom to top for better visibility */
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+    background: var(--bg-soft);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: var(--spacing-sm);
+    min-width: 220px;
+    z-index: 1000;
+    /* Increased z-index */
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top center;
+}
+
+.add-round-dropdown:hover .add-round-menu,
+.add-round-dropdown.active .add-round-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+}
+
+.menu-section {
+    padding: var(--spacing-xs);
+}
+
+.menu-section label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-bottom: 2px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.menu-item:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary);
+}
+
+.item-icon {
+    display: flex;
+    color: var(--primary);
+}
+
+.item-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: var(--spacing-xs) 0;
+}
+
 /* Round Cards */
 .rounds-editor {
     display: flex;
@@ -201,8 +281,8 @@
 }
 
 .round-card {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
+    background: var(--bg-base);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-md);
     overflow: hidden;
     transition: all 0.2s ease;
@@ -223,7 +303,7 @@
     align-items: center;
     padding: var(--spacing-md);
     cursor: pointer;
-    background: var(--bg-secondary);
+    background: var(--bg-soft);
 }
 
 .round-header:hover {
@@ -265,8 +345,8 @@
 .round-action-btn {
     width: 28px;
     height: 28px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    background: var(--bg-soft);
     border-radius: var(--radius-sm);
     cursor: pointer;
     display: flex;
@@ -303,8 +383,8 @@
 /* Round Config Panel */
 .round-config {
     padding: var(--spacing-lg);
-    background: var(--bg-primary);
-    border-top: 1px solid var(--border-color);
+    background: var(--bg-base);
+    border-top: 1px solid var(--glass-border);
     animation: slideDown 0.2s ease;
 }
 
@@ -359,10 +439,11 @@
 .coding-config,
 .question-config,
 .assessment-config {
-    background: var(--bg-secondary);
+    background: var(--bg-soft);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     margin-top: var(--spacing-md);
+    border: 1px solid var(--glass-border-subtle, rgba(255, 255, 255, 0.05));
 }
 
 .coding-config h4,
@@ -387,7 +468,7 @@
 .skill-tag {
     padding: 4px 12px;
     background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-full);
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -463,7 +544,7 @@
 /* Pipeline Settings */
 .pipeline-settings {
     margin-top: var(--spacing-lg);
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--glass-border);
     padding-top: var(--spacing-lg);
 }
 
@@ -487,8 +568,8 @@
 }
 
 .settings-panel {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
+    background: var(--bg-soft);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-top: var(--spacing-md);
@@ -630,7 +711,16 @@
 }
 
 .manual-badge {
-    color: var(--text-secondary);
+    color: var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.ai-badge {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 /* Round action buttons */
@@ -724,7 +814,78 @@
     padding: 8px;
 }
 
-/* Fix for round type dropdown specifically */
-.config-row .config-field:first-child {
-    min-width: 220px;
+/* Human Config */
+.human-config {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.human-config h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.human-config textarea.input {
+    resize: vertical;
+    padding: var(--spacing-sm);
+    line-height: 1.5;
+}
+
+/* Criteria Tags */
+.criteria-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.criteria-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.criteria-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.criteria-tag button {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.criteria-tag button:hover {
+    color: var(--danger);
+}
+
+/* Assessment Types Branding */
+.assessment-type-card:hover {
+    border-color: var(--primary-light) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.assessment-type-card.selected {
+    box-shadow: 0 0 0 1px var(--primary);
 }

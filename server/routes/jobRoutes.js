@@ -8,6 +8,75 @@ const Interview = require('../models/Interview');
 const aiService = require('../services/ai/aiService');
 const { requirePlatformInterview } = require('../middleware/platformInterviewGuard');
 const { userAuth, requireRole } = require('../middleware/userAuth');
+const Round = require('../models/Round');
+
+// Helper to sync rounds from interviewPipeline to direct Round models
+const syncPipelineRounds = async (jobId, pipeline) => {
+    if (!pipeline || !Array.isArray(pipeline.rounds)) return [];
+
+    const roundIds = [];
+    const incomingRounds = pipeline.rounds;
+
+    // Get existing rounds for this job to identify removals
+    const existingRounds = await Round.find({ jobId, isDeleted: false });
+    const incomingIds = incomingRounds.map(r => r._id).filter(id => id);
+
+    // Soft delete rounds that are no longer in the pipeline
+    for (const existing of existingRounds) {
+        if (!incomingIds.includes(existing._id.toString())) {
+            existing.isDeleted = true;
+            await existing.save();
+        }
+    }
+
+    // Create or Update incoming rounds
+    for (let i = 0; i < incomingRounds.length; i++) {
+        const r = incomingRounds[i];
+        let roundDoc;
+
+        if (r._id) {
+            roundDoc = await Round.findById(r._id);
+            if (roundDoc) {
+                // Update existing
+                roundDoc.title = r.title;
+                roundDoc.type = r.type || (r.isAIEnabled ? 'AI' : 'HUMAN');
+                roundDoc.subtype = r.roundType;
+                roundDoc.orderIndex = i;
+                roundDoc.duration = r.duration;
+                roundDoc.configuration = {
+                    ...roundDoc.configuration,
+                    questionConfig: r.questionConfig,
+                    codingConfig: r.codingConfig,
+                    assessmentConfig: r.assessmentConfig,
+                    humanConfig: r.humanConfig
+                };
+                await roundDoc.save();
+            }
+        }
+
+        if (!roundDoc) {
+            // Create new
+            roundDoc = new Round({
+                jobId,
+                title: r.title,
+                type: r.type || (r.isAIEnabled ? 'AI' : 'HUMAN'),
+                subtype: r.roundType,
+                orderIndex: i,
+                duration: r.duration,
+                configuration: {
+                    questionConfig: r.questionConfig,
+                    codingConfig: r.codingConfig,
+                    assessmentConfig: r.assessmentConfig,
+                    humanConfig: r.humanConfig
+                }
+            });
+            await roundDoc.save();
+        }
+        roundIds.push(roundDoc._id);
+    }
+
+    return roundIds;
+};
 
 // Create job posting - PROTECTED: Recruiter only
 router.post('/', userAuth, requireRole('recruiter'), async (req, res) => {
@@ -23,6 +92,11 @@ router.post('/', userAuth, requireRole('recruiter'), async (req, res) => {
             job.description = formatted.formattedDescription || req.body.rawDescription;
             job.aiGenerated.formattedDescription = formatted.formattedDescription;
             job.aiGenerated.suggestedSkills = formatted.suggestedSkills;
+        }
+
+        // Sync pipeline rounds if provided
+        if (req.body.interviewPipeline) {
+            job.pipelineRounds = await syncPipelineRounds(job._id, req.body.interviewPipeline);
         }
 
         await job.save();
@@ -902,6 +976,11 @@ router.put('/:id', userAuth, requireRole('recruiter'), async (req, res) => {
         delete updateData.createdAt;
         delete updateData.recruiterId; // VERY IMPORTANT: Prevent job "vanishing" by overwriting ID
         delete updateData.applicants; // Don't allow overwriting applicants via this route
+
+        // Sync pipeline rounds if provided
+        if (updateData.interviewPipeline) {
+            updateData.pipelineRounds = await syncPipelineRounds(id, updateData.interviewPipeline);
+        }
 
         const updatedJob = await Job.findByIdAndUpdate(
             id,

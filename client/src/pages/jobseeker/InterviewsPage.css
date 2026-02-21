@@ -110,6 +110,109 @@
     border-radius: var(--radius-md);
 }
 
+.interview-timeline-container {
+    margin-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-md);
+}
+
+.interview-timeline-container h4 {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-md) 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.interview-pipeline-mini {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 10px 0;
+}
+
+.pipeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.step-marker {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.pipeline-step.completed .step-marker {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.pipeline-step.active .step-marker {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+    transform: scale(1.1);
+}
+
+.step-check {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--success);
+    color: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.step-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: center;
+    max-width: 60px;
+}
+
+.pipeline-step.active .step-label {
+    color: var(--primary);
+}
+
+.pipeline-step.completed .step-label {
+    color: var(--text-primary);
+}
+
+.step-connector {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border-color);
+    z-index: -1;
+}
+
+.pipeline-step.completed .step-connector {
+    background: var(--success);
+}
+
 .interview-details p {
     margin: var(--spacing-sm) 0;
     color: var(--text-secondary);
@@ -216,6 +319,119 @@
     content: '✓';
     color: var(--text-success);
     font-weight: 700;
+}
+
+/* Active Round Info styles */
+.active-round-info {
+    margin-top: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.card-highlight-mini {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+}
+
+.round-details-box {
+    padding: var(--spacing-lg);
+}
+
+.round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.round-type-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.round-method-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.round-method-tag.ai {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+}
+
+.round-method-tag.human {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+.round-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: var(--spacing-md);
+}
+
+.human-round-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-md);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.meta-item a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.meta-item a:hover {
+    text-decoration: underline;
+}
+
+.human-round-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: var(--spacing-sm) 0;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #f59e0b;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
 }
 
 @media (max-width: 768px) {

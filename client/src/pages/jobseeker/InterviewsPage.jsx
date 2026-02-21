@@ -8,6 +8,7 @@ import './InterviewsPage.css';
 const InterviewsPage = () => {
     const toast = useToast();
     const [interviews, setInterviews] = useState([]);
+    const [videoRooms, setVideoRooms] = useState([]);
     const [activeTab, setActiveTab] = useState('slots');
     const [platformInterviewStatus, setPlatformInterviewStatus] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -30,6 +31,16 @@ const InterviewsPage = () => {
             // Fetch all interviews
             const interviewsResponse = await api.get(`/interviews/user/${userId}`);
             setInterviews(interviewsResponse.data || []);
+
+            // Fetch video interview rooms
+            try {
+                const roomsResponse = await api.get('/video-rooms/my/rooms');
+                console.log('[InterviewsPage] Video rooms response:', roomsResponse);
+                const roomsData = roomsResponse?.data || roomsResponse;
+                setVideoRooms(Array.isArray(roomsData) ? roomsData : roomsData.data || []);
+            } catch (e) {
+                console.error('[InterviewsPage] Video rooms fetch error:', e);
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -221,6 +232,12 @@ const InterviewsPage = () => {
                     Completed Interviews
                 </button>
                 <button
+                    className={`tab-btn ${activeTab === 'video' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('video')}
+                >
+                    Video Interviews {videoRooms.length > 0 && <span className="tab-count">{videoRooms.length}</span>}
+                </button>
+                <button
                     className={`tab-btn ${activeTab === 'assessments' ? 'active' : ''}`}
                     onClick={() => setActiveTab('assessments')}
                 >
@@ -336,15 +353,101 @@ const InterviewsPage = () => {
                                     </div>
                                     <div className="interview-details">
                                         <p><strong>Date:</strong> {new Date(interview.createdAt).toLocaleDateString()}</p>
-                                        <p><strong>Time:</strong> {new Date(interview.createdAt).toLocaleTimeString()}</p>
                                         <p><strong>Status:</strong> <span className="badge">{interview.status}</span></p>
+
+                                        {/* Dynamic Pipeline Timeline */}
+                                        {interview.jobId?.pipelineRounds?.length > 0 && (
+                                            <div className="interview-timeline-container">
+                                                <h4>Interview Journey</h4>
+                                                <div className="interview-pipeline-mini">
+                                                    {interview.jobId.pipelineRounds.map((round, idx) => {
+                                                        const isCompleted = interview.roundResults?.some(r => r.roundIndex === idx);
+                                                        const isCurrent = (interview.currentRoundIndex || 0) === idx && interview.status === 'in_progress';
+                                                        return (
+                                                            <div key={round._id || idx} className={`pipeline-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'active' : ''}`}>
+                                                                <div className="step-marker">
+                                                                    {round.type === 'AI' ? '🤖' : '👥'}
+                                                                    {isCompleted && <span className="step-check">✓</span>}
+                                                                </div>
+                                                                <div className="step-label">
+                                                                    {round.subtype || round.type}
+                                                                </div>
+                                                                {idx < interview.jobId.pipelineRounds.length - 1 && (
+                                                                    <div className="step-connector"></div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <button
-                                        className="btn btn-primary"
-                                        onClick={() => continueJobInterview(interview._id)}
-                                    >
-                                        Continue Interview
-                                    </button>
+                                    {/* Active Round Details */}
+                                    {interview.jobId?.pipelineRounds?.length > 0 && (
+                                        <div className="active-round-info card-highlight-mini">
+                                            {(() => {
+                                                const currentIndex = interview.currentRoundIndex || 0;
+                                                const currentRound = interview.jobId.pipelineRounds[currentIndex];
+                                                if (!currentRound) return null;
+
+                                                const isAI = currentRound.type === 'AI';
+
+                                                return (
+                                                    <div className="round-details-box">
+                                                        <div className="round-header">
+                                                            <span className="round-type-tag">{currentRound.subtype || currentRound.type}</span>
+                                                            <span className={`round-method-tag ${isAI ? 'ai' : 'human'}`}>
+                                                                {isAI ? 'AI Interview' : 'Human Interview'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="round-desc">{currentRound.description || 'Proceed to the next stage of your application.'}</p>
+
+                                                        {!isAI && (
+                                                            <div className="human-round-meta">
+                                                                {currentRound.configuration?.meetingLink && (
+                                                                    <div className="meta-item">
+                                                                        <span>🔗</span>
+                                                                        <a href={currentRound.configuration.meetingLink} target="_blank" rel="noopener noreferrer">Join Meeting</a>
+                                                                    </div>
+                                                                )}
+                                                                {currentRound.configuration?.location && (
+                                                                    <div className="meta-item">
+                                                                        <span>📍</span>
+                                                                        {currentRound.configuration.location}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="round-action">
+                                                            {isAI ? (
+                                                                <button
+                                                                    className="btn btn-primary"
+                                                                    onClick={() => continueJobInterview(interview._id)}
+                                                                >
+                                                                    {interview.status === 'in_progress' ? 'Continue AI Interview' : 'Start AI Round'}
+                                                                </button>
+                                                            ) : (
+                                                                <div className="human-round-status">
+                                                                    <span className="status-indicator"></span>
+                                                                    Waiting for recruiter to start this round
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
+
+                                    {!(interview.jobId?.pipelineRounds?.length > 0) && (
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={() => continueJobInterview(interview._id)}
+                                        >
+                                            Continue Interview
+                                        </button>
+                                    )}
                                 </div>
                             ))
                         )}
@@ -421,6 +524,74 @@ const InterviewsPage = () => {
                         </svg>
                         <h3>Assessments Coming Soon</h3>
                         <p>Future feature for skill-based assessments (MCQ, coding challenges, etc.)</p>
+                    </div>
+                )}
+
+                {activeTab === 'video' && (
+                    <div className="assessments-grid">
+                        {videoRooms.length === 0 ? (
+                            <div className="empty-state card">
+                                <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                                    <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" strokeWidth="2" />
+                                    <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+                                </svg>
+                                <h3>No video interviews yet</h3>
+                                <p>When a recruiter schedules a video interview, it will appear here</p>
+                            </div>
+                        ) : (
+                            videoRooms.map((room) => {
+                                const isUpcoming = ['scheduled', 'waiting'].includes(room.status);
+                                const isLive = room.status === 'live';
+                                const isDone = room.status === 'completed';
+                                return (
+                                    <div key={room._id} className={`interview-card card card-job`}>
+                                        <div className="card-header">
+                                            <div className="company-logo">
+                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" strokeWidth="2" />
+                                                    <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3>{room.jobId?.title || 'Video Interview'}</h3>
+                                                <p className="interview-type">
+                                                    with {room.recruiterId?.profile?.name || 'Recruiter'}
+                                                </p>
+                                            </div>
+                                            <span className={`badge ${isLive ? 'badge-danger' : isDone ? 'badge-success' : 'badge-info'}`}
+                                                style={isLive ? { animation: 'pulse 1.5s infinite' } : {}}
+                                            >
+                                                {isLive ? 'LIVE' : isDone ? 'Completed' : 'Scheduled'}
+                                            </span>
+                                        </div>
+                                        <div className="interview-details">
+                                            <p><strong>Date:</strong> {new Date(room.scheduledAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                            <p><strong>Time:</strong> {new Date(room.scheduledAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+                                            <p><strong>Duration:</strong> {room.duration || 45} min</p>
+                                            <p><strong>Room Code:</strong> <code style={{ background: 'var(--bg-tertiary, #f3f4f6)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>{room.roomCode}</code></p>
+                                        </div>
+                                        {(isUpcoming || isLive) && (
+                                            <button
+                                                className="btn btn-primary btn-block"
+                                                onClick={() => navigate(`/interview-room/${room.roomCode}`)}
+                                                style={isLive ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)' } : {}}
+                                            >
+                                                {isLive ? 'Join Now' : 'Join Interview'}
+                                            </button>
+                                        )}
+                                        {isDone && (
+                                            <button
+                                                className="btn btn-secondary btn-block"
+                                                onClick={() => navigate(`/interview-room/${room.roomCode}`)}
+                                                style={{ opacity: 0.8 }}
+                                            >
+                                                View Details
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 )}
             </div>

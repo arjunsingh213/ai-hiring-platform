@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import OfferLetterModal from '../../components/OfferLetterModal';
+import BatchManager from '../../components/BatchManager';
+import ScheduleInterviewModal from '../../components/ScheduleInterviewModal';
 import { ListSkeleton, CardSkeleton } from '../../components/Skeleton';
 import './RecruiterApplicationsPage.css';
 
@@ -14,6 +16,7 @@ const RecruiterApplicationsPage = () => {
     const [applicants, setApplicants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedApplicant, setSelectedApplicant] = useState(null);
+    const [viewMode, setViewMode] = useState('detail'); // 'detail' | 'batch'
 
     // Check if we came from MyJobsPage with a specific job filter
     const initialJobId = location.state?.filterJobId || '';
@@ -35,10 +38,26 @@ const RecruiterApplicationsPage = () => {
     const [uniqueJobs, setUniqueJobs] = useState([]);  // List of unique jobs for filter
     const [filterJobTitle, setFilterJobTitle] = useState(initialJobTitle);  // Display title for filtered job
     const [showOfferModal, setShowOfferModal] = useState(false);
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
+    const [scheduledInterview, setScheduledInterview] = useState(null); // existing video room for this candidate+job
+    const [rescheduleRoomCode, setRescheduleRoomCode] = useState(null);
 
     useEffect(() => {
         fetchApplicants();
     }, [filters]);
+
+    // Check if a video interview room already exists for the selected applicant
+    const checkScheduledInterview = async (item) => {
+        try {
+            const candidateId = item.applicant?.userId?._id || item.applicant?.userId;
+            if (!candidateId || !item.jobId) { setScheduledInterview(null); return; }
+            const resp = await api.get(`/video-rooms/check/${item.jobId}/${candidateId}`);
+            const data = resp?.data || resp;
+            setScheduledInterview(data.room || null);
+        } catch {
+            setScheduledInterview(null);
+        }
+    };
 
     const fetchApplicants = async () => {
         try {
@@ -354,82 +373,113 @@ const RecruiterApplicationsPage = () => {
                             ({applicants.length})
                         </h3>
                         {filterJobTitle && (
-                            <button
-                                className="btn btn-text"
-                                onClick={() => {
-                                    setFilters({ ...filters, jobId: '' });
-                                    setFilterJobTitle('');
-                                    // Clear navigation state
-                                    window.history.replaceState({}, document.title);
-                                }}
-                            >
-                                Show All Applicants
-                            </button>
+                            <div className="list-actions">
+                                <div className="view-toggle">
+                                    <button
+                                        className={`toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}
+                                        onClick={() => setViewMode('detail')}
+                                    >
+                                        Detail View
+                                    </button>
+                                    <button
+                                        className={`toggle-btn ${viewMode === 'batch' ? 'active' : ''}`}
+                                        onClick={() => setViewMode('batch')}
+                                    >
+                                        Batch View
+                                    </button>
+                                </div>
+                                <button
+                                    className="btn btn-text"
+                                    onClick={() => {
+                                        setFilters({ ...filters, jobId: '' });
+                                        setFilterJobTitle('');
+                                        setViewMode('detail');
+                                        // Clear navigation state
+                                        window.history.replaceState({}, document.title);
+                                    }}
+                                >
+                                    Show All Applicants
+                                </button>
+                            </div>
                         )}
                     </div>
-                    {applicants.map((item, index) => {
-                        // Extract data with fallbacks (API returns nested structure)
-                        const userData = item.applicant?.userId || item.applicant || {};
-                        const profile = userData.profile || {};
-                        const name = profile.name || userData.name || 'Unknown';
-                        const photo = profile.photo || userData.photo;
-                        const status = item.applicant?.status || 'applied';
+                    {viewMode === 'detail' ? (
+                        <>
+                            {applicants.map((item, index) => {
+                                // Extract data with fallbacks (API returns nested structure)
+                                const userData = item.applicant?.userId || item.applicant || {};
+                                const profile = userData.profile || {};
+                                const name = profile.name || userData.name || 'Unknown';
+                                const photo = profile.photo || userData.photo;
+                                const status = item.applicant?.status || 'applied';
 
-                        return (
-                            <div
-                                key={index}
-                                className={`applicant-item card ${selectedApplicant === item ? 'active' : ''}`}
-                                onClick={() => setSelectedApplicant(item)}
-                            >
-                                <div
-                                    className="applicant-avatar"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const userId = item.applicant?.userId?._id || item.applicant?.userId;
-                                        if (userId) navigate(`/profile/${userId}`);
-                                    }}
-                                    style={{ cursor: 'pointer' }}
-                                    title="View Profile"
-                                >
-                                    {photo ? (
-                                        <img src={photo} alt={name} />
-                                    ) : (
-                                        <div className="avatar-placeholder">
-                                            {name.charAt(0) || '?'}
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`applicant-item card ${selectedApplicant === item ? 'active' : ''}`}
+                                        onClick={() => { setSelectedApplicant(item); checkScheduledInterview(item); }}
+                                    >
+                                        <div
+                                            className="applicant-avatar"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const userId = item.applicant?.userId?._id || item.applicant?.userId;
+                                                if (userId) navigate(`/profile/${userId}`);
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                            title="View Profile"
+                                        >
+                                            {photo ? (
+                                                <img src={photo} alt={name} />
+                                            ) : (
+                                                <div className="avatar-placeholder">
+                                                    {name.charAt(0) || '?'}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                                <div className="applicant-info">
-                                    <h4>{name}</h4>
-                                    <p className="job-applied">{item.jobTitle}</p>
-                                    <div className="applicant-meta">
-                                        <span className={`badge ${getStatusBadge(status).class}`}>
-                                            {getStatusBadge(status).text}
-                                        </span>
-                                        {item.interview?.overallScore > 0 && (
-                                            <span
-                                                className="score-badge"
-                                                style={{ color: getScoreColor(item.interview.overallScore) }}
-                                            >
-                                                {item.interview.overallScore}%
-                                            </span>
-                                        )}
+                                        <div className="applicant-info">
+                                            <h4>{name}</h4>
+                                            <p className="job-applied">{item.jobTitle}</p>
+                                            <div className="applicant-meta">
+                                                <span className={`badge ${getStatusBadge(status).class}`}>
+                                                    {getStatusBadge(status).text}
+                                                </span>
+                                                {item.interview?.overallScore > 0 && (
+                                                    <span
+                                                        className="score-badge"
+                                                        style={{ color: getScoreColor(item.interview.overallScore) }}
+                                                    >
+                                                        {item.interview.overallScore}%
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                                );
+                            })}
 
-                    {applicants.length === 0 && (
-                        <div className="empty-state">
-                            <p>No applicants found</p>
+                            {applicants.length === 0 && (
+                                <div className="empty-state">
+                                    <p>No applicants found</p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="batch-view-indicator card-glass">
+                            <p>You are in <strong>Batch Management</strong> mode.</p>
+                            <p className="text-muted">Select candidates on the right to group them.</p>
                         </div>
                     )}
                 </div>
 
                 {/* Main Content */}
                 <div className="applications-content">
-                    {selectedApplicant ? (() => {
+                    {viewMode === 'batch' ? (
+                        <BatchManager
+                            jobId={filters.jobId}
+                            candidates={applicants}
+                        />
+                    ) : selectedApplicant ? (() => {
                         // Extract data from nested structure
                         const userData = selectedApplicant.applicant?.userId || selectedApplicant.applicant || {};
                         const profile = userData.profile || {};
@@ -515,6 +565,75 @@ const RecruiterApplicationsPage = () => {
                                                     </svg>
                                                     Reject
                                                 </motion.button>
+                                                {scheduledInterview ? (
+                                                    <>
+                                                        <motion.button
+                                                            className="action-btn"
+                                                            onClick={() => navigate(`/interview-room/${scheduledInterview.roomCode}`)}
+                                                            whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)' }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ duration: 0.2, delay: 0.08 }}
+                                                            style={{
+                                                                background: scheduledInterview.status === 'completed'
+                                                                    ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                                                                    : scheduledInterview.status === 'live'
+                                                                        ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                                                        : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                                                color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px',
+                                                                fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                                                            }}
+                                                        >
+                                                            {scheduledInterview.status === 'completed' ? (
+                                                                <>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                                                                    Completed
+                                                                </>
+                                                            ) : scheduledInterview.status === 'live' ? (
+                                                                <>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5" /></svg>
+                                                                    Join Live
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                                                                    Scheduled
+                                                                </>
+                                                            )}
+                                                        </motion.button>
+                                                        {scheduledInterview.status !== 'completed' && (
+                                                            <motion.button
+                                                                className="action-btn"
+                                                                onClick={() => { setRescheduleRoomCode(scheduledInterview.roomCode); setShowScheduleModal(true); }}
+                                                                whileHover={{ scale: 1.05 }}
+                                                                whileTap={{ scale: 0.95 }}
+                                                                initial={{ opacity: 0, y: 10 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ duration: 0.2, delay: 0.1 }}
+                                                                style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '8px 12px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 105.69-13.51L3 7.5" /></svg>
+                                                                Reschedule
+                                                            </motion.button>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <motion.button
+                                                        className="action-btn"
+                                                        onClick={() => setShowScheduleModal(true)}
+                                                        disabled={actionLoading}
+                                                        whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)' }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ duration: 0.2, delay: 0.08 }}
+                                                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" /></svg>
+                                                        Schedule Interview
+                                                    </motion.button>
+                                                )}
                                             </>
                                         )}
                                         {status === 'rejected' && (
@@ -726,47 +845,74 @@ const RecruiterApplicationsPage = () => {
             </div>
 
             {/* Reject Modal */}
-            {showRejectModal && (
-                <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
-                    <div className="modal-content card" onClick={e => e.stopPropagation()}>
-                        <h2>Reject Candidate</h2>
-                        <p>Please provide a reason for rejection (optional):</p>
-                        <textarea
-                            className="input"
-                            placeholder="e.g., Position filled, qualifications not matching, etc."
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                        ></textarea>
-                        <div className="modal-actions">
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setShowRejectModal(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="btn btn-danger"
-                                onClick={handleReject}
-                                disabled={actionLoading}
-                            >
-                                {actionLoading ? 'Processing...' : 'Confirm Rejection'}
-                            </button>
+            {
+                showRejectModal && (
+                    <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
+                        <div className="modal-content card" onClick={e => e.stopPropagation()}>
+                            <h2>Reject Candidate</h2>
+                            <p>Please provide a reason for rejection (optional):</p>
+                            <textarea
+                                className="input"
+                                placeholder="e.g., Position filled, qualifications not matching, etc."
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                            ></textarea>
+                            <div className="modal-actions">
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setShowRejectModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="btn btn-danger"
+                                    onClick={handleReject}
+                                    disabled={actionLoading}
+                                >
+                                    {actionLoading ? 'Processing...' : 'Confirm Rejection'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Offer Letter Modal */}
-            {selectedApplicant && (
-                <OfferLetterModal
-                    isOpen={showOfferModal}
-                    onClose={() => setShowOfferModal(false)}
-                    applicant={selectedApplicant.applicant}
-                    job={selectedApplicant.job}
-                    onOfferSent={handleOfferSent}
+            {
+                selectedApplicant && (
+                    <OfferLetterModal
+                        isOpen={showOfferModal}
+                        onClose={() => setShowOfferModal(false)}
+                        applicant={selectedApplicant.applicant}
+                        job={selectedApplicant.job}
+                        onOfferSent={handleOfferSent}
+                    />
+                )
+            }
+
+            {/* Schedule Video Interview Modal */}
+            {showScheduleModal && selectedApplicant && (
+                <ScheduleInterviewModal
+                    applicant={{
+                        _id: selectedApplicant.applicant?.userId?._id || selectedApplicant.applicant?.userId,
+                        name: selectedApplicant.applicant?.userId?.profile?.name || selectedApplicant.applicant?.userId?.name || 'Candidate',
+                        applicantName: selectedApplicant.applicant?.userId?.profile?.name || selectedApplicant.applicant?.userId?.name || 'Candidate'
+                    }}
+                    jobId={selectedApplicant.jobId}
+                    jobTitle={selectedApplicant.jobTitle}
+                    onClose={() => { setShowScheduleModal(false); setRescheduleRoomCode(null); }}
+                    rescheduleRoomCode={rescheduleRoomCode}
+                    onScheduled={(data) => {
+                        setShowScheduleModal(false);
+                        setRescheduleRoomCode(null);
+                        // Update button state immediately
+                        const roomData = data?.data || data;
+                        setScheduledInterview(roomData);
+                        fetchApplicants();
+                    }}
                 />
             )}
-        </div>
+        </div >
     );
 };
 

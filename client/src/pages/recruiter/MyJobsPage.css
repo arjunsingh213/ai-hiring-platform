@@ -422,6 +422,93 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   DELETE MODAL (Light/Dark Adaptable)
+   ═══════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.delete-modal {
+    max-width: 420px;
+    width: 90%;
+    transform-origin: center;
+    animation: fadeUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    background: var(--bg-card, rgba(255, 255, 255, 0.95));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-2xl);
+}
+
+.delete-modal-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.delete-modal-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.delete-modal-header h2 {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+.delete-modal-header p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.delete-modal-warning {
+    background: var(--danger-soft);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.delete-modal-warning p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--danger-dark);
+    font-weight: 500;
+}
+
+.modal-footer-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-footer-actions button {
+    flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    RESPONSIVE DESIGN
    ═══════════════════════════════════════════════════════════════ */
 

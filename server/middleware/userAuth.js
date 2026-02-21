@@ -114,6 +114,7 @@ const requireRole = (...allowedRoles) => {
         }
 
         if (!allowedRoles.includes(req.user.role)) {
+            console.log(`[AUTH] Access Denied: User ${req.userId} has role '${req.user.role}' but required one of [${allowedRoles.join(', ')}]`);
             return res.status(403).json({
                 success: false,
                 error: 'Access denied. Insufficient permissions.',

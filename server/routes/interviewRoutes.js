@@ -1253,7 +1253,14 @@ router.get('/user/:userId', userAuth, async (req, res) => {
             return res.status(403).json({ success: false, error: 'Access denied.' });
         }
         const interviews = await Interview.find({ userId: req.params.userId })
-            .populate('jobId', 'title company')
+            .populate({
+                path: 'jobId',
+                select: 'title company pipelineRounds',
+                populate: {
+                    path: 'pipelineRounds',
+                    model: 'Round'
+                }
+            })
             .sort({ createdAt: -1 });
 
         res.json({ success: true, data: interviews, count: interviews.length });

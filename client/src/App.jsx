@@ -21,6 +21,8 @@ const InterviewResults = lazy(() => import('./pages/interview/InterviewResults')
 const PublicProfilePage = lazy(() => import('./pages/shared/PublicProfilePage'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const InterviewRoom = lazy(() => import('./pages/interview/InterviewRoom'));
+const InterviewReport = lazy(() => import('./pages/recruiter/InterviewReport'));
 
 // Loading Fallback
 const LoadingFallback = () => (
@@ -138,6 +140,20 @@ function App() {
               <Route path="/interview/:interviewId/results" element={
                 <ProtectedRoute redirectTo="/">
                   <InterviewResults />
+                </ProtectedRoute>
+              } />
+
+              {/* Froscel Interview Room™ */}
+              <Route path="/interview-room/:roomCode" element={
+                <ProtectedRoute>
+                  <InterviewRoom />
+                </ProtectedRoute>
+              } />
+
+              {/* Interview Report */}
+              <Route path="/interview-report/:roomCode" element={
+                <ProtectedRoute>
+                  <InterviewReport />
                 </ProtectedRoute>
               } />
 

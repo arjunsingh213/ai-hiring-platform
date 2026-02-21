@@ -150,6 +150,20 @@ app.use('/api/projects', projectRoutes);
 // Challenge Admin
 app.use('/api/admin/challenges', challengeAdminRoutes);
 
+// Hybrid Pipeline Routes
+const roundRoutes = require('./routes/roundRoutes');
+const batchRoutes = require('./routes/batchRoutes');
+app.use('/api/rounds', roundRoutes);
+app.use('/api/batches', batchRoutes);
+
+// Froscel Interview Room™ — Video Room Routes
+const videoRoomRoutes = require('./routes/videoRoomRoutes');
+app.use('/api/video-rooms', videoRoomRoutes);
+
+// Initialize Video Room Socket namespace
+const { setupVideoRoomNamespace } = require('./config/socket');
+setupVideoRoomNamespace(io);
+
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({

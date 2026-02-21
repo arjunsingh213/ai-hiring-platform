@@ -39,7 +39,8 @@
     "socket.io": "^4.8.3",
     "speakeasy": "^2.0.0",
     "unpdf": "^1.4.0",
-    "unstructured-client": "^0.30.2"
+    "unstructured-client": "^0.30.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
