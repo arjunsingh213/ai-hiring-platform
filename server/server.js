@@ -62,8 +62,14 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// Handle preflight globally and explicitly (Express 5 requires named parameters for wildcards)
-app.options('/:any*', cors(corsOptions));
+
+// Handle preflight globally without using problematic path wildcards
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        return cors(corsOptions)(req, res, next);
+    }
+    next();
+});
 // -------------------------------------------------------
 
 // Initialize Socket.io
