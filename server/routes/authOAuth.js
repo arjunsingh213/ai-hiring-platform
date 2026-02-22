@@ -59,8 +59,8 @@ router.get('/google/callback',
                     : `${getFrontendUrl()}/jobseeker/home`;
             }
 
-            // Redirect with token in query params (frontend will store it)
-            res.redirect(`${redirectUrl}?token=${token}&userId=${req.user._id}`);
+            // Redirect with token and user info in query params (frontend will store it)
+            res.redirect(`${redirectUrl}?token=${token}&userId=${req.user._id}&role=${req.user.role}&onboardingStatus=${req.user.isOnboardingComplete}`);
         } catch (error) {
             console.error('OAuth callback error:', error);
             res.redirect(`${getFrontendUrl()}/login?error=oauth_failed`);

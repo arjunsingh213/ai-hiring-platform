@@ -44,6 +44,8 @@ const OAuthTokenHandler = ({ children }) => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const userId = params.get('userId');
+    const role = params.get('role');
+    const onboardingStatus = params.get('onboardingStatus');
 
     if (token && userId) {
       // Store auth data from OAuth redirect
@@ -51,7 +53,19 @@ const OAuthTokenHandler = ({ children }) => {
       localStorage.setItem('userId', userId);
       localStorage.setItem('loginTimestamp', Date.now().toString());
 
-      // Fetch user data to get role and other info
+      if (role) localStorage.setItem('userRole', role);
+      if (onboardingStatus) {
+        // We store a user object piece so components like Sidebar find it
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({
+          ...user,
+          _id: userId,
+          role: role,
+          isOnboardingComplete: onboardingStatus === 'true'
+        }));
+      }
+
+      // Fetch full user data in background to refresh everything else
       const fetchUserData = async () => {
         try {
           const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/${userId}`, {
@@ -59,6 +73,7 @@ const OAuthTokenHandler = ({ children }) => {
           });
           const data = await response.json();
           if (data.success && data.data) {
+            localStorage.setItem('user', JSON.stringify(data.data));
             localStorage.setItem('userRole', data.data.role);
             localStorage.setItem('userEmail', data.data.email);
           }
@@ -75,7 +90,7 @@ const OAuthTokenHandler = ({ children }) => {
       // Force a small delay then reload to ensure all components get fresh data
       setTimeout(() => window.location.reload(), 100);
 
-      console.log('OAuth login successful, token stored');
+      console.log('OAuth login successful, session initialized');
     }
   }, [location, navigate]);
 
