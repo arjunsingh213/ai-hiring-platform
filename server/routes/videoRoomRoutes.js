@@ -217,7 +217,12 @@ router.get('/check/:jobId/:candidateId', userAuth, requireRole('recruiter'), asy
 router.get('/my/rooms', userAuth, async (req, res) => {
     try {
         const userId = req.userId;
-        console.log('[VideoRoom /my/rooms] Looking up rooms for userId:', userId, 'type:', typeof userId);
+        console.log('[VideoRoom /my/rooms] Debug START');
+        console.log('[VideoRoom /my/rooms] userId from token:', userId, 'type:', typeof userId);
+
+        // Let's do a raw find to see what's in the DB for this user
+        const allRoomsAny = await VideoRoom.find({}).limit(5).select('roomCode candidateId participants.userId status').lean();
+        console.log('[VideoRoom /my/rooms] Sample rooms in DB:', JSON.stringify(allRoomsAny, null, 2));
 
         // Primary query: check participants array
         let rooms = await VideoRoom.find({
@@ -249,7 +254,15 @@ router.get('/my/rooms', userAuth, async (req, res) => {
             console.log('[VideoRoom /my/rooms] Found via candidateId/recruiterId fallback:', rooms.length);
         }
 
-        res.json({ success: true, data: rooms });
+        res.json({
+            success: true,
+            data: rooms,
+            debug: {
+                userId,
+                foundCount: rooms.length,
+                totalRoomsChecked: allRoomsAny.length
+            }
+        });
     } catch (error) {
         console.error('Error fetching my rooms:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -717,17 +730,19 @@ router.put('/:roomCode/reschedule', userAuth, requireRole('recruiter'), async (r
         const { scheduledAt, duration } = req.body;
         const room = await VideoRoom.findOne({ roomCode: req.params.roomCode, recruiterId: req.userId });
         if (!room) return res.status(404).json({ success: false, error: 'Room not found' });
-        if (room.status === 'completed') {
-            return res.status(400).json({ success: false, error: 'Cannot reschedule a completed interview' });
-        }
-
         room.scheduledAt = new Date(scheduledAt);
         if (duration) room.duration = duration;
-        // Reset status back to scheduled
+
+        // Reset status back to scheduled and clear timings for a fresh start
         room.status = 'scheduled';
         room.startedAt = null;
+        room.endedAt = null;
+
         room.addAuditEntry('room_created', req.userId, 'recruiter', {
-            action: 'rescheduled', previousDate: room.scheduledAt, newDate: scheduledAt
+            action: 'rescheduled',
+            previousDate: room.scheduledAt,
+            newDate: scheduledAt,
+            wasPreviouslyCompleted: room.status === 'completed'
         });
         await room.save();
 

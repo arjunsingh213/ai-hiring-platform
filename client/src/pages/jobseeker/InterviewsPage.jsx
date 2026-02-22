@@ -218,6 +218,12 @@ const InterviewsPage = () => {
                 </div>
             )}
 
+            {/* DEBUG INFO */}
+            <div style={{ padding: '4px 12px', background: 'rgba(255,0,0,0.1)', fontSize: '12px', color: '#666', borderBottom: '1px solid #eee', display: 'flex', gap: '20px' }}>
+                <span>Debug: ProfileID: {userId}</span>
+                <span>Rooms Loaded: {videoRooms.length}</span>
+            </div>
+
             <div className="interview-tabs">
                 <button
                     className={`tab-btn ${activeTab === 'slots' ? 'active' : ''}`}

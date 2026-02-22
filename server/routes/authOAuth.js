@@ -14,7 +14,8 @@ const generateToken = (user) => {
 
 // Helper function to get frontend URL
 const getFrontendUrl = () => {
-    return process.env.CLIENT_URL || 'http://localhost:5173';
+    return process.env.CLIENT_URL ||
+        (process.env.NODE_ENV === 'production' ? 'https://froscel.xyz' : 'http://localhost:5173');
 };
 
 // ==================== GOOGLE OAUTH ====================
