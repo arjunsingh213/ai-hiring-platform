@@ -1,49 +1,80 @@
 .page {
     min-height: 100vh;
-    background: #0a0f1c;
-    color: #e2e8f0;
+    background: #FFFFFF;
+    color: #1E293B;
     font-family: 'Inter', system-ui, sans-serif;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Subtle mesh grid pattern overlay to match landing */
+.page::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.03) 1px, transparent 0);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
 }
 
 .hero {
-    max-width: 720px;
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 60px 24px 40px;
+    padding: 120px 24px 48px;
     text-align: center;
 }
 
 .backLink {
-    color: #60a5fa;
+    color: #0090FF;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
     display: inline-block;
     margin-bottom: 24px;
+    transition: color 0.2s ease;
 }
 
 .backLink:hover {
-    text-decoration: underline;
+    color: #0F172A;
 }
 
 .title {
-    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
     font-weight: 800;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    color: #0F172A;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+}
+
+.gradient {
+    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
     -webkit-background-clip: text;
-    background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 12px;
+    background-clip: text;
 }
 
 .subtitle {
-    color: #94a3b8;
-    font-size: 1.05rem;
+    color: #64748B;
+    font-size: 1.125rem;
     line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .glossary {
-    max-width: 720px;
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 0 24px 48px;
+    padding: 0 24px 64px;
 }
 
 .termList {
@@ -53,60 +84,81 @@
 }
 
 .termCard {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    padding: 24px;
-    scroll-margin-top: 80px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 20px;
+    padding: 32px;
+    scroll-margin-top: 100px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+}
+
+.termCard:hover {
+    transform: translateY(-3px);
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
 }
 
 .termTitle {
-    font-size: 1.15rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    color: #f1f5f9;
-    margin-bottom: 8px;
+    color: #0F172A;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
 }
 
 .termDef {
-    font-size: 0.95rem;
-    color: #94a3b8;
-    line-height: 1.65;
+    font-size: 1rem;
+    color: #64748B;
+    line-height: 1.7;
 }
 
 .ctaSection {
     text-align: center;
-    padding: 48px 24px 80px;
+    padding: 64px 24px 100px;
+    position: relative;
+    z-index: 1;
 }
 
 .ctaSection h2 {
-    font-size: 1.4rem;
-    color: #f1f5f9;
-    margin-bottom: 20px;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0F172A;
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
 }
 
 .primaryBtn {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
     color: white;
-    padding: 14px 32px;
-    border-radius: 12px;
+    padding: 1rem 2.5rem;
+    border-radius: 100px;
     font-weight: 600;
     font-size: 1rem;
     text-decoration: none;
-    display: inline-block;
-    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(0, 144, 255, 0.3);
 }
 
 .primaryBtn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 30px rgba(0, 144, 255, 0.4);
 }
 
 @media (max-width: 640px) {
     .hero {
-        padding: 48px 16px 32px;
+        padding: 80px 16px 32px;
     }
 
     .glossary {
         padding: 0 16px 40px;
+    }
+
+    .termCard {
+        padding: 24px;
     }
 }

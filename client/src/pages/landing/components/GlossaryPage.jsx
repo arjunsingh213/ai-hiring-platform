@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Header from './Header';
+import Footer from './Footer';
 import styles from './GlossaryPage.module.css';
 
 const GLOSSARY_TERMS = [
@@ -54,32 +57,80 @@ const GLOSSARY_TERMS = [
 ];
 
 const GlossaryPage = () => {
+    // Scroll to top on mount
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    // Force light theme
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+        return () => {
+            if (previousTheme) document.documentElement.setAttribute('data-theme', previousTheme);
+        };
+    }, []);
+
     return (
-        <main className={styles.page}>
-            <section className={styles.hero}>
-                <Link to="/" className={styles.backLink}>← Back to Froscel</Link>
-                <h1 className={styles.title}>Hiring & AI Interview Glossary</h1>
-                <p className={styles.subtitle}>
-                    Definitions for key terms in AI-powered hiring, technical interviews, and recruitment technology.
-                </p>
-            </section>
+        <div className={styles.page}>
+            <Header />
+            <main>
+                <section className={styles.hero}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <Link to="/" className={styles.backLink}>← Back to Home</Link>
+                        <h1 className={styles.title}>
+                            Hiring & AI <br />
+                            <span className={styles.gradient}>Interview Glossary</span>
+                        </h1>
+                        <p className={styles.subtitle}>
+                            Definitions for key terms in AI-powered hiring, technical interviews, and recruitment technology.
+                        </p>
+                    </motion.div>
+                </section>
 
-            <section className={styles.glossary}>
-                <div className={styles.termList}>
-                    {GLOSSARY_TERMS.sort((a, b) => a.term.localeCompare(b.term)).map((item) => (
-                        <article key={item.term} className={styles.termCard} id={item.term.toLowerCase().replace(/\s+/g, '-')}>
-                            <h2 className={styles.termTitle}>{item.term}</h2>
-                            <p className={styles.termDef}>{item.definition}</p>
-                        </article>
-                    ))}
-                </div>
-            </section>
+                <section className={styles.glossary}>
+                    <div className={styles.termList}>
+                        {GLOSSARY_TERMS.sort((a, b) => a.term.localeCompare(b.term)).map((item, index) => (
+                            <motion.article
+                                key={item.term}
+                                className={styles.termCard}
+                                id={item.term.toLowerCase().replace(/\s+/g, '-')}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <h2 className={styles.termTitle}>{item.term}</h2>
+                                <p className={styles.termDef}>{item.definition}</p>
+                            </motion.article>
+                        ))}
+                    </div>
+                </section>
 
-            <section className={styles.ctaSection}>
-                <h2>Ready to transform your hiring?</h2>
-                <Link to="/signup" className={styles.primaryBtn}>Get Started Free →</Link>
-            </section>
-        </main>
+                <section className={styles.ctaSection}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                    >
+                        <h2>Ready to transform your hiring?</h2>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Link to="/signup" className={styles.primaryBtn}>
+                                Get Started Free
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ marginLeft: '8px' }}>
+                                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </Link>
+                        </motion.div>
+                    </motion.div>
+                </section>
+            </main>
+            <Footer />
+        </div>
     );
 };
 

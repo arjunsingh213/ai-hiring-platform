@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import styles from './Features.module.css';
 
 // Import assets from existing landing assets folder
@@ -12,9 +13,10 @@ const features = [
     {
         id: 'interview-room',
         title: 'Froscel Interview Room™',
-        description: 'Enterprise-grade AI-powered video interviews. Secure WebRTC, live code editors, AI co-interviewer, and post-interview intelligence reports. You maintain full control.',
-        image: recruiterReportImg, // Using existing asset for now, can be updated later
+        description: 'Enterprise-grade AI-powered video interviews. Secure WebRTC, live code editors, AI co-interviewer, and post-interview intelligence reports.',
+        image: recruiterReportImg,
         color: '#E11D48',
+        link: '/interview-room',
         metric: {
             value: 'SFU',
             label: 'Architecture',
@@ -135,6 +137,16 @@ const FeatureSlider = () => {
                                 </div>
                                 <h3 className={styles.featureTitle}>{activeFeature.title}</h3>
                                 <p className={styles.featureDesc}>{activeFeature.description}</p>
+                                {activeFeature.link && (
+                                    <div style={{ marginTop: '24px' }}>
+                                        <Link to={activeFeature.link} className={styles.learnMoreBtn}>
+                                            Learn More
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginLeft: '6px' }}>
+                                                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Bottom Right: Metrics */}

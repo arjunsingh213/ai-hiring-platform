@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import Header from './Header';
+import Footer from './Footer';
 import styles from './InterviewRoomLanding.module.css';
 
 const JOB_TYPES = {
@@ -48,88 +50,141 @@ const InterviewRoomLanding = () => {
     const { jobType } = useParams();
     const data = jobType ? JOB_TYPES[jobType] : null;
 
+    // Scroll to top on route change
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [jobType]);
+
+    // Force light theme
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+        return () => {
+            if (previousTheme) document.documentElement.setAttribute('data-theme', previousTheme);
+        };
+    }, []);
+
     // Individual job type page
     if (data) {
         return (
-            <main className={styles.page}>
-                <section className={styles.hero}>
-                    <span className={styles.icon}>{data.icon}</span>
-                    <h1 className={styles.title}>{data.title}</h1>
-                    <p className={styles.description}>{data.description}</p>
-                    <div className={styles.skills}>
-                        {data.skills.map((skill) => (
-                            <span key={skill} className={styles.skillTag}>{skill}</span>
-                        ))}
-                    </div>
-                    <div className={styles.cta}>
-                        <Link to="/signup" className={styles.primaryBtn}>Start Free Interview</Link>
-                        <Link to="/" className={styles.secondaryBtn}>← Back to Home</Link>
-                    </div>
-                </section>
+            <div className={styles.page}>
+                <Header />
+                <main>
+                    <section className={styles.hero}>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <span className={styles.icon}>{data.icon}</span>
+                            <h1 className={styles.title}>
+                                {data.title.split('Interview for').map((part, i) => (
+                                    i === 1 ? <><br /><span className={styles.gradient}>Interview for {part}</span></> : part
+                                ))}
+                            </h1>
+                            <p className={styles.description}>{data.description}</p>
+                            <div className={styles.skills}>
+                                {data.skills.map((skill) => (
+                                    <span key={skill} className={styles.skillTag}>{skill}</span>
+                                ))}
+                            </div>
+                            <div className={styles.cta}>
+                                <Link to="/signup" className={styles.primaryBtn}>
+                                    Start Free Interview
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ marginLeft: '8px' }}>
+                                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </Link>
+                                <Link to="/" className={styles.secondaryBtn}>← Back to Home</Link>
+                            </div>
+                        </motion.div>
+                    </section>
 
-                <section className={styles.features}>
-                    <h2>What's Included in Every Froscel Interview</h2>
-                    <div className={styles.featureGrid}>
-                        <div className={styles.featureCard}>
-                            <h3>🎥 Secure WebRTC Video</h3>
-                            <p>Enterprise-grade encrypted video calls with SFU architecture for panel interviews.</p>
+                    <section className={styles.features}>
+                        <h2>What's Included in Every <span className={styles.gradient}>Froscel Interview</span></h2>
+                        <div className={styles.featureGrid}>
+                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
+                                <h3>🎥 Secure WebRTC Video</h3>
+                                <p>Enterprise-grade encrypted video calls with SFU architecture for panel interviews.</p>
+                            </motion.div>
+                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
+                                <h3>💻 Live Code Editor</h3>
+                                <p>Monaco Editor with real-time execution in 9+ languages including Python, Java, and Go.</p>
+                            </motion.div>
+                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
+                                <h3>🤖 AI Co-Interviewer</h3>
+                                <p>Adaptive follow-up questions, real-time scoring, and post-interview intelligence reports.</p>
+                            </motion.div>
+                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
+                                <h3>🛡️ Advanced Proctoring</h3>
+                                <p>Face detection, tab monitoring, and violation timestamping for fair assessments.</p>
+                            </motion.div>
                         </div>
-                        <div className={styles.featureCard}>
-                            <h3>💻 Live Code Editor</h3>
-                            <p>Monaco Editor with real-time execution in 9+ languages including Python, Java, and Go.</p>
-                        </div>
-                        <div className={styles.featureCard}>
-                            <h3>🤖 AI Co-Interviewer</h3>
-                            <p>Adaptive follow-up questions, real-time scoring, and post-interview intelligence reports.</p>
-                        </div>
-                        <div className={styles.featureCard}>
-                            <h3>🛡️ Advanced Proctoring</h3>
-                            <p>Face detection, tab monitoring, and violation timestamping for fair assessments.</p>
-                        </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section className={styles.otherRoles}>
-                    <h2>Explore Other Roles</h2>
-                    <div className={styles.roleGrid}>
-                        {ALL_TYPES.filter(([key]) => key !== jobType).map(([key, role]) => (
-                            <Link key={key} to={`/interview-room/${key}`} className={styles.roleCard}>
-                                <span>{role.icon}</span>
-                                <span>{role.title.replace('AI Interview for ', '')}</span>
-                            </Link>
-                        ))}
-                    </div>
-                </section>
-            </main>
+                    <section className={styles.otherRoles}>
+                        <h2>Explore Other Roles</h2>
+                        <div className={styles.roleGrid}>
+                            {ALL_TYPES.filter(([key]) => key !== jobType).map(([key, role]) => (
+                                <Link key={key} to={`/interview-room/${key}`} className={styles.roleCard}>
+                                    <span>{role.icon}</span>
+                                    <span>{role.title.replace('AI Interview for ', '')}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                </main>
+                <Footer />
+            </div>
         );
     }
 
     // Index page listing all job types
     return (
-        <main className={styles.page}>
-            <section className={styles.hero}>
-                <h1 className={styles.title}>AI-Powered Technical Interviews</h1>
-                <p className={styles.description}>
-                    Enterprise-grade interview rooms tailored for every engineering role. Live code execution, AI scoring, and bias-free assessments.
-                </p>
-            </section>
-            <section className={styles.allRoles}>
-                <div className={styles.roleGrid}>
-                    {ALL_TYPES.map(([key, role]) => (
-                        <Link key={key} to={`/interview-room/${key}`} className={styles.roleCardLarge}>
-                            <span className={styles.roleIcon}>{role.icon}</span>
-                            <h2>{role.title}</h2>
-                            <p>{role.description}</p>
-                            <div className={styles.skills}>
-                                {role.skills.slice(0, 3).map((s) => (
-                                    <span key={s} className={styles.skillTag}>{s}</span>
-                                ))}
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            </section>
-        </main>
+        <div className={styles.page}>
+            <Header />
+            <main>
+                <section className={styles.hero}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h1 className={styles.title}>
+                            AI-Powered <br />
+                            <span className={styles.gradient}>Technical Interviews</span>
+                        </h1>
+                        <p className={styles.description}>
+                            Enterprise-grade interview rooms tailored for every engineering role. Live code execution, AI scoring, and bias-free assessments.
+                        </p>
+                    </motion.div>
+                </section>
+                <section className={styles.allRoles}>
+                    <div className={styles.roleGrid}>
+                        {ALL_TYPES.map(([key, role], index) => (
+                            <motion.div
+                                key={key}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <Link to={`/interview-room/${key}`} className={styles.roleCardLarge}>
+                                    <span className={styles.roleIcon}>{role.icon}</span>
+                                    <h2>{role.title}</h2>
+                                    <p>{role.description}</p>
+                                    <div className={styles.skills}>
+                                        {role.skills.slice(0, 3).map((s) => (
+                                            <span key={s} className={styles.skillTag}>{s}</span>
+                                        ))}
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </section>
+            </main>
+            <Footer />
+        </div>
     );
 };
 

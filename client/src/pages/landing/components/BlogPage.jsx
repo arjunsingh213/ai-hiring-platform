@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Header from './Header';
+import Footer from './Footer';
 import styles from './BlogPage.module.css';
 
 const BLOG_POSTS = [
@@ -54,41 +57,87 @@ const BLOG_POSTS = [
 ];
 
 const BlogPage = () => {
+    // Scroll to top on mount
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    // Force light theme
+    useEffect(() => {
+        const previousTheme = document.documentElement.getAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+        return () => {
+            if (previousTheme) document.documentElement.setAttribute('data-theme', previousTheme);
+        };
+    }, []);
+
     return (
-        <main className={styles.page}>
-            <section className={styles.hero}>
-                <Link to="/" className={styles.backLink}>← Back to Froscel</Link>
-                <h1 className={styles.title}>Froscel Blog</h1>
-                <p className={styles.subtitle}>
-                    Insights on AI-powered hiring, technical interviews, and building world-class engineering teams.
-                </p>
-            </section>
+        <div className={styles.page}>
+            <Header />
+            <main>
+                <section className={styles.hero}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <Link to="/" className={styles.backLink}>← Back to Home</Link>
+                        <h1 className={styles.title}>
+                            Froscel <span className={styles.gradient}>Blog</span>
+                        </h1>
+                        <p className={styles.subtitle}>
+                            Insights on AI-powered hiring, technical interviews, and building world-class engineering teams.
+                        </p>
+                    </motion.div>
+                </section>
 
-            <section className={styles.posts}>
-                <div className={styles.grid}>
-                    {BLOG_POSTS.map((post) => (
-                        <article key={post.slug} className={styles.postCard}>
-                            <div className={styles.meta}>
-                                <span className={styles.category}>{post.category}</span>
-                                <span className={styles.readTime}>{post.readTime}</span>
-                            </div>
-                            <h2 className={styles.postTitle}>{post.title}</h2>
-                            <p className={styles.excerpt}>{post.excerpt}</p>
-                            <div className={styles.footer}>
-                                <time className={styles.date}>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time>
-                                <span className={styles.readMore}>Coming Soon →</span>
-                            </div>
-                        </article>
-                    ))}
-                </div>
-            </section>
+                <section className={styles.posts}>
+                    <div className={styles.grid}>
+                        {BLOG_POSTS.map((post, index) => (
+                            <motion.article
+                                key={post.slug}
+                                className={styles.postCard}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <div className={styles.meta}>
+                                    <span className={styles.category}>{post.category}</span>
+                                    <span className={styles.readTime}>{post.readTime}</span>
+                                </div>
+                                <h2 className={styles.postTitle}>{post.title}</h2>
+                                <p className={styles.excerpt}>{post.excerpt}</p>
+                                <div className={styles.footer}>
+                                    <time className={styles.date}>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time>
+                                    <span className={styles.readMore}>Read More →</span>
+                                </div>
+                            </motion.article>
+                        ))}
+                    </div>
+                </section>
 
-            <section className={styles.ctaSection}>
-                <h2>Want to see Froscel in action?</h2>
-                <p>Join the free beta and experience AI-powered hiring firsthand.</p>
-                <Link to="/signup" className={styles.primaryBtn}>Get Started Free →</Link>
-            </section>
-        </main>
+                <section className={styles.ctaSection}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <h2>Want to see Froscel in action?</h2>
+                        <p>Join the free beta and experience AI-powered hiring firsthand.</p>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Link to="/signup" className={styles.primaryBtn}>
+                                Get Started Free
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ marginLeft: '8px' }}>
+                                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </Link>
+                        </motion.div>
+                    </motion.div>
+                </section>
+            </main>
+            <Footer />
+        </div>
     );
 };
 

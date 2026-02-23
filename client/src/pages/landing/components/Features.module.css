@@ -53,6 +53,25 @@
     margin: 0 auto;
 }
 
+.learnMoreBtn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
+    border-radius: 100px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0, 144, 255, 0.25);
+    transition: all 0.2s ease;
+}
+
+.learnMoreBtn:hover {
+    box-shadow: 0 6px 20px rgba(0, 144, 255, 0.35);
+    transform: translateY(-1px);
+}
+
 /* macOS Window Module */
 .windowContainer {
     position: relative;

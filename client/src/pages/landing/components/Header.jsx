@@ -20,10 +20,10 @@ const Header = () => {
     }, []);
 
     const navItems = [
-        { label: 'Jobs', href: '/jobs' },
-        { label: 'Features', href: '#features' },
-        { label: 'Why Us', href: '#proof' },
-        { label: 'Contact', href: '#contact' },
+        { label: 'AI Interview', href: '/interview-room' },
+        { label: 'Glossary', href: '/glossary' },
+        { label: 'Blog', href: '/blog' },
+        { label: 'Features', href: '/#features' },
     ];
 
     return (

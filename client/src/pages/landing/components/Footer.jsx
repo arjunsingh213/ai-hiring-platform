@@ -81,33 +81,17 @@ const Footer = () => {
                     <div className={styles.linksColumn}>
                         <h4 className={styles.columnTitle}>Product</h4>
                         <ul className={styles.linksList}>
-                            {footerLinks.product.map((link) => (
-                                <li key={link.label}>
-                                    <a href={link.href} className={styles.link}>{link.label}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className={styles.linksColumn}>
-                        <h4 className={styles.columnTitle}>Company</h4>
-                        <ul className={styles.linksList}>
-                            {footerLinks.company.map((link) => (
-                                <li key={link.label}>
-                                    <a href={link.href} className={styles.link}>{link.label}</a>
-                                </li>
-                            ))}
+                            <li><Link to="/interview-room" className={styles.link}>AI Interview Room</Link></li>
+                            <li><a href="#features" className={styles.link}>Features</a></li>
+                            <li><a href="#proof" className={styles.link}>Why Us</a></li>
                         </ul>
                     </div>
 
                     <div className={styles.linksColumn}>
                         <h4 className={styles.columnTitle}>Resources</h4>
                         <ul className={styles.linksList}>
-                            {footerLinks.resources.map((link) => (
-                                <li key={link.label}>
-                                    <a href={link.href} className={styles.link}>{link.label}</a>
-                                </li>
-                            ))}
+                            <li><Link to="/blog" className={styles.link}>Blog</Link></li>
+                            <li><Link to="/glossary" className={styles.link}>Glossary</Link></li>
                         </ul>
                     </div>
 
