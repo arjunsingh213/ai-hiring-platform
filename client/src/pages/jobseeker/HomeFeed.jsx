@@ -982,7 +982,7 @@ const HomeFeed = () => {
                                 </div>
                             ) : recommendedJobs.length > 0 ? (
                                 recommendedJobs.map((job) => (
-                                    <div className="job-item-sidebar" onClick={() => navigate(`/jobseeker/jobs?id=${job._id}`)}>
+                                    <div key={job._id} className="job-item-sidebar" onClick={() => navigate(`/jobseeker/jobs?id=${job._id}`)}>
                                         <div className="job-info-mini">
                                             <h4 className="job-title-mini">{job.title}</h4>
                                             <span className="job-type-mini">{job.jobDetails?.type || 'Full-time'}</span>
@@ -1030,10 +1030,11 @@ const HomeFeed = () => {
                                     <div className="profile-score-section">
                                         <div className="profile-score-ring">
                                             <svg viewBox="0 0 100 100">
-                                                <circle className="profile-ring-bg" cx="50" cy="50" r="42" />
+                                                <circle className="profile-ring-bg" cx="50" cy="50" r="42" fill="none" />
                                                 <circle
                                                     className="profile-ring-progress"
                                                     cx="50" cy="50" r="42"
+                                                    fill="none"
                                                     stroke={
                                                         user.aiTalentPassport.talentScore >= 80 ? '#10B981' :
                                                             user.aiTalentPassport.talentScore >= 60 ? '#6366F1' :

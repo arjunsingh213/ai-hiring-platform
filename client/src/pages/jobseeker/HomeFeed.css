@@ -2602,3 +2602,140 @@
     background: rgba(30, 41, 59, 0.4);
     border-color: rgba(255, 255, 255, 0.12);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR PROFILE CARD FIXES
+   ═══════════════════════════════════════════════════════════════ */
+
+.quick-profile-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-score-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.profile-score-ring {
+    position: relative;
+    width: 140px;
+    height: 140px;
+}
+
+.profile-score-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.profile-ring-bg {
+    stroke: var(--bg-soft);
+    stroke-width: 8;
+    fill: none;
+}
+
+.profile-ring-progress {
+    stroke-width: 8;
+    stroke-linecap: round;
+    fill: none;
+    transition: stroke-dasharray 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.profile-score-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.profile-score-num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.profile-score-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.level-badge {
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.level-badge.expert {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+}
+
+.level-badge.advanced {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366F1;
+}
+
+.level-badge.intermediate {
+    background: rgba(245, 158, 11, 0.1);
+    color: #F59E0B;
+}
+
+.level-badge.beginner {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+}
+
+.global-rank {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.global-rank strong {
+    color: var(--text-primary);
+}
+
+.no-score-state {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.no-score-state p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+[data-theme="dark"] .profile-ring-bg {
+    stroke: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .profile-cta {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .profile-cta:hover {
+    background: var(--primary);
+}

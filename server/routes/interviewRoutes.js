@@ -1255,11 +1255,12 @@ router.get('/user/:userId', userAuth, async (req, res) => {
         const interviews = await Interview.find({ userId: req.params.userId })
             .populate({
                 path: 'jobId',
-                select: 'title company pipelineRounds',
+                select: 'title company interviewPipeline.pipelineRounds',
                 populate: {
-                    path: 'pipelineRounds',
+                    path: 'interviewPipeline.pipelineRounds',
                     model: 'Round'
-                }
+                },
+                strictPopulate: false
             })
             .sort({ createdAt: -1 });
 

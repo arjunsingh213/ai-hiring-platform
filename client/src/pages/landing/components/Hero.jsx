@@ -59,14 +59,13 @@ const Hero = () => {
                     whileInView="show"
                     viewport={{ once: true, amount: 0.15 }}
                 >
-                    <span className={styles.badge}>AI-Powered Talent Platform</span>
+                    <span className={styles.badge}>AI-Powered Hiring Infrastructure</span>
                     <h1 id="hero-heading" className={styles.title}>
                         Skills meet<br />
                         <span className={styles.gradient}>opportunity</span>
                     </h1>
                     <p className={styles.subtitle}>
-                        Build your AI Talent Passport, ace adaptive interviews, or find verified talent.
-                        The platform that connects skills with opportunity — fairly and efficiently.
+                        Deploy enterprise-grade video interviews, build verified Talent Passports, and scale your technical hiring with intelligent, bias-free infrastructure.
                     </p>
                     <div className={styles.cta}>
                         <motion.div {...buttonMicro}>

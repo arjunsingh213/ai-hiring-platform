@@ -10,6 +10,18 @@ import recruiterReportImg from '../../landing/assets/recruiter-report-1200x700.w
 
 const features = [
     {
+        id: 'interview-room',
+        title: 'Froscel Interview Room™',
+        description: 'Enterprise-grade AI-powered video interviews. Secure WebRTC, live code editors, AI co-interviewer, and post-interview intelligence reports. You maintain full control.',
+        image: recruiterReportImg, // Using existing asset for now, can be updated later
+        color: '#E11D48',
+        metric: {
+            value: 'SFU',
+            label: 'Architecture',
+            trend: [20, 40, 60, 80, 90, 95, 98, 100]
+        }
+    },
+    {
         id: 'passport',
         title: 'AI Talent Passport',
         description: 'Candidates build verified skill portfolios through AI assessments. Recruiters access portable credentials with confidence.',

@@ -24,7 +24,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL ||
             (process.env.NODE_ENV === 'production'
-                ? 'https://froscel.xyz/api/auth/google/callback'
+                ? 'https://froscel.com/api/auth/google/callback'
                 : 'http://localhost:5000/api/auth/google/callback'),
         passReqToCallback: true
     }, async (req, accessToken, refreshToken, profile, done) => {

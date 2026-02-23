@@ -1,0 +1,18 @@
+# Froscel - robots.txt
+# Allow crawlers to index public landing pages
+# Block all internal app routes
+
+User-agent: *
+Allow: /
+Disallow: /jobseeker/
+Disallow: /recruiter/
+Disallow: /admin/
+Disallow: /onboarding/
+Disallow: /interview/
+Disallow: /api/
+Disallow: /app/
+Disallow: /settings/
+Disallow: /messages/
+
+# Sitemap
+Sitemap: https://froscel.com/sitemap.xml

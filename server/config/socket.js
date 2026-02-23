@@ -11,7 +11,6 @@ const initializeSocket = (server) => {
                 const isAllowed =
                     domain.includes('localhost') ||
                     domain.includes('127.0.0.1') ||
-                    domain.includes('froscel.xyz') ||
                     domain.includes('froscel.com') ||
                     domain.includes('vercel.app');
 
