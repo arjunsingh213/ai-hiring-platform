@@ -1,21 +1,7 @@
 
 export default function middleware(request) {
-    const url = new URL(request.url);
-    const ua = request.headers.get('user-agent') || '';
-
-    // High-performance regex for detecting crawler bots
-    const isBot = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|whatsapp|discordbot/i.test(ua);
-
-    // Only intercept the root landing page and public routes to avoid breaking internal app functionality
-    const isPublicRoute = url.pathname === '/' || url.pathname.startsWith('/signup') || url.pathname.startsWith('/login') || url.pathname.startsWith('/interview-room') || url.pathname.startsWith('/glossary') || url.pathname.startsWith('/blog');
-
-    if (isBot && isPublicRoute) {
-        // Rewrite to a pre-rendering service (Rendertron or similar)
-        // This allows bots to see a static version of the JS-heavy landing page
-        return fetch(`https://render-tron.appspot.com/render/${url.href}`);
-    }
-
-    // Return undefined to continue the request
+    // Middleware is active but currently passing through all requests.
+    // This file is kept to maintain the edge runtime config and matcher rules.
     return;
 }
 

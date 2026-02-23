@@ -1,11 +1,24 @@
 {
+    "redirects": [
+        {
+            "source": "/(.*)",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "www.froscel.com"
+                }
+            ],
+            "destination": "https://froscel.com/$1",
+            "permanent": true
+        }
+    ],
     "rewrites": [
         {
             "source": "/api/(.*)",
             "destination": "https://ai-hiring-platformserver.vercel.app/api/$1"
         },
         {
-            "source": "/(.*)",
+            "source": "/((?!api/).*)",
             "destination": "/index.html"
         }
     ]
