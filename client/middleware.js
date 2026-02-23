@@ -1,4 +1,3 @@
-import { next } from '@vercel/edge';
 
 export default function middleware(request) {
     const url = new URL(request.url);
@@ -16,7 +15,8 @@ export default function middleware(request) {
         return fetch(`https://render-tron.appspot.com/render/${url.href}`);
     }
 
-    return next();
+    // Return undefined to continue the request
+    return;
 }
 
 export const config = {
