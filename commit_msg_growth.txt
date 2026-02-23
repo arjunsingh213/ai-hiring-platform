@@ -1,0 +1,10 @@
+feat(growth): add programmatic SEO pages, glossary, blog, and hreflang
+
+- Created /interview-room/:jobType programmatic pages (6 job types)
+- Created /glossary with 12 AI hiring terms for Entity SEO
+- Created /blog with 6 technical hiring article stubs
+- Added hreflang tags (en + x-default) to index.html
+- Expanded sitemap.xml from 3 to 12 indexable pages
+- Updated Vercel middleware matcher for new public routes
+- Updated noscript fallback with links to new pages
+- Registered all new routes in App.jsx as public (no auth)

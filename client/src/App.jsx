@@ -24,6 +24,11 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const InterviewRoom = lazy(() => import('./pages/interview/InterviewRoom'));
 const InterviewReport = lazy(() => import('./pages/recruiter/InterviewReport'));
 
+// Growth SEO Pages
+const InterviewRoomLanding = lazy(() => import('./pages/landing/components/InterviewRoomLanding'));
+const GlossaryPage = lazy(() => import('./pages/landing/components/GlossaryPage'));
+const BlogPage = lazy(() => import('./pages/landing/components/BlogPage'));
+
 // Loading Fallback
 const LoadingFallback = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f8fafc' }}>
@@ -116,6 +121,12 @@ function App() {
               {/* Public Routes - No authentication required */}
               <Route path="/" element={<LandingPageNew />} />
               <Route path="/landing-old" element={<LandingPage />} />
+
+              {/* Growth SEO Pages - Public, no auth required */}
+              <Route path="/interview-room" element={<InterviewRoomLanding />} />
+              <Route path="/interview-room/:jobType" element={<InterviewRoomLanding />} />
+              <Route path="/glossary" element={<GlossaryPage />} />
+              <Route path="/blog" element={<BlogPage />} />
 
               {/* Authentication - Combined sliding auth page */}
               <Route path="/login" element={<AuthPage />} />

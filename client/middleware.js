@@ -8,7 +8,7 @@ export default function middleware(request) {
     const isBot = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|whatsapp|discordbot/i.test(ua);
 
     // Only intercept the root landing page and public routes to avoid breaking internal app functionality
-    const isPublicRoute = url.pathname === '/' || url.pathname.startsWith('/signup') || url.pathname.startsWith('/login');
+    const isPublicRoute = url.pathname === '/' || url.pathname.startsWith('/signup') || url.pathname.startsWith('/login') || url.pathname.startsWith('/interview-room') || url.pathname.startsWith('/glossary') || url.pathname.startsWith('/blog');
 
     if (isBot && isPublicRoute) {
         // Rewrite to a pre-rendering service (Rendertron or similar)
@@ -21,5 +21,5 @@ export default function middleware(request) {
 
 export const config = {
     // Only apply to the most critical SEO landing pages
-    matcher: ['/', '/signup', '/login', '/sitemap.xml'],
+    matcher: ['/', '/signup', '/login', '/sitemap.xml', '/interview-room', '/interview-room/:path*', '/glossary', '/blog'],
 };
