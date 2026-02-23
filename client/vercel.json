@@ -1,17 +1,4 @@
 {
-    "redirects": [
-        {
-            "source": "/(.*)",
-            "has": [
-                {
-                    "type": "host",
-                    "value": "www.froscel.com"
-                }
-            ],
-            "destination": "https://froscel.com/$1",
-            "permanent": true
-        }
-    ],
     "rewrites": [
         {
             "source": "/api/(.*)",
