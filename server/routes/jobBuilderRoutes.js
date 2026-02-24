@@ -6,7 +6,7 @@ const { userAuth, requireRole } = require('../middleware/userAuth');
 
 // Helper to keep conversational history clean
 const buildChatContext = (messages, currentDraft) => {
-    let systemPrompt = 'You are an expert AI recruiting assistant helping a hiring manager craft a job posting. Keep responses extremely concise. Ask ONLY ONE focused question at a time to uncover missing details like role title, seniority, responsibilities, or skills. Try to infer seniority from the responsibilities if not explicitly stated. Do not ask for details already present in the current draft.';
+    let systemPrompt = 'You are an expert AI recruiting assistant helping a hiring manager craft a job posting. Keep responses extremely concise. Ask ONLY ONE focused question at a time to uncover missing details like role title, seniority, responsibilities, compensation (salary range), qualifications (education/certifications), or skills. Try to infer seniority from the responsibilities if not explicitly stated. Do not ask for details already present in the current draft.';
 
     if (currentDraft && currentDraft !== 'null' && currentDraft !== 'Hello.') {
         systemPrompt += `\n\nCurrent Draft Details (DO NOT ask about these again):\n${currentDraft}`;
@@ -73,6 +73,8 @@ Return ONLY structured JSON:
 "role_title": "Title if found",
 "extracted_skills": ["Skill 1", "Skill 2"],
 "responsibilities": ["Resp 1"],
+"qualifications": ["Qualification 1"],
+"compensation_raw": "e.g. $120k - $150k",
 "inferred_seniority": "Junior|Mid|Senior|Lead",
 "parsing_confidence": 0-100
 }`;

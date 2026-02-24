@@ -131,6 +131,13 @@ Produce ONLY a valid JSON object matching exactly this structure. DO NOT use mar
   "role_title": "Clean concise title",
   "seniority_level": "Entry|Junior|Mid|Senior|Lead",
   "role_complexity": "Low|Medium|High",
+  "salary_range": {
+     "min": 0,
+     "max": 0,
+     "currency": "USD",
+     "period": "year"
+  },
+  "qualifications": ["Degree in CS", "3+ years in React"],
   "responsibilities": ["Responsibility 1", "Responsibility 2"],
   "required_skills": ["Skill 1", "Skill 2"],
   "preferred_skills": ["Skill A", "Skill B"],

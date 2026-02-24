@@ -210,13 +210,18 @@ const JobPostingPage = () => {
                                 skills: smartData.skills.split(',').map(s => s.trim()).filter(s => s),
                                 minExperience: parseInt(smartData.minExperience) || 0,
                                 maxExperience: parseInt(smartData.maxExperience) || 10,
-                                education: []
+                                education: smartData.education ? smartData.education.split(',').map(e => e.trim()).filter(e => e) : []
                             },
                             jobDetails: {
                                 type: smartData.type,
-                                location: 'Remote',
+                                location: smartData.location || 'Remote',
                                 remote: true,
-                                salary: { min: 0, max: 0, currency: 'USD', period: 'yearly' }
+                                salary: {
+                                    min: parseFloat(smartData.salaryMin) || 0,
+                                    max: parseFloat(smartData.salaryMax) || 0,
+                                    currency: smartData.currency || 'USD',
+                                    period: 'yearly'
+                                }
                             },
                             status: 'active'
                         };
@@ -233,13 +238,13 @@ const JobPostingPage = () => {
                                 skills: smartData.skills || '',
                                 minExperience: smartData.minExperience || '0',
                                 maxExperience: smartData.maxExperience || '10',
-                                education: '',
+                                education: smartData.education || '',
                                 type: smartData.type || 'full-time',
-                                location: 'Remote',
+                                location: smartData.location || 'Remote',
                                 remote: true,
-                                salaryMin: '0',
-                                salaryMax: '0',
-                                currency: 'USD'
+                                salaryMin: smartData.salaryMin || '0',
+                                salaryMax: smartData.salaryMax || '0',
+                                currency: smartData.currency || 'USD'
                             });
 
                             // Map smartPipeline directly if present
@@ -571,6 +576,14 @@ const JobPostingPage = () => {
                                             <div className="overview-item">
                                                 <label>Location:</label>
                                                 <span>{formData.location} {formData.remote && '(Remote)'}</span>
+                                            </div>
+                                            <div className="overview-item">
+                                                <label>Compensation:</label>
+                                                <span>{formData.currency} {parseFloat(formData.salaryMin).toLocaleString()} - {parseFloat(formData.salaryMax).toLocaleString()} / yr</span>
+                                            </div>
+                                            <div className="overview-item">
+                                                <label>Education:</label>
+                                                <span>{formData.education || 'Not specified'}</span>
                                             </div>
                                         </div>
 

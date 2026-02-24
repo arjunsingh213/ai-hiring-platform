@@ -108,6 +108,25 @@ const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
                 return;
             }
 
+            // ENFORCEMENT: Check for mandatory fields (Compensation & Qualifications)
+            const hasCompensation = signals.compensation_raw && signals.compensation_raw.length > 5;
+            const hasQualifications = signals.qualifications && signals.qualifications.length > 0;
+
+            if (!hasCompensation || !hasQualifications) {
+                let missingMsg = "I've analyzed the JD, but some mandatory details are missing:";
+                if (!hasCompensation) missingMsg += "\n- Compensation/Salary range";
+                if (!hasQualifications) missingMsg += "\n- Core Qualifications/Education";
+                missingMsg += "\n\nPlease provide these details so I can generate an accurate job draft for you.";
+
+                setActiveTab('chat');
+                setMessages(prev => [...prev,
+                { role: 'user', content: `I pasted a JD for ${signals.role_title || 'a new role'}.` },
+                { role: 'assistant', content: missingMsg }
+                ]);
+                setIsParsing(false);
+                return;
+            }
+
             // Second pass: Groq Full Generation using signals
             setIsGeneratingFull(true);
             const fullRes = await api.post('/job-builder/generate-full', {
@@ -160,12 +179,41 @@ const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
     const finalizeJob = () => {
         if (!draft) return;
 
+        // Validation for mandatory fields
+        const hasSalary = draft.salary_range?.min > 0 && draft.salary_range?.max > 0;
+        const hasQuals = draft.qualifications && draft.qualifications.length > 0;
+
+        if (!hasSalary || !hasQuals) {
+            toast.warning("Incomplete draft. AI needs Compensation and Qualifications to proceed.");
+            let prompt = "I've generated a draft, but I noticed some mandatory details are missing:";
+            if (!hasSalary) prompt += "\n- Compensation/Salary range";
+            if (!hasQuals) prompt += "\n- Core Qualifications/Education";
+            prompt += "\n\nPlease provide these details so we can move to the interview pipeline.";
+
+            setActiveTab('chat');
+            setMessages(prev => [...prev, { role: 'assistant', content: prompt }]);
+            return;
+        }
+
+        // Helper to strip non-numeric characters (except decimals)
+        const cleanNumber = (val) => {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            const cleaned = val.toString().replace(/[^0-9.]/g, '');
+            return parseFloat(cleaned) || 0;
+        };
+
+        const sMin = cleanNumber(draft.salary_range?.min);
+        const sMax = cleanNumber(draft.salary_range?.max);
+
         // Convert SMART_JOB draft to legacy required format
         const finalJobData = {
             title: draft.role_title,
-            description: draft.responsibilities?.join('\n\n• ')
-                ? `Responsibilities:\n• ${draft.responsibilities.join('\n• ')}`
-                : '',
+            description: `Compensation: ${draft.salary_range?.currency || 'USD'} ${sMin.toLocaleString()} - ${sMax.toLocaleString()}\n` +
+                `Education: ${draft.qualifications?.join(', ') || 'Not Specified'}\n\n` +
+                (draft.responsibilities?.join('\n\n• ')
+                    ? `Responsibilities:\n• ${draft.responsibilities.join('\n• ')}`
+                    : ''),
             skills: [...(draft.required_skills || []), ...(draft.preferred_skills || [])].join(', '),
             minExperience: draft.experience_model === 'learning_with_guidance' ? 0 :
                 draft.experience_model === 'feature_owner' ? 3 :
@@ -173,14 +221,13 @@ const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
             maxExperience: draft.experience_model === 'learning_with_guidance' ? 2 :
                 draft.experience_model === 'feature_owner' ? 5 :
                     draft.experience_model === 'system_owner' ? 8 : 15,
-            education: '',
-            type: 'full-time',
-            location: '',
-            remote: true, // defaulting to remote for smart jobs
-            salaryMin: '',
-            salaryMax: '',
-            currency: 'USD',
-            // Pass interview pipeline directly!
+            education: draft.qualifications?.join(', ') || '',
+            type: draft.type || 'full-time',
+            location: draft.location || 'Remote',
+            remote: true,
+            salaryMin: sMin.toString(),
+            salaryMax: sMax.toString(),
+            currency: draft.salary_range?.currency || 'USD',
             smartPipeline: draft.suggested_interview_rounds
         };
 
@@ -310,15 +357,26 @@ const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
                                         <div style={{ fontWeight: '500' }}>{draft.seniority_level}</div>
                                     </div>
                                     <div>
+                                        <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Compensation</p>
+                                        <div style={{ fontWeight: '600', color: 'var(--primary-color)' }}>
+                                            {draft.salary_range?.min > 0 ? `${draft.salary_range.currency} ${draft.salary_range.min.toLocaleString()} - ${draft.salary_range.max.toLocaleString()} / ${draft.salary_range.period || 'year'}` : 'Not Specified'}
+                                        </div>
+                                    </div>
+                                    <div>
                                         <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Ownership Level</p>
                                         <div style={{ fontWeight: '500', color: 'var(--primary-color)' }}>{draft.experience_model?.replace(/_/g, ' ')}</div>
                                     </div>
-                                    <div>
-                                        <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Complexity</p>
-                                        <div style={{ fontWeight: '500' }}>{draft.role_complexity}</div>
-                                    </div>
                                 </div>
                             </div>
+
+                            {draft.qualifications?.length > 0 && (
+                                <div className="sjb-draft-card">
+                                    <h4>Qualifications</h4>
+                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                                        {draft.qualifications.map((q, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>{q}</li>)}
+                                    </ul>
+                                </div>
+                            )}
 
                             <div className="sjb-draft-card">
                                 <h4>Required Skills</h4>
