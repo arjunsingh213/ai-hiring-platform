@@ -124,7 +124,14 @@ function App() {
 
               {/* Growth SEO Pages - Public, no auth required */}
               <Route path="/interview-room" element={<InterviewRoomLanding />} />
-              <Route path="/interview-room/:jobType" element={<InterviewRoomLanding />} />
+
+              {/* Froscel Interview Room™ — must be above the SEO :jobType catch-all */}
+              <Route path="/interview-room/:roomCode" element={
+                <ProtectedRoute>
+                  <InterviewRoom />
+                </ProtectedRoute>
+              } />
+
               <Route path="/glossary" element={<GlossaryPage />} />
               <Route path="/blog" element={<BlogPage />} />
 
@@ -166,13 +173,6 @@ function App() {
               <Route path="/interview/:interviewId/results" element={
                 <ProtectedRoute redirectTo="/">
                   <InterviewResults />
-                </ProtectedRoute>
-              } />
-
-              {/* Froscel Interview Room™ */}
-              <Route path="/interview-room/:roomCode" element={
-                <ProtectedRoute>
-                  <InterviewRoom />
                 </ProtectedRoute>
               } />
 

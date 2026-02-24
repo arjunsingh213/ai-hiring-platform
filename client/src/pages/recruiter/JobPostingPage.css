@@ -383,20 +383,20 @@
 
 .overview-header {
     margin-bottom: 24px;
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid var(--glass-border);
     padding-bottom: 16px;
 }
 
 .overview-header h3 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0F172A;
+    color: var(--text-primary);
     margin-bottom: 4px;
 }
 
 .overview-header p {
     font-size: 0.9rem;
-    color: #64748B;
+    color: var(--text-secondary);
 }
 
 .overview-grid {
@@ -406,8 +406,8 @@
 }
 
 .overview-card {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: var(--bg-softer);
+    border: 1px solid var(--glass-border);
     border-radius: 14px;
     padding: 20px;
 }
@@ -421,9 +421,9 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #94A3B8;
+    color: var(--text-tertiary);
     margin-bottom: 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid var(--glass-border);
     padding-bottom: 8px;
 }
 
@@ -439,12 +439,12 @@
 }
 
 .overview-item label {
-    color: #64748B;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
 .overview-item span {
-    color: #0F172A;
+    color: var(--text-primary);
     font-weight: 600;
     text-align: right;
 }
@@ -485,11 +485,11 @@
 
 .round-details {
     padding: 10px 14px;
-    background: white;
-    border: 1px solid #E2E8F0;
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border);
     border-radius: 10px;
     min-width: 140px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .round-top {
@@ -503,7 +503,7 @@
 .round-name {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #1E293B;
+    color: var(--text-primary);
     white-space: nowrap;
 }
 
@@ -516,24 +516,24 @@
 }
 
 .round-badge.ai {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(99, 102, 241, 0.15);
     color: #6366F1;
 }
 
 .round-badge.human {
-    background: rgba(245, 158, 11, 0.1);
-    color: #D97706;
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
 }
 
 .round-meta {
     font-size: 0.75rem;
-    color: #64748B;
+    color: var(--text-secondary);
 }
 
 .mini-connector {
     width: 20px;
     height: 2px;
-    background: #E2E8F0;
+    background: var(--glass-border);
 }
 
 .pipeline-modal-footer {

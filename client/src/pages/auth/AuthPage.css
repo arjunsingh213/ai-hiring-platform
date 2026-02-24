@@ -149,6 +149,19 @@
     box-shadow: 0 0 0 4px rgba(0, 125, 255, 0.1);
 }
 
+/* Fix browser autofill colors */
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:hover,
+.input-group input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text-primary, #0F172A);
+    -webkit-box-shadow: 0 0 0px 1000px #f5f7fa inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.input-group input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset, 0 0 0 4px rgba(0, 125, 255, 0.1);
+}
+
 .input-group select {
     cursor: pointer;
     appearance: none;

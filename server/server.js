@@ -133,6 +133,7 @@ const adminRoutes = require('./routes/adminRoutes'); // Added adminRoutes
 const adminSetupRoutes = require('./routes/adminSetup'); // Added adminSetupRoutes
 const skillNodeRoutes = require('./routes/skillNodeRoutes');
 const challengeAdminRoutes = require('./routes/challengeAdminRoutes');
+const jobBuilderRoutes = require('./routes/jobBuilderRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', authOAuthRoutes); // OAuth routes
@@ -144,6 +145,8 @@ app.use('/api/resume', resumeRoutes); // Changed from /api/resumes
 app.use('/api/parse-resume', resumeParserRoutes); // Changed from /api/resume
 app.use('/api/interviews', interviewRoutes); // Fixed: must match frontend API calls
 app.use('/api/onboarding-interview', onboardingInterviewRoutes);
+app.use('/api/job-builder', jobBuilderRoutes);
+
 app.use('/api/documents', documentRoutes); // Changed from /api/hiring
 app.use('/api/hiring', hiringRoutes);
 app.use('/api/notifications', notificationRoutes);

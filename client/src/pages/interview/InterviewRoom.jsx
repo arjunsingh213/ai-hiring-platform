@@ -200,11 +200,12 @@ const InterviewRoom = () => {
 
                 socket.on('admission-request', (request) => {
                     // Recruiter sees this
+                    console.log(`[InterviewRoom DEBUG] 🔔 Admission request RECEIVED from: ${request.name}, waitingCount: ${request.waitingCount} (My Role: ${myRole})`);
                     setWaitingList(prev => [...prev.filter(r => r.socketId !== request.socketId), request]);
-                    console.log('[InterviewRoom] 🔔 Admission request from:', request.name);
                 });
 
                 socket.on('waiting-list-update', ({ waiting }) => {
+                    console.log(`[InterviewRoom DEBUG] 📋 waiting-list-update RECEIVED, count: ${waiting?.length} (My Role: ${myRole})`);
                     setWaitingList(waiting);
                 });
 

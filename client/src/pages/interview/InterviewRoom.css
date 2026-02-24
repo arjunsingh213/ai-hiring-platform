@@ -1233,6 +1233,18 @@
     background: rgba(0, 0, 0, 0.08);
 }
 
+/* ── Lobby Screen (Light) ── */
+[data-theme="light"] .ir-lobby-user-card {
+    background: rgba(0, 0, 0, 0.03);
+    color: #1a1a2e;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ir-waiting-spinner {
+    border-color: rgba(99, 102, 241, 0.2);
+    border-top-color: #4338ca;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    MOBILE RESPONSIVE — Extended
    ═══════════════════════════════════════════════════════════════ */

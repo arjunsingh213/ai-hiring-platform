@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import InterviewPipelineConfig from '../../components/InterviewPipelineConfig';
 import FeedbackModal from '../../components/FeedbackModal';
+import SmartJobBuilder from '../../components/SmartJobBuilder/SmartJobBuilder';
 import './JobPostingPage.css';
 
 const JobPostingPage = () => {
@@ -14,6 +15,7 @@ const JobPostingPage = () => {
     // Check if we're in edit mode
     const editMode = location.state?.editMode || false;
     const existingJob = location.state?.jobData || null;
+    const [isManualMode, setIsManualMode] = useState(editMode || false);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -192,6 +194,109 @@ const JobPostingPage = () => {
             navigate('/recruiter/my-jobs');
         }
     };
+
+    if (!isManualMode) {
+        return (
+            <SmartJobBuilder
+                onSwitchToManual={() => setIsManualMode(true)}
+                onJobReady={async (smartData) => {
+                    setLoading(true);
+                    try {
+                        const jobData = {
+                            recruiterId: userId,
+                            title: smartData.title,
+                            description: smartData.description,
+                            requirements: {
+                                skills: smartData.skills.split(',').map(s => s.trim()).filter(s => s),
+                                minExperience: parseInt(smartData.minExperience) || 0,
+                                maxExperience: parseInt(smartData.maxExperience) || 10,
+                                education: []
+                            },
+                            jobDetails: {
+                                type: smartData.type,
+                                location: 'Remote',
+                                remote: true,
+                                salary: { min: 0, max: 0, currency: 'USD', period: 'yearly' }
+                            },
+                            status: 'active'
+                        };
+                        const response = await api.post('/jobs', jobData);
+                        const createdJob = response.data || response.job;
+
+                        if (createdJob && createdJob._id) {
+                            setCreatedJobId(createdJob._id);
+
+                            // Sync smartData to formData so overview and pipeline see it
+                            setFormData({
+                                title: smartData.title || '',
+                                description: smartData.description || '',
+                                skills: smartData.skills || '',
+                                minExperience: smartData.minExperience || '0',
+                                maxExperience: smartData.maxExperience || '10',
+                                education: '',
+                                type: smartData.type || 'full-time',
+                                location: 'Remote',
+                                remote: true,
+                                salaryMin: '0',
+                                salaryMax: '0',
+                                currency: 'USD'
+                            });
+
+                            // Map smartPipeline directly if present
+                            if (smartData.smartPipeline && smartData.smartPipeline.length > 0) {
+                                setInterviewPipeline(prev => ({
+                                    ...prev,
+                                    pipelineType: 'custom',
+                                    rounds: smartData.smartPipeline.map((r, i) => {
+                                        let rType = 'technical';
+                                        let typeStr = (r.type || r.title || '').toLowerCase();
+                                        if (typeStr.includes('behavioral') || typeStr.includes('hr') || typeStr.includes('culture') || typeStr.includes('management')) rType = 'hr';
+                                        else if (typeStr.includes('coding') || typeStr.includes('algorithm')) rType = 'coding';
+                                        else if (typeStr.includes('screen')) rType = 'screening';
+
+                                        const mappedSkills = smartData.skills.split(',').map(s => s.trim()).filter(s => s).slice(0, 5);
+
+                                        return {
+                                            roundNumber: i + 1,
+                                            roundType: rType,
+                                            type: 'AI', // Default AI
+                                            title: r.title || `Round ${i + 1}`,
+                                            description: `AI-assigned ${rType} evaluation based on job description.`,
+                                            duration: r.duration || 30,
+                                            isAIEnabled: true,
+                                            isRequired: true,
+                                            questionConfig: ['technical', 'hr', 'screening'].includes(rType) ? {
+                                                questionCount: 5,
+                                                categories: ['conceptual', 'practical'],
+                                                focusSkills: mappedSkills
+                                            } : undefined,
+                                            codingConfig: ['coding', 'dsa'].includes(rType) ? {
+                                                difficulty: 'medium',
+                                                problemCount: 2,
+                                                topics: ['arrays', 'strings'],
+                                                languages: ['JavaScript', 'Python'],
+                                                timePerProblem: 25
+                                            } : undefined,
+                                            scoring: { passingScore: 60, weightage: 100 }
+                                        };
+                                    })
+                                }));
+                            }
+
+                            toast.success('Smart Job created! Now review the auto-generated interview pipeline.');
+                            setShowPipelineModal(true);
+                            setIsManualMode(true); // Switch to manual container layout for modal
+                        }
+                    } catch (error) {
+                        console.error('Error saving smart job:', error);
+                        toast.error('Failed to post job. Please try again.');
+                    } finally {
+                        setLoading(false);
+                    }
+                }}
+            />
+        );
+    }
 
     return (
         <div className="job-posting-page">

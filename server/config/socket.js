@@ -100,14 +100,14 @@ const getIO = () => {
    WebRTC signaling, real-time collaboration, AI events
    ═══════════════════════════════════════════════════════════════ */
 
+// Track active rooms
+// { roomCode: { participants: Map<socketId, info>, waitingList: Map<socketId, info> } }
+const activeRooms = new Map();
+
 // This is initialized separately after the main socket setup
 // Call setupVideoRoomNamespace(io) from server.js after initializeSocket
 const setupVideoRoomNamespace = (io) => {
     const videoNs = io.of('/video-room');
-
-    // Track active rooms
-    // { roomCode: { participants: Map<socketId, info>, waitingList: Map<socketId, info> } }
-    const activeRooms = new Map();
 
     const getOrCreateRoom = (roomCode) => {
         if (!activeRooms.has(roomCode)) {
@@ -178,7 +178,7 @@ const setupVideoRoomNamespace = (io) => {
                 // Send any currently waiting candidates
                 const waiting = Array.from(room.waitingList.values());
                 if (waiting.length > 0) {
-                    socket.emit('waiting-list', { waiting, roomCode });
+                    socket.emit('waiting-list-update', { waiting, roomCode });
                 }
             } else {
                 // Candidate goes to waiting list
@@ -257,6 +257,62 @@ const setupVideoRoomNamespace = (io) => {
                 if (p.role === 'recruiter' || p.role === 'panelist') {
                     videoNs.to(sid).emit('waiting-list-update', {
                         waiting: Array.from(room.waitingList.values()),
+                        roomCode
+                    });
+                }
+            });
+        });
+
+        // ─────────────────────────────────────────────────
+        // ADMIT ALL — Recruiter admits everyone in the waiting list
+        // ─────────────────────────────────────────────────
+        socket.on('admit-all', ({ roomCode }) => {
+            if (socket.userRole !== 'recruiter' && socket.userRole !== 'panelist') return;
+
+            const room = activeRooms.get(roomCode);
+            if (!room || room.waitingList.size === 0) return;
+
+            console.log(`[VideoRoom] ✅ Admitting ALL (${room.waitingList.size}) waiting participants by ${socket.userName}`);
+
+            room.waitingList.forEach((candidate, targetSocketId) => {
+                // Move to participants
+                room.participants.set(targetSocketId, candidate);
+
+                // Tell the admitted candidate
+                videoNs.to(targetSocketId).emit('admission-granted', {
+                    roomCode,
+                    message: `You have been admitted by ${socket.userName}`
+                });
+
+                // Send existing participants to them
+                const existing = Array.from(room.participants.values())
+                    .filter(p => p.socketId !== targetSocketId);
+                videoNs.to(targetSocketId).emit('room-participants', {
+                    participants: existing,
+                    roomCode
+                });
+
+                // Notify others
+                const targetSocket = videoNs.sockets.get(targetSocketId);
+                if (targetSocket) {
+                    targetSocket.to(roomCode).emit('participant-joined', {
+                        userId: candidate.userId,
+                        role: candidate.role,
+                        name: candidate.name,
+                        socketId: targetSocketId,
+                        participantCount: room.participants.size
+                    });
+                }
+            });
+
+            // Clear waiting list
+            room.waitingList.clear();
+
+            // Notify recruiters
+            room.participants.forEach((p, sid) => {
+                if (p.role === 'recruiter' || p.role === 'panelist') {
+                    videoNs.to(sid).emit('waiting-list-update', {
+                        waiting: [],
                         roomCode
                     });
                 }

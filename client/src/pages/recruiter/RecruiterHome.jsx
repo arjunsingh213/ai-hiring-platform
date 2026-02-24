@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -104,7 +104,9 @@ const RecruiterHome = () => {
     const [mediaType, setMediaType] = useState(null);
     const [loading, setLoading] = useState(false);
     const [postsLoading, setPostsLoading] = useState(true);
-    const [user, setUser] = useState(null);
+    const userId = localStorage.getItem('userId');
+    const storedUserData = JSON.parse(localStorage.getItem('user') || 'null');
+    const [user, setUser] = useState(storedUserData);
     const [commentingPostId, setCommentingPostId] = useState(null);
     const [expandedATP, setExpandedATP] = useState(null);
     const [atpData, setAtpData] = useState({});
@@ -114,9 +116,7 @@ const RecruiterHome = () => {
         interviewsScheduled: 0
     });
     const [showFeedback, setShowFeedback] = useState(false);
-
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const userId = storedUser._id || storedUser.id || localStorage.getItem('userId');
+    const feedbackTimerRef = useRef(null);
 
     useEffect(() => {
         fetchPosts();
@@ -133,6 +133,7 @@ const RecruiterHome = () => {
         return () => {
             window.removeEventListener('profile-updated', handleUpdate);
             window.removeEventListener('user-updated', handleUpdate);
+            if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
         };
     }, []);
 
@@ -178,11 +179,14 @@ const RecruiterHome = () => {
                 interviewsScheduled: 0
             });
 
-            // Trigger feedback for recruiter dashboard
+            // Trigger feedback for recruiter dashboard — only after meaningful usage
             const feedbackShown = localStorage.getItem(`feedback_recruiter_${userId}`);
             if (!feedbackShown) {
-                setShowFeedback(true);
-                localStorage.setItem(`feedback_recruiter_${userId}`, 'true');
+                // Wait 2 minutes before showing feedback so the user actually uses the dashboard first
+                feedbackTimerRef.current = setTimeout(() => {
+                    setShowFeedback(true);
+                    localStorage.setItem(`feedback_recruiter_${userId}`, 'true');
+                }, 120000); // 2 minutes
             }
         } catch (error) {
             console.error('Error fetching stats:', error);
