@@ -1243,6 +1243,61 @@ router.get('/users/:id', adminAuth, requirePermission('view_users'), async (req,
 });
 
 /**
+ * GET /api/admin/users/:id/resume
+ * Get user's resume data
+ */
+router.get('/users/:id/resume', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const Resume = require('../models/Resume');
+        const resume = await Resume.findOne({ userId: req.params.id }).lean();
+
+        if (!resume) {
+            return res.status(404).json({
+                success: false,
+                error: 'Resume not found for this user'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: resume
+        });
+    } catch (error) {
+        console.error('Fetch resume error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch resume'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/users/:id/resume/download
+ * Download user's resume file
+ */
+router.get('/users/:id/resume/download', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const Resume = require('../models/Resume');
+        const resume = await Resume.findOne({ userId: req.params.id });
+
+        if (!resume || !resume.fileUrl) {
+            return res.status(404).json({
+                success: false,
+                error: 'Resume file not found'
+            });
+        }
+
+        res.redirect(resume.fileUrl);
+    } catch (error) {
+        console.error('Download resume error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to download resume'
+        });
+    }
+});
+
+/**
  * POST /api/admin/users/:id/suspend
  * Suspend a user
  */

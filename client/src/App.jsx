@@ -111,10 +111,18 @@ const OAuthTokenHandler = ({ children }) => {
   return children;
 };
 
+import { useActivityTracker } from './hooks/useActivityTracker';
+
+const ActivityLogger = () => {
+  useActivityTracker();
+  return null;
+};
+
 function App() {
   return (
     <ToastProvider>
       <Router>
+        <ActivityLogger />
         <OAuthTokenHandler>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>

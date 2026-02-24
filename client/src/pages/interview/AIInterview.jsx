@@ -892,10 +892,19 @@ const AIInterview = () => {
             const roundQuestionCount = currentRound?.questionConfig?.questionCount ||
                 pipelineConfig?.rounds?.[currentRoundIndex]?.questionConfig?.questionCount || 5;
 
-            // Use currentQuestionIndex + 1 as the count of answered questions (0-indexed)
-            const answeredInRound = currentQuestionIndex + 1;
+            // Calculate how many questions have been answered IN THE CURRENT ROUND
+            const answeredInRound = (latestInterview.questions || []).filter(q =>
+                (q.roundIndex === currentRoundIndex) ||
+                (q.roundIndex === undefined && currentRoundIndex === 0)
+            ).filter((q, idx) => {
+                // Only count questions that have a corresponding response
+                // Questions are answered sequentially, so if we have N responses, they belong to the first N questions globally.
+                // But we need to know how many of those responses belong to THIS round.
+                const globalIndex = latestInterview.questions.indexOf(q);
+                return globalIndex < latestInterview.responses.length;
+            }).length;
 
-            console.log(`[INTERVIEW] Q ${answeredInRound}/${roundQuestionCount} in ${currentRound?.roundType || 'round'}`);
+            console.log(`[INTERVIEW] Q ${answeredInRound}/${roundQuestionCount} in round index ${currentRoundIndex}`);
 
             if (answeredInRound >= roundQuestionCount || nextIndex >= updatedQuestions.length) {
                 // This round is complete - complete round and check for next
@@ -1350,14 +1359,28 @@ const AIInterview = () => {
         ? getCurrentRoundQuestionCount()
         : (interview.jobId ? 10 : questions.length || 1);
 
+    const getQuestionInRoundNumber = () => {
+        const roundQs = (questions || []).filter(q =>
+            (q.roundIndex === currentRoundIndex) ||
+            (q.roundIndex === undefined && currentRoundIndex === 0)
+        );
+        const currentQ = questions[currentQuestionIndex];
+        const indexInRound = roundQs.indexOf(currentQ);
+
+        // Fallback for edge cases
+        if (indexInRound === -1) return 1;
+        return indexInRound + 1;
+    };
+
+    const qNumberInRound = getQuestionInRoundNumber();
     const currentRoundType = currentRound?.roundType || pipelineConfig?.rounds?.[0]?.roundType || 'technical';
-    const progress = ((currentQuestionIndex + 1) / totalQ) * 100;
+    const progress = (qNumberInRound / totalQ) * 100;
 
     // Get next round info for button text
     const getNextButtonText = () => {
         if (submitting) return 'Saving...';
 
-        const isLastQuestionInRound = currentQuestionIndex >= totalQ - 1;
+        const isLastQuestionInRound = qNumberInRound >= totalQ;
 
         if (!isLastQuestionInRound) return 'Next →';
 
@@ -1403,7 +1426,7 @@ const AIInterview = () => {
                         </div>
                     )}
                     <p className="question-progress">
-                        Q {currentQuestionIndex + 1}/{totalQ} ({currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Interview'})
+                        Q {qNumberInRound}/{totalQ} ({currentRound?.title || ROUND_TYPE_INFO[currentRoundType]?.label || 'Interview'})
                     </p>
                 </div>
                 <div className="header-right">

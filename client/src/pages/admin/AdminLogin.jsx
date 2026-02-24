@@ -16,7 +16,7 @@ const AdminLogin = () => {
         // Check if already logged in
         const adminToken = localStorage.getItem('adminToken');
         if (adminToken) {
-            navigate('/admin/dashboard');
+            navigate('/admin');
         }
     }, [navigate]);
 
@@ -57,7 +57,7 @@ const AdminLogin = () => {
             if (data.data.admin.mustResetPassword) {
                 navigate('/admin/reset-password');
             } else {
-                navigate('/admin/dashboard');
+                navigate('/admin');
             }
         } catch (err) {
             setError(err.message);

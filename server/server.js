@@ -134,6 +134,7 @@ const adminSetupRoutes = require('./routes/adminSetup'); // Added adminSetupRout
 const skillNodeRoutes = require('./routes/skillNodeRoutes');
 const challengeAdminRoutes = require('./routes/challengeAdminRoutes');
 const jobBuilderRoutes = require('./routes/jobBuilderRoutes');
+const activityRoutes = require('./routes/activityRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', authOAuthRoutes); // OAuth routes
@@ -159,6 +160,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/code', codeExecutionRoutes);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/activity', activityRoutes);
 
 // Admin Review System
 app.use('/api/admin', adminRoutes);

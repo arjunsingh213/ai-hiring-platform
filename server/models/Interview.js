@@ -141,7 +141,8 @@ const interviewSchema = new mongoose.Schema({
         timeLimit: {
             type: Number,
             default: 120 // seconds
-        }
+        },
+        roundIndex: Number
     }],
 
     responses: [{
@@ -173,7 +174,8 @@ const interviewSchema = new mongoose.Schema({
         },
 
         // Legacy field for backward compatibility
-        confidence: Number
+        confidence: Number,
+        roundIndex: Number
     }],
 
     // Scoring

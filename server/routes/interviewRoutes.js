@@ -199,7 +199,8 @@ router.post('/:interviewId/response', userAuth, async (req, res) => {
             round: round || question?.category || 'general',
             // No evaluation yet - will be done at completion
             evaluation: null,
-            confidence: 0
+            confidence: 0,
+            roundIndex: interview.currentRoundIndex || 0
         });
 
         await interview.save();
@@ -272,12 +273,11 @@ Your goal is to assess the candidate's fit based on the Job Description below.
 
 INSTRUCTIONS:
 1. Roleplay as the interviewer. Speak directly to the candidate.
-2. Ask exactly ONE clear question relevant to the ${roundType} round.
-3. DO NOT generate a list of questions.
-4. DO NOT provide "Reasoning", "Expected Answer", or "Difficulty" metadata.
-5. DO NOT say "Here is a question" or "Okay, based on...".
-6. Return ONLY the question text.
-7. Example output: "Can you explain the difference between TCP and UDP?"
+2. Ask EXACTLY ONE clear question relevant to the ${roundType} round.
+3. CRITICAL: DO NOT generate a list of questions or any intro/preeamble.
+4. CRITICAL: Return ONLY the raw question text. Do NOT provide "Reasoning", "Expected Answer", or "Difficulty".
+5. If you return more than one question, the candidate will be overwhelmed.
+6. Example output: "Can you explain the difference between TCP and UDP?"
 `;
 
                     const nextQuestionText = await geminiService.generateAdaptiveQuestion(

@@ -13,23 +13,69 @@ const TEMPLATES = [
 
 const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
     const toast = useToast();
-    const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'parse' | 'templates'
+    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('sjb_active_tab') || 'chat');
 
     // AI Draft State
-    const [draft, setDraft] = useState(null);
+    const [draft, setDraft] = useState(() => {
+        const saved = localStorage.getItem('sjb_draft');
+        return saved ? JSON.parse(saved) : null;
+    });
     const [isGeneratingFull, setIsGeneratingFull] = useState(false);
 
     // Chat State
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: 'Hi! What kind of role are you looking to hire for today?' }
-    ]);
-    const [chatInput, setChatInput] = useState('');
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem('sjb_messages');
+        return saved ? JSON.parse(saved) : [
+            { role: 'assistant', content: 'Hi! What kind of role are you looking to hire for today?' }
+        ];
+    });
+    const [chatInput, setChatInput] = useState(() => localStorage.getItem('sjb_chat_input') || '');
     const [isChatLoading, setIsChatLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
     // Parse State
-    const [parseInput, setParseInput] = useState('');
+    const [parseInput, setParseInput] = useState(() => localStorage.getItem('sjb_parse_input') || '');
     const [isParsing, setIsParsing] = useState(false);
+
+    // Sync to LocalStorage
+    useEffect(() => {
+        localStorage.setItem('sjb_active_tab', activeTab);
+    }, [activeTab]);
+
+    useEffect(() => {
+        localStorage.setItem('sjb_messages', JSON.stringify(messages));
+    }, [messages]);
+
+    useEffect(() => {
+        if (draft) localStorage.setItem('sjb_draft', JSON.stringify(draft));
+        else localStorage.removeItem('sjb_draft');
+    }, [draft]);
+
+    useEffect(() => {
+        localStorage.setItem('sjb_chat_input', chatInput);
+    }, [chatInput]);
+
+    useEffect(() => {
+        localStorage.setItem('sjb_parse_input', parseInput);
+    }, [parseInput]);
+
+    // Reset Functionality
+    const handleReset = () => {
+        if (window.confirm('Start a fresh session? Current progress will be cleared.')) {
+            localStorage.removeItem('sjb_active_tab');
+            localStorage.removeItem('sjb_messages');
+            localStorage.removeItem('sjb_draft');
+            localStorage.removeItem('sjb_chat_input');
+            localStorage.removeItem('sjb_parse_input');
+
+            setMessages([{ role: 'assistant', content: 'Hi! What kind of role are you looking to hire for today?' }]);
+            setDraft(null);
+            setChatInput('');
+            setParseInput('');
+            setActiveTab('chat');
+            toast.success('Session reset! Ready for a new job post.');
+        }
+    };
 
     // Initial trigger to auto-scroll
     useEffect(() => {
@@ -247,10 +293,34 @@ const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
                         </svg>
                         Smart Builder
                     </h2>
-                    <div className="sjb-tabs">
-                        <button className={`sjb-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>Chat</button>
-                        <button className={`sjb-tab ${activeTab === 'parse' ? 'active' : ''}`} onClick={() => setActiveTab('parse')}>Paste JD</button>
-                        <button className={`sjb-tab ${activeTab === 'templates' ? 'active' : ''}`} onClick={() => setActiveTab('templates')}>Templates</button>
+                    <div className="sjb-tabs-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="sjb-tabs">
+                            <button className={`sjb-tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>Chat</button>
+                            <button className={`sjb-tab ${activeTab === 'parse' ? 'active' : ''}`} onClick={() => setActiveTab('parse')}>Paste JD</button>
+                            <button className={`sjb-tab ${activeTab === 'templates' ? 'active' : ''}`} onClick={() => setActiveTab('templates')}>Templates</button>
+                        </div>
+                        <button
+                            className="sjb-reset-btn"
+                            onClick={handleReset}
+                            title="Start New Job/Chat"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'var(--surface-light)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '6px',
+                                padding: '4px',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 

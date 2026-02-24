@@ -315,9 +315,9 @@ Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a l
             // aggressive cleaning for "technical interview for..." context headers
             question = question.replace(/^["']?technical["']? interview for.*?(\n|$)/i, '');
             question = question.replace(/^["']?screening["']? interview for.*?(\n|$)/i, '');
-            question = question.replace(/^\*\*?I\..*?(\n|$)/i, ''); // Remove "**I. Topic" headers (and variances like **I. SQL:**)
+            question = question.replace(/^\*\*?I\..*?(\n|$)/i, '');
 
-            // Remove markdown bolding for the whole line if present (e.g. **Question:** ...)
+            // Remove markdown bolding for the whole line if present
             question = question.replace(/\*\*(Question|Q|Next Question):?\*\*/i, '');
 
             // Remove common prefixes
@@ -325,30 +325,43 @@ Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a l
                 .replace(/^(Question:|Q:|Next Question:|\d+\.)\s*/i, '')
                 .replace(/^Okay, here is a .*?:/i, '')
                 .replace(/^Okay, based on .*?:/i, '')
-                .replace(/^Okay, .*?:/i, '') // Catch-all for "Okay, ..." prefixes
+                .replace(/^Okay, .*?:/i, '')
                 .replace(/^Here is a .*?:/i, '')
                 .replace(/^Based on the .*?:/i, '')
-                .replace(/^Here are .*?:/i, '') // Catch "Here are some questions..."
-                .replace(/\*\*Reasoning:\*\*[\s\S]*$/i, '') // Remove reasoning at the end
-                .replace(/\*\*Why this is .*?\*\*[\s\S]*$/i, '') // Remove "Why this is..."
-                .replace(/^Role:.*?(\n|$)/i, '') // Remove "Role: Senior Data Engineer" lines
+                .replace(/^Here are .*?:/i, '')
+                .replace(/\*\*Reasoning:\*\*[\s\S]*$/i, '')
+                .replace(/\*\*Why this is .*?\*\*[\s\S]*$/i, '')
+                .replace(/^Role:.*?(\n|$)/i, '')
                 .trim();
 
-            // 1. Remove obvious Topic/Header lines (e.g. "Topic: MySQL")
+            // 1. Remove obvious Topic/Header lines
             question = question.split('\n').filter(line => {
                 const l = line.trim().toLowerCase();
-                return !l.startsWith('topic:') && !l.startsWith('round:') && !l.startsWith('focus:');
+                return !l.startsWith('topic:') && !l.startsWith('round:') && !l.startsWith('focus:') && !l.startsWith('instruction:');
             }).join('\n').trim();
 
-            // 2. Remove list numbering only if it's at the very start (e.g. "1. What is...")
-            question = question.replace(/^\d+\.\s*/, '');
+            // 2. DETECT LIST DUMP: If we see numbered questions 1, 2, 3... or multiple paragraphs
+            // Heuristic: If we have multiple lines and some start with numbers or bullets, it's a list.
+            if (question.includes('\n')) {
+                const lines = question.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-            // 3. If there are multiple lines, try to find the actual question part
-            // (Remove trailing reasoning/notes that Gemini often adds)
-            // SAFER REGEX: Only split if it looks like a header (starts a line or follows a newline)
+                // If the first real line looks like a question, and there are many lines, 
+                // it might be a list where the AI ignored the "exactly one" rule.
+                // Just take the first line that looks like a question.
+                for (const line of lines) {
+                    const cleanedLine = line.replace(/^\d+[\.\)]\s*/, '').trim();
+                    if (cleanedLine.length > 20 && (cleanedLine.endsWith('?') || cleanedLine.includes('?'))) {
+                        console.log('[GeminiService] Detected possible list dump, selecting first question line');
+                        question = cleanedLine;
+                        break;
+                    }
+                }
+            }
+
+            // 3. Final cleanup
             question = question.split(/\n\s*(?:reasoning|why this is|note|evaluation criteria):/i)[0].trim();
 
-            console.log(`[GeminiService] Generated adaptive question: "${question.substring(0, 60)}..."`);
+            console.log(`[GeminiService] Final question: "${question.substring(0, 60)}..."`);
             return question;
         } catch (error) {
             console.error('[GeminiService] Adaptive question error:', error.message);

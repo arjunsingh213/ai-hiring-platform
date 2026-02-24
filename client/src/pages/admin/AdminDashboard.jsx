@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink, useNavigate, Link } from 'react-router-dom';
+import { Routes, Route, NavLink, useNavigate, Link, Navigate } from 'react-router-dom';
 import {
     LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -197,6 +197,7 @@ const AdminDashboard = () => {
                     <Route path="ai-usage" element={<AIUsageDashboard />} />
                     <Route path="challenges" element={<AdminChallengeMonitoring />} />
                     <Route path="projects" element={<AdminProjectReview />} />
+                    <Route path="dashboard" element={<Navigate to="/admin" replace />} />
                 </Routes>
             </main>
         </div>

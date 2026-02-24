@@ -146,10 +146,10 @@ You are a professional interviewer conducting a ${firstRound.roundType} intervie
 INSTRUCTIONS:
 1. Roleplay as the interviewer. Speak directly to the candidate.
 2. Ask exactly ONE question to start the interview.
-3. DO NOT generate a list of potential questions.
-4. DO NOT explain your reasoning.
-5. Return ONLY the question text.
-6. Example output: "Could you tell me about your experience with ${job.requirements?.skills?.[0] || 'this role'}?"
+3. CRITICAL: Do NOT generate a list of questions or a guide.
+4. CRITICAL: Do NOT explain your reasoning or provide any preamble.
+5. Return ONLY the question text itself.
+6. If you provide more than one question, the system will fail.
 `;
 
             firstQuestion = await geminiService.generateAdaptiveQuestion(
@@ -758,8 +758,8 @@ router.post('/next', requirePlatformInterview, async (req, res) => {
             type: q.category
         }));
 
-        // Determine round: 1-5 technical, 6-10 HR
-        const round = currentCount + 1 <= 5 ? 'technical' : 'hr';
+        // Determine round name for prompt
+        const roundName = currentRoundConfig?.title || (currentCount + 1 <= 5 ? 'technical' : 'hr');
 
         // Generate job-specific summary for context
         const jobDescriptionSummary = `
@@ -772,17 +772,15 @@ Description: ${job.description?.substring(0, 300) || 'Not provided'}
         // Generate next question
         // Generate next question using Gemini
         const systemInstruction = `
-You are a professional interviewer conducting a ${round} interview for the role of ${job.title}.
+You are a professional interviewer conducting a ${roundName} interview for the role of ${job.title}.
 Your goal is to assess the candidate's fit based on the Job Description below.
 
 INSTRUCTIONS:
-1. Ask ONE clear, professional question relevant to the ${round} round.
-2. Based *strictly* on the Job Description and Skills.
-3. If this is a 'screening' round, verify basic qualifications and communication.
-4. If 'technical', test specific skills mentioned in JD.
-5. If 'hr', assess fit and behavior.
-6. CRITICAL: Return ONLY the question text. Do NOT include labels like "Question:", "Reasoning:", "Difficulty:", or conversational fillers like "Okay, here is a question".
-7. Do not use markdown formatting like **bold** for the question text itself.
+1. Ask EXACTLY ONE clear, professional question relevant to the ${round} round.
+2. Based strictly on the Job Description and Skills.
+3. CRITICAL: Do NOT provide a list of questions, a summary of the round, or any intro/preamble.
+4. CRITICAL: Return ONLY the raw question text. Any additional words will break the candidate's UI.
+5. Do not use markdown formatting like **bold** for the question text.
 `;
 
         let nextQuestion = await geminiService.generateAdaptiveQuestion(

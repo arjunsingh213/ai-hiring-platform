@@ -285,6 +285,10 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    totalTimeSpent: {
+        type: Number,
+        default: 0 // In seconds
+    },
 
     // ==================== ACCOUNT STATUS (ADMIN CONTROL) ====================
     accountStatus: {

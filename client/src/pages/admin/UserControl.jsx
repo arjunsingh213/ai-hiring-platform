@@ -16,6 +16,10 @@ const UserControl = () => {
     const [showModal, setShowModal] = useState(null);
     const [formData, setFormData] = useState({ reason: '' });
     const [actionLoading, setActionLoading] = useState(false);
+    const [resumeData, setResumeData] = useState(null);
+    const [activities, setActivities] = useState([]);
+    const [activityPagination, setActivityPagination] = useState({ page: 1, total: 0 });
+    const [fetchingDetail, setFetchingDetail] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -87,6 +91,66 @@ const UserControl = () => {
         } finally {
             setActionLoading(false);
         }
+    };
+
+    const fetchUserResume = async (userId) => {
+        setFetchingDetail(true);
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/admin/users/${userId}/resume`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setResumeData(data.data);
+            } else {
+                alert(data.error || 'Failed to fetch resume');
+            }
+        } catch (error) {
+            console.error('Resume fetch failed:', error);
+            alert('Failed to fetch resume');
+        } finally {
+            setFetchingDetail(false);
+        }
+    };
+
+    const fetchUserActivity = async (userId, pageNum = 1) => {
+        setFetchingDetail(true);
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/activity/admin/${userId}?page=${pageNum}&limit=10`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setActivities(data.data.activities);
+                setActivityPagination({
+                    page: data.data.pagination.page,
+                    total: data.data.pagination.total,
+                    pages: data.data.pagination.pages
+                });
+            }
+        } catch (error) {
+            console.error('Activity fetch failed:', error);
+        } finally {
+            setFetchingDetail(false);
+        }
+    };
+
+    const handleDownloadResume = (userId) => {
+        const token = localStorage.getItem('adminToken');
+        window.open(`${API_URL}/admin/users/${userId}/resume/download?adminToken=${token}`, '_blank');
+    };
+
+    const formatDuration = (seconds) => {
+        if (!seconds) return '0s';
+        if (seconds < 60) return `${seconds}s`;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        if (mins < 60) return `${mins}m ${secs}s`;
+        const hours = Math.floor(mins / 60);
+        const remainingMins = mins % 60;
+        return `${hours}h ${remainingMins}m`;
     };
 
     const formatDate = (dateString) => {
@@ -203,6 +267,7 @@ const UserControl = () => {
                                     <th>Account Status</th>
                                     <th>Joined</th>
                                     <th>Last Active</th>
+                                    <th>Time Spent</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -225,8 +290,8 @@ const UserControl = () => {
                                         </td>
                                         <td>
                                             <span className={`status-badge ${user.platformInterview?.status === 'passed' ? 'approved' :
-                                                    user.platformInterview?.status === 'failed' ? 'rejected' :
-                                                        'pending'
+                                                user.platformInterview?.status === 'failed' ? 'rejected' :
+                                                    'pending'
                                                 }`}>
                                                 {user.platformInterview?.status || 'pending'}
                                             </span>
@@ -245,6 +310,9 @@ const UserControl = () => {
                                         </td>
                                         <td>
                                             {formatDate(user.lastActive)}
+                                        </td>
+                                        <td>
+                                            {formatDuration(user.totalTimeSpent)}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -269,6 +337,29 @@ const UserControl = () => {
                                                         Suspend
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    className="admin-action-btn primary"
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setShowModal('resume');
+                                                        fetchUserResume(user._id);
+                                                    }}
+                                                >
+                                                    View Resume
+                                                </button>
+
+                                                <button
+                                                    className="admin-action-btn"
+                                                    style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setShowModal('activity');
+                                                        fetchUserActivity(user._id);
+                                                    }}
+                                                >
+                                                    Activity
+                                                </button>
 
                                                 <button
                                                     className="admin-action-btn primary"
@@ -400,6 +491,189 @@ const UserControl = () => {
                             >
                                 {actionLoading ? 'Processing...' : 'Confirm'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Resume Details Modal */}
+            {showModal === 'resume' && selectedUser && (
+                <div className="admin-modal-overlay" onClick={() => setShowModal(null)}>
+                    <div className="admin-modal" style={{ maxWidth: '1000px', width: '95%' }} onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <div>
+                                <h2>{selectedUser.profile?.name}'s Resume</h2>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>{resumeData?.fileName || 'Resume Preview'}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <button
+                                    className="admin-action-btn success"
+                                    onClick={() => handleDownloadResume(selectedUser._id)}
+                                >
+                                    Download Original
+                                </button>
+                                <button className="admin-modal-close" onClick={() => setShowModal(null)}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="admin-modal-body" style={{ height: '80vh', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                            {fetchingDetail ? (
+                                <div className="admin-loading-spinner" style={{ margin: 'auto' }}></div>
+                            ) : resumeData ? (
+                                <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+                                    {/* PDF Viewer Section */}
+                                    <div style={{ flex: 1, height: '100%', background: '#1e293b' }}>
+                                        {resumeData.fileUrl ? (
+                                            <iframe
+                                                src={`${resumeData.fileUrl}#toolbar=0`}
+                                                title="Resume PDF"
+                                                width="100%"
+                                                height="100%"
+                                                style={{ border: 'none' }}
+                                            />
+                                        ) : (
+                                            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                                                <p>PDF file URL not available.</p>
+                                                {resumeData.htmlContent && <p>Showing text preview instead.</p>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Sidebar for Parsed Data */}
+                                    <div style={{
+                                        width: '300px',
+                                        borderLeft: '1px solid rgba(255,255,255,0.1)',
+                                        padding: '20px',
+                                        overflowY: 'auto',
+                                        background: 'rgba(15, 23, 42, 0.5)'
+                                    }}>
+                                        {resumeData.parsedData && (
+                                            <div className="resume-parsed-section">
+                                                <h4 style={{ color: '#38bdf8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Parsed Skills</h4>
+                                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                                                    {resumeData.parsedData.skills?.map((skill, i) => (
+                                                        <span key={i} style={{
+                                                            background: 'rgba(56, 189, 248, 0.1)',
+                                                            color: '#38bdf8',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.75rem'
+                                                        }}>
+                                                            {skill}
+                                                        </span>
+                                                    ))}
+                                                </div>
+
+                                                <h4 style={{ color: '#38bdf8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>AI Insights</h4>
+                                                <div style={{
+                                                    background: 'rgba(56, 189, 248, 0.05)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid rgba(56, 189, 248, 0.1)'
+                                                }}>
+                                                    <p style={{ color: '#e2e8f0', lineHeight: '1.5', fontSize: '0.85rem', margin: 0 }}>
+                                                        {resumeData.aiAnalysis?.roleMatch || 'No specific AI role analysis available.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!resumeData.fileUrl && resumeData.htmlContent && (
+                                            <div style={{ marginTop: '20px' }}>
+                                                <h4 style={{ color: '#312e81', fontSize: '0.9rem' }}>Text Content</h4>
+                                                <div
+                                                    style={{
+                                                        padding: '10px',
+                                                        background: 'white',
+                                                        color: 'black',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.8rem',
+                                                        maxHeight: '300px',
+                                                        overflowY: 'auto'
+                                                    }}
+                                                    dangerouslySetInnerHTML={{ __html: resumeData.htmlContent }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <p style={{ color: '#ef4444', textAlign: 'center', padding: '40px' }}>Resume data not available.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Activity Log Modal */}
+            {showModal === 'activity' && selectedUser && (
+                <div className="admin-modal-overlay" onClick={() => setShowModal(null)}>
+                    <div className="admin-modal" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <h2>User Activity Logs</h2>
+                            <button className="admin-modal-close" onClick={() => setShowModal(null)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="admin-modal-body">
+                            {fetchingDetail ? (
+                                <div className="admin-loading-spinner" style={{ margin: '40px auto' }}></div>
+                            ) : (
+                                <div className="activity-list">
+                                    <table className="admin-table" style={{ fontSize: '0.85rem' }}>
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Action</th>
+                                                <th>Feature</th>
+                                                <th>Duration</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {activities.map((act, i) => (
+                                                <tr key={i}>
+                                                    <td>{new Date(act.timestamp).toLocaleString()}</td>
+                                                    <td style={{ fontWeight: '500' }}>{act.action.replace(/_/g, ' ')}</td>
+                                                    <td>{act.feature}</td>
+                                                    <td>{act.duration > 0 ? formatDuration(act.duration) : '-'}</td>
+                                                </tr>
+                                            ))}
+                                            {activities.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="4" style={{ textAlign: 'center', color: '#64748b' }}>No activity logs found.</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+
+                                    {activityPagination.pages > 1 && (
+                                        <div className="admin-pagination" style={{ marginTop: '15px' }}>
+                                            <button
+                                                className="admin-pagination-btn"
+                                                onClick={() => fetchUserActivity(selectedUser._id, activityPagination.page - 1)}
+                                                disabled={activityPagination.page === 1}
+                                            >
+                                                Prev
+                                            </button>
+                                            <span style={{ color: '#94a3b8' }}>{activityPagination.page} / {activityPagination.pages}</span>
+                                            <button
+                                                className="admin-pagination-btn"
+                                                onClick={() => fetchUserActivity(selectedUser._id, activityPagination.page + 1)}
+                                                disabled={activityPagination.page === activityPagination.pages}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
