@@ -300,11 +300,22 @@ const JobPostingPage = () => {
 
     return (
         <div className="job-posting-page">
-            <div className="page-header">
-                <h1>{editMode ? '✏️ Edit Job' : 'Post a New Job'}</h1>
-                <p className="text-muted">
-                    {editMode ? 'Update the job details below' : 'Fill in the details to create a job posting'}
-                </p>
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                    <h1>{editMode ? '✏️ Edit Job' : 'Post a New Job'}</h1>
+                    <p className="text-muted">
+                        {editMode ? 'Update the job details below' : 'Fill in the details to create a job posting'}
+                    </p>
+                </div>
+                {!editMode && (
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setIsManualMode(false)}
+                        style={{ marginTop: '0.5rem' }}
+                    >
+                        ✨ Switch to Smart Builder
+                    </button>
+                )}
             </div>
 
             <form onSubmit={handleSubmit} className="job-form card">

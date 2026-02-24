@@ -84,7 +84,8 @@
 .sjb-chat-view {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    overflow: hidden;
 }
 
 .sjb-chat-messages {
@@ -179,7 +180,8 @@
     padding: var(--spacing-lg);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    overflow: hidden;
     gap: 1.5rem;
 }
 
@@ -209,6 +211,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    flex: 1;
     overflow-y: auto;
 }
 
