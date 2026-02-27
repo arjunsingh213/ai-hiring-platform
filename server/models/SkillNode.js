@@ -17,10 +17,10 @@ const skillNodeSchema = new mongoose.Schema({
         trim: true,
         lowercase: true
     },
-    domainCategory: {
+    domainCategories: [{
         type: String,
         default: 'Others'
-    },
+    }],
     // Level 0→4: Unverified → Basic → Intermediate → Advanced → Expert
     level: {
         type: Number,
@@ -119,7 +119,7 @@ skillNodeSchema.statics.LEVEL_LABELS = ['Unverified', 'Basic', 'Intermediate', '
 
 // Unique constraint per user per skill
 skillNodeSchema.index({ userId: 1, skillNameNormalized: 1 }, { unique: true });
-skillNodeSchema.index({ userId: 1, domainCategory: 1 });
+skillNodeSchema.index({ userId: 1, domainCategories: 1 });
 skillNodeSchema.index({ userId: 1, level: -1 });
 skillNodeSchema.index({ userId: 1, verifiedStatus: 1 });
 

@@ -146,7 +146,9 @@ const AITalentPassport = ({
     }));
 
     // Line chart data (skill growth from history)
-    const historyForDomain = (interviewSkillHistory || []).filter(h => h.domain === selectedDomain);
+    const historyForDomain = (interviewSkillHistory || []).filter(h =>
+        h.domain === selectedDomain || (h.domains && h.domains.includes(selectedDomain))
+    );
     const lineData = buildGrowthData(historyForDomain);
 
     // Area chart — performance trend
@@ -424,7 +426,15 @@ const AITalentPassport = ({
                             ))}
                             {/* Resume Skills (Self-Reported) */}
                             {resumeSkills
-                                .filter(rs => !domainSkills.find(ds => ds.skillName.toLowerCase() === rs.name.toLowerCase()))
+                                .filter(rs => {
+                                    // Check if this resume skill belongs to the selected domain
+                                    // We'll use the same classification logic or check if it's already in domainSkills
+                                    const isVerified = domainSkills.find(ds => ds.skillName.toLowerCase() === rs.name.toLowerCase());
+                                    if (isVerified) return false;
+
+                                    // If resume skill has domain info, use it, otherwise show in 'Others' or if it matches current
+                                    return true; // Show all for now, or refine if resumeSkills has domain
+                                })
                                 .map((rs, i) => (
                                     <div key={`resume-${i}`} className="atp-v2-mini-skill atp-v2-mini-skill--resume">
                                         <div className="atp-v2-mini-skill__header">

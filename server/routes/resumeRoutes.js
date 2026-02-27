@@ -225,7 +225,7 @@ router.post('/upload', userAuth, upload.single('resume'), async (req, res) => {
                                 userId,
                                 skillName: skillData.name,
                                 skillNameNormalized: key,
-                                domainCategory: skillData.domain,
+                                domainCategories: Array.isArray(skillData.domain) ? skillData.domain : [skillData.domain || 'Others'],
                                 level: 0,
                                 xp: 0,
                                 source: 'resume',

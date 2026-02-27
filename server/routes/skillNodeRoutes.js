@@ -6,11 +6,21 @@ const User = require('../models/User');
 // Domain category mapping for auto-classification
 const DOMAIN_MAP = {
     // Programming Languages
-    'python': 'Software Engineering', 'java': 'Software Engineering', 'javascript': 'Software Engineering',
-    'typescript': 'Software Engineering', 'c++': 'Software Engineering', 'c#': 'Software Engineering',
-    'go': 'Software Engineering', 'rust': 'Software Engineering', 'swift': 'Software Engineering',
-    'kotlin': 'Software Engineering', 'ruby': 'Software Engineering', 'php': 'Software Engineering',
-    'scala': 'Software Engineering', 'r': 'Data Science', 'matlab': 'Data Science',
+    'python': ['Software Engineering', 'Data Science'],
+    'java': 'Software Engineering',
+    'javascript': 'Software Engineering',
+    'typescript': 'Software Engineering',
+    'c++': 'Software Engineering',
+    'c#': 'Software Engineering',
+    'go': 'Software Engineering',
+    'rust': 'Software Engineering',
+    'swift': 'Software Engineering',
+    'kotlin': 'Software Engineering',
+    'ruby': 'Software Engineering',
+    'php': 'Software Engineering',
+    'scala': 'Software Engineering',
+    'r': ['Data Science'],
+    'matlab': ['Data Science', 'Software Engineering'],
     // Frontend
     'react': 'Software Engineering', 'vue': 'Software Engineering', 'angular': 'Software Engineering',
     'svelte': 'Software Engineering', 'next.js': 'Software Engineering', 'html': 'Software Engineering',
@@ -20,9 +30,12 @@ const DOMAIN_MAP = {
     'flask': 'Software Engineering', 'spring': 'Software Engineering', 'fastapi': 'Software Engineering',
     'nestjs': 'Software Engineering', 'rails': 'Software Engineering', '.net': 'Software Engineering',
     // Databases
-    'mysql': 'Software Engineering', 'postgresql': 'Software Engineering', 'mongodb': 'Software Engineering',
+    'mysql': ['Software Engineering', 'Data Science'],
+    'postgresql': ['Software Engineering', 'Data Science'],
+    'mongodb': ['Software Engineering', 'Data Science'],
     'redis': 'Software Engineering', 'elasticsearch': 'Software Engineering', 'dynamodb': 'Software Engineering',
     'firebase': 'Software Engineering', 'sqlite': 'Software Engineering', 'cassandra': 'Software Engineering',
+    'sql': ['Software Engineering', 'Data Science'],
     // Cloud & DevOps
     'aws': 'Software Engineering', 'azure': 'Software Engineering', 'gcp': 'Software Engineering',
     'docker': 'Software Engineering', 'kubernetes': 'Software Engineering', 'terraform': 'Software Engineering',
@@ -33,50 +46,44 @@ const DOMAIN_MAP = {
     'scikit-learn': 'Data Science', 'nlp': 'Data Science', 'computer vision': 'Data Science',
     'data analysis': 'Data Science', 'statistics': 'Data Science', 'tableau': 'Data Science',
     'power bi': 'Data Science', 'spark': 'Data Science', 'hadoop': 'Data Science',
+    'scipy': 'Data Science', 'matplotlib': 'Data Science', 'seaborn': 'Data Science',
     // Design
     'figma': 'Design', 'photoshop': 'Design', 'illustrator': 'Design', 'sketch': 'Design',
     'ui/ux': 'Design', 'ui design': 'Design', 'ux design': 'Design', 'graphic design': 'Design',
-    'adobe xd': 'Design', 'canva': 'Design', 'wireframing': 'Design', 'prototyping': 'Design',
     // Marketing
-    'seo': 'Marketing', 'sem': 'Marketing', 'google ads': 'Marketing', 'facebook ads': 'Marketing',
-    'content marketing': 'Marketing', 'email marketing': 'Marketing', 'social media': 'Marketing',
-    'analytics': 'Marketing', 'google analytics': 'Marketing', 'copywriting': 'Marketing',
-    'brand management': 'Marketing', 'digital marketing': 'Marketing',
+    'seo': 'Marketing', 'sem': 'Marketing', 'google ads': 'Marketing', 'analytics': 'Marketing',
     // Product Management
     'product management': 'Product Management', 'agile': 'Product Management', 'scrum': 'Product Management',
-    'jira': 'Product Management', 'roadmapping': 'Product Management', 'user research': 'Product Management',
-    'a/b testing': 'Product Management', 'product strategy': 'Product Management',
-    // Sales
-    'salesforce': 'Sales', 'crm': 'Sales', 'lead generation': 'Sales', 'b2b sales': 'Sales',
-    'negotiation': 'Sales', 'cold calling': 'Sales', 'account management': 'Sales',
-    // HR
-    'recruitment': 'HR', 'talent acquisition': 'HR', 'employee relations': 'HR',
-    'performance management': 'HR', 'onboarding': 'HR', 'hris': 'HR', 'payroll': 'HR',
     // Finance
-    'financial analysis': 'Finance', 'accounting': 'Finance', 'excel': 'Finance',
-    'financial modeling': 'Finance', 'budgeting': 'Finance', 'taxation': 'Finance',
-    'investment banking': 'Finance', 'risk management': 'Finance',
-    // Customer Support
-    'customer service': 'Customer Support', 'zendesk': 'Customer Support',
-    'troubleshooting': 'Customer Support', 'ticketing': 'Customer Support',
+    'excel': ['Finance', 'Data Science'],
     // Soft Skills
     'communication': 'Others', 'leadership': 'Others', 'teamwork': 'Others',
-    'problem solving': 'Others', 'critical thinking': 'Others', 'time management': 'Others',
-    'project management': 'Others', 'presentation': 'Others'
+    'problem solving': 'Others'
 };
 
 /**
- * Classify a skill into a domain category
+ * Classify a skill into one or more domain categories
  */
 function classifySkill(skillName) {
     const normalized = skillName.toLowerCase().trim();
-    if (DOMAIN_MAP[normalized]) return DOMAIN_MAP[normalized];
+    let domains = [];
 
-    // Fuzzy match: check if any key is contained in the skill name
-    for (const [key, domain] of Object.entries(DOMAIN_MAP)) {
-        if (normalized.includes(key) || key.includes(normalized)) return domain;
+    // Check direct match
+    if (DOMAIN_MAP[normalized]) {
+        domains = Array.isArray(DOMAIN_MAP[normalized]) ? DOMAIN_MAP[normalized] : [DOMAIN_MAP[normalized]];
+    } else {
+        // Fuzzy match: check if any key is contained in the skill name
+        for (const [key, domain] of Object.entries(DOMAIN_MAP)) {
+            if (normalized.includes(key) || key.includes(normalized)) {
+                const results = Array.isArray(domain) ? domain : [domain];
+                domains.push(...results);
+            }
+        }
     }
-    return 'Others';
+
+    // Return unique domains, or ['Others'] if none found
+    if (domains.length === 0) return ['Others'];
+    return [...new Set(domains)];
 }
 
 // ===== GET /api/skill-nodes/:userId — Get all SkillNodes for a user =====
@@ -94,11 +101,14 @@ router.get('/:userId', async (req, res) => {
             .sort({ level: -1, xp: -1, skillName: 1 })
             .lean();
 
-        // Group by domain category
+        // Group by domain category (a skill can appear in multiple groups now)
         const grouped = {};
         skillNodes.forEach(node => {
-            if (!grouped[node.domainCategory]) grouped[node.domainCategory] = [];
-            grouped[node.domainCategory].push(node);
+            const domains = node.domainCategories || ['Others'];
+            domains.forEach(d => {
+                if (!grouped[d]) grouped[d] = [];
+                grouped[d].push(node);
+            });
         });
 
         res.json({
@@ -208,9 +218,13 @@ router.post('/from-resume', async (req, res) => {
         for (const [normalized, skillData] of allSkills) {
             const existing = await SkillNode.findOne({ userId, skillNameNormalized: normalized });
             if (existing) {
-                // Don't downgrade existing nodes, just update domain if needed
-                if (existing.domainCategory === 'Others' && skillData.domain !== 'Others') {
-                    existing.domainCategory = skillData.domain;
+                // Combine and unique-ify domains
+                const newDomains = Array.isArray(skillData.domain) ? skillData.domain : [skillData.domain];
+                const currentDomains = existing.domainCategories || [];
+                const combined = [...new Set([...currentDomains, ...newDomains])];
+
+                if (combined.length > currentDomains.length) {
+                    existing.domainCategories = combined;
                     await existing.save();
                     updated.push(existing);
                 }
@@ -219,7 +233,7 @@ router.post('/from-resume', async (req, res) => {
                     const node = new SkillNode({
                         userId,
                         skillName: skillData.name,
-                        domainCategory: skillData.domain,
+                        domainCategories: Array.isArray(skillData.domain) ? skillData.domain : [skillData.domain],
                         level: 0,
                         xp: 0,
                         source: 'resume',
@@ -281,10 +295,11 @@ router.post('/add', async (req, res) => {
             return res.json({ success: true, data: existing, message: 'SkillNode already exists' });
         }
 
+        const domains = classifySkill(skillName);
         const node = new SkillNode({
             userId,
             skillName: skillName.trim(),
-            domainCategory: classifySkill(skillName),
+            domainCategories: domains,
             level: 0,
             xp: 0,
             source: 'manual'

@@ -423,108 +423,114 @@ router.post('/:id/submit', async (req, res) => {
                 try {
                     const atpUser = await User.findById(userId);
                     if (atpUser && atpUser.aiTalentPassport) {
-                        if (!atpUser.aiTalentPassport.domainScores) {
-                            atpUser.aiTalentPassport.domainScores = [];
-                        }
-                        const domain = skillNode.domainCategory || challenge.domain;
-                        let domainEntry = atpUser.aiTalentPassport.domainScores.find(d => d.domain === domain);
-                        if (!domainEntry) {
-                            atpUser.aiTalentPassport.domainScores.push({
-                                domain, domainScore: 0, skills: [], lastUpdated: new Date()
-                            });
-                            domainEntry = atpUser.aiTalentPassport.domainScores[
-                                atpUser.aiTalentPassport.domainScores.length - 1
-                            ];
-                        }
+                        const domains = skillNode.domainCategories && skillNode.domainCategories.length > 0
+                            ? skillNode.domainCategories
+                            : [challenge.domain || 'Others'];
 
-                        let skillEntry = domainEntry.skills.find(
-                            s => s.skillName.toLowerCase() === skillNode.skillName.toLowerCase()
-                        );
-                        if (!skillEntry) {
-                            domainEntry.skills.push({
-                                skillName: skillNode.skillName,
-                                score: 0, level: 1, xp: 0,
-                                validationScore: 0, riskIndex: 0,
-                                recencyScore: 100, confidence: 0,
-                                lastAssessedAt: new Date(),
-                                challengePerformance: 0,
-                                interviewPerformance: 0,
-                                projectValidation: 0
-                            });
-                            skillEntry = domainEntry.skills[domainEntry.skills.length - 1];
-                        }
+                        // Update all relevant domains for this skill
+                        for (const domain of domains) {
+                            if (!atpUser.aiTalentPassport.domainScores) {
+                                atpUser.aiTalentPassport.domainScores = [];
+                            }
+                            let domainEntry = atpUser.aiTalentPassport.domainScores.find(d => d.domain === domain);
+                            if (!domainEntry) {
+                                atpUser.aiTalentPassport.domainScores.push({
+                                    domain, domainScore: 0, skills: [], lastUpdated: new Date()
+                                });
+                                domainEntry = atpUser.aiTalentPassport.domainScores[
+                                    atpUser.aiTalentPassport.domainScores.length - 1
+                                ];
+                            }
 
-                        // Update challenge performance
-                        skillEntry.challengePerformance = Math.min(100,
-                            Math.max(skillEntry.challengePerformance || 0, score)
-                        );
-                        skillEntry.xp = skillNode.xp;
-                        skillEntry.level = Math.min(5, Math.max(1, skillNode.level + 1));
-                        skillEntry.riskIndex = riskLevel === 'high' ? 80 : riskLevel === 'medium' ? 40 : 10;
-                        skillEntry.recencyScore = 100;
-                        skillEntry.lastAssessedAt = new Date();
-                        skillEntry.validationScore = score;
-
-                        // Skill Score = Challenge×40% + Interview×50% + Project×10%
-                        skillEntry.score = Math.round(
-                            (skillEntry.challengePerformance || 0) * 0.4 +
-                            (skillEntry.interviewPerformance || 0) * 0.5 +
-                            (skillEntry.projectValidation || 0) * 0.1
-                        );
-                        skillEntry.confidence = Math.round(
-                            (skillEntry.challengePerformance * 0.4 +
-                                skillEntry.interviewPerformance * 0.5 +
-                                skillEntry.projectValidation * 0.1) || 0
-                        );
-
-                        // Recalculate domain score
-                        if (domainEntry.skills.length > 0) {
-                            domainEntry.domainScore = Math.round(
-                                domainEntry.skills.reduce((sum, s) => sum + (s.score || 0), 0) /
-                                domainEntry.skills.length
+                            let skillEntry = domainEntry.skills.find(
+                                s => s.skillName.toLowerCase() === skillNode.skillName.toLowerCase()
                             );
-                            const avgRisk = domainEntry.skills.reduce((sum, s) => sum + (s.riskIndex || 0), 0) /
-                                domainEntry.skills.length;
-                            domainEntry.riskAdjustedATP = Math.round(domainEntry.domainScore * (1 - avgRisk / 100));
-                            domainEntry.domainStabilityIndex = Math.round(100 - avgRisk);
-                        }
-                        domainEntry.lastUpdated = new Date();
+                            if (!skillEntry) {
+                                domainEntry.skills.push({
+                                    skillName: skillNode.skillName,
+                                    score: 0, level: 1, xp: 0,
+                                    validationScore: 0, riskIndex: 0,
+                                    recencyScore: 100, confidence: 0,
+                                    lastAssessedAt: new Date(),
+                                    challengePerformance: 0,
+                                    interviewPerformance: 0,
+                                    projectValidation: 0
+                                });
+                                skillEntry = domainEntry.skills[domainEntry.skills.length - 1];
+                            }
 
-                        // Log skill history
-                        if (!atpUser.aiTalentPassport.interviewSkillHistory) {
-                            atpUser.aiTalentPassport.interviewSkillHistory = [];
-                        }
-                        atpUser.aiTalentPassport.interviewSkillHistory.push({
-                            source: 'challenge',
-                            sourceId: challenge._id,
-                            skillName: skillNode.skillName,
-                            domain: domain,
-                            xpDelta: challenge.rewardPoints || 100,
-                            scoreDelta: atpImpactScore,
-                            detail: `Challenge "${challenge.title}" L${challenge.skillNodeLevel} (Score: ${score}%)`,
-                            timestamp: new Date()
-                        });
+                            // Update performance metrics
+                            skillEntry.challengePerformance = Math.min(100,
+                                Math.max(skillEntry.challengePerformance || 0, score)
+                            );
+                            skillEntry.xp = skillNode.xp;
+                            skillEntry.level = Math.min(5, Math.max(1, skillNode.level + 1));
+                            skillEntry.riskIndex = riskLevel === 'high' ? 80 : riskLevel === 'medium' ? 40 : 10;
+                            skillEntry.recencyScore = 100;
+                            skillEntry.lastAssessedAt = new Date();
+                            skillEntry.validationScore = score;
 
-                        // Apply risk suppression to score
-                        const riskAdjusted = applyRiskSuppression(skillEntry.score, skillEntry.riskIndex);
-                        skillEntry.validationScore = riskAdjusted;
+                            // Calculate scores
+                            skillEntry.score = Math.round(
+                                (skillEntry.challengePerformance || 0) * 0.4 +
+                                (skillEntry.interviewPerformance || 0) * 0.5 +
+                                (skillEntry.projectValidation || 0) * 0.1
+                            );
+                            skillEntry.confidence = Math.round(
+                                (skillEntry.challengePerformance * 0.4 +
+                                    skillEntry.interviewPerformance * 0.5 +
+                                    skillEntry.projectValidation * 0.1) || 0
+                            );
+
+                            // Recalculate domain aggregate
+                            if (domainEntry.skills.length > 0) {
+                                domainEntry.domainScore = Math.round(
+                                    domainEntry.skills.reduce((sum, s) => sum + (s.score || 0), 0) /
+                                    domainEntry.skills.length
+                                );
+                                const avgRisk = domainEntry.skills.reduce((sum, s) => sum + (s.riskIndex || 0), 0) /
+                                    domainEntry.skills.length;
+                                domainEntry.riskAdjustedATP = Math.round(domainEntry.domainScore * (1 - avgRisk / 100));
+                                domainEntry.domainStabilityIndex = Math.round(100 - avgRisk);
+                            }
+                            domainEntry.lastUpdated = new Date();
+
+                            // Log skill history
+                            if (!atpUser.aiTalentPassport.interviewSkillHistory) {
+                                atpUser.aiTalentPassport.interviewSkillHistory = [];
+                            }
+                            atpUser.aiTalentPassport.interviewSkillHistory.push({
+                                source: 'challenge',
+                                sourceId: challenge._id,
+                                skillName: skillNode.skillName,
+                                domain: domain,
+                                xpDelta: challenge.rewardPoints || 100,
+                                scoreDelta: atpImpactScore,
+                                detail: `Challenge "${challenge.title}" L${challenge.skillNodeLevel} (Score: ${score}%)`,
+                                timestamp: new Date()
+                            });
+
+                            // Apply risk suppression
+                            const riskAdjusted = applyRiskSuppression(skillEntry.score, skillEntry.riskIndex);
+                            skillEntry.validationScore = riskAdjusted;
+
+                            // Emit real-time updates
+                            emitSkillUpdate(userId, skillNode.skillName, domain, {
+                                xp: skillEntry.xp, level: skillEntry.level,
+                                score: skillEntry.score, confidence: skillEntry.confidence,
+                                riskIndex: skillEntry.riskIndex
+                            });
+                            emitDomainUpdate(userId, domain,
+                                domainEntry.domainScore, domainEntry.riskAdjustedATP
+                            );
+                        }
 
                         atpUser.aiTalentPassport.lastUpdated = new Date();
                         await atpUser.save();
-                        console.log(`[ATP] Challenge ATP sync for ${skillNode.skillName} in ${domain}`);
-
-                        // Emit WebSocket events for real-time frontend updates
-                        emitSkillUpdate(userId, skillNode.skillName, domain, {
-                            xp: skillEntry.xp, level: skillEntry.level,
-                            score: skillEntry.score, confidence: skillEntry.confidence,
-                            riskIndex: skillEntry.riskIndex
-                        });
-                        emitDomainUpdate(userId, domain,
-                            domainEntry.domainScore, domainEntry.riskAdjustedATP
-                        );
+                        console.log(`[ATP] Challenge ATP sync for ${skillNode.skillName}`);
                     }
                 } catch (atpErr) {
-                    console.error('[ATP] Challenge ATP sync failed (non-blocking):', atpErr.message);
+                    console.error('[ATP] Challenge ATP sync failed:', atpErr.message);
                 }
             }
         }

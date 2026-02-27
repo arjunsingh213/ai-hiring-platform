@@ -991,7 +991,7 @@ router.post('/submit', async (req, res) => {
                                     source: 'interview',
                                     sourceId: typeof newInterview !== 'undefined' ? newInterview._id : null,
                                     skillName: node.skillName,
-                                    domain: node.domainCategory,
+                                    domains: node.domainCategories || [],
                                     xpDelta: xpGain,
                                     scoreDelta: Math.round(qScore * 0.5),
                                     detail: `Interview Q${i + 1}: "${qa.question?.substring(0, 60)}..." (Score: ${qScore})`,
@@ -1022,8 +1022,10 @@ router.post('/submit', async (req, res) => {
                             ];
                         }
 
-                        // Sync skills from SkillNodes in this domain
-                        const domainNodes = userSkillNodes.filter(n => n.domainCategory === domain);
+                        // Sync skills from SkillNodes that belong to this domain
+                        const domainNodes = userSkillNodes.filter(n =>
+                            (n.domainCategories || []).includes(domain)
+                        );
                         for (const node of domainNodes) {
                             let skillEntry = domainEntry.skills.find(
                                 s => s.skillName.toLowerCase() === node.skillName.toLowerCase()
