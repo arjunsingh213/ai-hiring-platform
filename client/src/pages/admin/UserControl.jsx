@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
+import AITalentPassport from '../../components/AITalentPassport/AITalentPassport';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -13,6 +14,8 @@ const UserControl = () => {
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({ role: '', isSuspended: '' });
     const [selectedUser, setSelectedUser] = useState(null);
+    const [viewingATPUser, setViewingATPUser] = useState(null);
+    const [atpProjects, setAtpProjects] = useState([]);
     const [showModal, setShowModal] = useState(null);
     const [formData, setFormData] = useState({ reason: '' });
     const [actionLoading, setActionLoading] = useState(false);
@@ -53,6 +56,22 @@ const UserControl = () => {
             console.error('Failed to fetch users:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchUserProjects = async (userId) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/projects/user/${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setAtpProjects(data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch user projects:', error);
+            setAtpProjects([]);
         }
     };
 
@@ -419,20 +438,32 @@ const UserControl = () => {
                                                 )}
 
                                                 {user.role === 'jobseeker' && (
-                                                    <button
-                                                        className="admin-action-btn"
-                                                        style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa' }}
-                                                        onClick={() => {
-                                                            setSelectedUser(user);
-                                                            setFormData({
-                                                                reason: '',
-                                                                newScore: user.aiTalentPassport?.talentScore || 0
-                                                            });
-                                                            setShowModal('atp');
-                                                        }}
-                                                    >
-                                                        Edit ATP
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button
+                                                            className="admin-action-btn"
+                                                            style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8' }}
+                                                            onClick={() => {
+                                                                setViewingATPUser(user);
+                                                                fetchUserProjects(user._id);
+                                                            }}
+                                                        >
+                                                            View ATP
+                                                        </button>
+                                                        <button
+                                                            className="admin-action-btn"
+                                                            style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa' }}
+                                                            onClick={() => {
+                                                                setSelectedUser(user);
+                                                                setFormData({
+                                                                    reason: '',
+                                                                    newScore: user.aiTalentPassport?.talentScore || 0
+                                                                });
+                                                                setShowModal('atp');
+                                                            }}
+                                                        >
+                                                            Edit ATP
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </td>
@@ -761,6 +792,35 @@ const UserControl = () => {
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ATP View Modal */}
+            {viewingATPUser && (
+                <div className="admin-modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: '1000' }}>
+                    <div className="admin-modal" style={{ width: '95%', maxWidth: '1300px', height: '90vh', overflow: 'hidden', padding: '0', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+                        <div className="admin-modal-header" style={{ padding: '20px', background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ margin: '0', color: '#f8fafc' }}>AI Talent Passport — {viewingATPUser.profile?.name}</h2>
+                            <button className="admin-modal-close" onClick={() => setViewingATPUser(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#0f172a' }}>
+                            <AITalentPassport
+                                passport={viewingATPUser.aiTalentPassport}
+                                userName={viewingATPUser.profile?.name}
+                                userPhoto={viewingATPUser.profile?.photo}
+                                userDomain={viewingATPUser.jobSeekerProfile?.domain || viewingATPUser.jobSeekerProfile?.desiredRole || 'Software Engineering'}
+                                userId={viewingATPUser._id}
+                                viewMode="recruiter"
+                                jobDomains={viewingATPUser.jobSeekerProfile?.jobDomains || []}
+                                verifiedProjects={atpProjects}
+                                skillHistory={viewingATPUser.aiTalentPassport?.interviewSkillHistory || []}
+                            />
                         </div>
                     </div>
                 </div>
