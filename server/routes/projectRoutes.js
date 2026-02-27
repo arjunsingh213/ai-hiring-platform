@@ -87,6 +87,9 @@ router.get('/user/:userId', async (req, res) => {
         const { userId } = req.params;
         const { status } = req.query;
 
+        const query = { userId };
+        if (status) query.status = status;
+
         const projects = await VerifiedProject.find(query)
             .sort({ createdAt: -1 })
             .lean();
