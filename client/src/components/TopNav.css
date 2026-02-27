@@ -2,7 +2,8 @@
 .top-nav {
     position: fixed;
     top: 16px;
-    left: calc(var(--sidebar-width, 240px) + 48px);
+    left: 280px;
+    /* Safer fixed offset clear of sidebar */
     right: 24px;
     height: 58px;
     background: var(--glass-bg);
@@ -14,7 +15,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--spacing-lg);
-    z-index: 1000;
+    z-index: 1100;
+    /* Higher than sidebar's 1000 */
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-normal);
 }
@@ -44,6 +46,7 @@
     border-radius: var(--radius-full);
     padding: 0.625rem var(--spacing-lg);
     transition: all var(--transition-fast);
+    width: 100%;
 }
 
 .search-bar:focus-within {
@@ -75,6 +78,7 @@
 .search-bar-wrapper {
     position: relative;
     width: 100%;
+    max-width: 500px;
 }
 
 .search-spinner {
@@ -95,20 +99,19 @@
 
 .search-results-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     left: 0;
-    width: 100%;
-    min-width: 320px;
+    right: 0;
     background: var(--glass-bg-strong);
     backdrop-filter: var(--glass-blur-strong);
     -webkit-backdrop-filter: var(--glass-blur-strong);
     border: 1px solid var(--glass-border-strong);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl), 0 10px 40px rgba(0, 0, 0, 0.2);
-    max-height: 480px;
+    box-shadow: var(--shadow-xl), 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-height: 400px;
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 1001;
+    z-index: 1200;
     display: flex;
     flex-direction: column;
     padding: 8px;
