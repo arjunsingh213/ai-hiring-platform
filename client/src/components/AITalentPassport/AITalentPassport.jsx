@@ -243,8 +243,11 @@ const AITalentPassport = ({
                     </div>
                 </div>
                 <div className="atp-v2-header__right">
-                    <ATPRing score={isRecruiter ? (currentDomainData.riskAdjustedATP || talentScore) : talentScore} size={isMobile ? 100 : 130} />
-                    {isRecruiter && currentDomainData.riskAdjustedATP > 0 && (
+                    <ATPRing
+                        score={currentDomainData.riskAdjustedATP || currentDomainData.domainScore || talentScore}
+                        size={isMobile ? 100 : 130}
+                    />
+                    {(currentDomainData.riskAdjustedATP > 0) && (
                         <span className="atp-v2-ring-label">Risk-Adjusted</span>
                     )}
                 </div>
