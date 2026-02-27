@@ -18,13 +18,13 @@ class OpenRouterService {
 
         // Model configurations - Using FREE tier models
         this.models = {
-            resumeParsing: 'meta-llama/llama-3.2-3b-instruct:free',
-            jdMatching: 'meta-llama/llama-3.2-3b-instruct:free',
-            questionGeneration: 'meta-llama/llama-3.2-3b-instruct:free',
-            answerEvaluation: 'meta-llama/llama-3.2-3b-instruct:free',
-            fastScoring: 'meta-llama/llama-3.2-3b-instruct:free',
-            recruiterReport: 'meta-llama/llama-3.2-3b-instruct:free',
-            skillExtraction: 'meta-llama/llama-3.2-3b-instruct:free', // Dedicated for skill extraction
+            resumeParsing: 'meta-llama/llama-3.1-405b-instruct:free',
+            jdMatching: 'meta-llama/llama-3.1-405b-instruct:free',
+            questionGeneration: 'meta-llama/llama-3.1-405b-instruct:free',
+            answerEvaluation: 'meta-llama/llama-3.1-405b-instruct:free',
+            fastScoring: 'meta-llama/llama-3.1-405b-instruct:free',
+            recruiterReport: 'meta-llama/llama-3.1-405b-instruct:free',
+            skillExtraction: 'meta-llama/llama-3.1-405b-instruct:free', // Dedicated for skill extraction
             fallback: 'arcee-ai/trinity-large-preview:free' // Global FREE fallback model
         };
 
@@ -168,6 +168,11 @@ class OpenRouterService {
                 });
             }
 
+            if (!response.data?.choices?.[0]?.message?.content) {
+                console.warn(`[OpenRouter] Empty response from ${model}`);
+                throw new Error('Empty response from AI model');
+            }
+
             return response.data.choices[0].message.content;
         } catch (error) {
             console.error(`OpenRouter API error (${model}):`, error.response?.data || error.message);
@@ -265,13 +270,11 @@ RULES:
 4. Categorize skills properly
 5. Return ONLY valid JSON, no markdown, no extra text`;
 
-        // Fallback model chain for skill extraction ONLY
         const fallbackModels = [
-            this.models.resumeParsing,                    // Primary: llama-3.2-3b-instruct:free
-            'meta-llama/llama-3.1-405b-instruct:free',   // Fallback 1
-            'meta-llama/llama-3.3-70b-instruct:free',    // Fallback 2
-            this.models.fallback,                        // Fallback 3: Trinity Large Preview Free
-            'meta-llama/llama-3.2-3b-instruct'           // Fallback 4: Paid version (no :free)
+            this.models.resumeParsing,                   // Primary: llama-3.1-405b-instruct:free
+            'meta-llama/llama-3.3-70b-instruct:free',    // Fallback 1
+            this.models.fallback,                        // Fallback 2: Trinity Large Preview Free
+            'meta-llama/llama-3.2-3b-instruct'           // Fallback 3: Paid version (no :free)
         ];
 
         for (let i = 0; i < fallbackModels.length; i++) {

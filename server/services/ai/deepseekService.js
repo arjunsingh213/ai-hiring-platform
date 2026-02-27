@@ -11,7 +11,7 @@ const axios = require('axios');
 const MODELS = {
     // Primary model - Llama 3.2 3B (FREE tier)
     LLAMA: {
-        name: 'meta-llama/llama-3.2-3b-instruct:free',  // FREE tier model
+        name: 'meta-llama/llama-3.1-405b-instruct:free',  // FREE tier model
         key: process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_LLAMA_KEY || process.env.OPENROUTER_CHIMERA_KEY
     },
     // Fallback 1 - Mistral 7B (also free)
