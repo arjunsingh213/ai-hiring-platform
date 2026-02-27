@@ -1174,7 +1174,7 @@ router.get('/users', adminAuth, requirePermission('view_users'), async (req, res
 
         const [users, total] = await Promise.all([
             User.find(query)
-                .select('profile email role platformInterview accountStatus createdAt lastActive')
+                .select('profile email role platformInterview aiTalentPassport accountStatus createdAt lastActive')
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(parseInt(limit))
@@ -1469,6 +1469,80 @@ router.post('/users/:id/mark-offender', adminAuth, requirePermission('suspend_us
         res.status(500).json({
             success: false,
             error: 'Failed to mark offender'
+        });
+    }
+});
+
+/**
+ * POST /api/admin/users/:id/update-atp
+ * Update user's ATP score manually
+ */
+router.post('/users/:id/update-atp', adminAuth, requirePermission('adjust_scores'), async (req, res) => {
+    try {
+        const { newScore, reason } = req.body;
+        const { id } = req.params;
+
+        if (newScore === undefined || newScore < 0 || newScore > 100) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid score. Must be between 0 and 100.'
+            });
+        }
+
+        if (!reason) {
+            return res.status(400).json({
+                success: false,
+                error: 'Reason for ATP update is required.'
+            });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        const previousScore = user.aiTalentPassport?.talentScore || 0;
+
+        // Initialize aiTalentPassport if it doesn't exist
+        if (!user.aiTalentPassport) {
+            user.aiTalentPassport = {
+                talentScore: 0,
+                skills: [],
+                lastUpdated: new Date()
+            };
+        }
+
+        user.aiTalentPassport.talentScore = newScore;
+        user.aiTalentPassport.lastUpdated = new Date();
+
+        await user.save();
+
+        // Log the action
+        await auditLog(req, 'update_atp', 'user', user._id, {
+            previousValue: { talentScore: previousScore },
+            newValue: { talentScore: newScore },
+            reason,
+            metadata: {
+                targetEmail: user.email,
+                targetName: user.profile?.name
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'ATP score updated successfully',
+            data: {
+                talentScore: newScore
+            }
+        });
+    } catch (error) {
+        console.error('Update ATP error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update ATP score'
         });
     }
 });

@@ -66,13 +66,18 @@ const UserControl = () => {
         setActionLoading(true);
         try {
             const token = localStorage.getItem('adminToken');
+            const body = { reason: formData.reason };
+            if (action === 'atp') {
+                body.newScore = formData.newScore;
+            }
+
             const response = await fetch(`${API_URL}/admin/users/${userId}/${endpoint}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ reason: formData.reason })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
@@ -264,6 +269,7 @@ const UserControl = () => {
                                     <th>User</th>
                                     <th>Role</th>
                                     <th>Interview Status</th>
+                                    <th>ATP Score</th>
                                     <th>Account Status</th>
                                     <th>Joined</th>
                                     <th>Last Active</th>
@@ -295,6 +301,34 @@ const UserControl = () => {
                                                 }`}>
                                                 {user.platformInterview?.status || 'pending'}
                                             </span>
+                                        </td>
+                                        <td>
+                                            {user.role === 'jobseeker' ? (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{
+                                                        color: '#38bdf8',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '1rem'
+                                                    }}>
+                                                        {user.aiTalentPassport?.talentScore || 0}
+                                                    </span>
+                                                    <div style={{
+                                                        width: '40px',
+                                                        height: '4px',
+                                                        background: 'rgba(255,255,255,0.1)',
+                                                        borderRadius: '2px',
+                                                        overflow: 'hidden'
+                                                    }}>
+                                                        <div style={{
+                                                            width: `${user.aiTalentPassport?.talentScore || 0}%`,
+                                                            height: '100%',
+                                                            background: '#38bdf8'
+                                                        }}></div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: '#64748b' }}>-</span>
+                                            )}
                                         </td>
                                         <td>
                                             {user.accountStatus?.isSuspended ? (
@@ -383,6 +417,23 @@ const UserControl = () => {
                                                         Mark Offender
                                                     </button>
                                                 )}
+
+                                                {user.role === 'jobseeker' && (
+                                                    <button
+                                                        className="admin-action-btn"
+                                                        style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa' }}
+                                                        onClick={() => {
+                                                            setSelectedUser(user);
+                                                            setFormData({
+                                                                reason: '',
+                                                                newScore: user.aiTalentPassport?.talentScore || 0
+                                                            });
+                                                            setShowModal('atp');
+                                                        }}
+                                                    >
+                                                        Edit ATP
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -425,6 +476,7 @@ const UserControl = () => {
                                 {showModal === 'unsuspend' && 'Unsuspend User'}
                                 {showModal === 'reset' && 'Reset Interview Eligibility'}
                                 {showModal === 'offender' && 'Mark as Repeat Offender'}
+                                {showModal === 'atp' && 'Update AI Talent Passport Score'}
                             </h2>
                             <button className="admin-modal-close" onClick={() => setShowModal(null)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -451,7 +503,7 @@ const UserControl = () => {
                                 </label>
                                 <textarea
                                     value={formData.reason}
-                                    onChange={(e) => setFormData({ reason: e.target.value })}
+                                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                                     placeholder={showModal === 'unsuspend' ? 'Optional notes...' : 'Enter reason...'}
                                     rows={4}
                                     style={{
@@ -466,6 +518,40 @@ const UserControl = () => {
                                     }}
                                 />
                             </div>
+
+                            {showModal === 'atp' && (
+                                <div className="admin-form-group" style={{ marginTop: '16px' }}>
+                                    <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>
+                                        New ATP Score (0-100) *
+                                    </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={formData.newScore}
+                                            onChange={(e) => setFormData({ ...formData, newScore: parseInt(e.target.value) })}
+                                            style={{
+                                                width: '100px',
+                                                padding: '12px',
+                                                background: 'rgba(0,0,0,0.2)',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '8px',
+                                                color: '#f8fafc',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        />
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={formData.newScore}
+                                            onChange={(e) => setFormData({ ...formData, newScore: parseInt(e.target.value) })}
+                                            style={{ flex: 1 }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="admin-modal-footer">
@@ -477,13 +563,14 @@ const UserControl = () => {
                                 Cancel
                             </button>
                             <button
-                                className={`admin-action-btn ${showModal === 'unsuspend' || showModal === 'reset' ? 'success' : 'danger'}`}
+                                className={`admin-action-btn ${showModal === 'unsuspend' || showModal === 'reset' || showModal === 'atp' ? 'success' : 'danger'}`}
                                 onClick={() => {
                                     const endpoints = {
                                         suspend: 'suspend',
                                         unsuspend: 'unsuspend',
                                         reset: 'reset-eligibility',
-                                        offender: 'mark-offender'
+                                        offender: 'mark-offender',
+                                        atp: 'update-atp'
                                     };
                                     handleAction(selectedUser._id, showModal, endpoints[showModal]);
                                 }}
