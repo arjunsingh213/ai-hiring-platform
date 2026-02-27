@@ -30,6 +30,30 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Search users by name - Publicly accessible
+router.get('/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q || q.length < 2) {
+            return res.json({ success: true, data: [] });
+        }
+
+        const query = {
+            'profile.name': { $regex: q, $options: 'i' },
+            'accountStatus.isSuspended': { $ne: true } // Don't show suspended users
+        };
+
+        const users = await User.find(query)
+            .select('profile.name profile.photo profile.headline role aiTalentPassport.talentScore recruiterProfile.companyName')
+            .limit(10);
+
+        res.json({ success: true, data: users });
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Get user by ID - Publicly accessible for profile views
 router.get('/:id', async (req, res) => {
     try {
@@ -411,6 +435,7 @@ router.post('/upload-verification-doc', userAuth, upload.single('document'), asy
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 
 module.exports = router;
 

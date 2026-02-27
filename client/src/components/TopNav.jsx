@@ -12,7 +12,14 @@ const TopNav = () => {
     const [user, setUser] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = React.useRef(null);
+    const searchRef = React.useRef(null);
     const userId = localStorage.getItem('userId');
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearchResults, setShowSearchResults] = useState(false);
 
     useEffect(() => {
         fetchUser();
@@ -24,6 +31,9 @@ const TopNav = () => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setShowDropdown(false);
             }
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSearchResults(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
 
@@ -32,6 +42,30 @@ const TopNav = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Debounced search
+    useEffect(() => {
+        if (searchQuery.trim().length < 2) {
+            setSearchResults([]);
+            setShowSearchResults(false);
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const response = await api.get(`/users/search?q=${searchQuery}`);
+                setSearchResults(response.data || []);
+                setShowSearchResults(true);
+            } catch (error) {
+                console.error('Search error:', error);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
 
     const fetchUser = async () => {
         try {
@@ -55,6 +89,12 @@ const TopNav = () => {
         window.location.href = '/';
     };
 
+    const handleResultClick = (resultId) => {
+        navigate(`/profile/${resultId}`);
+        setShowSearchResults(false);
+        setSearchQuery('');
+    };
+
     // Determine user role from current path
     const isRecruiter = location.pathname.startsWith('/recruiter');
     const profilePath = isRecruiter ? '/recruiter/profile' : '/jobseeker/profile';
@@ -68,12 +108,65 @@ const TopNav = () => {
                 </div>
 
                 <div className="top-nav-left">
-                    <div className="search-bar">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
-                            <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                        <input type="text" placeholder="Search..." />
+                    <div className="search-bar-wrapper" ref={searchRef}>
+                        <div className="search-bar">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+                                <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search people..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+                            />
+                            {isSearching && (
+                                <div className="search-spinner"></div>
+                            )}
+                        </div>
+
+                        {showSearchResults && (
+                            <div className="search-results-dropdown">
+                                {searchResults.length > 0 ? (
+                                    searchResults.map((result) => (
+                                        <div
+                                            key={result._id}
+                                            className="search-result-item"
+                                            onClick={() => handleResultClick(result._id)}
+                                        >
+                                            <div className="result-avatar">
+                                                {result.profile?.photo ? (
+                                                    <img src={result.profile.photo} alt={result.profile.name} />
+                                                ) : (
+                                                    <div className="avatar-placeholder">
+                                                        {result.profile?.name?.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="result-info">
+                                                <div className="result-name">
+                                                    {result.profile?.name}
+                                                    {result.role === 'recruiter' && (
+                                                        <span className="recruiter-badge">RECRUITER</span>
+                                                    )}
+                                                </div>
+                                                <div className="result-headline">
+                                                    {result.profile?.headline || (result.role === 'recruiter' ? result.recruiterProfile?.companyName : 'Candidate')}
+                                                </div>
+                                            </div>
+                                            {result.role === 'jobseeker' && result.aiTalentPassport?.talentScore > 0 && (
+                                                <div className="result-atp">
+                                                    <span className="atp-score">{result.aiTalentPassport.talentScore} ATP</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="no-results">No people found with "{searchQuery}"</div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
