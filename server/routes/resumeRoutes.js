@@ -111,6 +111,8 @@ router.post('/upload', userAuth, upload.single('resume'), async (req, res) => {
                     // Merge AI parsed data with basic parsed data
                     parsedData = {
                         ...parsedData,
+                        personalInfo: aiParsedData.personalInfo || parsedData.personalInfo || {},
+                        summary: aiParsedData.summary || parsedData.summary || '',
                         skills: [...new Set([
                             ...(parsedData.skills || []),
                             ...(aiParsedData.skills || [])
