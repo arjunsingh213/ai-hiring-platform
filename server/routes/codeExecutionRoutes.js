@@ -79,6 +79,64 @@ async function executeCode(code, language, stdin = '') {
         };
     } catch (error) {
         console.error('Piston execution error:', error.response?.data || error.message);
+
+        // --- FALLBACK FOR JAVASCRIPT ---
+        if (language.toLowerCase() === 'javascript') {
+            console.log('[FALLBACK] Using local Node.js VM for JavaScript execution');
+            try {
+                const vm = require('vm');
+                const { PassThrough } = require('stream');
+
+                let output = '';
+                const sandbox = {
+                    console: {
+                        log: (...args) => { output += args.join(' ') + '\n'; },
+                        error: (...args) => { output += args.join(' ') + '\n'; },
+                        warn: (...args) => { output += args.join(' ') + '\n'; },
+                        info: (...args) => { output += args.join(' ') + '\n'; },
+                    },
+                    Math: Math,
+                    Date: Date,
+                    JSON: JSON,
+                    isNaN: isNaN,
+                    parseInt: parseInt,
+                    parseFloat: parseFloat,
+                    String: String,
+                    Number: Number,
+                    Boolean: Boolean,
+                    Array: Array,
+                    Object: Object,
+                    Map: Map,
+                    Set: Set,
+                    RegExp: RegExp,
+                    Error: Error
+                };
+
+                const context = new vm.createContext(sandbox);
+                // Simple timeout to prevent infinite loops
+                const startTime = Date.now();
+                vm.runInContext(code, context, { timeout: 5000 });
+                const timeTaken = Date.now() - startTime;
+
+                return {
+                    success: true,
+                    output: output,
+                    stderr: '',
+                    compile_output: '',
+                    time: timeTaken,
+                    error: null,
+                    language: language
+                };
+            } catch (vmError) {
+                return {
+                    success: false,
+                    error: `Execution Error: ${vmError.message}`,
+                    output: '',
+                    stderr: vmError.message
+                };
+            }
+        }
+
         const errorMessage = error.response?.data?.message || error.message;
         return {
             success: false,
