@@ -20,6 +20,17 @@ const resumeSchema = new mongoose.Schema({
     // Parsed data from resume
     parsedData: {
         rawText: String,
+        summary: String,
+        personalInfo: {
+            name: String,
+            email: String,
+            phone: String,
+            location: String,
+            linkedin: String,
+            github: String,
+            portfolio: String,
+            dateOfBirth: String
+        },
         skills: [String],
 
         // Categorized skills for targeted interview questions
