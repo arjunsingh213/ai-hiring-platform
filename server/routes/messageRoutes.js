@@ -152,8 +152,8 @@ router.get('/conversation/:userId1/:userId2', userAuth, async (req, res) => {
 
         const messages = await Message.find({
             $or: [
-                { senderId: userId1, recipientId: userId2 },
-                { senderId: userId2, recipientId: userId1 }
+                { senderId: targetUserId1, recipientId: targetUserId2 },
+                { senderId: targetUserId2, recipientId: targetUserId1 }
             ]
         }).sort({ createdAt: 1 });
 
@@ -178,7 +178,7 @@ router.get('/conversations/:userId', userAuth, async (req, res) => {
         }
 
         const messages = await Message.find({
-            $or: [{ senderId: userId }, { recipientId: userId }]
+            $or: [{ senderId: targetUserId }, { recipientId: targetUserId }]
         })
             .populate('senderId', 'profile email jobSeekerProfile')
             .populate('recipientId', 'profile email jobSeekerProfile')
@@ -190,22 +190,22 @@ router.get('/conversations/:userId', userAuth, async (req, res) => {
             // Skip messages with deleted users (populate returns null)
             if (!msg.senderId || !msg.recipientId) return;
 
-            const otherUserId = msg.senderId._id.toString() === userId
+            const otherUserId = msg.senderId._id.toString() === targetUserId
                 ? msg.recipientId._id.toString()
                 : msg.senderId._id.toString();
 
             if (!conversations[otherUserId]) {
-                const otherUser = msg.senderId._id.toString() === userId ? msg.recipientId : msg.senderId;
+                const otherUser = msg.senderId._id.toString() === targetUserId ? msg.recipientId : msg.senderId;
                 conversations[otherUserId] = {
-                    _id: `conv-${userId}-${otherUserId}`, // Create a conversation ID
-                    participants: [userId, otherUserId],
+                    _id: `conv-${targetUserId}-${otherUserId}`, // Create a conversation ID
+                    participants: [targetUserId, otherUserId],
                     otherUser: otherUser, // Changed from 'user' to 'otherUser'
                     lastMessage: msg,
                     unreadCount: 0
                 };
             }
 
-            if (!msg.read && msg.recipientId._id.toString() === userId) {
+            if (!msg.read && msg.recipientId._id.toString() === targetUserId) {
                 conversations[otherUserId].unreadCount++;
             }
         });
@@ -282,7 +282,7 @@ router.put('/conversation/:senderId/:recipientId/read', userAuth, async (req, re
 });
 
 // Search users for new conversation
-router.get('/search-users/:query', async (req, res) => {
+router.get('/search-users/:query', userAuth, async (req, res) => {
     try {
         const { query } = req.params;
         const User = require('../models/User');

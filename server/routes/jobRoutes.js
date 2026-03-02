@@ -266,12 +266,12 @@ router.get('/recruiter/:recruiterId/analytics', userAuth, requireRole('recruiter
                         const interview = await Interview.findById(applicant.interviewId);
                         if (interview && interview.status === 'completed') {
                             interviewsCompleted++;
-                            if (interview.scoring?.overall > 0) {
-                                totalScore += interview.scoring.overall;
+                            if (interview.scoring?.overallScore > 0) {
+                                totalScore += interview.scoring.overallScore;
                                 scoreCount++;
                                 // Check if interview was from last month for comparison
                                 if (interview.completedAt && new Date(interview.completedAt) < startOfMonth) {
-                                    lastMonthScore += interview.scoring.overall;
+                                    lastMonthScore += interview.scoring.overallScore;
                                     lastMonthScoreCount++;
                                 }
                             }
@@ -597,7 +597,7 @@ router.delete('/:id/withdraw', userAuth, requireRole('jobseeker'), async (req, r
 });
 
 // Check interview status for a job application
-router.get('/:id/interview-status/:userId', async (req, res) => {
+router.get('/:id/interview-status/:userId', userAuth, async (req, res) => {
     try {
         const { id: jobId, userId } = req.params;
 

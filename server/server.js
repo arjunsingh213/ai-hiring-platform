@@ -192,6 +192,10 @@ app.use('/api/video-rooms', videoRoomRoutes);
 const { setupVideoRoomNamespace } = require('./config/socket');
 setupVideoRoomNamespace(io);
 
+// Initialize Adaptive Interview Socket namespace
+const { setupAdaptiveNamespace } = require('./services/adaptiveInterview/socketHandlers');
+setupAdaptiveNamespace(io);
+
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({

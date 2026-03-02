@@ -44,7 +44,10 @@ const useFaceDetection = (videoRef, enabled = true) => {
 
             // Models are served from public/models folder
             // Models are served from public/models folder - handle base URL correctly
-            const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+            const basePath = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
+                ? import.meta.env.BASE_URL
+                : '/';
+            const baseUrl = basePath.endsWith('/') ? basePath : `${basePath}/`;
             const MODEL_URL = `${baseUrl}models`;
 
             console.log(`🔄 Loading face detection models from: ${MODEL_URL}`);

@@ -1,13 +1,15 @@
+/* BlogPage.module.css — Editorial Sub-Page */
 .page {
     min-height: 100vh;
-    background: #FFFFFF;
+    background: #FAFBFF;
     color: #1E293B;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'DM Sans', -apple-system, sans-serif;
     position: relative;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle mesh grid pattern overlay to match landing */
+/* Subtle grain texture */
 .page::before {
     content: '';
     position: fixed;
@@ -15,11 +17,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image:
-        radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.03) 1px, transparent 0);
-    background-size: 40px 40px;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 0;
+    opacity: 0.5;
 }
 
 .hero {
@@ -34,10 +35,12 @@
 .backLink {
     color: #0090FF;
     text-decoration: none;
-    font-size: 0.9375rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
     font-weight: 500;
     display: inline-block;
     margin-bottom: 24px;
+    letter-spacing: 0.02em;
     transition: color 0.2s ease;
 }
 
@@ -46,8 +49,9 @@
 }
 
 .title {
+    font-family: 'Instrument Serif', Georgia, serif;
     font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 800;
+    font-weight: 400;
     color: #0F172A;
     letter-spacing: -0.04em;
     margin-bottom: 1.5rem;
@@ -55,17 +59,16 @@
 }
 
 .gradient {
-    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0090FF;
+    font-style: italic;
 }
 
 .subtitle {
+    font-family: 'DM Sans', sans-serif;
     color: #64748B;
-    font-size: 1.25rem;
-    line-height: 1.6;
-    max-width: 650px;
+    font-size: 1.125rem;
+    line-height: 1.7;
+    max-width: 600px;
     margin: 0 auto;
 }
 
@@ -80,77 +83,81 @@
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 32px;
+    gap: 24px;
 }
 
 .postCard {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    border-radius: 24px;
-    padding: 40px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 32px;
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .postCard:hover {
-    transform: translateY(-8px);
-    border-color: rgba(99, 102, 241, 0.2);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+    transform: translateY(-4px);
+    border-color: rgba(0, 144, 255, 0.2);
+    box-shadow: 0 12px 32px rgba(0, 144, 255, 0.06);
 }
 
 .meta {
     display: flex;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     align-items: center;
 }
 
 .category {
     background: rgba(0, 144, 255, 0.08);
     color: #0090FF;
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
 .readTime {
+    font-family: 'DM Sans', sans-serif;
     color: #94A3B8;
     font-size: 0.8125rem;
     font-weight: 500;
 }
 
 .postTitle {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 1.375rem;
+    font-weight: 400;
     color: #0F172A;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     line-height: 1.3;
     letter-spacing: -0.01em;
 }
 
 .excerpt {
-    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9375rem;
     color: #64748B;
-    line-height: 1.7;
+    line-height: 1.75;
     flex: 1;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 24px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding-top: 20px;
+    border-top: 1px solid #F1F5F9;
 }
 
 .date {
+    font-family: 'DM Sans', sans-serif;
     color: #94A3B8;
     font-size: 0.8125rem;
     font-weight: 500;
@@ -158,7 +165,8 @@
 
 .readMore {
     color: #0090FF;
-    font-size: 0.9375rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -170,41 +178,44 @@
     padding: 80px 24px 120px;
     position: relative;
     z-index: 1;
-    background: radial-gradient(circle at 50% 50%, rgba(0, 144, 255, 0.03) 0%, transparent 70%);
 }
 
 .ctaSection h2 {
+    font-family: 'Instrument Serif', Georgia, serif;
     font-size: 2.25rem;
-    font-weight: 800;
+    font-weight: 400;
     color: #0F172A;
     margin-bottom: 12px;
     letter-spacing: -0.02em;
 }
 
 .ctaSection p {
+    font-family: 'DM Sans', sans-serif;
     font-size: 1.125rem;
     color: #64748B;
     margin-bottom: 32px;
 }
 
 .primaryBtn {
-    background: linear-gradient(135deg, #0090FF 0%, #4CC8FF 100%);
+    background: #0090FF;
     color: white;
-    padding: 1rem 2.5rem;
-    border-radius: 100px;
+    padding: 0.875rem 2rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.9375rem;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 20px rgba(0, 144, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 144, 255, 0.2);
 }
 
 .primaryBtn:hover {
+    background: #0080E5;
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 144, 255, 0.4);
+    box-shadow: 0 6px 20px rgba(0, 144, 255, 0.3);
 }
 
 @media (max-width: 640px) {

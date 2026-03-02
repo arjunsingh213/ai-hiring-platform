@@ -1,0 +1,219 @@
+/* TalkingAvatar.css */
+.ai-talking-avatar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+}
+
+.avatar-core {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color, #4f46e5), var(--secondary-color, #8b5cf6));
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+    position: relative;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+/* Base states container */
+.avatar-idle,
+.avatar-speaking,
+.avatar-thinking,
+.avatar-listening {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 250px;
+    height: 250px;
+}
+
+/* --- Idle Animation --- */
+.idle-animation {
+    animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 35px rgba(79, 70, 229, 0.6);
+    }
+}
+
+/* --- Speaking Animation (Voice Waves) --- */
+.speaking-animation {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    animation: speakPulse 1s ease-in-out infinite alternate;
+}
+
+.wave {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(59, 130, 246, 0.5);
+    opacity: 0;
+    z-index: 1;
+}
+
+.wave1 {
+    width: 140px;
+    height: 140px;
+    animation: waveAnim 1.5s linear infinite;
+}
+
+.wave2 {
+    width: 140px;
+    height: 140px;
+    animation: waveAnim 1.5s linear infinite 0.5s;
+}
+
+.wave3 {
+    width: 140px;
+    height: 140px;
+    animation: waveAnim 1.5s linear infinite 1s;
+}
+
+@keyframes waveAnim {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+@keyframes speakPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.1);
+        box-shadow: 0 0 40px rgba(59, 130, 246, 0.8);
+    }
+}
+
+/* --- Listening Animation (Subtle Ring) --- */
+.listening-animation {
+    background: linear-gradient(135deg, #10b981, #059669);
+    animation: listenGlow 2s infinite alternate;
+}
+
+.pulse-ring {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.2);
+    animation: pulseRing 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    z-index: 1;
+}
+
+@keyframes pulseRing {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+@keyframes listenGlow {
+    0% {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.7);
+    }
+}
+
+/* --- Thinking Animation (Orbits) --- */
+.thinking-animation {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.orbit {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px dashed rgba(245, 158, 11, 0.5);
+    z-index: 1;
+}
+
+.orbit1 {
+    width: 160px;
+    height: 160px;
+    animation: spin 4s linear infinite;
+}
+
+.orbit2 {
+    width: 200px;
+    height: 200px;
+    border-style: dotted;
+    animation: spin 6s linear infinite reverse;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Status Badge */
+.avatar-status-badge {
+    margin-top: 1.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot.idle {
+    background-color: #9ca3af;
+}
+
+.status-dot.speaking {
+    background-color: #3b82f6;
+    box-shadow: 0 0 8px #3b82f6;
+}
+
+.status-dot.listening {
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.status-dot.thinking {
+    background-color: #f59e0b;
+    box-shadow: 0 0 8px #f59e0b;
+}

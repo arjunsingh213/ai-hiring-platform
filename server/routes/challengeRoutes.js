@@ -8,6 +8,7 @@ const SkillNode = require('../models/SkillNode'); // Required for skill challeng
 const challengeEvaluator = require('../utils/challengeEvaluator'); // AI generation
 const { calculateAttemptRisk, applyRiskSuppression } = require('../utils/riskEngine');
 const { emitSkillUpdate, emitDomainUpdate } = require('../utils/atpEmitter');
+const { userAuth } = require('../middleware/userAuth');
 
 // ===== GET /api/challenges — All active challenges (Community) =====
 router.get('/', async (req, res) => {
@@ -44,7 +45,7 @@ router.get('/', async (req, res) => {
 });
 
 // ===== GET /api/challenges/domain — Skill Ladders & Domain Challenges =====
-router.get('/domain', async (req, res) => {
+router.get('/domain', userAuth, async (req, res) => {
     try {
         const { userId } = req.query;
         if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
@@ -123,7 +124,7 @@ router.get('/domain', async (req, res) => {
 });
 
 // ===== GET /api/challenges/history — User's Attempt History =====
-router.get('/history', async (req, res) => {
+router.get('/history', userAuth, async (req, res) => {
     try {
         const { userId, limit = 50 } = req.query;
         if (!userId) return res.status(400).json({ success: false, error: 'User ID required' });
@@ -144,7 +145,7 @@ router.get('/history', async (req, res) => {
 });
 
 // ===== GET /api/challenges/history/stats — Summary Stats =====
-router.get('/history/stats', async (req, res) => {
+router.get('/history/stats', userAuth, async (req, res) => {
     try {
         const { userId } = req.query;
         if (!userId) return res.status(400).json({ success: false, error: 'User ID required' });
@@ -190,7 +191,7 @@ router.get('/history/stats', async (req, res) => {
 });
 
 // ===== POST /api/challenges/domain/generate — AI Generate =====
-router.post('/domain/generate', async (req, res) => {
+router.post('/domain/generate', userAuth, async (req, res) => {
     try {
         const { userId, skillName, level, forceRegenerate } = req.body;
 
@@ -241,7 +242,7 @@ router.post('/domain/generate', async (req, res) => {
 });
 
 // ===== POST /api/challenges — Create Custom Challenge =====
-router.post('/', async (req, res) => {
+router.post('/', userAuth, async (req, res) => {
     try {
         const { title, description, domain, difficulty, timeLimit, questions, creatorId } = req.body;
 
@@ -266,7 +267,7 @@ router.post('/', async (req, res) => {
 });
 
 // ===== POST /api/challenges/:id/start — Start a Challenge (Create Attempt) =====
-router.post('/:id/start', async (req, res) => {
+router.post('/:id/start', userAuth, async (req, res) => {
     try {
         const { userId } = req.body;
         const challengeId = req.params.id;
@@ -303,7 +304,7 @@ router.post('/:id/start', async (req, res) => {
 });
 
 // ===== POST /api/challenges/:id/submit =====
-router.post('/:id/submit', async (req, res) => {
+router.post('/:id/submit', userAuth, async (req, res) => {
     try {
         const { content, answers, attemptId, antiCheatData } = req.body;
         const userId = req.body.userId || req.user.id;
@@ -326,7 +327,10 @@ router.post('/:id/submit', async (req, res) => {
             feedback = evalResult.feedback;
             evaluationDetails = evalResult.scores;
         } else {
-            score = Math.floor(Math.random() * 20) + 80; // Fallback mock
+            return res.status(400).json({
+                success: false,
+                error: 'Challenge has no questions to evaluate'
+            });
         }
 
         const passed = score >= (challenge.passingScore || 70);

@@ -78,13 +78,13 @@ const LandingPageNew = () => {
                 <Features />
                 <Proof />
                 <CTA />
-                <section id="contact" className={styles.section} style={{ padding: '80px 20px', backgroundColor: '#f9fafb' }}>
+                <section id="contact" className={styles.section} style={{ padding: '80px 20px', backgroundColor: '#FAFBFF' }}>
                     <div className={styles.container} style={{ maxWidth: '1200px', margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                            <h2 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem', color: '#111827' }}>
+                            <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '2.5rem', fontWeight: '400', marginBottom: '1rem', color: '#111827', letterSpacing: '-0.02em' }}>
                                 Get In Touch
                             </h2>
-                            <p style={{ fontSize: '1.125rem', color: '#6b7280' }}>
+                            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '1.125rem', color: '#64748B', lineHeight: '1.7' }}>
                                 Have questions? We're here to help.
                             </p>
                         </div>

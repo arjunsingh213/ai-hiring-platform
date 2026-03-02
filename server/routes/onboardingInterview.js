@@ -9,6 +9,7 @@ const router = express.Router();
 // AI Services
 const deepseekService = require('../services/ai/deepseekService');
 const geminiService = require('../services/ai/geminiService'); // Keep as fallback
+const openRouterService = require('../services/ai/openRouterService'); // For accurate answer evaluation
 const interviewOrchestrator = require('../services/ai/interviewOrchestrator');
 const User = require('../models/User');
 const Interview = require('../models/Interview');
@@ -16,6 +17,7 @@ const cloudinary = require('../config/cloudinary');
 const multer = require('multer');
 const { calculateAttemptRisk, applyRiskSuppression } = require('../utils/riskEngine');
 const { emitSkillUpdate, emitDomainUpdate, emitCognitiveUpdate } = require('../utils/atpEmitter');
+const { userAuth, optionalAuth } = require('../middleware/userAuth');
 
 // Configure multer for video uploads (in memory)
 const videoUpload = multer({
@@ -34,7 +36,7 @@ const videoUpload = multer({
  * GET /api/onboarding-interview/check-status/:userId
  * Check if user can take interview based on admin review status
  */
-router.get('/check-status/:userId', async (req, res) => {
+router.get('/check-status/:userId', optionalAuth, async (req, res) => {
     try {
         const { userId } = req.params;
 
@@ -124,13 +126,21 @@ router.get('/check-status/:userId', async (req, res) => {
  * POST /api/onboarding-interview/validate-answer
  * Validate candidate's answer for gibberish/relevance
  */
-router.post('/validate-answer', async (req, res) => {
+router.post('/validate-answer', userAuth, async (req, res) => {
     try {
         const { question, answer } = req.body;
 
+        if (!question || !answer) {
+            return res.status(400).json({
+                success: false,
+                valid: false,
+                message: 'Question and answer are required'
+            });
+        }
+
         console.log('Validating answer:', answer.substring(0, 50) + '...');
         // 1. Strict Validation using Gemini
-        const validation = await geminiService.validateAnswer(currentQuestion.question, answer);
+        const validation = await geminiService.validateAnswer(question, answer);
         if (!validation.valid) {
             return res.json({
                 success: true,
@@ -138,6 +148,9 @@ router.post('/validate-answer', async (req, res) => {
                 message: validation.message || 'Please provide a clearer answer.'
             });
         }
+
+        // Answer is valid
+        res.json({ success: true, valid: true });
     } catch (error) {
         console.error('Validation route error:', error);
         res.json({ success: true, valid: true }); // Fail open
@@ -148,7 +161,7 @@ router.post('/validate-answer', async (req, res) => {
  * POST /api/onboarding-interview/generate-blueprint
  * Generate interview blueprint based on resume
  */
-router.post('/generate-blueprint', async (req, res) => {
+router.post('/generate-blueprint', userAuth, async (req, res) => {
     try {
         const { parsedResume, desiredRole, experienceLevel } = req.body;
         console.log('[BLUEPRINT] Generating blueprint for:', desiredRole);
@@ -170,7 +183,7 @@ router.post('/generate-blueprint', async (req, res) => {
  * POST /api/onboarding-interview/start
  * Start a new adaptive interview session with role-specific blueprint
  */
-router.post('/start', async (req, res) => {
+router.post('/start', userAuth, async (req, res) => {
     try {
         const {
             parsedResume,
@@ -431,7 +444,7 @@ ${experienceLevel === 'fresher' ? '⚠️ REMINDER: FRESHER = SIMPLE CONCEPTUAL 
  * POST /api/onboarding-interview/next
  * Validate previous answer and generate next question with round awareness
  */
-router.post('/next', async (req, res) => {
+router.post('/next', userAuth, async (req, res) => {
     try {
         const {
             currentQuestion,
@@ -503,7 +516,7 @@ router.post('/next', async (req, res) => {
 
         // Get experience data from request or blueprint
         const { yearsOfExperience, jobDomains } = req.body;
-        const resumeSkills = parsedResume?.skills?.slice(0, 10) || [];
+        const resumeSkills = parsedResume?.skills?.map(s => typeof s === 'string' ? s : s?.name).filter(Boolean).slice(0, 10) || [];
         const resumeProjects = parsedResume?.projects?.slice(0, 2) || [];
 
         // Build context-aware prompt for next question
@@ -598,7 +611,7 @@ router.post('/next', async (req, res) => {
  * POST /api/onboarding-interview/generate-questions
  * (Legacy/Fallback) Generate all questions at once
  */
-router.post('/generate-questions', async (req, res) => {
+router.post('/generate-questions', userAuth, async (req, res) => {
     try {
         const { parsedResume, desiredRole, experienceLevel } = req.body;
 
@@ -694,7 +707,7 @@ router.post('/generate-questions', async (req, res) => {
  * POST /api/onboarding-interview/submit
  * Submit interview answers for evaluation using multi-dimensional engine
  */
-router.post('/submit', async (req, res) => {
+router.post('/submit', userAuth, async (req, res) => {
     try {
         const { userId, questionsAndAnswers, parsedResume, desiredRole, blueprint } = req.body;
 
@@ -719,42 +732,38 @@ router.post('/submit', async (req, res) => {
             // We continue instead of returning, to ensure an Interview document is created
         }
 
-        // Use Gemini as primary, DeepSeek as fallback
+        // Use Gemini as the PRIMARY evaluator, OpenRouter as fallback
         let evaluation;
         try {
-            // Try Gemini first (free-tier with rate limiting)
-            console.log('[SUBMIT] Trying Gemini evaluation...');
+            console.log('[SUBMIT] Trying Gemini evaluation (primary)...');
             evaluation = await geminiService.evaluateAnswers(questionsAndAnswers, {
                 jobTitle: desiredRole || 'Software Developer',
                 jobDescription: 'General position',
                 requiredSkills: parsedResume?.skills || []
             });
-
-            // Check if Gemini returned a valid evaluation
-            if (!evaluation || evaluation.overallScore === undefined) {
-                throw new Error('Gemini returned invalid evaluation, trying DeepSeek');
-            }
             console.log('[SUBMIT] Gemini evaluation successful, score:', evaluation.overallScore);
-        } catch (geminiError) {
-            console.log('[SUBMIT] Gemini unavailable, falling back to DeepSeek:', geminiError.message);
 
-            // Fallback to DeepSeek
+            // Validate response
+            if (evaluation.overallScore === undefined) throw new Error('Invalid Gemini response');
+        } catch (geminiError) {
+            console.error('[SUBMIT] Gemini evaluation failed, trying OpenRouter fallback:', geminiError.message);
             try {
-                evaluation = await deepseekService.evaluateAllAnswers(questionsAndAnswers, {
+                evaluation = await openRouterService.evaluateAllAnswers(questionsAndAnswers, {
                     jobTitle: desiredRole || 'Software Developer',
                     jobDescription: 'General position',
                     requiredSkills: parsedResume?.skills || []
-                }, blueprint);
-                console.log('[SUBMIT] DeepSeek evaluation successful, score:', evaluation.overallScore);
-            } catch (deepseekError) {
-                console.error('[SUBMIT] Both AI evaluations failed, using rule-based:', deepseekError.message);
+                });
+                console.log('[SUBMIT] OpenRouter fallback successful, score:', evaluation.overallScore);
+                if (evaluation.overallScore === undefined) throw new Error('Invalid OpenRouter response');
+            } catch (openRouterError) {
+                console.error('[SUBMIT] OpenRouter fallback failed too, using strict score');
                 evaluation = calculateStrictScore(questionsAndAnswers, validationResult);
             }
         }
 
         // Ensure evaluation exists before proceeding
-        if (!evaluation) {
-            console.warn('[SUBMIT] Evaluation failed completely, using fallback score.');
+        if (!evaluation || typeof evaluation.overallScore === 'undefined') {
+            console.warn('[SUBMIT] Evaluation failed completely or missing score, using fallback score.');
             evaluation = calculateStrictScore(questionsAndAnswers, validationResult);
         }
 
@@ -788,23 +797,18 @@ router.post('/submit', async (req, res) => {
         };
 
         // Save interview results and create Interview document for admin review
+        let newInterview = null;
         try {
             // ==================== ADMIN REVIEW INTEGRATION ====================
             // Interview goes to "pending_review" - admin must approve before candidate sees results
-            // DO NOT set platformInterview.status to passed/failed yet - wait for admin review
 
-            const passed = (
-                (evaluation.overallScore ?? 0) >= 60 &&
-                (evaluation.technicalScore ?? 0) >= 50 &&
-                (evaluation.hrScore ?? 0) >= 50 &&
-                (evaluation.communication ?? 0) >= 40
-            );
+            const passed = calculatePassStatus(evaluation);
 
             await User.findByIdAndUpdate(userId, {
                 $set: {
                     'jobSeekerProfile.onboardingInterview': interviewResults,
                     'jobSeekerProfile.interviewScore': evaluation.overallScore || 10,
-                    // PILOT TESTING: Set status to passed/failed immediately
+                    // Set status to passed/failed immediately
                     'platformInterview.status': passed ? 'passed' : 'failed',
                     'platformInterview.lastAttemptAt': new Date()
                 },
@@ -834,7 +838,7 @@ router.post('/submit', async (req, res) => {
                     escalationReason = 'Auto-escalated: Multiple cheating flags detected';
                 }
 
-                const newInterview = await Interview.create({
+                newInterview = await Interview.create({
                     userId,
                     interviewType: 'platform',
                     status: 'completed', // Changed from pending_review to completed
@@ -843,11 +847,11 @@ router.post('/submit', async (req, res) => {
 
                     // Scoring from AI (Aligned with schema)
                     scoring: {
-                        overallScore: evaluation.overallScore || 10,
-                        technicalScore: evaluation.technicalScore || 10,
-                        communicationScore: evaluation.communication || 10,
-                        confidenceScore: evaluation.confidence || 10,
-                        relevanceScore: evaluation.relevance || 10,
+                        overallScore: evaluation.overallScore ?? 0,
+                        technicalScore: evaluation.technicalScore ?? 0,
+                        communicationScore: (evaluation.communicationScore ?? evaluation.communication ?? evaluation.hrScore ?? 0),
+                        confidenceScore: evaluation.confidenceScore ?? evaluation.confidence ?? 0,
+                        relevanceScore: evaluation.relevanceScore ?? evaluation.relevance ?? 0,
                         strengths: evaluation.strengths || [],
                         weaknesses: evaluation.weaknesses || [],
                         detailedFeedback: evaluation.feedback || 'Platform interview completed'
@@ -989,7 +993,7 @@ router.post('/submit', async (req, res) => {
 
                                 skillHistory.push({
                                     source: 'interview',
-                                    sourceId: typeof newInterview !== 'undefined' ? newInterview._id : null,
+                                    sourceId: newInterview ? newInterview._id : null,
                                     skillName: node.skillName,
                                     domains: node.domainCategories || [],
                                     xpDelta: xpGain,
@@ -1150,34 +1154,30 @@ router.post('/submit', async (req, res) => {
         res.json({
             success: true,
             data: {
-                interviewId: typeof newInterview !== 'undefined' ? newInterview._id : null,
-                // Core scores - FALLBACKS ARE NOW 0-10 (NOT 50)
-                score: evaluation.overallScore ?? 10,
-                technicalScore: evaluation.technicalScore ?? 10,
-                hrScore: evaluation.hrScore ?? 10,
+                interviewId: newInterview ? newInterview._id : null,
+                // Structure scores to match frontend InterviewResultsPreview component expectations
+                scoring: {
+                    overallScore: evaluation.overallScore ?? 10,
+                    technicalScore: evaluation.technicalScore ?? 10,
+                    hrScore: evaluation.hrScore ?? 10,
+                    communication: evaluation.communication ?? calculateCommunicationScore(questionsAndAnswers),
+                    confidence: evaluation.confidence ?? 10,
+                    relevance: evaluation.relevance ?? 10,
+                    problemSolving: evaluation.problemSolving ?? 10
+                },
+                score: evaluation.overallScore ?? 10, // keep legacy field just in case
 
                 // STRICT PASS CRITERIA:
                 // Must have: Overall >= 60 AND both Technical & HR >= 50 AND Communication >= 40
-                passed: (
-                    (evaluation.overallScore ?? 0) >= 60 &&
-                    (evaluation.technicalScore ?? 0) >= 50 &&
-                    (evaluation.hrScore ?? 0) >= 50 &&
-                    (evaluation.communication ?? 0) >= 40
-                ),
-
-                // Detailed analysis - fallbacks are now 0-10
-                communication: evaluation.communication ?? calculateCommunicationScore(questionsAndAnswers),
-                confidence: evaluation.confidence ?? 10,
-                relevance: evaluation.relevance ?? 10,
-                problemSolving: evaluation.problemSolving ?? 10,
+                passed: calculatePassStatus(evaluation),
 
                 // Strengths & Weaknesses
-                strengths: evaluation.strengths || (evaluation.overallScore >= 40 ? ['Completed interview'] : []),
-                weaknesses: evaluation.weaknesses || (evaluation.overallScore < 40 ? ['Needs to provide more substantive answers'] : []),
+                strengths: evaluation.strengths || ((evaluation.overallScore ?? 0) >= 40 ? ['Completed interview'] : []),
+                weaknesses: evaluation.weaknesses || ((evaluation.overallScore ?? 0) < 40 ? ['Needs to provide more substantive answers'] : []),
                 areasToImprove: evaluation.areasToImprove || generateImprovementAreas(evaluation),
 
                 // Detailed feedback
-                feedback: evaluation.feedback || (evaluation.overallScore < 30
+                feedback: evaluation.feedback || ((evaluation.overallScore ?? 0) < 30
                     ? 'Your answers were insufficient. Please provide thoughtful, detailed responses.'
                     : 'Thank you for completing the interview!'),
                 technicalFeedback: evaluation.technicalFeedback || 'Review your technical fundamentals and practice problem-solving.',
@@ -1398,8 +1398,9 @@ function validateAnswers(questionsAndAnswers) {
     questionsAndAnswers.forEach((qa, index) => {
         const answer = (qa.answer || '').trim();
         const wordCount = answer.split(/\s+/).filter(w => w).length;
+        const isSkipped = !answer || answer === '(Skipped)' || answer.includes('(Skipped)') || answer.includes('I don\'t know the answer');
 
-        if (!answer || answer === '(Skipped)' || wordCount < 1) {
+        if (isSkipped || wordCount < 1) {
             emptyCount++;
             details.push({ question: index + 1, status: 'empty', words: wordCount });
         } else if (wordCount < 10) {
@@ -1419,6 +1420,19 @@ function validateAnswers(questionsAndAnswers) {
         completionRate: Math.round((validCount / questionsAndAnswers.length) * 100),
         details
     };
+}
+
+/**
+ * Determine if the candidate passed the interview
+ */
+function calculatePassStatus(evaluation) {
+    if (!evaluation) return false;
+    return (
+        (evaluation.overallScore ?? 0) >= 60 &&
+        (evaluation.technicalScore ?? 0) >= 50 &&
+        (evaluation.hrScore ?? 0) >= 50 &&
+        (evaluation.communication ?? 0) >= 40
+    );
 }
 
 /**
@@ -1879,28 +1893,40 @@ router.post('/upload-video', videoUpload.single('video'), async (req, res) => {
 
         // Update Interview document with video details (if interviewId provided)
         if (interviewId) {
+            // FIX: MongoDB cannot set nested fields on a null value (PathNotViable error).
+            // If videoRecording was explicitly set to null, dot-notation $set fails.
+            // First, unset the null field, then set the full object.
+            const existingInterview = await Interview.findById(interviewId).select('videoRecording');
+            if (existingInterview && existingInterview.videoRecording === null) {
+                await Interview.findByIdAndUpdate(interviewId, {
+                    $unset: { videoRecording: 1 }
+                });
+            }
+
             await Interview.findByIdAndUpdate(interviewId, {
                 $set: {
-                    'videoRecording.publicId': uploadResult.public_id,
-                    'videoRecording.url': uploadResult.url,
-                    'videoRecording.secureUrl': uploadResult.secure_url,
-                    'videoRecording.duration': uploadResult.duration,
-                    'videoRecording.format': uploadResult.format,
-                    'videoRecording.uploadedAt': new Date(),
-                    'videoRecording.fileSize': req.file.size,
-                    'videoRecording.cheatingMarkers': parsedMarkers.map(m => ({
-                        flagType: m.type || m.flagType,
-                        timestamp: m.videoTimestamp || m.timestamp || 0,
-                        duration: m.duration || 5,
-                        severity: m.severity || 'medium',
-                        description: m.description || '',
-                        aiConfidence: m.confidence || 80
-                    })),
-                    'videoRecording.totalFlagsInVideo': parsedMarkers.length,
-                    'videoRecording.highSeverityFlagsCount': parsedMarkers.filter(m => m.severity === 'high').length
+                    videoRecording: {
+                        publicId: uploadResult.public_id,
+                        url: uploadResult.url,
+                        secureUrl: uploadResult.secure_url,
+                        duration: uploadResult.duration,
+                        format: uploadResult.format,
+                        uploadedAt: new Date(),
+                        fileSize: req.file.size,
+                        cheatingMarkers: parsedMarkers.map(m => ({
+                            flagType: m.type || m.flagType,
+                            timestamp: m.videoTimestamp || m.timestamp || 0,
+                            duration: m.duration || 5,
+                            severity: m.severity || 'medium',
+                            description: m.description || '',
+                            aiConfidence: m.confidence || 80
+                        })),
+                        totalFlagsInVideo: parsedMarkers.length,
+                        highSeverityFlagsCount: parsedMarkers.filter(m => m.severity === 'high').length
+                    }
                 }
             });
-            console.log('Interview document updated with video');
+            console.log('Interview document updated with video recording and', parsedMarkers.length, 'cheating markers');
         }
 
         res.json({

@@ -122,9 +122,14 @@ function extractJson(text) {
     try {
         return JSON.parse(text);
     } catch (e) {
-        const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/);
+        const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonMatch) {
             try { return JSON.parse(jsonMatch[1]); } catch (e) { }
+        }
+        // Also try without language tag
+        const mdMatch = text.match(/```\s*([\s\S]*?)\s*```/);
+        if (mdMatch) {
+            try { return JSON.parse(mdMatch[1]); } catch (e) { }
         }
         const bracketMatch = text.match(/\{[\s\S]*\}/);
         if (bracketMatch) {
@@ -599,12 +604,14 @@ async function evaluateInterview(questionsAndAnswers, context, codingSubmission 
         console.log('[EVAL] Majority invalid answers, returning low scores');
         return {
             success: true,
-            overallScore: Math.max(5, 25 - invalidCount * 2),
+            overallScore: 0,
+            technicalScore: 0,
+            hrScore: 0,
             dimensions: Object.fromEntries(
-                Object.keys(DIMENSIONS).map(k => [k, { score: 10, peak: 15, average: 10 }])
+                Object.keys(DIMENSIONS).map(k => [k, { score: 0, peak: 0, average: 0 }])
             ),
             trend: { overall: 'insufficient_data', boost: 1.0, description: 'Most answers were empty or invalid' },
-            potentialIndex: { score: 15, grade: 'F', baseScore: 15 },
+            potentialIndex: { score: 0, grade: 'F', baseScore: 0 },
             perAnswerEvaluations: [],
             codingEvaluation: null,
             summary: {

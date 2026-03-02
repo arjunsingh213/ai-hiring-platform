@@ -217,12 +217,6 @@ router.get('/check/:jobId/:candidateId', userAuth, requireRole('recruiter'), asy
 router.get('/my/rooms', userAuth, async (req, res) => {
     try {
         const userId = req.userId;
-        console.log('[VideoRoom /my/rooms] Debug START');
-        console.log('[VideoRoom /my/rooms] userId from token:', userId, 'type:', typeof userId);
-
-        // Let's do a raw find to see what's in the DB for this user
-        const allRoomsAny = await VideoRoom.find({}).limit(5).select('roomCode candidateId participants.userId status').lean();
-        console.log('[VideoRoom /my/rooms] Sample rooms in DB:', JSON.stringify(allRoomsAny, null, 2));
 
         // Primary query: check participants array
         let rooms = await VideoRoom.find({
@@ -234,8 +228,6 @@ router.get('/my/rooms', userAuth, async (req, res) => {
             .populate('candidateId', 'profile.name profile.photo')
             .sort({ scheduledAt: -1 })
             .lean();
-
-        console.log('[VideoRoom /my/rooms] Found via participants.userId:', rooms.length);
 
         // Fallback: also check top-level candidateId and recruiterId fields
         if (rooms.length === 0) {
@@ -251,17 +243,11 @@ router.get('/my/rooms', userAuth, async (req, res) => {
                 .populate('candidateId', 'profile.name profile.photo')
                 .sort({ scheduledAt: -1 })
                 .lean();
-            console.log('[VideoRoom /my/rooms] Found via candidateId/recruiterId fallback:', rooms.length);
         }
 
         res.json({
             success: true,
-            data: rooms,
-            debug: {
-                userId,
-                foundCount: rooms.length,
-                totalRoomsChecked: allRoomsAny.length
-            }
+            data: rooms
         });
     } catch (error) {
         console.error('Error fetching my rooms:', error);
@@ -470,6 +456,10 @@ router.post('/:roomCode/recording', userAuth, async (req, res) => {
             return res.status(404).json({ success: false, error: 'Room not found' });
         }
 
+        if (room.recruiterId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Unauthorized: You are not assigned to this room' });
+        }
+
         room.recording = {
             ...room.recording,
             status: 'ready',
@@ -522,6 +512,10 @@ router.post('/:roomCode/notes', userAuth, async (req, res) => {
             return res.status(404).json({ success: false, error: 'Room not found' });
         }
 
+        if (room.recruiterId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Unauthorized: You are not assigned to this room' });
+        }
+
         room.notes.push({
             type,
             content,
@@ -548,6 +542,10 @@ router.put('/:roomCode/validate', userAuth, requireRole('recruiter'), async (req
 
         if (!room) {
             return res.status(404).json({ success: false, error: 'Room not found' });
+        }
+
+        if (room.recruiterId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Unauthorized: You are not assigned to this room' });
         }
 
         room.recruiterValidation = {
@@ -626,6 +624,10 @@ router.put('/:roomCode/ai-config', userAuth, requireRole('recruiter'), async (re
             return res.status(404).json({ success: false, error: 'Room not found' });
         }
 
+        if (room.recruiterId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Unauthorized: You are not assigned to this room' });
+        }
+
         if (typeof enabled === 'boolean') {
             room.aiConfig.enabled = enabled;
             if (!enabled) {
@@ -651,6 +653,14 @@ router.put('/:roomCode/ai-config', userAuth, requireRole('recruiter'), async (re
 // ─── Generate Post-Interview Report ───
 router.post('/:roomCode/report', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
+        const room = await VideoRoom.findOne({ roomCode: req.params.roomCode });
+        if (!room) {
+            return res.status(404).json({ success: false, error: 'Room not found' });
+        }
+        if (room.recruiterId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Unauthorized: You are not assigned to this room' });
+        }
+
         const reportGeneratorService = require('../services/ai/reportGeneratorService');
         const report = await reportGeneratorService.generateReport(req.params.roomCode);
         res.json({ success: true, data: report });
@@ -663,6 +673,14 @@ router.post('/:roomCode/report', userAuth, requireRole('recruiter'), async (req,
 // ─── Validate Post-Interview Report ───
 router.put('/:roomCode/report/validate', userAuth, requireRole('recruiter'), async (req, res) => {
     try {
+        const room = await VideoRoom.findOne({ roomCode: req.params.roomCode });
+        if (!room) {
+            return res.status(404).json({ success: false, error: 'Room not found' });
+        }
+        if (room.recruiterId.toString() !== req.userId.toString()) {
+            return res.status(403).json({ success: false, error: 'Unauthorized: You are not assigned to this room' });
+        }
+
         const reportGeneratorService = require('../services/ai/reportGeneratorService');
         const { decision, overrideScore, overrideRecommendation, comments, competencyOverrides } = req.body;
 
@@ -676,8 +694,7 @@ router.put('/:roomCode/report/validate', userAuth, requireRole('recruiter'), asy
         if ((decision === 'accepted' || decision === 'edited') && req.body.updateATP !== false) {
             try {
                 const atpService = require('../services/aiTalentPassportService');
-                const room = await VideoRoom.findOne({ roomCode: req.params.roomCode });
-                if (room && room.candidateId) {
+                if (room.candidateId) {
                     await atpService.updateTalentPassport(room.candidateId);
                     room.addAuditEntry('atp_updated', req.userId, 'recruiter', {
                         decision,
@@ -730,6 +747,11 @@ router.put('/:roomCode/reschedule', userAuth, requireRole('recruiter'), async (r
         const { scheduledAt, duration } = req.body;
         const room = await VideoRoom.findOne({ roomCode: req.params.roomCode, recruiterId: req.userId });
         if (!room) return res.status(404).json({ success: false, error: 'Room not found' });
+
+        // Capture previous values for audit BEFORE overwriting
+        const previousDate = room.scheduledAt;
+        const wasPreviouslyCompleted = room.status === 'completed';
+
         room.scheduledAt = new Date(scheduledAt);
         if (duration) room.duration = duration;
 
@@ -740,9 +762,9 @@ router.put('/:roomCode/reschedule', userAuth, requireRole('recruiter'), async (r
 
         room.addAuditEntry('room_created', req.userId, 'recruiter', {
             action: 'rescheduled',
-            previousDate: room.scheduledAt,
+            previousDate: previousDate,
             newDate: scheduledAt,
-            wasPreviouslyCompleted: room.status === 'completed'
+            wasPreviouslyCompleted: wasPreviouslyCompleted
         });
         await room.save();
 

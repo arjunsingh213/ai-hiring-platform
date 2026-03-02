@@ -286,7 +286,6 @@ const InterviewReadiness = ({
             return;
         }
         setShowCaptureModal(true);
-        setFaceDetected(false);
     };
 
     const startCapture = () => {

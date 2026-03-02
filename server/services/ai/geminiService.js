@@ -713,22 +713,14 @@ IF SKILL LEVEL IS 'FRESHER', 'ENTRY' or 'EASY':
             // Robust JSON extraction
             let jsonStr = response;
 
-            // 1. Try to find content between ```json and ```
-            const markdownMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-            if (markdownMatch) {
-                jsonStr = markdownMatch[1];
-            } else {
-                // 2. Try to find content between ``` and ```
-                const generalMarkdownMatch = response.match(/```\s*([\s\S]*?)\s*```/);
-                if (generalMarkdownMatch) {
-                    jsonStr = generalMarkdownMatch[1];
-                } else {
-                    // 3. Fallback: try to find the first { and last }
-                    const braceMatch = response.match(/\{[\s\S]*\}/);
-                    if (braceMatch) {
-                        jsonStr = braceMatch[0];
-                    }
-                }
+            // 0. Strip markdown fences first (handles both ```json{ and ```json\n{)
+            //    This catches cases where there's no space/newline between the language tag and content
+            jsonStr = jsonStr.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+
+            // 1. Try to extract a JSON object from the cleaned string
+            const braceMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (braceMatch) {
+                jsonStr = braceMatch[0];
             }
 
             // Cleanup common AI JSON errors

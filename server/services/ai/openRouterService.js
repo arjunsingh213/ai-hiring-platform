@@ -650,9 +650,9 @@ BE STRICT AND HONEST. Return ONLY valid JSON.`;
 
         try {
             const response = await this.callModel(
-                this.models.answerEvaluation,
+                'arcee-ai/trinity-large-preview:free',
                 [{ role: 'user', content: prompt }],
-                this.apiKeys.qwen,
+                this.apiKeys.llama,
                 { ...options, purpose: 'holistic_evaluation' }
             );
 

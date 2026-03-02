@@ -9,6 +9,8 @@ const Job = require('../models/Job');
 const geminiService = require('../services/ai/geminiService'); // Gemini as primary AI
 const cloudinary = require('../config/cloudinary');
 const multer = require('multer');
+const evaluationEngine = require('../services/ai/evaluationEngine');
+const aiTalentPassportService = require('../services/aiTalentPassportService');
 const { userAuth, optionalAuth } = require('../middleware/userAuth');
 
 // Configure multer for video uploads (in memory)
@@ -316,8 +318,9 @@ INSTRUCTIONS:
             message: 'Answer recorded',
             progress: {
                 answered: interview.responses.length,
-                // For job interviews, always show total as 10 (dynamic generation)
-                total: interview.jobId ? 10 : interview.questions.length
+                total: interview.pipelineConfig?.rounds
+                    ? interview.pipelineConfig.rounds.reduce((sum, r) => sum + (r.questionConfig?.questionCount || 5), 0)
+                    : interview.questions.length || 10
             }
         });
     } catch (error) {
@@ -661,19 +664,83 @@ router.post('/:interviewId/round-complete', userAuth, async (req, res) => {
         let nextRoundQuestion = null;
 
         if (completedRounds >= totalRounds) {
-            // All rounds complete - calculate overall score
-            const avgScore = interview.roundResults.reduce((sum, r) => sum + r.score, 0) / completedRounds;
-
+            // All rounds complete
             interview.status = 'completed';
             interview.completedAt = new Date();
-            interview.passed = avgScore >= 60;
-            interview.scoring = {
-                ...interview.scoring,
-                overallScore: Math.round(avgScore),
-                roundScores: interview.roundResults.map(r => ({ round: r.roundType, score: r.score }))
+
+            // Format Q&A for the Evaluation Engine
+            const qaList = (interview.questions || []).map((q, index) => {
+                const response = (interview.responses || []).find(r => r.questionIndex === index) || (interview.responses || [])[index];
+                return {
+                    question: q.question,
+                    answer: response?.answer || '',
+                    category: q.category || 'general',
+                    difficulty: q.difficulty || 'medium',
+                    type: q.type || 'general'
+                };
+            });
+
+            // Construct Job Context
+            const jobContext = {
+                jobTitle: interview.jobId?.title || 'Unknown Role',
+                jobDescription: interview.jobId?.description || '',
+                requiredSkills: interview.jobId?.requirements?.skills || []
             };
 
-            console.log(`[ROUND COMPLETE] Interview ${interviewId} fully completed. Avg score: ${avgScore}`);
+            try {
+                console.log(`[ROUND COMPLETE] Triggering AI Evaluation Engine for interview ${interviewId}...`);
+                // Run full AI Evaluation
+                const evaluationResult = await evaluationEngine.evaluateInterview(qaList, jobContext);
+
+                // Blend average round score with AI's overall score (if available)
+                const avgRoundScore = interview.roundResults.reduce((sum, r) => sum + r.score, 0) / completedRounds;
+                const finalOverallScore = Math.round(((evaluationResult?.overallScore ?? avgRoundScore) + avgRoundScore) / 2);
+
+                interview.passed = finalOverallScore >= (interview.pipelineConfig?.rounds?.[0]?.scoring?.passingScore || 50);
+
+                interview.scoring = {
+                    ...interview.scoring,
+                    overallScore: finalOverallScore,
+                    roundScores: interview.roundResults.map(r => ({ round: r.roundType, score: r.score })),
+                    technicalScore: evaluationResult?.technicalScore ?? evaluationResult?.dimensions?.domainKnowledge?.score ?? 0,
+                    communicationScore: evaluationResult?.hrScore ?? evaluationResult?.dimensions?.communication?.score ?? 0,
+                    confidenceScore: evaluationResult?.dimensions?.confidence?.score ?? evaluationResult?.confidence ?? 0,
+                    relevanceScore: evaluationResult?.dimensions?.domainKnowledge?.score ?? evaluationResult?.relevance ?? 0
+                };
+
+                // Populate Strengths & Weaknesses
+                interview.strengths = evaluationResult?.strengths || [];
+                interview.weaknesses = evaluationResult?.weaknesses || [];
+
+                // recruiterReport must be an Object (schema subdocument), never a plain string
+                const reportSummary = evaluationResult?.summary?.summary || evaluationResult?.summary || evaluationResult?.feedback || '';
+                interview.recruiterReport = typeof reportSummary === 'string'
+                    ? { summary: reportSummary, recommendation: finalOverallScore >= 60 ? 'consider' : 'not_recommended', keyStrengths: evaluationResult?.strengths || [], concerns: evaluationResult?.weaknesses || [] }
+                    : reportSummary;
+
+                console.log(`[ROUND COMPLETE] Evaluation success. Final score: ${finalOverallScore}`);
+            } catch (evalError) {
+                console.error(`[ROUND COMPLETE] Fast-fallback evaluation failed:`, evalError);
+                // Fallback to simple averages if AI fails
+                const avgScore = interview.roundResults.reduce((sum, r) => sum + r.score, 0) / completedRounds;
+                interview.passed = avgScore >= (interview.pipelineConfig?.rounds?.[0]?.scoring?.passingScore || 50);
+                interview.scoring = {
+                    ...interview.scoring,
+                    overallScore: Math.round(avgScore),
+                    roundScores: interview.roundResults.map(r => ({ round: r.roundType, score: r.score }))
+                };
+            }
+
+            // Trigger ATP Update asynchronously in the background
+            setTimeout(async () => {
+                try {
+                    console.log(`[ATP SYNC] Triggering ATP update for user ${interview.userId}`);
+                    await aiTalentPassportService.updateTalentPassport(interview.userId);
+                } catch (atpErr) {
+                    console.error('[ATP SYNC] Failed to update ATP post-interview:', atpErr);
+                }
+            }, 1000);
+
         } else {
             // Advance to next round
             interview.currentRoundIndex = completedRounds;
@@ -685,16 +752,26 @@ router.post('/:interviewId/round-complete', userAuth, async (req, res) => {
             if (nextRound && ['technical', 'hr', 'behavioral', 'screening'].includes(nextRound.roundType)) {
                 try {
                     const job = interview.jobId;
-                    const jobDescriptionSummary = `
+                    const isBehavioral = ['hr', 'behavioral'].includes(nextRound.roundType);
+                    const systemRole = isBehavioral
+                        ? 'empathetic HR Recruiter focusing purely on past experiences, work history, and soft skills (NO technical architecture/coding questions)'
+                        : `expert interviewer conducting a ${nextRound.roundType} interview round`;
+
+                    const promptForNextRound = `You are an ${systemRole}.
+This is a VOICE conversation. Return EXACTLY ONE natural, conversational opening question for this round.
+Do NOT give lists, do NOT greet the candidate again (the interview is already ongoing), and do NOT provide formatting or preambles.
+Just ask the next question directly.
+${isBehavioral ? '\nCRITICAL INSTRUCTION: Ensure your question focuses ONLY on behavioral aspects (e.g., teamwork, conflict resolution, leadership, past challenges) and ABSOLUTELY NOT on technical skills or architecture.' : ''}
+
+JOB CONTEXT:
 Job Title: ${job?.title || 'Unknown'}
 Required Skills: ${job?.requirements?.skills?.join(', ') || 'Not specified'}
 Experience Level: ${job?.requirements?.experienceLevel || 'Not specified'}
-Description: ${job?.description?.substring(0, 500) || 'Not provided'}
-                    `.trim();
+Description: ${job?.description?.substring(0, 500) || 'Not provided'}`;
 
                     // Generate first question for new round
                     const nextQText = await geminiService.generateAdaptiveQuestion(
-                        jobDescriptionSummary + `\n\nROUND: ${nextRound.roundType}`,
+                        promptForNextRound,
                         [], // No previous answers for this round
                         { userId: req.userId, purpose: 'round_generation' }
                     );

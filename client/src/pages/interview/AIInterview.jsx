@@ -5,6 +5,8 @@ import { useToast } from '../../components/Toast';
 import CodeIDE from '../../components/CodeIDE';
 import InterviewProctor from '../../components/InterviewProctor';
 import Skeleton, { CardSkeleton } from '../../components/Skeleton';
+import useVoiceInterview from '../../hooks/useVoiceInterview'; // [ADAPTIVE VOICE]
+import TalkingAvatar from '../../components/interview/TalkingAvatar'; // [ADAPTIVE VOICE]
 import './AIInterview.css';
 
 // Programming languages to detect
@@ -24,6 +26,7 @@ const PROGRAMMING_LANGUAGES = [
 
 // SVG Icon Components for professional UI
 const Icons = {
+    // ... Keep existing icons ...
     technical: () => (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
             <polyline points="16 18 22 12 16 6"></polyline>
@@ -144,6 +147,18 @@ const Icons = {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
+    ),
+    activity: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+    ),
+    info: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
     )
 };
 
@@ -195,6 +210,18 @@ const AIInterview = () => {
     const streamRef = useRef(null); // Track camera stream
     const isMountedRef = useRef(true); // Track mount status
 
+    // Core interview state
+    const [interview, setInterview] = useState(null);
+    const [job, setJob] = useState(null);
+
+    // --- [ADAPTIVE VOICE] ---
+    // Extract candidate and job context safely
+    const candidateId = localStorage.getItem('userId');
+    const [adaptiveJobSkills, setAdaptiveJobSkills] = useState([]);
+    // (Hook moved below state declarations to prevent ReferenceError)
+    // ------------------------
+
+
     // Video recording refs
     const mediaRecorderRef = useRef(null);
     const recordedChunksRef = useRef([]);
@@ -203,9 +230,7 @@ const AIInterview = () => {
     const [uploadingVideo, setUploadingVideo] = useState(false);
     const [finalViolations, setFinalViolations] = useState([]);
 
-    // Core interview state
-    const [interview, setInterview] = useState(null);
-    const [job, setJob] = useState(null);
+
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answer, setAnswer] = useState('');
     const [isRecording, setIsRecording] = useState(false);
@@ -236,6 +261,18 @@ const AIInterview = () => {
     // Text-to-Speech states
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [ttsSupported, setTtsSupported] = useState(false);
+
+    // --- [ADAPTIVE VOICE] ---
+    // Make sure we only show Voice UI if the current pipeline round isn't explicitly a different type like coding or assessment
+    const isVoiceActive = interview?.interviewType === 'job_specific' &&
+        !['coding', 'dsa', 'assessment'].includes(currentRound?.roundType);
+
+    const voiceMode = useVoiceInterview(
+        interviewId,
+        isVoiceActive,
+        currentRoundIndex // Pass round index to force socket reconnect on new rounds
+    );
+    // ------------------------
 
     // Coding test states
     const [detectedLanguages, setDetectedLanguages] = useState([]);
@@ -411,6 +448,9 @@ const AIInterview = () => {
 
     // Auto-speak question when it changes
     useEffect(() => {
+        // Prevent native auto-speak if adaptive voice mode handles its own TTS stream
+        if (interview?.interviewType === 'job_specific') return;
+
         if (interview && interview.questions && interview.questions[currentQuestionIndex] && ttsSupported && !completed) {
             // Small delay to let the UI update first
             const timer = setTimeout(() => {
@@ -527,7 +567,15 @@ const AIInterview = () => {
             }
 
             setInterview(data);
-            if (data.jobId) setJob(data.jobId);
+            if (data.jobId) {
+                setJob(data.jobId);
+                // [ADAPTIVE VOICE] Extract skills for the voice interviewer
+                if (data.jobId.requirements?.skills?.length > 0) {
+                    setAdaptiveJobSkills(data.jobId.requirements.skills);
+                } else if (data.jobId.title) {
+                    setAdaptiveJobSkills([data.jobId.title]);
+                }
+            }
 
             // Pipeline-aware setup
             if (data.pipelineConfig) {
@@ -991,6 +1039,21 @@ const AIInterview = () => {
         await completeCurrentRound();
     };
 
+    // Prevent duplicate completion triggers
+    const processingVoiceCompletion = useRef(false);
+
+    // Listen for Voice Mode completion (e.g., early exits or max turns)
+    useEffect(() => {
+        if (voiceMode.status === 'completed' && interview?.interviewType === 'job_specific' && !processingVoiceCompletion.current) {
+            console.log("[PIPELINE] Voice mode indicated completion, advancing to next round.");
+            processingVoiceCompletion.current = true;
+            completeCurrentRound();
+        } else if (voiceMode.status !== 'completed') {
+            // Reset the flag when starting a new round so it can complete again later
+            processingVoiceCompletion.current = false;
+        }
+    }, [voiceMode.status, interview?.interviewType]);
+
     // Loading
     // Show loading state when generating coding problem
     if (loadingProblem) {
@@ -1393,6 +1456,124 @@ const AIInterview = () => {
 
         return 'Complete Interview';
     };
+
+    // --- [ADAPTIVE VOICE] IMMERSIVE UI RENDER OVERRIDE ---
+
+    if (isVoiceActive) {
+        return (
+            <div className="ai-interview adaptive-voice-mode">
+
+                {/* Header */}
+                <div className="interview-header">
+                    <div className="header-left">
+                        <h2>
+                            {currentRound?.title || 'Voice Interview'}
+                            {pipelineConfig?.rounds && ` (Round ${currentRoundIndex + 1} of ${pipelineConfig.rounds.length})`}
+                        </h2>
+                        {job && <p className="job-context">{job.title}</p>}
+                    </div>
+                    <div className="header-right">
+                        <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+                        <button className="btn btn-secondary btn-sm" onClick={async () => {
+                            if (window.confirm('Exit interview? Your progress was automatically saved.')) {
+                                stopCamera();
+                                navigate('/jobseeker/interviews');
+                            }
+                        }}>Exit</button>
+                    </div>
+                </div>
+
+                <div className="immersive-container">
+
+                    {/* Left Column: Avatar & AI text */}
+                    <div className="avatar-section card-glass">
+                        {/* Status Indicator */}
+                        <div className={`vad-status ${voiceMode.isSpeaking ? 'active' : ''}`}>
+                            {voiceMode.avatarState === 'listening' ? (
+                                <div className="listening-indicator" style={{
+                                    boxShadow: `0 0 ${20 + voiceMode.volumeLevel / 2}px rgba(139, 92, 246, ${0.3 + voiceMode.volumeLevel / 100})`,
+                                    borderColor: voiceMode.volumeLevel > 5 ? '#a78bfa' : 'rgba(139, 92, 246, 0.5)'
+                                }}>
+                                    <div className="volume-bar-container">
+                                        <div className="volume-bar" style={{ height: `${Math.max(5, voiceMode.volumeLevel)}%` }}></div>
+                                    </div>
+                                    <Icons.mic /> <span>Listening...</span>
+                                    <button
+                                        className="btn-done-speaking"
+                                        onClick={voiceMode.forceSilenceDetection}
+                                        title="Click if I'm done speaking but system hasn't stopped"
+                                    >
+                                        <Icons.check /> Done
+                                    </button>
+                                </div>
+                            ) : voiceMode.avatarState === 'speaking' ? (
+                                <div className="speaking-indicator">
+                                    <Icons.speaker /> <span>AI is speaking...</span>
+                                    <button
+                                        className="btn-skip-intro"
+                                        onClick={voiceMode.skipAIPlayback}
+                                        title="Skip to answering"
+                                    >
+                                        <Icons.skip /> Skip
+                                    </button>
+                                </div>
+                            ) : voiceMode.avatarState === 'thinking' ? (
+                                <div className="thinking-indicator">
+                                    <Icons.brain /> <span>Thinking...</span>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <div className="ai-subtitles">
+                            <h3>{voiceMode.currentQuestionText || "Connecting..."}</h3>
+                            {voiceMode.partialTranscript && (
+                                <p className="candidate-transcript">
+                                    <Icons.mic /> <i>{voiceMode.partialTranscript}</i>
+                                </p>
+                            )}
+                        </div>
+
+                        <TalkingAvatar state={voiceMode.avatarState} size="large" />
+                    </div>
+
+                    {/* Right Column: Controls & Camera */}
+                    <div className="controls-section">
+                        <div className="mini-video-container card">
+                            <video ref={videoRef} autoPlay muted className="mini-video-feed"></video>
+                            <p className="camera-info text-muted">
+                                <Icons.camera /> Camera Active
+                            </p>
+
+                            <InterviewProctor
+                                videoRef={videoRef}
+                                enabled={true}
+                                onViolationLog={handleViolationLog}
+                            />
+                            {proctoringViolations.length > 0 && (
+                                <div className="violation-counter-badge" style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                                    <Icons.warning /> {proctoringViolations.length}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="voice-controls card-glass">
+                            <p className="automated-info">
+                                <Icons.info /> Voice interaction is automatic. Just speak to answer!
+                            </p>
+
+                            {voiceMode.partialTranscript && (
+                                <div className="realtime-transcript-display">
+                                    <Icons.mic /> <span>{voiceMode.partialTranscript}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    // --- END IMMERSIVE RENDER OVERRIDE ---
+
 
     return (
         <div className="ai-interview">

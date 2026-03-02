@@ -6,6 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Job = require('../models/Job');
 const User = require('../models/User');
 const Interview = require('../models/Interview');
@@ -26,6 +27,14 @@ router.post('/start', requirePlatformInterview, async (req, res) => {
             return res.status(400).json({
                 success: false,
                 error: 'User ID and Job ID are required'
+            });
+        }
+
+        // Validate ObjectIds before DB calls
+        if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(jobId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid userId or jobId format'
             });
         }
 
@@ -187,7 +196,8 @@ INSTRUCTIONS:
                 generatedBy: 'ai',
                 category: firstQuestion.type || firstRound.roundType,
                 difficulty: 'medium',
-                expectedTopics: job.requirements?.skills?.slice(0, 3) || []
+                expectedTopics: job.requirements?.skills?.slice(0, 3) || [],
+                roundIndex: 0
             }] : [],
             responses: []
         });
@@ -732,8 +742,16 @@ router.post('/next', requirePlatformInterview, async (req, res) => {
         const job = interview.jobId;
         const currentCount = questionIndex || interview.responses.length;
 
-        // Check if interview is complete (10 questions)
-        if (currentCount >= 10) {
+        // Get current round config from pipeline
+        const currentRoundConfig = interview.pipelineConfig?.rounds?.[interview.currentRoundIndex || 0];
+        const round = currentRoundConfig?.roundType || (currentCount + 1 <= 5 ? 'technical' : 'hr');
+        const roundName = currentRoundConfig?.title || round;
+
+        // Check if round is complete based on pipeline config (fallback to 10 for legacy)
+        const maxQuestionsForRound = currentRoundConfig?.questionConfig?.questionCount || 10;
+        const questionsInCurrentRound = interview.questions.filter(q => q.roundIndex === (interview.currentRoundIndex || 0)).length;
+
+        if (questionsInCurrentRound >= maxQuestionsForRound || currentCount >= 50) {
             return res.json({
                 success: true,
                 completed: true,
@@ -742,12 +760,12 @@ router.post('/next', requirePlatformInterview, async (req, res) => {
             });
         }
 
-        // Store the response
+        // Store the response with actual timeSpent from frontend
         if (answer && currentQuestion) {
             interview.responses.push({
                 questionIndex: currentCount,
                 answer: answer,
-                timeSpent: 120 // Default 2 minutes
+                timeSpent: req.body.timeSpent || 120
             });
         }
 
@@ -757,9 +775,6 @@ router.post('/next', requirePlatformInterview, async (req, res) => {
             answer: interview.responses[i]?.answer || '',
             type: q.category
         }));
-
-        // Determine round name for prompt
-        const roundName = currentRoundConfig?.title || (currentCount + 1 <= 5 ? 'technical' : 'hr');
 
         // Generate job-specific summary for context
         const jobDescriptionSummary = `
@@ -806,23 +821,24 @@ INSTRUCTIONS:
             type: round
         };
 
-        // Add to interview questions
+        // Add to interview questions with roundIndex for per-round tracking
         interview.questions.push({
             question: nextQuestionObj.question,
             generatedBy: 'ai',
             category: nextQuestionObj.type || round,
-            difficulty: 'medium'
+            difficulty: 'medium',
+            roundIndex: interview.currentRoundIndex || 0
         });
 
         await interview.save();
 
-        console.log(`[JOB INTERVIEW] Question ${currentCount + 2}/10 for interview ${interviewId}`);
+        console.log(`[JOB INTERVIEW] Question ${currentCount + 2}/${maxQuestionsForRound} (round ${round}) for interview ${interviewId}`);
 
         res.json({
             success: true,
             question: nextQuestionObj,
             questionNumber: currentCount + 2,
-            totalQuestions: 10,
+            totalQuestions: maxQuestionsForRound,
             isHRRound: round === 'hr',
             completed: false
         });
@@ -853,16 +869,20 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
 
         const job = interview.jobId;
 
-        // Build Q&A for evaluation
-        const questionsAndAnswers = interview.questions.map((q, i) => ({
-            question: q.question,
-            answer: answers[i]?.answer || interview.responses[i]?.answer || '',
-            category: q.category,
-            round: i < 5 ? 'technical' : 'hr'
-        }));
+        // Build Q&A for evaluation — use actual round info from pipeline config
+        const pipelineRounds = interview.pipelineConfig?.rounds || [];
+        const questionsAndAnswers = interview.questions.map((q, i) => {
+            const roundIdx = q.roundIndex || 0;
+            const roundConfig = pipelineRounds[roundIdx];
+            return {
+                question: q.question,
+                answer: answers[i]?.answer || interview.responses[i]?.answer || '',
+                category: q.category,
+                round: roundConfig?.roundType || q.category || 'technical'
+            };
+        });
 
-        // Evaluate using same AI service
-        // Evaluate using Gemini (Primary) or DeepSeek (Fallback)
+        // Evaluate using Gemini (with retry fallback)
         let evaluation;
         try {
             evaluation = await geminiService.evaluateAnswers(questionsAndAnswers, {
@@ -871,12 +891,26 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
                 requiredSkills: job.requirements?.skills
             });
         } catch (err) {
-            console.log('Gemini evaluation failed, using fallback logic');
-            evaluation = await deepseekService.evaluateAllAnswers(questionsAndAnswers, {
-                jobTitle: job.title,
-                jobDescription: job.description,
-                requiredSkills: job.requirements?.skills
-            });
+            console.log('Gemini evaluation failed, retrying with simplified prompt...');
+            try {
+                evaluation = await geminiService.evaluateAnswers(questionsAndAnswers, {
+                    jobTitle: job.title,
+                    requiredSkills: job.requirements?.skills
+                });
+            } catch (retryErr) {
+                console.error('Gemini retry also failed, using safe fallback scores');
+                evaluation = {
+                    overallScore: 10,
+                    technicalScore: 10,
+                    hrScore: 10,
+                    communicationScore: 10,
+                    confidenceScore: 10,
+                    relevanceScore: 10,
+                    strengths: [],
+                    weaknesses: ['Evaluation could not be completed due to a service error.'],
+                    feedback: 'Interview evaluation failed. Please contact support for manual review.'
+                };
+            }
         }
 
         // Combine with coding results if available
@@ -912,7 +946,7 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
 
         // Update job applicant status
         const applicantIndex = job.applicants.findIndex(
-            a => a.userId.toString() === interview.userId.toString()
+            a => a.userId?.toString() === interview.userId?.toString()
         );
         if (applicantIndex !== -1) {
             job.applicants[applicantIndex].status = passed ? 'shortlisted' : 'reviewed';
@@ -950,7 +984,7 @@ router.post('/submit', requirePlatformInterview, async (req, res) => {
  * GET /api/job-interview/:interviewId
  * Get interview status and details
  */
-router.get('/:interviewId', async (req, res) => {
+router.get('/:interviewId', requirePlatformInterview, async (req, res) => {
     try {
         const { interviewId } = req.params;
 
@@ -975,7 +1009,9 @@ router.get('/:interviewId', async (req, res) => {
                 completedAt: interview.completedAt,
                 job: interview.jobId,
                 questionsAnswered: interview.responses.length,
-                totalQuestions: 10
+                totalQuestions: interview.pipelineConfig?.rounds?.reduce(
+                    (sum, r) => sum + (r.questionConfig?.questionCount || 5), 0
+                ) || interview.questions?.length || 10
             }
         });
     } catch (error) {

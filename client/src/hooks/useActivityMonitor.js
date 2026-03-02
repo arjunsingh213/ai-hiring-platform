@@ -7,7 +7,7 @@
  * - Dev tools opening (keyboard shortcuts)
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 const useActivityMonitor = (enabled = true, onViolation = null) => {
     // Violation tracking
@@ -180,6 +180,7 @@ const useActivityMonitor = (enabled = true, onViolation = null) => {
 
     // Start monitoring (call when interview actually starts)
     const startMonitoring = useCallback(() => {
+        if (interviewStartedRef.current) return;
         interviewStartedRef.current = true;
         console.log('🔍 Activity monitoring started');
     }, []);
@@ -203,7 +204,7 @@ const useActivityMonitor = (enabled = true, onViolation = null) => {
     // Check if any critical violation exists
     const hasCriticalViolation = tabSwitchCount >= 3 || windowBlurCount >= 5;
 
-    return {
+    return useMemo(() => ({
         // State
         violations,
         tabSwitchCount,
@@ -221,7 +222,7 @@ const useActivityMonitor = (enabled = true, onViolation = null) => {
 
         // Check if monitoring is active
         isMonitoring: interviewStartedRef.current
-    };
+    }), [violations, tabSwitchCount, copyAttemptCount, windowBlurCount, totalViolations, isTabActive, isWindowFocused, hasCriticalViolation, startMonitoring, stopMonitoring, clearViolations]);
 };
 
 export default useActivityMonitor;
