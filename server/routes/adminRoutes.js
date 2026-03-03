@@ -1887,4 +1887,390 @@ router.get('/:id/activity', adminAuth, requirePermission('manage_admins'), async
     }
 });
 
+// ==================== JOB APPLICATION REVIEW ====================
+
+const Job = require('../models/Job');
+const Resume = require('../models/Resume');
+const Notification = require('../models/Notification');
+const { sendEmail } = require('../services/emailService');
+
+/**
+ * Compute AI fit score by comparing resume skills/domain with job requirements.
+ * Returns { fitScore (0-100), fitLabel, fitColor }
+ */
+function computeFitScore(user, resume, job) {
+    const jobSkills = (job.requirements?.skills || []).map(s => s.toLowerCase().trim());
+    const resumeSkills = (resume?.parsedData?.skills || user?.jobSeekerProfile?.skills || []).map(s => s.toLowerCase().trim());
+    const userDomain = (user?.jobSeekerProfile?.domain || user?.jobSeekerProfile?.desiredRole || '').toLowerCase();
+    const jobDomain = (job.domain || job.title || '').toLowerCase();
+
+    if (jobSkills.length === 0) {
+        return { fitScore: 50, fitLabel: 'No Requirements Set', fitColor: '#94a3b8' };
+    }
+
+    // Skill match: what fraction of required skills does the candidate have?
+    const matchedSkills = jobSkills.filter(js =>
+        resumeSkills.some(rs => rs.includes(js) || js.includes(rs))
+    );
+    const skillMatch = matchedSkills.length / jobSkills.length;
+
+    // Domain relevance: simple keyword overlap between user domain and job title/domain
+    const domainWords = jobDomain.split(/[\s\-_,]+/).filter(w => w.length > 2);
+    const userDomainWords = userDomain.split(/[\s\-_,]+/).filter(w => w.length > 2);
+    const domainOverlap = domainWords.length > 0
+        ? domainWords.filter(dw => userDomainWords.some(uw => uw.includes(dw) || dw.includes(uw))).length / domainWords.length
+        : 0;
+
+    const fitScore = Math.round((skillMatch * 0.65 + domainOverlap * 0.35) * 100);
+
+    let fitLabel, fitColor;
+    if (fitScore >= 70) { fitLabel = 'Strong Match'; fitColor = '#10b981'; }
+    else if (fitScore >= 40) { fitLabel = 'Partial Match'; fitColor = '#f59e0b'; }
+    else { fitLabel = 'Weak Match'; fitColor = '#ef4444'; }
+
+    return { fitScore, fitLabel, fitColor, matchedSkills, totalRequired: jobSkills.length };
+}
+
+/**
+ * GET /api/admin/applications
+ * List all job applications pending admin review, with AI fit scoring
+ */
+router.get('/applications', adminAuth, async (req, res) => {
+    try {
+        const { status = 'applied', page = 1, limit = 20 } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+
+        // 1. Find all jobs that have applicants with the requested status
+        const jobs = await Job.find({
+            'applicants.status': status
+        }).populate({
+            path: 'applicants.userId',
+            select: 'profile email jobSeekerProfile aiTalentPassport'
+        });
+
+        // 2. Flatten into a raw list of applications *without* processing fit scores or DB lookups yet
+        let rawApplications = [];
+
+        for (const job of jobs) {
+            const matchingApplicants = job.applicants.filter(a => a.status === status && a.userId);
+            for (const applicant of matchingApplicants) {
+                rawApplications.push({
+                    job,
+                    applicant,
+                    appliedAt: applicant.appliedAt
+                });
+            }
+        }
+
+        // 3. Sort by applied date (newest first)
+        rawApplications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+
+        const total = rawApplications.length;
+
+        // 4. Extract just the page we need
+        const paginatedRawApps = rawApplications.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+
+        // 5. Bulk fetch resumes for just this page
+        const userIdsForPage = paginatedRawApps.map(app => app.applicant.userId._id);
+        const resumes = await Resume.find({ userId: { $in: userIdsForPage } });
+
+        // Build a lookup map of userId -> resume
+        const resumeMap = {};
+        resumes.forEach(resume => {
+            resumeMap[resume.userId.toString()] = resume;
+        });
+
+        // 6. Process only the paginated subset
+        const applications = paginatedRawApps.map(({ job, applicant }) => {
+            const userStrId = applicant.userId._id.toString();
+            const resume = resumeMap[userStrId] || null;
+
+            const fit = computeFitScore(applicant.userId, resume, job);
+
+            return {
+                jobId: job._id,
+                jobTitle: job.title,
+                jobCompany: job.company?.name || 'N/A',
+                jobDomain: job.domain || 'General',
+                jobSkills: job.requirements?.skills || [],
+                userId: applicant.userId._id,
+                userName: applicant.userId.profile?.name || 'Unknown',
+                userEmail: applicant.userId.email,
+                userPhoto: applicant.userId.profile?.photo,
+                userDomain: applicant.userId.jobSeekerProfile?.domain || applicant.userId.jobSeekerProfile?.desiredRole || 'N/A',
+                userSkills: resume?.parsedData?.skills || applicant.userId.jobSeekerProfile?.skills || [],
+                atpScore: applicant.userId.aiTalentPassport?.talentScore || 0,
+                hasResume: !!resume,
+                resumeFileName: resume?.fileName || null,
+                appliedAt: applicant.appliedAt,
+                status: applicant.status,
+                fitScore: fit.fitScore,
+                fitLabel: fit.fitLabel,
+                fitColor: fit.fitColor,
+                matchedSkills: fit.matchedSkills || [],
+                totalRequired: fit.totalRequired || 0
+            };
+        });
+
+        res.json({
+            success: true,
+            data: {
+                applications,
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    total,
+                    pages: Math.ceil(total / limitNum)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Fetch applications error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch applications' });
+    }
+});
+
+/**
+ * POST /api/admin/applications/:jobId/:userId/approve
+ * Approve a candidate's application — sends email + in-app notification
+ */
+router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) => {
+    try {
+        const { jobId, userId } = req.params;
+
+        const job = await Job.findById(jobId);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+        const applicant = job.applicants.find(a => a.userId.toString() === userId);
+        if (!applicant) return res.status(404).json({ success: false, error: 'Applicant not found' });
+        if (applicant.status !== 'applied') {
+            return res.status(400).json({ success: false, error: `Applicant already has status: ${applicant.status}` });
+        }
+
+        // Update status to interviewing
+        applicant.status = 'interviewing';
+        await job.save();
+
+        // Get user info for notification/email
+        const user = await User.findById(userId);
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+        // Attempt to send notifications and audit log, but don't fail the request if they fail
+        try {
+            // Create in-app notification
+            await Notification.create({
+                userId,
+                type: 'application_status',
+                title: 'Application Approved!',
+                message: `Your application for "${job.title}" at ${job.company?.name || 'the company'} has been approved! You can now proceed to the interview.`,
+                relatedEntity: { entityType: 'job', entityId: job._id },
+                actionUrl: '/jobseeker/jobs',
+                actionText: 'View Jobs',
+                priority: 'high'
+            });
+
+            // Send email
+            if (user?.email) {
+                const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { background: #f9fafb; padding: 32px; }
+        .detail-card { background: white; border-radius: 10px; padding: 20px; margin: 16px 0; border: 1px solid #e5e7eb; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
+        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Application Approved!</h1>
+        </div>
+        <div class="content">
+            <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
+            <p>Great news! Your application for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong> has been approved.</p>
+            <div class="detail-card">
+                <p><strong>Next Step:</strong> You can now take the job-specific interview. Log in to your dashboard to get started.</p>
+            </div>
+            <center style="margin: 24px 0;">
+                <a href="${frontendUrl}/jobseeker/jobs" class="cta-button">
+                    View Jobs →
+                </a>
+            </center>
+            <p>Best of luck!<br/>The AI Hiring Platform Team</p>
+        </div>
+        <div class="footer">
+            <p>This email was sent by AI Hiring Platform.</p>
+        </div>
+    </div>
+</body>
+</html>`.trim();
+
+                await sendEmail({
+                    to: user.email,
+                    subject: `Application Approved — ${job.title}`,
+                    text: `Your application for ${job.title} has been approved! Log in to proceed to the interview.`,
+                    html
+                });
+            }
+
+            // Audit log
+            await auditLog(req, 'approve_application', 'job', job._id, {
+                userId, jobTitle: job.title
+            });
+        } catch (setupError) {
+            console.error('Failed to send approval notifications/email:', setupError);
+            // Non-fatal error since DB update succeeded
+        }
+
+        res.json({
+            success: true,
+            message: 'Application approved. Candidate has been notified.'
+        });
+    } catch (error) {
+        console.error('Approve application error:', error);
+        res.status(500).json({ success: false, error: 'Failed to approve application' });
+    }
+});
+
+/**
+ * POST /api/admin/applications/:jobId/:userId/reject
+ * Reject a candidate's application — sends email + in-app notification
+ */
+router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) => {
+    try {
+        const { jobId, userId } = req.params;
+        const { reason } = req.body;
+
+        const job = await Job.findById(jobId);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+        const applicant = job.applicants.find(a => a.userId.toString() === userId);
+        if (!applicant) return res.status(404).json({ success: false, error: 'Applicant not found' });
+        if (applicant.status !== 'applied') {
+            return res.status(400).json({ success: false, error: `Applicant already has status: ${applicant.status}` });
+        }
+
+        // Update status
+        applicant.status = 'rejected';
+        applicant.rejectionReason = reason || 'Application did not meet requirements for this role.';
+        await job.save();
+
+        // Get user info
+        const user = await User.findById(userId);
+
+        // Attempt to send notifications and audit log, but don't fail the request if they fail
+        try {
+            // In-app notification
+            await Notification.create({
+                userId,
+                type: 'application_status',
+                title: 'Application Update',
+                message: `Your application for "${job.title}" has been reviewed. Unfortunately, we are moving forward with other candidates at this time.`,
+                relatedEntity: { entityType: 'job', entityId: job._id },
+                actionUrl: '/jobseeker/jobs',
+                actionText: 'Browse More Jobs',
+                priority: 'medium'
+            });
+
+            // Send email
+            if (user?.email) {
+                const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { background: #f9fafb; padding: 32px; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
+        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Application Update</h1>
+        </div>
+        <div class="content">
+            <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
+            <p>Thank you for applying for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong>.</p>
+            <p>After careful review, we've decided to move forward with other candidates for this position. We encourage you to continue exploring other opportunities on our platform.</p>
+            <center style="margin: 24px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobseeker/jobs" class="cta-button">
+                    Browse More Jobs →
+                </a>
+            </center>
+            <p>Best regards,<br/>The AI Hiring Platform Team</p>
+        </div>
+        <div class="footer">
+            <p>This email was sent by AI Hiring Platform.</p>
+        </div>
+    </div>
+</body>
+</html>`.trim();
+
+                await sendEmail({
+                    to: user.email,
+                    subject: `Application Update — ${job.title}`,
+                    text: `Thank you for applying for ${job.title}. After review, we've decided to move forward with other candidates.`,
+                    html
+                });
+            }
+
+            // Audit log
+            await auditLog(req, 'reject_application', 'job', job._id, {
+                userId, jobTitle: job.title, reason
+            });
+        } catch (setupError) {
+            console.error('Failed to send rejection notifications/email:', setupError);
+            // Non-fatal error since DB update succeeded
+        }
+
+        res.json({
+            success: true,
+            message: 'Application rejected. Candidate has been notified.'
+        });
+    } catch (error) {
+        console.error('Reject application error:', error);
+        res.status(500).json({ success: false, error: 'Failed to reject application' });
+    }
+});
+
+/**
+ * GET /api/admin/applications/stats
+ * Quick stats for applications
+ */
+router.get('/applications/stats', adminAuth, async (req, res) => {
+    try {
+        const jobs = await Job.find({
+            'applicants.0': { $exists: true }
+        });
+
+        let pending = 0, approved = 0, rejected = 0;
+        for (const job of jobs) {
+            for (const app of job.applicants) {
+                if (app.status === 'applied') pending++;
+                else if (app.status === 'interviewing' || app.status === 'shortlisted' || app.status === 'hired') approved++;
+                else if (app.status === 'rejected') rejected++;
+            }
+        }
+
+        res.json({
+            success: true,
+            data: { pending, approved, rejected, total: pending + approved + rejected }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to fetch stats' });
+    }
+});
+
 module.exports = router;

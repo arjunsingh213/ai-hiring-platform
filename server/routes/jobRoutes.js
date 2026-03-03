@@ -486,9 +486,9 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Apply to job - ENHANCED with AI Interview integration - PROTECTED
-// REQUIRES: Platform interview must be passed before applying
-router.post('/:id/apply', userAuth, requireRole('jobseeker'), requirePlatformInterview, async (req, res) => {
+// Apply to job - PROTECTED
+// Application is submitted for admin review before interview starts
+router.post('/:id/apply', userAuth, requireRole('jobseeker'), async (req, res) => {
     try {
         const userId = req.userId; // Securely get user ID from token
         const { answers } = req.body;
@@ -501,26 +501,31 @@ router.post('/:id/apply', userAuth, requireRole('jobseeker'), requirePlatformInt
         // Check if already applied
         const alreadyApplied = job.applicants.some(app => app.userId.toString() === userId);
         if (alreadyApplied) {
-            // Check if there's a pending interview
-            const existingInterview = await Interview.findOne({
-                userId,
-                jobId: job._id,
-                status: { $in: ['scheduled', 'in_progress'] }
-            });
+            const applicant = job.applicants.find(app => app.userId.toString() === userId);
 
-            if (existingInterview) {
+            // If approved and has interview, redirect to interview
+            if (applicant.status === 'interviewing' && applicant.interviewId) {
                 return res.json({
                     success: true,
                     message: 'You have a pending interview for this job',
                     interviewRequired: true,
-                    interviewId: existingInterview._id
+                    interviewId: applicant.interviewId
+                });
+            }
+
+            // If still pending review
+            if (applicant.status === 'applied') {
+                return res.json({
+                    success: true,
+                    message: 'Your application is under review. Stay tuned!',
+                    applicationPending: true
                 });
             }
 
             return res.status(400).json({ success: false, error: 'Already applied to this job' });
         }
 
-        // Add to job applicants WITHOUT creating interview yet
+        // Add to job applicants — NO interview created yet, awaits admin approval
         job.applicants.push({
             userId,
             answers: answers || [],
@@ -533,8 +538,8 @@ router.post('/:id/apply', userAuth, requireRole('jobseeker'), requirePlatformInt
 
         res.json({
             success: true,
-            message: 'Application submitted! You will need to complete an AI interview.',
-            interviewRequired: true,
+            message: 'Application submitted successfully! Stay tuned for updates.',
+            applicationPending: true,
             jobId: job._id
         });
     } catch (error) {

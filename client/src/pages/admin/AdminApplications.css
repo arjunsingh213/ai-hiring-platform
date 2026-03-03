@@ -1,0 +1,63 @@
+/* Admin Applications Page Styles */
+
+.app-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.app-stat-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.app-stat-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+.app-stat-card.active {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.app-stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.app-stat-number.pending {
+    color: #f59e0b;
+}
+
+.app-stat-number.approved {
+    color: #10b981;
+}
+
+.app-stat-number.rejected {
+    color: #ef4444;
+}
+
+.app-stat-number.total {
+    color: #94a3b8;
+}
+
+.app-stat-label {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .app-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

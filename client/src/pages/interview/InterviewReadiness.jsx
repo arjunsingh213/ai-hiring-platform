@@ -400,12 +400,71 @@ const InterviewReadiness = ({
 
     const pipelineRounds = job?.interviewPipeline?.rounds?.length > 0 ? job.interviewPipeline.rounds : null;
 
+    // Mobile/tablet detection
+    const isMobileOrTablet = () => {
+        const ua = navigator.userAgent || '';
+        const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+        return mobileRegex.test(ua) || window.innerWidth <= 1024;
+    };
+
     if (loading) {
         return (
             <div className="readiness-page">
                 <div className="readiness-loading">
                     <div className="loading-spinner"></div>
                     <p>Loading interview details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Desktop-only gate
+    if (isMobileOrTablet()) {
+        return (
+            <div className="readiness-page">
+                <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    minHeight: '80vh', padding: '32px', textAlign: 'center', maxWidth: '520px', margin: '0 auto'
+                }}>
+                    <div style={{
+                        width: '80px', height: '80px', borderRadius: '20px',
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px'
+                    }}>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg>
+                    </div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary, #f8fafc)' }}>
+                        Desktop Required
+                    </h2>
+                    <p style={{ fontSize: '1rem', color: 'var(--text-secondary, #94a3b8)', lineHeight: '1.6', marginBottom: '24px' }}>
+                        For the best interview experience — including camera verification, screen sharing, and coding exercises — please switch to a <strong style={{ color: 'var(--text-primary, #e2e8f0)' }}>desktop or laptop computer</strong>.
+                    </p>
+                    <div style={{
+                        padding: '16px 24px', borderRadius: '12px',
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))',
+                        border: '1px solid rgba(99,102,241,0.2)', width: '100%', marginBottom: '24px'
+                    }}>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)', margin: 0, lineHeight: '1.5' }}>
+                            <strong style={{ color: '#6366f1' }}>Why desktop?</strong><br />
+                            Interviews require a webcam, microphone, and stable browser — features that work best on desktop for uninterrupted performance.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate(-1)}
+                        style={{
+                            padding: '12px 32px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: '600',
+                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
+                            border: 'none', cursor: 'pointer', transition: 'opacity 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
+                        onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                    >
+                        Go Back
+                    </button>
                 </div>
             </div>
         );

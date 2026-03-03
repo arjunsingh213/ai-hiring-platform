@@ -13,6 +13,7 @@ import AdminFeedbacks from './AdminFeedbacks';
 import AIUsageDashboard from './AIUsageDashboard';
 import AdminChallengeMonitoring from './AdminChallengeMonitoring';
 import AdminProjectReview from './AdminProjectReview';
+import AdminApplications from './AdminApplications';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -102,6 +103,17 @@ const AdminDashboard = () => {
                         <span>Interview Queue</span>
                     </NavLink>
 
+                    <NavLink to="/admin/applications" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                        <span>Applications</span>
+                    </NavLink>
+
                     <NavLink to="/admin/flagged" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
@@ -189,6 +201,7 @@ const AdminDashboard = () => {
                     <Route index element={<DashboardHome />} />
                     <Route path="interviews" element={<InterviewQueue />} />
                     <Route path="interviews/:id" element={<InterviewDetail />} />
+                    <Route path="applications" element={<AdminApplications />} />
                     <Route path="flagged" element={<InterviewQueue flaggedOnly />} />
                     <Route path="users" element={<UserControl />} />
                     <Route path="audit-logs" element={<AuditLogs />} />

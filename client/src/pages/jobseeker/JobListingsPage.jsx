@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import './JobListingsPage.css';
@@ -36,7 +36,7 @@ const JobListingsPage = () => {
     // Check if user has passed platform interview
     const checkPlatformInterviewStatus = async () => {
         try {
-            const response = await api.get(`/onboarding-interview/check-status/${userId}`);
+            const response = await api.get(`/ onboarding - interview / check - status / ${userId} `);
             if (response.success) {
                 setPlatformInterviewStatus(response.data || response); // Handle structure variation
             }
@@ -51,7 +51,7 @@ const JobListingsPage = () => {
             if (filters.type) params.append('type', filters.type);
             if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
 
-            const response = await api.get(`/jobs?${params.toString()}`);
+            const response = await api.get(`/ jobs ? ${params.toString()} `);
             const fetchedJobs = response.data || [];
             setJobs(fetchedJobs);
 
@@ -75,7 +75,7 @@ const JobListingsPage = () => {
 
     const checkExistingApplication = async (jobId) => {
         try {
-            const response = await api.get(`/jobs/${jobId}/interview-status/${userId}`);
+            const response = await api.get(`/ jobs / ${jobId} /interview-status/${userId} `);
             return response;
         } catch (error) {
             return { hasInterview: false };
@@ -87,13 +87,6 @@ const JobListingsPage = () => {
             toast.warning('Please login to apply for jobs');
             navigate('/login');
             return;
-        }
-
-        // Check platform interview status before applying - REDUCED TO WARNING for validation phase
-        if (platformInterviewStatus && !platformInterviewStatus.canApplyToJobs) {
-            // Keep the warning but don't prevent application if they really want to proceed
-            // However, the user wants it to be OPEN, so let's just log and move on or show a soft toast
-            console.log('Platform interview not passed, but proceeding for validation phase');
         }
 
         setApplying(true);
@@ -109,53 +102,27 @@ const JobListingsPage = () => {
             }
 
             if (existingStatus.hasInterview && existingStatus.interview?.id) {
-                // Resume existing interview - go to readiness screen first
-                navigate(`/interview/${existingStatus.interview.id}/ready`);
+                navigate(`/ interview / ${existingStatus.interview.id}/ready`);
                 return;
             }
 
             // Apply to job
             const response = await api.post(`/jobs/${jobId}/apply`, { userId });
 
-            if (response.interviewRequired) {
-                // New flow: Start job-specific interview via /job-interview/start
-                setShowApplyModal(true);
-
-                try {
-                    // Create job-specific interview using deepseekService
-                    const interviewResponse = await api.post('/job-interview/start', {
-                        userId,
-                        jobId: response.jobId || jobId
-                    });
-
-                    // Auto redirect to readiness screen after showing modal
-                    setTimeout(() => {
-                        setShowApplyModal(false);
-                        navigate(`/interview/${interviewResponse.interview.id}/ready`);
-                    }, 2500);
-                } catch (interviewError) {
-                    console.error('Error starting job interview:', interviewError);
-                    setShowApplyModal(false);
-                    toast.error('Failed to start interview. Please try again from the Interviews page.');
-                }
+            if (response.applicationPending) {
+                // Application submitted — awaiting admin review
+                toast.success('Application submitted! Stay tuned for updates.');
+                fetchJobs();
+            } else if (response.interviewRequired && response.interviewId) {
+                // Application already approved — resume interview
+                navigate(`/interview/${response.interviewId}/ready`);
             } else {
-                toast.success('Application submitted successfully!');
+                toast.success('Application submitted!');
                 fetchJobs();
             }
         } catch (error) {
             console.error('Error applying to job:', error);
-
-            // Handle 403 - platform interview required
-            if (error.code === 'INTERVIEW_REQUIRED' || error.code === 'INTERVIEW_FAILED') {
-                // For validation phase, we shouldn't hit this often if backend is opened, 
-                // but just in case, show a softer message.
-                toast.info('Completing the Platform Interview is recommended for better visibility.');
-            } else if (error.code === 'INTERVIEW_RETRY_AVAILABLE') {
-                toast.info('You can retry your platform interview now!');
-                navigate('/onboarding/jobseeker?step=interview');
-            } else {
-                toast.error(error.error || 'Failed to apply. Please try again.');
-            }
+            toast.error(error.error || 'Failed to apply. Please try again.');
         } finally {
             setApplying(false);
         }
@@ -187,6 +154,43 @@ const JobListingsPage = () => {
 
     const hasApplied = (job) => {
         return job.applicants?.some(app => app.userId === userId || app.userId?._id === userId);
+    };
+
+    // Get applicant status for a job (applied, interviewing, rejected, etc.)
+    const getApplicantStatus = (job) => {
+        const applicant = job.applicants?.find(app => app.userId === userId || app.userId?._id === userId);
+        return applicant?.status || null;
+    };
+
+    // Start interview after admin approval
+    const startInterview = async (jobId) => {
+        setApplying(true);
+        try {
+            // First check if there's already an interview
+            const existingStatus = await checkExistingApplication(jobId);
+            if (existingStatus.hasInterview && existingStatus.interview?.id) {
+                navigate(`/interview/${existingStatus.interview.id}/ready`);
+                return;
+            }
+
+            // Create new job-specific interview
+            const interviewResponse = await api.post('/job-interview/start', {
+                userId,
+                jobId
+            });
+
+            if (interviewResponse.interview?.id) {
+                toast.success('Interview ready! Redirecting...');
+                navigate(`/interview/${interviewResponse.interview.id}/ready`);
+            } else {
+                toast.error('Failed to start interview. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error starting interview:', error);
+            toast.error(error.error || 'Failed to start interview. Please try again.');
+        } finally {
+            setApplying(false);
+        }
     };
 
     // Share Job - copy shareable link to clipboard
@@ -314,7 +318,9 @@ const JobListingsPage = () => {
                                 </div>
                             </div>
                             {hasApplied(job) && (
-                                <span className="applied-badge">Applied</span>
+                                <span className={`applied-badge ${getApplicantStatus(job) === 'interviewing' ? 'approved' : ''}`}>
+                                    {getApplicantStatus(job) === 'interviewing' ? 'Approved' : 'Applied'}
+                                </span>
                             )}
                         </div>
                     ))}
@@ -368,21 +374,49 @@ const JobListingsPage = () => {
                                 </div>
                                 <div className="job-actions">
                                     {hasApplied(selectedJob) ? (
-                                        <div className="applied-status-group">
-                                            <div className="applied-indicator">
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                <span>Applied</span>
+                                        getApplicantStatus(selectedJob) === 'interviewing' ? (
+                                            /* Approved — show Start Now button */
+                                            <div className="apply-section">
+                                                <button
+                                                    className="btn btn-primary"
+                                                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                                                    onClick={() => startInterview(selectedJob._id)}
+                                                    disabled={applying}
+                                                >
+                                                    {applying ? (
+                                                        <>
+                                                            <span className="loading-spinner"></span>
+                                                            Starting...
+                                                        </>
+                                                    ) : (
+                                                        <>Start Now</>
+                                                    )}
+                                                </button>
+                                                <p style={{ fontSize: '0.78rem', color: '#10b981', margin: '6px 0 0', fontWeight: '500' }}>
+                                                    Your application has been approved! Click to start the interview.
+                                                </p>
                                             </div>
-                                            <button
-                                                className="btn btn-withdraw"
-                                                onClick={() => withdrawFromJob(selectedJob._id)}
-                                                disabled={withdrawing}
-                                            >
-                                                {withdrawing ? 'Withdrawing...' : 'Withdraw'}
-                                            </button>
-                                        </div>
+                                        ) : (
+                                            /* Pending review — show Applied + Stay tuned */
+                                            <div className="applied-status-group">
+                                                <div className="applied-indicator">
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                    <span>Applied</span>
+                                                </div>
+                                                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '4px 0 8px' }}>
+                                                    Stay tuned! Your application is being reviewed.
+                                                </p>
+                                                <button
+                                                    className="btn btn-withdraw"
+                                                    onClick={() => withdrawFromJob(selectedJob._id)}
+                                                    disabled={withdrawing}
+                                                >
+                                                    {withdrawing ? 'Withdrawing...' : 'Withdraw'}
+                                                </button>
+                                            </div>
+                                        )
                                     ) : (
                                         <div className="apply-section">
                                             <button
@@ -399,11 +433,9 @@ const JobListingsPage = () => {
                                                     <>Apply Now</>
                                                 )}
                                             </button>
-                                            {platformInterviewStatus && !platformInterviewStatus.canApplyToJobs && (
-                                                <p className="apply-info-message">
-                                                    💡 Pro Tip: Complete the <a href="/jobseeker/interviews">Platform Interview</a> to stand out!
-                                                </p>
-                                            )}
+                                            <p className="apply-info-message" style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '6px' }}>
+                                                Complete the <Link to="/jobseeker/interviews">Platform Interview</Link> to stand out!
+                                            </p>
                                         </div>
                                     )}
                                     <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={handleShareJob} title="Copy shareable link">
