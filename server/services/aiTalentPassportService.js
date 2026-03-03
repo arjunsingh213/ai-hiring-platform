@@ -8,6 +8,7 @@ const User = require('../models/User');
 const Interview = require('../models/Interview');
 const SkillNode = require('../models/SkillNode');
 const geminiService = require('./ai/geminiService'); // For ATP synthesis
+const googleSheetService = require('./googleSheetService');
 
 class AITalentPassportService {
     /**
@@ -341,6 +342,12 @@ class AITalentPassportService {
             };
 
             await User.findByIdAndUpdate(userId, { $set: updateData });
+
+            // Background: Sync updated ATP and interview counts to Google Sheets
+            const updatedUser = await User.findById(userId);
+            if (updatedUser) {
+                googleSheetService.syncUser(updatedUser);
+            }
 
             console.log(`✅ AI Talent Passport updated for user ${userId}`);
             return updateData;

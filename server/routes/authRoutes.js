@@ -6,6 +6,16 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendVerificationEmail } = require('../utils/email');
 const { getIO } = require('../config/socket');
+const googleSheetService = require('../services/googleSheetService');
+
+if (!process.env.JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+        console.error('CRITICAL ERROR: JWT_SECRET environment variable is missing. Cannot start server.');
+        process.exit(1);
+    }
+    // Fallback strictly for local development
+    process.env.JWT_SECRET = 'your_jwt_secret_key_change_in_production';
+}
 
 /**
  * @route   POST /api/auth/register
@@ -78,6 +88,9 @@ router.post('/register', async (req, res) => {
                 message: 'Registration successful! Please check your email to verify your account.'
             }
         });
+
+        // Background: Sync to Google Sheets
+        googleSheetService.syncUser(user).catch(err => console.error('Failed to background sync registered user:', err));
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({
@@ -174,7 +187,7 @@ router.post('/verify-email', async (req, res) => {
         // Generate JWT token
         const jwtToken = jwt.sign(
             { userId: user._id, role: user.role },
-            process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -220,6 +233,9 @@ router.post('/verify-email', async (req, res) => {
             },
             message: 'Email verified successfully'
         });
+
+        // Background: Sync email verification to Google Sheets
+        googleSheetService.syncUser(user).catch(err => console.error('Failed to background sync verified user:', err));
     } catch (error) {
         console.error('Verification error:', error);
         res.status(500).json({
@@ -273,6 +289,11 @@ router.post('/login', async (req, res) => {
             });
         }
 
+        // Record login metrics
+        user.lastLogin = new Date();
+        user.totalLogins = (user.totalLogins || 0) + 1;
+        await user.save();
+
         // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, role: user.role },
@@ -294,6 +315,9 @@ router.post('/login', async (req, res) => {
             },
             message: 'Login successful'
         });
+
+        // Background: Sync latest login data to Google Sheets
+        googleSheetService.syncUser(user).catch(err => console.error('Failed to background sync logged in user:', err));
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -329,7 +353,7 @@ router.post('/forgot-password', async (req, res) => {
         }
 
         // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto.randomInt(100000, 1000000).toString();
 
         // Store OTP and expiry (10 minutes)
         user.passwordResetOTP = otp;
@@ -488,7 +512,7 @@ router.post('/send-work-email-otp', async (req, res) => {
         }
 
         // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto.randomInt(100000, 1000000).toString();
 
         // Update user
         user.recruiterProfile = user.recruiterProfile || {};

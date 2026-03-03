@@ -3,9 +3,19 @@ const Admin = require('../models/Admin');
 const AuditLog = require('../models/AuditLog');
 
 // Admin JWT secret (separate from user secret)
-const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET + '_admin';
-const ADMIN_TOKEN_EXPIRY = '8h';
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+let ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
+
+if (!ADMIN_JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+        console.error('CRITICAL ERROR: ADMIN_JWT_SECRET environment variable is missing.');
+        console.error('The server cannot start in production without a secure ADMIN_JWT_SECRET.');
+        process.exit(1);
+    }
+    // Fallback strictly allowed only in local development
+    ADMIN_JWT_SECRET = (process.env.JWT_SECRET || 'dev_fallback_secret') + '_admin';
+}
+const ADMIN_TOKEN_EXPIRY = '2d';
+const INACTIVITY_TIMEOUT = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 /**
  * Generate admin JWT token

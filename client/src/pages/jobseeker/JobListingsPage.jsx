@@ -36,7 +36,7 @@ const JobListingsPage = () => {
     // Check if user has passed platform interview
     const checkPlatformInterviewStatus = async () => {
         try {
-            const response = await api.get(`/ onboarding - interview / check - status / ${userId} `);
+            const response = await api.get(`/onboarding-interview/check-status/${userId}`);
             if (response.success) {
                 setPlatformInterviewStatus(response.data || response); // Handle structure variation
             }
@@ -51,7 +51,7 @@ const JobListingsPage = () => {
             if (filters.type) params.append('type', filters.type);
             if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
 
-            const response = await api.get(`/ jobs ? ${params.toString()} `);
+            const response = await api.get(`/jobs?${params.toString()}`);
             const fetchedJobs = response.data || [];
             setJobs(fetchedJobs);
 
@@ -75,7 +75,7 @@ const JobListingsPage = () => {
 
     const checkExistingApplication = async (jobId) => {
         try {
-            const response = await api.get(`/ jobs / ${jobId} /interview-status/${userId} `);
+            const response = await api.get(`/jobs/${jobId}/interview-status/${userId}`);
             return response;
         } catch (error) {
             return { hasInterview: false };

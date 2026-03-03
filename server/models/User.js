@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema({
     },
     verificationToken: String,
 
+    lastLogin: Date,
+    totalLogins: {
+        type: Number,
+        default: 0
+    },
+
     // Password Reset Fields
     passwordResetOTP: String,
     passwordResetToken: String,

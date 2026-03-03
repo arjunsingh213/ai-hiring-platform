@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import './AdminDashboard.css';
 import AITalentPassport from '../../components/AITalentPassport/AITalentPassport';
 
@@ -17,16 +18,21 @@ const UserControl = () => {
     const [viewingATPUser, setViewingATPUser] = useState(null);
     const [atpProjects, setAtpProjects] = useState([]);
     const [showModal, setShowModal] = useState(null);
-    const [formData, setFormData] = useState({ reason: '' });
+    const [formData, setFormData] = useState({ reason: '', newScore: 0, inviteJobId: '' });
     const [actionLoading, setActionLoading] = useState(false);
     const [resumeData, setResumeData] = useState(null);
     const [activities, setActivities] = useState([]);
     const [activityPagination, setActivityPagination] = useState({ page: 1, total: 0 });
     const [fetchingDetail, setFetchingDetail] = useState(false);
+    const [activeJobs, setActiveJobs] = useState([]);
 
     useEffect(() => {
         fetchUsers();
-    }, [page, filters]);
+    }, [page, search, filters.role, filters.isSuspended]); // Updated dependencies for fetchUsers
+
+    useEffect(() => {
+        fetchActiveJobs();
+    }, []); // New useEffect for fetching active jobs
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -59,6 +65,21 @@ const UserControl = () => {
         }
     };
 
+    const fetchActiveJobs = async () => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/jobs?status=active`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success && data.data) {
+                setActiveJobs(data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch jobs for invitation dropdown:', err);
+        }
+    };
+
     const fetchUserProjects = async (userId) => {
         try {
             const token = localStorage.getItem('adminToken');
@@ -85,9 +106,19 @@ const UserControl = () => {
         setActionLoading(true);
         try {
             const token = localStorage.getItem('adminToken');
-            const body = { reason: formData.reason };
+            let body = {};
             if (action === 'atp') {
+                if (!formData.reason || formData.reason.trim() === '') {
+                    alert('Please provide a reason for the ATP score update.');
+                    setActionLoading(false);
+                    return;
+                }
                 body.newScore = formData.newScore;
+                body.reason = formData.reason;
+            } else if (action === 'invite') {
+                body.inviteJobId = formData.inviteJobId;
+            } else {
+                body.reason = formData.reason;
             }
 
             const response = await fetch(`${API_URL}/admin/users/${userId}/${endpoint}`, {
@@ -104,7 +135,7 @@ const UserControl = () => {
             if (data.success) {
                 setShowModal(null);
                 setSelectedUser(null);
-                setFormData({ reason: '' });
+                setFormData({ reason: '', newScore: 0, inviteJobId: '' });
                 fetchUsers();
             } else {
                 alert(data.error || 'Action failed');
@@ -161,9 +192,93 @@ const UserControl = () => {
         }
     };
 
-    const handleDownloadResume = (userId) => {
-        const token = localStorage.getItem('adminToken');
-        window.open(`${API_URL}/admin/users/${userId}/resume/download?adminToken=${token}`, '_blank');
+    const handleInviteUser = async () => {
+        if (!formData.inviteJobId || !selectedUser) return;
+        setActionLoading(true);
+        try {
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch(`${API_URL}/admin/jobs/${formData.inviteJobId}/invite/${selectedUser._id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setShowModal(null);
+                setFormData({ ...formData, inviteJobId: '' });
+                alert('Job invitation email sent successfully!');
+            } else {
+                alert(data.error || 'Failed to send invitation');
+            }
+        } catch (err) {
+            console.error('Invitation failed:', err);
+            alert('Failed to send invitation due to network error.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDownloadResume = async (userId) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/admin/users/${userId}/resume/download`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            let filename = `resume_${userId}.pdf`;
+            const disposition = response.headers.get('content-disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error downloading resume:', error);
+            alert('Failed to download resume. Please try again.');
+        }
+    };
+
+    const handleDownloadSheet = async () => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const timestamp = new Date().getTime();
+            const response = await fetch(`${API_URL}/admin/users/export-sheet?t=${timestamp}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'Froscel_Users_Export.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error downloading sheet:', error);
+            alert('Failed to download user sheet. Please try again.');
+        }
     };
 
     const formatDuration = (seconds) => {
@@ -200,6 +315,20 @@ const UserControl = () => {
                 <div>
                     <h1>User Control</h1>
                     <p>Manage user accounts and interview eligibility</p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                        onClick={handleDownloadSheet}
+                        className="admin-action-btn success"
+                        style={{ padding: '10px 16px', fontWeight: '600' }}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download User Sheet
+                    </button>
                 </div>
             </div>
 
@@ -402,6 +531,19 @@ const UserControl = () => {
                                                     View Resume
                                                 </button>
 
+                                                {user.role === 'jobseeker' && (
+                                                    <button
+                                                        className="admin-action-btn"
+                                                        style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#6366F1' }}
+                                                        onClick={() => {
+                                                            setSelectedUser(user);
+                                                            setShowModal('invite');
+                                                        }}
+                                                    >
+                                                        Invite
+                                                    </button>
+                                                )}
+
                                                 <button
                                                     className="admin-action-btn"
                                                     style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}
@@ -508,6 +650,7 @@ const UserControl = () => {
                                 {showModal === 'reset' && 'Reset Interview Eligibility'}
                                 {showModal === 'offender' && 'Mark as Repeat Offender'}
                                 {showModal === 'atp' && 'Update AI Talent Passport Score'}
+                                {showModal === 'invite' && 'Invite to Job Opportunity'}
                             </h2>
                             <button className="admin-modal-close" onClick={() => setShowModal(null)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -528,27 +671,55 @@ const UserControl = () => {
                                 <span style={{ color: '#64748b', display: 'block' }}>{selectedUser.email}</span>
                             </div>
 
-                            <div className="admin-form-group">
-                                <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>
-                                    Reason {showModal !== 'unsuspend' && '*'}
-                                </label>
-                                <textarea
-                                    value={formData.reason}
-                                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                    placeholder={showModal === 'unsuspend' ? 'Optional notes...' : 'Enter reason...'}
-                                    rows={4}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px',
-                                        background: 'rgba(0,0,0,0.2)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px',
-                                        color: '#f8fafc',
-                                        fontSize: '0.9rem',
-                                        resize: 'vertical'
-                                    }}
-                                />
-                            </div>
+                            {showModal === 'invite' ? (
+                                <div className="admin-form-group">
+                                    <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>
+                                        Select Target Job *
+                                    </label>
+                                    <select
+                                        value={formData.inviteJobId}
+                                        onChange={(e) => setFormData({ ...formData, inviteJobId: e.target.value })}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            background: '#0f172a',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '8px',
+                                            color: '#f8fafc',
+                                            fontSize: '0.9rem',
+                                            WebkitAppearance: 'none'
+                                        }}
+                                    >
+                                        <option value="">-- Choose an internal Active Job --</option>
+                                        {activeJobs.map(job => (
+                                            <option key={job._id} value={job._id}>{job.title} ({job.company?.name || 'Froscel'})</option>
+                                        ))}
+                                    </select>
+                                    <p style={{ marginTop: '10px', fontSize: '0.8rem', color: '#94a3b8' }}>This will trigger a professional email and an inside-platform system alert containing the job applying link attached.</p>
+                                </div>
+                            ) : (
+                                <div className="admin-form-group">
+                                    <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>
+                                        Reason {showModal !== 'unsuspend' && '*'}
+                                    </label>
+                                    <textarea
+                                        value={formData.reason}
+                                        onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                                        placeholder={showModal === 'unsuspend' ? 'Optional notes...' : 'Enter reason...'}
+                                        rows={4}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            background: 'rgba(0,0,0,0.2)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '8px',
+                                            color: '#f8fafc',
+                                            fontSize: '0.9rem',
+                                            resize: 'vertical'
+                                        }}
+                                    />
+                                </div>
+                            )}
 
                             {showModal === 'atp' && (
                                 <div className="admin-form-group" style={{ marginTop: '16px' }}>
@@ -561,7 +732,7 @@ const UserControl = () => {
                                             min="0"
                                             max="100"
                                             value={formData.newScore}
-                                            onChange={(e) => setFormData({ ...formData, newScore: parseInt(e.target.value) })}
+                                            onChange={(e) => setFormData({ ...formData, newScore: parseInt(e.target.value) || 0 })}
                                             style={{
                                                 width: '100px',
                                                 padding: '12px',
@@ -577,7 +748,7 @@ const UserControl = () => {
                                             min="0"
                                             max="100"
                                             value={formData.newScore}
-                                            onChange={(e) => setFormData({ ...formData, newScore: parseInt(e.target.value) })}
+                                            onChange={(e) => setFormData({ ...formData, newScore: parseInt(e.target.value) || 0 })}
                                             style={{ flex: 1 }}
                                         />
                                     </div>
@@ -594,18 +765,22 @@ const UserControl = () => {
                                 Cancel
                             </button>
                             <button
-                                className={`admin-action-btn ${showModal === 'unsuspend' || showModal === 'reset' || showModal === 'atp' ? 'success' : 'danger'}`}
+                                className={`admin-action-btn ${showModal === 'unsuspend' || showModal === 'reset' || showModal === 'atp' || showModal === 'invite' ? 'success' : 'danger'}`}
                                 onClick={() => {
-                                    const endpoints = {
-                                        suspend: 'suspend',
-                                        unsuspend: 'unsuspend',
-                                        reset: 'reset-eligibility',
-                                        offender: 'mark-offender',
-                                        atp: 'update-atp'
-                                    };
-                                    handleAction(selectedUser._id, showModal, endpoints[showModal]);
+                                    if (showModal === 'invite') {
+                                        handleInviteUser();
+                                    } else {
+                                        const endpoints = {
+                                            suspend: 'suspend',
+                                            unsuspend: 'unsuspend',
+                                            reset: 'reset-eligibility',
+                                            offender: 'mark-offender',
+                                            atp: 'update-atp'
+                                        };
+                                        handleAction(selectedUser._id, showModal, endpoints[showModal]);
+                                    }
                                 }}
-                                disabled={actionLoading || (showModal !== 'unsuspend' && !formData.reason)}
+                                disabled={actionLoading || (showModal === 'invite' ? !formData.inviteJobId : (showModal !== 'unsuspend' && !formData.reason))}
                             >
                                 {actionLoading ? 'Processing...' : 'Confirm'}
                             </button>
@@ -713,7 +888,7 @@ const UserControl = () => {
                                                         maxHeight: '300px',
                                                         overflowY: 'auto'
                                                     }}
-                                                    dangerouslySetInnerHTML={{ __html: resumeData.htmlContent }}
+                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(resumeData.htmlContent) }}
                                                 />
                                             </div>
                                         )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './AdminApplications.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -12,7 +12,7 @@ const AdminApplications = () => {
     const [actionLoading, setActionLoading] = useState(null);
     const [filter, setFilter] = useState('applied');
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-    const [showModal, setShowModal] = useState(null); // { type: 'approve'|'reject', app }
+    const [showModal, setShowModal] = useState(null); // { type: 'approve'|'reject'|'invite', app }
     const [rejectReason, setRejectReason] = useState('');
     const [resumeModal, setResumeModal] = useState(null); // userId for resume viewing
 
@@ -131,6 +131,32 @@ const AdminApplications = () => {
     const formatDate = (d) => {
         if (!d) return '-';
         return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const handleInviteToJob = async (app) => {
+        setActionLoading(`${app.jobId}-${app.userId}-invite`);
+        try {
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch(`${API_URL}/admin/jobs/${app.jobId}/invite/${app.userId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Job invitation email sent successfully!');
+                setShowModal(null);
+            } else {
+                alert(data.error || 'Failed to send invitation');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to send invitation.');
+        } finally {
+            setActionLoading(null);
+        }
     };
 
     return (
@@ -305,6 +331,14 @@ const AdminApplications = () => {
                                                         Approve
                                                     </button>
                                                     <button
+                                                        className="admin-action-btn primary"
+                                                        style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+                                                        onClick={() => setShowModal({ type: 'invite', app })}
+                                                        disabled={actionLoading === `${app.jobId}-${app.userId}-invite`}
+                                                    >
+                                                        Invite
+                                                    </button>
+                                                    <button
                                                         className="admin-action-btn danger"
                                                         onClick={() => setShowModal({ type: 'reject', app })}
                                                         disabled={actionLoading === `${app.jobId}-${app.userId}`}
@@ -356,7 +390,7 @@ const AdminApplications = () => {
                 <div className="admin-modal-overlay" onClick={() => setShowModal(null)}>
                     <div className="admin-modal" style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
                         <div className="admin-modal-header">
-                            <h2>{showModal.type === 'approve' ? 'Approve Application' : 'Reject Application'}</h2>
+                            <h2>{showModal.type === 'approve' ? 'Approve Application' : showModal.type === 'invite' ? 'Invite Candidate' : 'Reject Application'}</h2>
                             <button className="admin-modal-close" onClick={() => setShowModal(null)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -386,6 +420,10 @@ const AdminApplications = () => {
                             {showModal.type === 'approve' ? (
                                 <p style={{ color: '#e2e8f0', fontSize: '0.9rem' }}>
                                     This will approve the candidate to take the job-specific interview. They will receive an <strong>email</strong> and an <strong>in-app notification</strong>.
+                                </p>
+                            ) : showModal.type === 'invite' ? (
+                                <p style={{ color: '#e2e8f0', fontSize: '0.9rem' }}>
+                                    This will send an invitation <strong>email</strong> and an <strong>in-app notification</strong> to the candidate, encouraging them to apply for this position.
                                 </p>
                             ) : (
                                 <div className="admin-form-group">
@@ -417,16 +455,18 @@ const AdminApplications = () => {
                                 Cancel
                             </button>
                             <button
-                                className={`admin-action-btn ${showModal.type === 'approve' ? 'success' : 'danger'}`}
+                                className={`admin-action-btn ${showModal.type === 'approve' ? 'success' : showModal.type === 'invite' ? 'primary' : 'danger'}`}
                                 onClick={() => showModal.type === 'approve'
                                     ? handleApprove(showModal.app)
-                                    : handleReject(showModal.app)
+                                    : showModal.type === 'invite'
+                                        ? handleInviteToJob(showModal.app)
+                                        : handleReject(showModal.app)
                                 }
                                 disabled={!!actionLoading}
                             >
                                 {actionLoading
                                     ? 'Processing...'
-                                    : showModal.type === 'approve' ? 'Approve & Notify' : 'Reject & Notify'
+                                    : showModal.type === 'approve' ? 'Approve & Notify' : showModal.type === 'invite' ? 'Send Invite' : 'Reject & Notify'
                                 }
                             </button>
                         </div>

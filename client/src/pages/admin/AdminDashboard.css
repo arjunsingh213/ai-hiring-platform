@@ -225,6 +225,7 @@
     position: fixed;
     height: 100vh;
     z-index: 100;
+    overflow-y: auto;
 }
 
 .admin-sidebar-header {
@@ -271,7 +272,11 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    overflow-y: auto;
+    padding-right: 8px;
+    /* For scrollbar inset space */
 }
+
 
 .admin-nav-item {
     display: flex;

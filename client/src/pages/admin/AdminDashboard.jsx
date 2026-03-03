@@ -14,6 +14,7 @@ import AIUsageDashboard from './AIUsageDashboard';
 import AdminChallengeMonitoring from './AdminChallengeMonitoring';
 import AdminProjectReview from './AdminProjectReview';
 import AdminApplications from './AdminApplications';
+import AdminJobs from './AdminJobs';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -114,6 +115,14 @@ const AdminDashboard = () => {
                         <span>Applications</span>
                     </NavLink>
 
+                    <NavLink to="/admin/jobs" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                        </svg>
+                        <span>Jobs</span>
+                    </NavLink>
+
                     <NavLink to="/admin/flagged" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
@@ -202,6 +211,7 @@ const AdminDashboard = () => {
                     <Route path="interviews" element={<InterviewQueue />} />
                     <Route path="interviews/:id" element={<InterviewDetail />} />
                     <Route path="applications" element={<AdminApplications />} />
+                    <Route path="jobs" element={<AdminJobs />} />
                     <Route path="flagged" element={<InterviewQueue flaggedOnly />} />
                     <Route path="users" element={<UserControl />} />
                     <Route path="audit-logs" element={<AuditLogs />} />

@@ -4,17 +4,22 @@ const bcrypt = require('bcryptjs');
 
 const Admin = require('../models/Admin');
 const AuditLog = require('../models/AuditLog');
+const googleSheetService = require('../services/googleSheetService');
 const Interview = require('../models/Interview');
 const User = require('../models/User');
 const {
     generateAdminToken,
     adminAuth,
-    requirePermission,
     auditLog,
-    adminRateLimiter
+    adminRateLimiter,
+    requirePermission
 } = require('../middleware/adminAuth');
 
 const AIUsage = require('../models/AIUsage');
+const Job = require('../models/Job');
+const Notification = require('../models/Notification');
+const Resume = require('../models/Resume');
+const { sendJobInvitationEmail } = require('../utils/email');
 const aiUsageService = require('../services/ai/aiUsageService');
 
 // ==================== AUTHENTICATION ====================
@@ -495,6 +500,27 @@ router.get('/dashboard/trends', adminAuth, async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to fetch trends'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/users/export-sheet
+ * Download the Google Sheets user sync data as CSV
+ */
+router.get('/users/export-sheet', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const csvData = await googleSheetService.exportSheetAsCSV();
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="Froscel_Users_Export.csv"');
+
+        res.send(csvData);
+    } catch (error) {
+        console.error('Export sheet error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to export sheet data'
         });
     }
 });
@@ -1335,6 +1361,11 @@ router.post('/users/:id/suspend', adminAuth, requirePermission('suspend_users'),
             metadata: { targetEmail: user.email }
         });
 
+        // Background: Sync to Google Sheets
+        googleSheetService.syncUser(user).catch(err => {
+            console.error('Failed to background sync suspended user to sheets:', err);
+        });
+
         res.json({
             success: true,
             message: 'User suspended'
@@ -1373,6 +1404,11 @@ router.post('/users/:id/unsuspend', adminAuth, requirePermission('suspend_users'
         await auditLog(req, 'unsuspend_user', 'user', user._id, {
             newValue: { isSuspended: false },
             metadata: { targetEmail: user.email }
+        });
+
+        // Background: Sync to Google Sheets
+        googleSheetService.syncUser(user).catch(err => {
+            console.error('Failed to background sync unsuspended user to sheets:', err);
         });
 
         res.json({
@@ -1420,6 +1456,9 @@ router.post('/users/:id/reset-eligibility', adminAuth, requirePermission('allow_
             metadata: { targetEmail: user.email }
         });
 
+        // Background: Sync to Google Sheets
+        googleSheetService.syncUser(user);
+
         res.json({
             success: true,
             message: 'Interview eligibility reset'
@@ -1460,6 +1499,9 @@ router.post('/users/:id/mark-offender', adminAuth, requirePermission('suspend_us
             newValue: { isRepeatOffender: true },
             metadata: { targetEmail: user.email }
         });
+
+        // Background: Sync to Google Sheets
+        googleSheetService.syncUser(user);
 
         res.json({
             success: true,
@@ -1530,6 +1572,9 @@ router.post('/users/:id/update-atp', adminAuth, requirePermission('adjust_scores
                 targetName: user.profile?.name
             }
         });
+
+        // Background: Sync to Google Sheets
+        googleSheetService.syncUser(user);
 
         res.json({
             success: true,
@@ -1761,6 +1806,63 @@ router.post('/:id/toggle-status', adminAuth, requirePermission('manage_admins'),
     }
 });
 
+// ==================== CANDIDATE INVITATIONS ====================
+
+/**
+ * POST /api/admin/jobs/:jobId/invite/:userId
+ * Send a professional job invitation email to a suitable candidate
+ */
+router.post('/jobs/:jobId/invite/:userId', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const { jobId, userId } = req.params;
+        const job = await Job.findById(jobId);
+        const candidate = await User.findById(userId);
+
+        if (!job || !candidate) {
+            return res.status(404).json({
+                success: false,
+                error: 'Job or Candidate not found.'
+            });
+        }
+
+        // 1. Send an industry-standard email
+        await sendJobInvitationEmail(candidate, job);
+
+        // 2. Add an in-app Notification for the candidate
+        const notification = new Notification({
+            userId: candidate._id,
+            type: 'job_recommendation',
+            title: `You are invited to apply for ${job.title}`,
+            message: `Froscel has identified you as a great fit for ${job.title} at ${job.company?.name || 'our platform'}! Review the details and apply while openings remain.`,
+            relatedEntity: {
+                entityType: 'job',
+                entityId: job._id
+            },
+            actionUrl: `/jobseeker/jobs?id=${job._id}`,
+            actionText: 'View Job'
+        });
+        await notification.save();
+
+        // 3. Log Audit
+        await auditLog(req, 'invite_candidate', 'user', candidate._id, {
+            reason: 'Invited based on strong profile match',
+            metadata: { targetEmail: candidate.email, jobToken: job.title }
+        });
+
+        return res.json({
+            success: true,
+            message: `Invitation successfully sent to ${candidate.profile?.name || candidate.email}.`
+        });
+
+    } catch (error) {
+        console.error('Job invitation failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to dispatch the job invitation.'
+        });
+    }
+});
+
 /**
  * POST /api/admin/:id/force-reset-password
  * Force password reset for admin (super_admin only)
@@ -1889,9 +1991,6 @@ router.get('/:id/activity', adminAuth, requirePermission('manage_admins'), async
 
 // ==================== JOB APPLICATION REVIEW ====================
 
-const Job = require('../models/Job');
-const Resume = require('../models/Resume');
-const Notification = require('../models/Notification');
 const { sendEmail } = require('../services/emailService');
 
 /**
@@ -2270,6 +2369,107 @@ router.get('/applications/stats', adminAuth, async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Failed to fetch stats' });
+    }
+});
+
+// ==================== ADMIN JOBS MANAGEMENT ====================
+
+/**
+ * GET /api/admin/jobs
+ * Get all posted jobs across the platform with pagination and filters
+ */
+router.get('/jobs', adminAuth, requirePermission('view_interviews'), async (req, res) => {
+    try {
+        const { page = 1, limit = 20, status, search } = req.query;
+        const query = {};
+
+        if (status && status !== 'all') query.status = status;
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { 'company.name': { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [jobs, total] = await Promise.all([
+            Job.find(query)
+                .populate('recruiterId', 'profile.name email')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(parseInt(limit))
+                .lean(),
+            Job.countDocuments(query)
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                jobs,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Fetch admin jobs error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch jobs' });
+    }
+});
+
+/**
+ * PUT /api/admin/jobs/:id
+ * Update job details
+ */
+router.put('/jobs/:id', adminAuth, requirePermission('approve_interviews'), async (req, res) => {
+    try {
+        const updates = req.body;
+
+        // Prevent changing recruiter ownership entirely without caution
+        if (updates.recruiterId) delete updates.recruiterId;
+
+        const job = await Job.findByIdAndUpdate(
+            req.params.id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        if (!job) {
+            return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        await auditLog(req, 'admin_update_job', 'job', job._id, { updates });
+
+        res.json({ success: true, data: job });
+    } catch (error) {
+        console.error('Update job error:', error);
+        res.status(500).json({ success: false, error: 'Failed to update job' });
+    }
+});
+
+/**
+ * DELETE /api/admin/jobs/:id
+ * Instead of hard delete, mark it closed.
+ */
+router.delete('/jobs/:id', adminAuth, requirePermission('approve_interviews'), async (req, res) => {
+    try {
+        const job = await Job.findById(req.params.id);
+        if (!job) {
+            return res.status(404).json({ success: false, error: 'Job not found' });
+        }
+
+        job.status = 'closed';
+        await job.save();
+
+        await auditLog(req, 'admin_close_job', 'job', job._id, { action: 'closed_by_admin' });
+
+        res.json({ success: true, message: 'Job has been marked as closed.' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to close job.' });
     }
 });
 
