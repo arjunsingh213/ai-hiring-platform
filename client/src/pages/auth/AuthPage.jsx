@@ -192,8 +192,16 @@ const AuthPage = () => {
                         navigate('/onboarding/role-selection');
                     }
                 } else if (redirectPath) {
-                    // Redirect to the intended page (e.g. from a shared job link)
-                    navigate(redirectPath);
+                    // Validate redirect path to prevent open redirects
+                    const isSafeRedirect = (path) => {
+                        if (!path || typeof path !== 'string') return false;
+                        // Must start with "/" but NOT "//" (protocol-relative)
+                        if (!path.startsWith('/') || path.startsWith('//')) return false;
+                        // Reject absolute URLs with protocols
+                        if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) return false;
+                        return true;
+                    };
+                    navigate(isSafeRedirect(redirectPath) ? redirectPath : '/');
                 } else if (user.role === 'jobseeker') {
                     navigate('/jobseeker/home');
                 } else {

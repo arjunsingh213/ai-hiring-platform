@@ -142,7 +142,7 @@ const UserControl = () => {
         setFetchingDetail(true);
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch(`${API_URL}/activity/admin/${userId}?page=${pageNum}&limit=10`, {
+            const response = await fetch(`${API_URL}/activity/admin/${userId}?page=${pageNum}&limit=25`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -730,9 +730,14 @@ const UserControl = () => {
             {/* Activity Log Modal */}
             {showModal === 'activity' && selectedUser && (
                 <div className="admin-modal-overlay" onClick={() => setShowModal(null)}>
-                    <div className="admin-modal" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal" style={{ maxWidth: '900px', width: '95%' }} onClick={e => e.stopPropagation()}>
                         <div className="admin-modal-header">
-                            <h2>User Activity Logs</h2>
+                            <div>
+                                <h2>User Activity Logs</h2>
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>
+                                    {selectedUser.profile?.name} — {selectedUser.email}
+                                </p>
+                            </div>
                             <button className="admin-modal-close" onClick={() => setShowModal(null)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -740,32 +745,74 @@ const UserControl = () => {
                                 </svg>
                             </button>
                         </div>
-                        <div className="admin-modal-body">
+                        <div className="admin-modal-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
                             {fetchingDetail ? (
                                 <div className="admin-loading-spinner" style={{ margin: '40px auto' }}></div>
                             ) : (
                                 <div className="activity-list">
-                                    <table className="admin-table" style={{ fontSize: '0.85rem' }}>
+                                    <table className="admin-table" style={{ fontSize: '0.82rem' }}>
                                         <thead>
                                             <tr>
                                                 <th>Time</th>
                                                 <th>Action</th>
-                                                <th>Feature</th>
+                                                <th>Page / Feature</th>
+                                                <th>Path</th>
                                                 <th>Duration</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {activities.map((act, i) => (
-                                                <tr key={i}>
-                                                    <td>{new Date(act.timestamp).toLocaleString()}</td>
-                                                    <td style={{ fontWeight: '500' }}>{act.action.replace(/_/g, ' ')}</td>
-                                                    <td>{act.feature}</td>
-                                                    <td>{act.duration > 0 ? formatDuration(act.duration) : '-'}</td>
-                                                </tr>
-                                            ))}
+                                            {activities.map((act, i) => {
+                                                const actionColors = {
+                                                    PAGE_VIEW: { bg: 'rgba(56,189,248,0.15)', color: '#38bdf8' },
+                                                    HEARTBEAT: { bg: 'rgba(148,163,184,0.15)', color: '#94a3b8' },
+                                                    LOGIN: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+                                                    LOGOUT: { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24' },
+                                                    START_INTERVIEW: { bg: 'rgba(139,92,246,0.15)', color: '#a78bfa' },
+                                                    SUBMIT_ANSWER: { bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
+                                                    COMPLETE_INTERVIEW: { bg: 'rgba(16,185,129,0.2)', color: '#34d399' },
+                                                    UPLOAD_RESUME: { bg: 'rgba(244,114,182,0.15)', color: '#f472b6' },
+                                                    UPDATE_PROFILE: { bg: 'rgba(251,146,60,0.15)', color: '#fb923c' },
+                                                };
+                                                const ac = actionColors[act.action] || { bg: 'rgba(255,255,255,0.06)', color: '#94a3b8' };
+
+                                                return (
+                                                    <tr key={i}>
+                                                        <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}>
+                                                            {new Date(act.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}{' '}
+                                                            <span style={{ color: '#64748b' }}>
+                                                                {new Date(act.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span style={{
+                                                                display: 'inline-block',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '4px',
+                                                                background: ac.bg,
+                                                                color: ac.color,
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: '600',
+                                                                letterSpacing: '0.02em',
+                                                                textTransform: 'uppercase'
+                                                            }}>
+                                                                {act.action.replace(/_/g, ' ')}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ fontWeight: '500', color: '#e2e8f0' }}>
+                                                            {act.feature}
+                                                        </td>
+                                                        <td style={{ color: '#64748b', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                                                            {act.page || '-'}
+                                                        </td>
+                                                        <td style={{ color: act.duration > 0 ? '#38bdf8' : '#475569' }}>
+                                                            {act.duration > 0 ? formatDuration(act.duration) : '-'}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                             {activities.length === 0 && (
                                                 <tr>
-                                                    <td colSpan="4" style={{ textAlign: 'center', color: '#64748b' }}>No activity logs found.</td>
+                                                    <td colSpan="5" style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>No activity logs found.</td>
                                                 </tr>
                                             )}
                                         </tbody>

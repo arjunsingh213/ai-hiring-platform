@@ -4,6 +4,74 @@ import { useLocation } from 'react-router-dom';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const HEARTBEAT_INTERVAL = 60000; // 1 minute
 
+/**
+ * Maps a URL path to a detailed, human-readable feature name.
+ * This is the single source of truth for page-level activity tracking.
+ */
+const getFeatureFromPath = (path) => {
+    // Normalize: strip trailing slash, lowercase
+    const p = path.replace(/\/$/, '').toLowerCase();
+
+    // ── Job Seeker Pages ──
+    if (p === '/jobseeker/home' || p === '/jobseeker/feed') return 'Home Feed';
+    if (p === '/jobseeker/dashboard') return 'Dashboard';
+    if (p === '/jobseeker/jobs') return 'Job Listings';
+    if (p === '/jobseeker/applications') return 'My Applications';
+    if (p === '/jobseeker/interviews') return 'Interviews';
+    if (p === '/jobseeker/challenges' || p.startsWith('/jobseeker/challenges')) return 'Challenges';
+    if (p === '/jobseeker/settings') return 'Settings';
+    if (p === '/jobseeker/profile') return 'Profile';
+    if (p === '/jobseeker/talent-passport') return 'Talent Passport';
+    if (p === '/jobseeker/messages') return 'Messages';
+    if (p === '/jobseeker/notifications') return 'Notifications';
+    if (p === '/jobseeker/onboarding') return 'Onboarding Portal';
+    if (p.startsWith('/jobseeker/')) return 'Job Seeker — ' + p.split('/jobseeker/')[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    // ── Recruiter Pages ──
+    if (p === '/recruiter/home' || p === '/recruiter/feed') return 'Recruiter Home';
+    if (p === '/recruiter/dashboard') return 'Recruiter Dashboard';
+    if (p === '/recruiter/my-jobs') return 'My Jobs';
+    if (p === '/recruiter/post-job') return 'Post Job';
+    if (p === '/recruiter/applications') return 'View Applications';
+    if (p === '/recruiter/analytics') return 'Analytics';
+    if (p === '/recruiter/interviews') return 'Interview Scheduling';
+    if (p === '/recruiter/candidates') return 'Candidate Search';
+    if (p === '/recruiter/talent-search') return 'Talent Search';
+    if (p === '/recruiter/settings') return 'Recruiter Settings';
+    if (p === '/recruiter/profile') return 'Recruiter Profile';
+    if (p === '/recruiter/messages') return 'Messages';
+    if (p.startsWith('/recruiter/')) return 'Recruiter — ' + p.split('/recruiter/')[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    // ── Interview Pages ──
+    if (p.match(/^\/interview\/[^/]+\/ready$/)) return 'Interview Readiness Check';
+    if (p.match(/^\/interview\/[^/]+\/results$/)) return 'Interview Results';
+    if (p.match(/^\/interview\/[^/]+$/)) return 'AI Interview';
+    if (p.match(/^\/interview-room\/[^/]+$/)) return 'Video Interview Room';
+    if (p === '/interview-room') return 'Interview Room Landing';
+    if (p.match(/^\/interview-report\/[^/]+$/)) return 'Interview Report';
+
+    // ── Auth & Onboarding ──
+    if (p === '/login' || p === '/auth') return 'Login';
+    if (p === '/signup') return 'Signup';
+    if (p === '/forgot-password') return 'Forgot Password';
+    if (p.startsWith('/verify-email')) return 'Email Verification';
+    if (p === '/onboarding/role-selection') return 'Onboarding — Role Selection';
+    if (p === '/onboarding/jobseeker') return 'Onboarding — Job Seeker';
+    if (p === '/onboarding/recruiter') return 'Onboarding — Recruiter';
+
+    // ── Public/Shared Pages ──
+    if (p === '/' || p === '/landing-old') return 'Landing Page';
+    if (p.startsWith('/profile/')) return 'Public Profile';
+    if (p.startsWith('/jobs/')) return 'Shared Job Link';
+    if (p === '/glossary') return 'Glossary';
+    if (p === '/blog') return 'Blog';
+
+    // ── Admin ──
+    if (p.startsWith('/admin')) return 'Admin Panel';
+
+    return 'Other';
+};
+
 export const useActivityTracker = () => {
     const location = useLocation();
     const lastReportTime = useRef(Date.now());
@@ -32,31 +100,20 @@ export const useActivityTracker = () => {
                 })
             });
         } catch (error) {
-            console.error('Failed to log activity:', error);
+            // Silent fail — activity logging should never block UX
         }
     };
 
-    // Track page views
+    // Track page views with detailed feature names
     useEffect(() => {
-        const path = location.pathname;
-        let feature = 'general';
-
-        if (path.includes('/interview/')) feature = 'interview';
-        else if (path.includes('/jobseeker')) feature = 'jobseeker_dashboard';
-        else if (path.includes('/recruiter')) feature = 'recruiter_dashboard';
-        else if (path.includes('/profile')) feature = 'profile';
-
+        const feature = getFeatureFromPath(location.pathname);
         logActivity('PAGE_VIEW', feature);
     }, [location.pathname]);
 
-    // Heartbeat for time spent tracking
+    // Heartbeat for time spent tracking — reports which page user is currently on
     useEffect(() => {
         const interval = setInterval(() => {
-            const path = location.pathname;
-            let feature = 'general';
-            if (path.includes('/interview/')) feature = 'interview';
-            else if (path.includes('/jobseeker')) feature = 'jobseeker_dashboard';
-
+            const feature = getFeatureFromPath(location.pathname);
             logActivity('HEARTBEAT', feature);
         }, HEARTBEAT_INTERVAL);
 

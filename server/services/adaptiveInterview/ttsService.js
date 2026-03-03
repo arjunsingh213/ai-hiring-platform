@@ -8,17 +8,21 @@ class TTSService {
      * @returns {Buffer} Audio data (mp3)
      */
     static async generateAudio(text) {
+        // ElevenLabs TTS disabled — free tier blocked.
+        // Returning a valid silent MP3 so the interview flow continues without voice.
+        // To re-enable, uncomment the ElevenLabs block below and remove this early return.
+        console.log('[TTSService] TTS disabled (ElevenLabs removed). Returning silent audio.');
+        const silentMp3Base64 = 'SUQzBAAAAAAAAFRTU0UAAAAPAAADTGFtZTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+        return Buffer.from(silentMp3Base64, 'base64');
+
+        /*
+        // --- ElevenLabs TTS (commented out) ---
         if (!process.env.ELEVENLABS_API_KEY) {
-            console.warn('[TTSService] No ElevenLabs API key found. Returning valid silent MP3 buffer.');
-            // Base64 for a 1-second silent MP3
-            const silentMp3Base64 = 'SUQzBAAAAAAAAFRTU0UAAAAPAAADTGFtZTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+            console.warn('[TTSService] No ElevenLabs API key found.');
             return Buffer.from(silentMp3Base64, 'base64');
         }
-
         try {
-            // Default to 'Adam' for high-quality professional voice available on all free tiers
-            const voiceId = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Standard ElevenLabs voice
-
+            const voiceId = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB';
             const response = await axios({
                 method: 'post',
                 url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
@@ -29,20 +33,17 @@ class TTSService {
                 },
                 data: {
                     text: text,
-                    model_id: 'eleven_turbo_v2_5', // Faster model for real-time
-                    voice_settings: {
-                        stability: 0.5,
-                        similarity_boost: 0.75
-                    }
+                    model_id: 'eleven_turbo_v2_5',
+                    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
                 },
                 responseType: 'arraybuffer'
             });
-
             return Buffer.from(response.data);
         } catch (error) {
             console.error('[TTSService] ElevenLabs API error:', error.response?.data ? error.response.data.toString() : error.message);
             throw new Error('TTS Generation failed');
         }
+        */
     }
 }
 

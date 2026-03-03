@@ -14,7 +14,7 @@ const JobShareRedirect = () => {
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        const role = localStorage.getItem('role');
+        const role = localStorage.getItem('userRole');
 
         if (!token) {
             // Not logged in — send to login with redirect back
