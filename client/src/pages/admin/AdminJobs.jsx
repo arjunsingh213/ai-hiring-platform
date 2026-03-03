@@ -17,7 +17,6 @@ const AdminJobs = () => {
     const [editingJob, setEditingJob] = useState(null);
     const [editForm, setEditForm] = useState({ title: '', companyName: '', status: '', description: '', type: 'full-time', remote: false, salaryMin: '', salaryMax: '', salaryPeriod: 'yearly' });
     const [saving, setSaving] = useState(false);
-    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         fetchJobs();
