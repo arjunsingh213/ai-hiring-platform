@@ -15,7 +15,8 @@ const AdminJobs = () => {
 
     // Edit Modal State
     const [editingJob, setEditingJob] = useState(null);
-    const [editForm, setEditForm] = useState({ title: '', companyName: '', status: '' });
+    const [editForm, setEditForm] = useState({ title: '', companyName: '', status: '', description: '', type: 'full-time', remote: false, salaryMin: '', salaryMax: '', salaryPeriod: 'yearly' });
+    const [saving, setSaving] = useState(false);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -54,9 +55,15 @@ const AdminJobs = () => {
     const handleEditClick = (job) => {
         setEditingJob(job);
         setEditForm({
-            title: job.title,
+            title: job.title || '',
             companyName: job.company?.name || '',
-            status: job.status
+            status: job.status || 'active',
+            description: job.description || '',
+            type: job.jobDetails?.type || 'full-time',
+            remote: job.jobDetails?.remote || false,
+            salaryMin: job.jobDetails?.salary?.min || '',
+            salaryMax: job.jobDetails?.salary?.max || '',
+            salaryPeriod: job.jobDetails?.salary?.period || 'yearly'
         });
     };
 
@@ -74,13 +81,36 @@ const AdminJobs = () => {
                 body: JSON.stringify({
                     title: editForm.title,
                     'company.name': editForm.companyName,
-                    status: editForm.status
+                    status: editForm.status,
+                    description: editForm.description,
+                    'jobDetails.type': editForm.type,
+                    'jobDetails.remote': editForm.remote,
+                    'jobDetails.salary.min': editForm.salaryMin ? Number(editForm.salaryMin) : null,
+                    'jobDetails.salary.max': editForm.salaryMax ? Number(editForm.salaryMax) : null,
+                    'jobDetails.salary.period': editForm.salaryPeriod
                 })
             });
 
             const data = await response.json();
             if (data.success) {
-                setJobs(prev => prev.map(j => j._id === editingJob._id ? { ...j, title: editForm.title, company: { ...j.company, name: editForm.companyName }, status: editForm.status } : j));
+                setJobs(prev => prev.map(j => j._id === editingJob._id ? {
+                    ...j,
+                    title: editForm.title,
+                    company: { ...j.company, name: editForm.companyName },
+                    status: editForm.status,
+                    description: editForm.description,
+                    jobDetails: {
+                        ...j.jobDetails,
+                        type: editForm.type,
+                        remote: editForm.remote,
+                        salary: {
+                            ...j.jobDetails?.salary,
+                            min: editForm.salaryMin ? Number(editForm.salaryMin) : null,
+                            max: editForm.salaryMax ? Number(editForm.salaryMax) : null,
+                            period: editForm.salaryPeriod
+                        }
+                    }
+                } : j));
                 setEditingJob(null);
             } else {
                 alert('Failed to update job');
@@ -111,7 +141,7 @@ const AdminJobs = () => {
     };
 
     return (
-        <div className="admin-jobs-container">
+        <div className="admin-jobs-container" style={{ backgroundColor: '#0f172a', minHeight: '100%', padding: '24px', color: '#f8fafc' }}>
             <div className="admin-page-header">
                 <div>
                     <h1>Jobs Management</h1>
@@ -144,7 +174,7 @@ const AdminJobs = () => {
                 </div>
             </div>
 
-            <div className="admin-table-container">
+            <div className="admin-table-container" style={{ backgroundColor: '#1e293b', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}>
                 {loading ? (
                     <div className="admin-loading"><div className="admin-loading-spinner"></div></div>
                 ) : jobs.length === 0 ? (
@@ -223,28 +253,62 @@ const AdminJobs = () => {
                             <form onSubmit={handleEditSubmit} className="admin-form">
                                 <div className="form-group">
                                     <label>Job Title</label>
-                                    <input
-                                        type="text"
-                                        value={editForm.title}
-                                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                                        required
-                                    />
+                                    <input type="text" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} required />
                                 </div>
                                 <div className="form-group">
                                     <label>Company Name</label>
-                                    <input
-                                        type="text"
-                                        value={editForm.companyName}
-                                        onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
-                                        placeholder="Keep blank for Confidential"
+                                    <input type="text" value={editForm.companyName} onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })} placeholder="Keep blank for Confidential" />
+                                </div>
+                                <div className="form-group">
+                                    <label>Description</label>
+                                    <textarea
+                                        value={editForm.description}
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                        rows="3"
+                                        placeholder="Brief overview of the role..."
+                                        style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 1)', borderRadius: '6px', fontSize: '0.95rem', color: '#f8fafc', resize: 'vertical' }}
                                     />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div className="form-group">
+                                        <label>Job Type</label>
+                                        <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}>
+                                            <option value="full-time">Full-Time</option>
+                                            <option value="part-time">Part-Time</option>
+                                            <option value="contract">Contract</option>
+                                            <option value="internship">Internship</option>
+                                            <option value="freelance">Freelance</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Workplace Mode</label>
+                                        <select value={editForm.remote ? 'remote' : 'onsite'} onChange={(e) => setEditForm({ ...editForm, remote: e.target.value === 'remote' })}>
+                                            <option value="onsite">On-site / Hybrid</option>
+                                            <option value="remote">Remote</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                    <div className="form-group">
+                                        <label>Min Salary</label>
+                                        <input type="number" placeholder="e.g. 50000" value={editForm.salaryMin} onChange={(e) => setEditForm({ ...editForm, salaryMin: e.target.value })} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Max Salary</label>
+                                        <input type="number" placeholder="e.g. 80000" value={editForm.salaryMax} onChange={(e) => setEditForm({ ...editForm, salaryMax: e.target.value })} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Period</label>
+                                        <select value={editForm.salaryPeriod} onChange={(e) => setEditForm({ ...editForm, salaryPeriod: e.target.value })}>
+                                            <option value="yearly">Yearly</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="hourly">Hourly</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="form-group">
                                     <label>Status</label>
-                                    <select
-                                        value={editForm.status}
-                                        onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                                    >
+                                    <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
                                         <option value="active">Active</option>
                                         <option value="draft">Draft</option>
                                         <option value="closed">Closed</option>

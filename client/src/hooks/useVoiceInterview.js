@@ -35,7 +35,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
         const fetchConfig = async () => {
             if (!interviewId) return;
             try {
-                const response = await fetch(`http://localhost:5000/api/interviews/${interviewId}`, {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/interviews/${interviewId}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await response.json();
@@ -202,7 +202,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
         setAvatarState('idle');
         setCurrentQuestionText("Connecting to AI Interviewer...");
 
-        const socketUrl = 'http://localhost:5000';
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
         console.log('[Voice] 🔌 Establishing connection for', interviewId, 'round trigger:', resetTrigger);
 
         const newSocket = io(`${socketUrl}/adaptive-interview`, {

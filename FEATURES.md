@@ -398,6 +398,7 @@
 - [x] **Admin Feedbacks** — view and manage user feedback submissions
 - [x] **Challenge Monitoring** — monitor challenge attempts, risk scores, anti-cheat flags
 - [x] **Project Review** — review and approve/reject verified projects (GitHub projects)
+- [x] **Jobs Management** — administer, edit, search, filter, and close published platform jobs
 - [x] **Account Status Management** — suspend accounts, mark offenders with notes
 - [x] **Admin Setup Route** — initial admin setup for fresh deployments (protected by secret)
 

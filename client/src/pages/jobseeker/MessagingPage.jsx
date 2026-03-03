@@ -24,7 +24,7 @@ const MessagingPage = () => {
 
     useEffect(() => {
         // Initialize Socket.io with environment variable
-        const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
         const newSocket = io(socketUrl);
         setSocket(newSocket);
 

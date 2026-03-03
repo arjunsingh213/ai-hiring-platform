@@ -1,102 +1,104 @@
 .admin-jobs-container {
     padding: 24px;
-    background-color: #f8fafc;
+    background-color: transparent;
+    color: #e2e8f0;
     min-height: 100%;
 }
 
-.admin-controls-bar {
+.admin-jobs-container .admin-controls-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    background: #ffffff;
+    background: rgba(30, 41, 59, 1);
     padding: 16px;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     gap: 16px;
 }
 
-.search-box {
+.admin-jobs-container .search-box {
     display: flex;
     align-items: center;
-    background: #f1f5f9;
+    background: rgba(15, 23, 42, 1);
     padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     flex: 1;
     max-width: 400px;
 }
 
-.search-box svg {
+.admin-jobs-container .search-box svg {
     width: 18px;
     height: 18px;
-    color: #64748b;
+    color: #94a3b8;
     margin-right: 12px;
 }
 
-.search-box input {
+.admin-jobs-container .search-box input {
     border: none;
     background: transparent;
     width: 100%;
     outline: none;
     font-size: 0.95rem;
-    color: #334155;
+    color: #f8fafc;
 }
 
-.filter-group select {
+.admin-jobs-container .filter-group select {
     padding: 10px 16px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    background-color: white;
-    color: #334155;
+    background-color: rgba(15, 23, 42, 1);
+    color: #f8fafc;
     font-size: 0.95rem;
     cursor: pointer;
     outline: none;
     transition: all 0.2s;
 }
 
-.filter-group select:focus {
+.admin-jobs-container .filter-group select:focus {
     border-color: #6366f1;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
-.admin-table-container {
-    background: #ffffff;
+.admin-jobs-container .admin-table-container {
+    background: rgba(30, 41, 59, 1);
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     overflow-x: auto;
 }
 
-.job-title-cell strong {
+.admin-jobs-container .job-title-cell strong {
     display: block;
-    color: #1e293b;
+    color: #f8fafc;
     margin-bottom: 4px;
 }
 
-.job-type {
+.admin-jobs-container .job-type {
     font-size: 0.75rem;
-    color: #64748b;
-    background: #f1f5f9;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
 }
 
-.recruiter-cell span {
+.admin-jobs-container .recruiter-cell span {
     display: block;
-    color: #334155;
+    color: #f8fafc;
     font-weight: 500;
 }
 
-.recruiter-cell small {
+.admin-jobs-container .recruiter-cell small {
     display: block;
-    color: #64748b;
+    color: #94a3b8;
 }
 
-.action-buttons {
+.admin-jobs-container .action-buttons {
     display: flex;
     gap: 8px;
 }
 
-.action-btn {
+.admin-jobs-container .action-btn {
     padding: 6px 12px;
     border: none;
     border-radius: 6px;
@@ -106,22 +108,24 @@
     transition: all 0.2s;
 }
 
-.action-btn.edit {
-    background: #eff6ff;
-    color: #3b82f6;
+.admin-jobs-container .action-btn.edit {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-.action-btn.edit:hover {
-    background: #dbeafe;
+.admin-jobs-container .action-btn.edit:hover {
+    background: rgba(59, 130, 246, 0.25);
 }
 
-.action-btn.delete {
-    background: #fef2f2;
-    color: #ef4444;
+.admin-jobs-container .action-btn.delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.action-btn.delete:hover {
-    background: #fee2e2;
+.admin-jobs-container .action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.25);
 }
 
 /* Modal specific overrides if any */
@@ -129,10 +133,11 @@
 .admin-modal-content .form-group select {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 1);
     border-radius: 6px;
     font-size: 0.95rem;
-    color: #1e293b;
+    color: #f8fafc;
     transition: all 0.2s;
 }
 

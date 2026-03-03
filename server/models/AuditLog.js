@@ -21,6 +21,7 @@ const auditLogSchema = new mongoose.Schema({
             'allow_reattempt',
             'confirm_cheating',
             'dismiss_cheating_flags',
+            'invite_candidate',
 
             // User actions
             'view_user',
@@ -34,6 +35,7 @@ const auditLogSchema = new mongoose.Schema({
             'create_admin',
             'deactivate_admin',
             'update_admin_permissions',
+            'update_status',
 
             // System actions
             'export_data',

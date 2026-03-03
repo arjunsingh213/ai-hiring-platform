@@ -13,6 +13,7 @@ const JobListingsPage = () => {
 
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
+    const [activeTab, setActiveTab] = useState('description');
     const [showMobileDetails, setShowMobileDetails] = useState(false); // NEW: For mobile job details modal
     const [categoryFilter, setCategoryFilter] = useState('all'); // all, applied, rejected
     const [filters, setFilters] = useState({
@@ -449,56 +450,100 @@ const JobListingsPage = () => {
                             </div>
 
                             <div className="job-tabs">
-                                <button className="tab-btn active">Job Description</button>
-                                <button className="tab-btn">Company Profile</button>
+                                <button
+                                    className={`tab-btn ${activeTab === 'description' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('description')}
+                                >
+                                    Job Description
+                                </button>
+                                <button
+                                    className={`tab-btn ${activeTab === 'company' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('company')}
+                                >
+                                    Company Profile
+                                </button>
                             </div>
 
                             <div className="job-content card">
-                                <section>
-                                    <h3>About the Role</h3>
-                                    <p>{selectedJob.description}</p>
-                                </section>
+                                {activeTab === 'description' ? (
+                                    <>
+                                        <section>
+                                            <h3>About the Role</h3>
+                                            <p>{selectedJob.description}</p>
+                                        </section>
 
-                                <section>
-                                    <h3>Required Skills</h3>
-                                    <div className="skills-list">
-                                        {selectedJob.requirements?.skills?.map((skill, index) => (
-                                            <span key={index} className="skill-tag">{skill}</span>
-                                        ))}
-                                    </div>
-                                </section>
+                                        <section>
+                                            <h3>Required Skills</h3>
+                                            <div className="skills-list">
+                                                {selectedJob.requirements?.skills?.map((skill, index) => (
+                                                    <span key={index} className="skill-tag">{skill}</span>
+                                                ))}
+                                            </div>
+                                        </section>
 
-                                <section>
-                                    <h3>Requirements</h3>
-                                    <ul>
-                                        <li>Experience: {selectedJob.requirements?.minExperience || 0}-{selectedJob.requirements?.maxExperience || 5} years</li>
-                                        <li>Education: {selectedJob.requirements?.education?.join(', ') || 'Not specified'}</li>
-                                    </ul>
-                                </section>
+                                        <section>
+                                            <h3>Requirements</h3>
+                                            <ul>
+                                                <li>Experience: {selectedJob.requirements?.minExperience || 0} - {selectedJob.requirements?.maxExperience || 5} years</li>
+                                                <li>Education: {selectedJob.requirements?.education?.join(', ') || 'Not specified'}</li>
+                                            </ul>
+                                        </section>
 
-                                {selectedJob.jobDetails?.salary && (
-                                    <section>
-                                        <h3>Compensation</h3>
-                                        <p>
-                                            {selectedJob.jobDetails.salary.currency} {selectedJob.jobDetails.salary.min?.toLocaleString()} - {selectedJob.jobDetails.salary.max?.toLocaleString()} / {selectedJob.jobDetails.salary.period}
-                                        </p>
-                                    </section>
+                                        {selectedJob.jobDetails?.salary && (
+                                            <section>
+                                                <h3>Compensation</h3>
+                                                <p>
+                                                    {selectedJob.jobDetails.salary.currency} {selectedJob.jobDetails.salary.min?.toLocaleString()} - {selectedJob.jobDetails.salary.max?.toLocaleString()} / {selectedJob.jobDetails.salary.period}
+                                                </p>
+                                            </section>
+                                        )}
+
+                                        {/* AI Interview Notice */}
+                                        <section className="interview-notice card-glass">
+                                            <h3>🤖 AI Interview Required</h3>
+                                            <p>
+                                                After applying, you'll complete a brief AI-powered interview. Our AI will:
+                                            </p>
+                                            <ul>
+                                                <li>✓ Match your resume with the job requirements</li>
+                                                <li>✓ Ask personalized questions based on your experience</li>
+                                                <li>✓ Evaluate your responses in real-time</li>
+                                                <li>✓ Generate a comprehensive report for the recruiter</li>
+                                            </ul>
+                                            <p className="text-muted">Typically takes 15-20 minutes</p>
+                                        </section>
+                                    </>
+                                ) : (
+                                    <>
+                                        <section>
+                                            <h3>About {selectedJob.company?.name || 'Company'}</h3>
+                                            <p>{selectedJob.company?.description || 'Company description is currently confidential or not provided for this listing.'}</p>
+                                        </section>
+
+                                        <section className="company-details-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px' }}>
+                                            <div className="detail-item">
+                                                <h4 style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 4px' }}>Industry</h4>
+                                                <p style={{ margin: 0, fontWeight: 500 }}>{selectedJob.company?.industry || 'Confidential'}</p>
+                                            </div>
+                                            <div className="detail-item">
+                                                <h4 style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 4px' }}>Company Size</h4>
+                                                <p style={{ margin: 0, fontWeight: 500 }}>{selectedJob.company?.size || 'Confidential'}</p>
+                                            </div>
+                                            <div className="detail-item">
+                                                <h4 style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 4px' }}>Location</h4>
+                                                <p style={{ margin: 0, fontWeight: 500 }}>{selectedJob.company?.location || 'Remote / Unspecified'}</p>
+                                            </div>
+                                            <div className="detail-item">
+                                                <h4 style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 4px' }}>Website</h4>
+                                                <p style={{ margin: 0, fontWeight: 500 }}>
+                                                    {selectedJob.company?.website ? (
+                                                        <a href={selectedJob.company.website.startsWith('http') ? selectedJob.company.website : `https://${selectedJob.company.website}`} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none' }}>Visit Website ↗</a>
+                                                    ) : 'Not provided'}
+                                                </p>
+                                            </div>
+                                        </section>
+                                    </>
                                 )}
-
-                                {/* AI Interview Notice */}
-                                <section className="interview-notice card-glass">
-                                    <h3>🤖 AI Interview Required</h3>
-                                    <p>
-                                        After applying, you'll complete a brief AI-powered interview. Our AI will:
-                                    </p>
-                                    <ul>
-                                        <li>✓ Match your resume with the job requirements</li>
-                                        <li>✓ Ask personalized questions based on your experience</li>
-                                        <li>✓ Evaluate your responses in real-time</li>
-                                        <li>✓ Generate a comprehensive report for the recruiter</li>
-                                    </ul>
-                                    <p className="text-muted">Typically takes 15-20 minutes</p>
-                                </section>
                             </div>
                         </>
                     ) : (

@@ -5,6 +5,7 @@ let socket = null;
 export const getSocket = () => {
     if (!socket) {
         const socketUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SOCKET_URL)
+            || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL?.replace('/api', ''))
             || 'http://localhost:5000';
         console.log('[SocketService] Initializing socket connection to:', socketUrl);
 
