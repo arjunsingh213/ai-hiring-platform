@@ -204,6 +204,7 @@ const JobListingsPage = () => {
             toast.success('Share link copied to clipboard!');
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
+            console.error('Clipboard write failed, using fallback:', err);
             const textArea = document.createElement('textarea');
             textArea.value = shareUrl;
             document.body.appendChild(textArea);
@@ -235,61 +236,77 @@ const JobListingsPage = () => {
 
             {/* Category Tabs + Filters */}
             <div className="jobs-header">
-                <div className="category-tabs">
-                    <button
-                        className={`category-tab ${categoryFilter === 'all' ? 'active' : ''}`}
-                        onClick={() => setCategoryFilter('all')}
-                    >
-                        All Jobs
-                    </button>
-                    <button
-                        className={`category-tab ${categoryFilter === 'applied' ? 'active' : ''}`}
-                        onClick={() => setCategoryFilter('applied')}
-                    >
-                        Applied
-                    </button>
-                    <button
-                        className={`category-tab ${categoryFilter === 'rejected' ? 'active' : ''}`}
-                        onClick={() => setCategoryFilter('rejected')}
-                    >
-                        Rejected
-                    </button>
-                </div>
-                <div className="filter-controls">
-                    <select
-                        className="filter-select"
-                        value={filters.type}
-                        onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                    >
-                        <option value="">All Types</option>
-                        <option value="full-time">Full Time</option>
-                        <option value="part-time">Part Time</option>
-                        <option value="contract">Contract</option>
-                        <option value="internship">Internship</option>
-                    </select>
-                    <select
-                        className="filter-select"
-                        value={filters.experienceLevel}
-                        onChange={(e) => setFilters({ ...filters, experienceLevel: e.target.value })}
-                    >
-                        <option value="">All Levels</option>
-                        <option value="entry">Entry Level</option>
-                        <option value="mid">Mid Level</option>
-                        <option value="senior">Senior Level</option>
-                        <option value="expert">Expert</option>
-                    </select>
-                </div>
+                {jobIdFromUrl ? (
+                    <div style={{ display: 'flex', alignItems: 'center', width: '100%', paddingBottom: '12px' }}>
+                        <Link to="/jobseeker/jobs" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            View All Jobs
+                        </Link>
+                    </div>
+                ) : (
+                    <>
+                        <div className="category-tabs">
+                            <button
+                                className={`category-tab ${categoryFilter === 'all' ? 'active' : ''}`}
+                                onClick={() => setCategoryFilter('all')}
+                            >
+                                All Jobs
+                            </button>
+                            <button
+                                className={`category-tab ${categoryFilter === 'applied' ? 'active' : ''}`}
+                                onClick={() => setCategoryFilter('applied')}
+                            >
+                                Applied
+                            </button>
+                            <button
+                                className={`category-tab ${categoryFilter === 'rejected' ? 'active' : ''}`}
+                                onClick={() => setCategoryFilter('rejected')}
+                            >
+                                Rejected
+                            </button>
+                        </div>
+                        <div className="filter-controls">
+                            <select
+                                className="filter-select"
+                                value={filters.type}
+                                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                            >
+                                <option value="">All Types</option>
+                                <option value="full-time">Full Time</option>
+                                <option value="part-time">Part Time</option>
+                                <option value="contract">Contract</option>
+                                <option value="internship">Internship</option>
+                            </select>
+                            <select
+                                className="filter-select"
+                                value={filters.experienceLevel}
+                                onChange={(e) => setFilters({ ...filters, experienceLevel: e.target.value })}
+                            >
+                                <option value="">All Levels</option>
+                                <option value="entry">Entry Level</option>
+                                <option value="mid">Mid Level</option>
+                                <option value="senior">Senior Level</option>
+                                <option value="expert">Expert</option>
+                            </select>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Main Content Area - Two Columns: Jobs List (prominent) + Job Details */}
             <div className="jobs-content">
                 <div className="jobs-list">
                     <div className="jobs-count">Jobs ({jobs.filter(job => {
+                        if (jobIdFromUrl && job._id !== jobIdFromUrl) return false;
                         if (categoryFilter === 'applied') return hasApplied(job);
                         if (categoryFilter === 'rejected') return false; // Add rejected logic
                         return true;
                     }).length})</div>
                     {jobs.filter(job => {
+                        if (jobIdFromUrl && job._id !== jobIdFromUrl) return false;
                         if (categoryFilter === 'applied') return hasApplied(job);
                         if (categoryFilter === 'rejected') return false;
                         return true;
