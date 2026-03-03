@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import './MyJobsPage.css';
 
 const MyJobsPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const toast = useToast();
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
+
+    // Read ?id= from URL for shared links
+    const queryParams = new URLSearchParams(location.search);
+    const jobIdFromUrl = queryParams.get('id');
 
     // Delete confirmation modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -38,8 +44,17 @@ const MyJobsPage = () => {
 
             setJobs(jobsData);
 
-            if (jobsData.length > 0 && !selectedJob) {
-                setSelectedJob(jobsData[0]);
+            if (jobsData.length > 0) {
+                if (jobIdFromUrl) {
+                    const targetJob = jobsData.find(j => j._id === jobIdFromUrl);
+                    if (targetJob) {
+                        setSelectedJob(targetJob);
+                    } else if (!selectedJob) {
+                        setSelectedJob(jobsData[0]);
+                    }
+                } else if (!selectedJob) {
+                    setSelectedJob(jobsData[0]);
+                }
             }
         } catch (error) {
             console.error('Error fetching jobs:', error);
@@ -90,6 +105,29 @@ const MyJobsPage = () => {
                 jobData: selectedJob
             }
         });
+    };
+
+    // Share Job - copy shareable link to clipboard
+    const handleShareJob = async () => {
+        if (!selectedJob) return;
+        const shareUrl = `${window.location.origin}/jobs/${selectedJob._id}`;
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setCopied(true);
+            toast.success('Share link copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setCopied(true);
+            toast.success('Share link copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     // Open delete confirmation modal
@@ -266,6 +304,13 @@ const MyJobsPage = () => {
                                     onClick={handleEditJob}
                                 >
                                     ✏️ Edit Job
+                                </button>
+                                <button
+                                    className="btn-action secondary"
+                                    onClick={handleShareJob}
+                                    title="Copy shareable link"
+                                >
+                                    {copied ? '✅ Copied!' : '🔗 Share'}
                                 </button>
                                 <button
                                     className="btn-action danger"

@@ -23,6 +23,7 @@ const JobListingsPage = () => {
     const [withdrawing, setWithdrawing] = useState(false);
     const [showApplyModal, setShowApplyModal] = useState(false);
     const [platformInterviewStatus, setPlatformInterviewStatus] = useState(null);
+    const [copied, setCopied] = useState(false);
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
@@ -186,6 +187,28 @@ const JobListingsPage = () => {
 
     const hasApplied = (job) => {
         return job.applicants?.some(app => app.userId === userId || app.userId?._id === userId);
+    };
+
+    // Share Job - copy shareable link to clipboard
+    const handleShareJob = async () => {
+        if (!selectedJob) return;
+        const shareUrl = `${window.location.origin}/jobs/${selectedJob._id}`;
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setCopied(true);
+            toast.success('Share link copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setCopied(true);
+            toast.success('Share link copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     return (
@@ -383,8 +406,8 @@ const JobListingsPage = () => {
                                             )}
                                         </div>
                                     )}
-                                    <button className="btn btn-secondary">
-                                        Save
+                                    <button className="btn btn-secondary" onClick={handleShareJob} title="Copy shareable link">
+                                        {copied ? '✅ Copied!' : '🔗 Share'}
                                     </button>
                                 </div>
                             </div>

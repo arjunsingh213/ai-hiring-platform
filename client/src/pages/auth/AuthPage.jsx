@@ -23,6 +23,10 @@ const AuthPage = () => {
     // Detect initial mode from URL path - /login starts in sign-in mode
     const isLoginPath = location.pathname === '/login';
 
+    // Check for redirect query param (used by job share links)
+    const searchParams = new URLSearchParams(location.search);
+    const redirectPath = searchParams.get('redirect');
+
     const [isSignUp, setIsSignUp] = useState(!isLoginPath);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -187,6 +191,9 @@ const AuthPage = () => {
                     } else {
                         navigate('/onboarding/role-selection');
                     }
+                } else if (redirectPath) {
+                    // Redirect to the intended page (e.g. from a shared job link)
+                    navigate(redirectPath);
                 } else if (user.role === 'jobseeker') {
                     navigate('/jobseeker/home');
                 } else {

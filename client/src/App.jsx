@@ -29,6 +29,9 @@ const InterviewRoomLanding = lazy(() => import('./pages/landing/components/Inter
 const GlossaryPage = lazy(() => import('./pages/landing/components/GlossaryPage'));
 const BlogPage = lazy(() => import('./pages/landing/components/BlogPage'));
 
+// Shared Pages
+const JobShareRedirect = lazy(() => import('./pages/shared/JobShareRedirect'));
+
 // Loading Fallback
 const LoadingFallback = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f8fafc' }}>
@@ -142,6 +145,9 @@ function App() {
 
               <Route path="/glossary" element={<GlossaryPage />} />
               <Route path="/blog" element={<BlogPage />} />
+
+              {/* Job Share Link - Public redirect based on auth state */}
+              <Route path="/jobs/:jobId" element={<JobShareRedirect />} />
 
               {/* Authentication - Combined sliding auth page */}
               <Route path="/login" element={<AuthPage />} />
