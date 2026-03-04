@@ -408,7 +408,7 @@ router.get('/recruiter/:recruiterId/all-applicants', userAuth, requireRole('recr
                 let interview = null;
                 if (applicant.interviewId) {
                     interview = await Interview.findById(applicant.interviewId)
-                        .select('status scoring matchScore passed completedAt duration');
+                        .select('status scoring matchScore passed completedAt duration questions responses');
                 }
 
                 allApplicants.push({
@@ -434,7 +434,9 @@ router.get('/recruiter/:recruiterId/all-applicants', userAuth, requireRole('recr
                         completedAt: interview.completedAt,
                         strengths: interview.scoring?.strengths || [],
                         weaknesses: interview.scoring?.weaknesses || [],
-                        feedback: interview.scoring?.detailedFeedback
+                        feedback: interview.scoring?.detailedFeedback,
+                        questions: interview.questions || [],
+                        responses: interview.responses || []
                     } : null
                 });
             }

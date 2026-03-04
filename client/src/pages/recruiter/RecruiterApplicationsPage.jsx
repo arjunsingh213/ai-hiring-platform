@@ -41,6 +41,7 @@ const RecruiterApplicationsPage = () => {
     const [showScheduleModal, setShowScheduleModal] = useState(false);
     const [scheduledInterview, setScheduledInterview] = useState(null); // existing video room for this candidate+job
     const [rescheduleRoomCode, setRescheduleRoomCode] = useState(null);
+    const [showTranscript, setShowTranscript] = useState(false);
 
     useEffect(() => {
         fetchApplicants();
@@ -790,6 +791,75 @@ const RecruiterApplicationsPage = () => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Q&A Transcript */}
+                                {selectedApplicant.interview && selectedApplicant.interview.status === 'completed' &&
+                                    selectedApplicant.interview.questions?.length > 0 && (
+                                        <div className="interview-transcript card" style={{ marginTop: '16px' }}>
+                                            <div
+                                                className="results-header"
+                                                style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                onClick={() => setShowTranscript(prev => !prev)}
+                                            >
+                                                <h3>📝 Interview Q&A Transcript ({selectedApplicant.interview.questions.length} questions)</h3>
+                                                <span className="transcript-toggle">
+                                                    {showTranscript ? '▲ Collapse' : '▼ Expand'}
+                                                </span>
+                                            </div>
+
+                                            {showTranscript && (
+                                                <div className="transcript-body">
+                                                    {selectedApplicant.interview.questions.map((q, idx) => {
+                                                        const response = selectedApplicant.interview.responses?.find(r => r.questionIndex === idx)
+                                                            || selectedApplicant.interview.responses?.[idx];
+                                                        return (
+                                                            <div key={idx} className="transcript-item">
+                                                                <div className="transcript-meta">
+                                                                    <span className="transcript-q-badge">Q{idx + 1}</span>
+                                                                    {q.category && (
+                                                                        <span className="transcript-category">{q.category}</span>
+                                                                    )}
+                                                                    {q.difficulty && (
+                                                                        <span className={`transcript-difficulty ${q.difficulty}`}>
+                                                                            {q.difficulty}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="transcript-question">{q.question}</p>
+
+                                                                {response ? (
+                                                                    <>
+                                                                        <div className="transcript-answer">
+                                                                            <p>"{response.answer || 'No text response'}"</p>
+                                                                        </div>
+                                                                        {response.evaluation && (
+                                                                            <div className="transcript-eval">
+                                                                                {response.evaluation.score !== undefined && (
+                                                                                    <span
+                                                                                        className="transcript-score"
+                                                                                        style={{ color: getScoreColor(response.evaluation.score) }}
+                                                                                    >
+                                                                                        Score: {response.evaluation.score}/100
+                                                                                    </span>
+                                                                                )}
+                                                                                {response.evaluation.feedback && (
+                                                                                    <span className="transcript-feedback">
+                                                                                        {response.evaluation.feedback}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                ) : (
+                                                                    <p className="transcript-no-response">No response recorded</p>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
 
                                 {/* Interview Pending */}
                                 {(!selectedApplicant.interview || selectedApplicant.interview.status !== 'completed') && (

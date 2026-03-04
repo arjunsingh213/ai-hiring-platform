@@ -353,7 +353,7 @@ const InterviewDetail = () => {
                                                 borderRadius: '4px',
                                                 fontSize: '0.75rem'
                                             }}>
-                                                {skill}
+                                                {typeof skill === 'object' ? skill.name : skill}
                                             </span>
                                         ))}
                                         {interview.userId.jobSeekerProfile.skills.length > 6 && (
