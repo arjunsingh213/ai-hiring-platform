@@ -74,7 +74,7 @@ You haven't completed your platform interview yet!
 
 To apply for jobs on our platform, you need to pass the platform interview first. It only takes about 15-20 minutes and helps us match you with the right opportunities.
 
-Complete your interview now: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/onboarding/jobseeker?step=interview
+Complete your interview now: ${process.env.FRONTEND_URL || 'https://www.froscel.com'}/onboarding/jobseeker?step=interview
 
 Why complete the interview?
 ✅ Unlock job applications
@@ -112,7 +112,7 @@ The AI Hiring Platform Team
             <p>To apply for jobs on our platform, you need to pass the platform interview first. It only takes about <strong>15-20 minutes</strong> and helps us match you with the right opportunities.</p>
             
             <center>
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/onboarding/jobseeker?step=interview" class="cta-button">
+                <a href="${process.env.FRONTEND_URL || 'https://www.froscel.com'}/onboarding/jobseeker?step=interview" class="cta-button">
                     Complete Interview Now →
                 </a>
             </center>
@@ -161,7 +161,7 @@ Great news! You can now retry your platform interview.
 
 Your previous score was ${user.platformInterview?.score || 'below passing'}. Take this opportunity to showcase your skills!
 
-Retry now: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/onboarding/jobseeker?step=interview
+Retry now: ${process.env.FRONTEND_URL || 'https://www.froscel.com'}/onboarding/jobseeker?step=interview
 
 Tips for success:
 - Take your time with each question
@@ -215,7 +215,7 @@ Date & Time: ${dateStr}
 Duration: ${duration} minutes
 Interviewer: ${recruiterName || 'Recruiter'}
 
-Join your interview here: ${process.env.FRONTEND_URL || 'http://localhost:5173'}${roomLink || `/interview-room/${roomCode}`}
+Join your interview here: ${process.env.FRONTEND_URL || 'https://www.froscel.com'}${roomLink || `/interview-room/${roomCode}`}
 
 Room Code: ${roomCode}
 
@@ -282,7 +282,7 @@ The Froscel Team
             </div>
 
             <center style="margin: 24px 0;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}${roomLink || `/interview-room/${roomCode}`}" class="cta-button">
+                <a href="${process.env.FRONTEND_URL || 'https://www.froscel.com'}${roomLink || `/interview-room/${roomCode}`}" class="cta-button">
                     Join Interview →
                 </a>
                 <br/><br/>

@@ -44,7 +44,7 @@ const sendMessageNotificationEmail = async (senderName, receiverEmail, receiverN
                             <p style="color: #475569; margin: 0; font-style: italic;">"${messageContent}"</p>
                         </div>
                         <p style="color: #334155; font-size: 16px;">Log in to the platform to reply.</p>
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/messages" 
+                        <a href="${process.env.FRONTEND_URL || 'https://www.froscel.com'}/messages" 
                            style="display: inline-block; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 15px;">
                             View Message
                         </a>

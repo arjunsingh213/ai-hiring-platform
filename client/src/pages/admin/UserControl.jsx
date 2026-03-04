@@ -25,6 +25,10 @@ const UserControl = () => {
     const [activityPagination, setActivityPagination] = useState({ page: 1, total: 0 });
     const [fetchingDetail, setFetchingDetail] = useState(false);
     const [activeJobs, setActiveJobs] = useState([]);
+    const [selectedUserIds, setSelectedUserIds] = useState(new Set());
+    const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
+    const [bulkEmailData, setBulkEmailData] = useState({ subject: '', body: '' });
+    const [bulkEmailLoading, setBulkEmailLoading] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -301,6 +305,61 @@ const UserControl = () => {
         });
     };
 
+    // ── Multi-select helpers ──
+    const toggleUserSelection = (userId) => {
+        setSelectedUserIds(prev => {
+            const next = new Set(prev);
+            if (next.has(userId)) next.delete(userId);
+            else next.add(userId);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedUserIds.size === users.length) {
+            setSelectedUserIds(new Set());
+        } else {
+            setSelectedUserIds(new Set(users.map(u => u._id)));
+        }
+    };
+
+    const handleBulkEmail = async () => {
+        if (!bulkEmailData.subject.trim() || !bulkEmailData.body.trim()) {
+            alert('Please fill in both subject and body.');
+            return;
+        }
+        setBulkEmailLoading(true);
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/admin/users/bulk-email`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userIds: Array.from(selectedUserIds),
+                    subject: bulkEmailData.subject,
+                    body: bulkEmailData.body
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                setShowBulkEmailModal(false);
+                setBulkEmailData({ subject: '', body: '' });
+                setSelectedUserIds(new Set());
+            } else {
+                alert(data.error || 'Failed to send bulk email.');
+            }
+        } catch (error) {
+            console.error('Bulk email error:', error);
+            alert('Failed to send bulk email.');
+        } finally {
+            setBulkEmailLoading(false);
+        }
+    };
+
     if (loading && users.length === 0) {
         return (
             <div className="admin-loading">
@@ -414,6 +473,15 @@ const UserControl = () => {
                         <table className="admin-table">
                             <thead>
                                 <tr>
+                                    <th style={{ width: '40px', textAlign: 'center' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={users.length > 0 && selectedUserIds.size === users.length}
+                                            onChange={toggleSelectAll}
+                                            style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#6366f1' }}
+                                            title="Select all"
+                                        />
+                                    </th>
                                     <th>User</th>
                                     <th>Role</th>
                                     <th>Interview Status</th>
@@ -427,7 +495,15 @@ const UserControl = () => {
                             </thead>
                             <tbody>
                                 {users.map((user) => (
-                                    <tr key={user._id}>
+                                    <tr key={user._id} style={{ background: selectedUserIds.has(user._id) ? 'rgba(99, 102, 241, 0.08)' : undefined }}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedUserIds.has(user._id)}
+                                                onChange={() => toggleUserSelection(user._id)}
+                                                style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#6366f1' }}
+                                            />
+                                        </td>
                                         <td>
                                             <div>
                                                 <strong style={{ color: '#f8fafc' }}>
@@ -1043,6 +1119,185 @@ const UserControl = () => {
                                 verifiedProjects={atpProjects}
                                 skillHistory={viewingATPUser.aiTalentPassport?.interviewSkillHistory || []}
                             />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Floating Bulk Action Bar */}
+            {selectedUserIds.size > 0 && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: '16px',
+                    padding: '14px 28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    zIndex: 999,
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(16px)',
+                    animation: 'fadeUp 0.3s ease'
+                }}>
+                    <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.95rem' }}>
+                        <span style={{ color: '#818cf8', fontWeight: 700 }}>{selectedUserIds.size}</span> user{selectedUserIds.size !== 1 ? 's' : ''} selected
+                    </span>
+
+                    <button
+                        className="admin-action-btn"
+                        style={{
+                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            color: 'white',
+                            padding: '10px 20px',
+                            fontWeight: 600,
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            border: 'none',
+                            cursor: 'pointer'
+                        }}
+                        onClick={() => setShowBulkEmailModal(true)}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        Send Email
+                    </button>
+
+                    <button
+                        onClick={() => setSelectedUserIds(new Set())}
+                        style={{
+                            background: 'rgba(255,255,255,0.08)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: '#94a3b8',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                        }}
+                    >
+                        Clear
+                    </button>
+                </div>
+            )}
+
+            {/* Bulk Email Compose Modal */}
+            {showBulkEmailModal && (
+                <div className="admin-modal-overlay" onClick={() => setShowBulkEmailModal(false)}>
+                    <div className="admin-modal" style={{ maxWidth: '640px', width: '95%' }} onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <h2>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" style={{ marginRight: '8px', verticalAlign: 'middle' }}>
+                                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                                    <polyline points="22,6 12,13 2,6" />
+                                </svg>
+                                Send Bulk Email
+                            </h2>
+                            <button className="admin-modal-close" onClick={() => setShowBulkEmailModal(false)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="admin-modal-body">
+                            <div style={{
+                                padding: '12px 16px',
+                                background: 'rgba(99, 102, 241, 0.1)',
+                                borderRadius: '8px',
+                                marginBottom: '16px',
+                                border: '1px solid rgba(99, 102, 241, 0.2)'
+                            }}>
+                                <span style={{ color: '#818cf8', fontWeight: 600 }}>
+                                    📧 Sending to {selectedUserIds.size} recipient{selectedUserIds.size !== 1 ? 's' : ''}
+                                </span>
+                                <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                                    {users.filter(u => selectedUserIds.has(u._id)).slice(0, 5).map(u => u.email).join(', ')}
+                                    {selectedUserIds.size > 5 && ` and ${selectedUserIds.size - 5} more...`}
+                                </div>
+                            </div>
+
+                            <div className="admin-form-group" style={{ marginBottom: '16px' }}>
+                                <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block', fontWeight: 600 }}>
+                                    Subject *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bulkEmailData.subject}
+                                    onChange={(e) => setBulkEmailData({ ...bulkEmailData, subject: e.target.value })}
+                                    placeholder="Enter email subject..."
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        color: '#f8fafc',
+                                        fontSize: '0.9rem',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+
+                            <div className="admin-form-group">
+                                <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block', fontWeight: 600 }}>
+                                    Message Body *
+                                </label>
+                                <textarea
+                                    value={bulkEmailData.body}
+                                    onChange={(e) => setBulkEmailData({ ...bulkEmailData, body: e.target.value })}
+                                    placeholder="Write your email message here..."
+                                    rows={8}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        color: '#f8fafc',
+                                        fontSize: '0.9rem',
+                                        resize: 'vertical',
+                                        boxSizing: 'border-box',
+                                        lineHeight: 1.6
+                                    }}
+                                />
+                                <p style={{ marginTop: '6px', fontSize: '0.75rem', color: '#64748b' }}>
+                                    Each recipient will be addressed by name. Line breaks will be preserved.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="admin-modal-footer">
+                            <button
+                                className="admin-action-btn"
+                                style={{ background: 'rgba(255,255,255,0.1)', color: '#94a3b8' }}
+                                onClick={() => setShowBulkEmailModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="admin-action-btn success"
+                                onClick={handleBulkEmail}
+                                disabled={bulkEmailLoading || !bulkEmailData.subject.trim() || !bulkEmailData.body.trim()}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="22" y1="2" x2="11" y2="13" />
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                </svg>
+                                {bulkEmailLoading ? 'Sending...' : `Send to ${selectedUserIds.size} user${selectedUserIds.size !== 1 ? 's' : ''}`}
+                            </button>
                         </div>
                     </div>
                 </div>

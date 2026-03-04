@@ -35,7 +35,7 @@ const sendEmail = async (options) => {
 };
 
 const sendVerificationEmail = async (user, token) => {
-    const verificationUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email/${token}`;
+    const verificationUrl = `${process.env.CLIENT_URL || 'https://www.froscel.com'}/verify-email/${token}`;
 
     const message = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -149,10 +149,9 @@ const sendWorkEmailOTP = async (user, email, otp) => {
 };
 
 const sendJobInvitationEmail = async (user, job) => {
-    // Generate an absolute link to view the job on the frontend platform
-    // Example: http://localhost:5173/jobseeker/jobs?id=123 (depending on actual routing)
-    const frontendUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    const jobLink = `${frontendUrl}/jobseeker/jobs`; // Candidate will click and load jobs
+    // Generate an absolute link to view the specific job on the frontend
+    const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://www.froscel.com';
+    const jobLink = `${frontendUrl}/jobs/${job._id}`;
 
     const message = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background-color: #ffffff;">

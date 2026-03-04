@@ -2153,7 +2153,7 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
 
         // Get user info for notification/email
         const user = await User.findById(userId);
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://www.froscel.com';
 
         // Attempt to send notifications and audit log, but don't fail the request if they fail
         try {
@@ -2304,7 +2304,7 @@ router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) =
             <p>Thank you for applying for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong>.</p>
             <p>After careful review, we've decided to move forward with other candidates for this position. We encourage you to continue exploring other opportunities on our platform.</p>
             <center style="margin: 24px 0;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobseeker/jobs" class="cta-button">
+                <a href="${process.env.FRONTEND_URL || 'https://www.froscel.com'}/jobseeker/jobs" class="cta-button">
                     Browse More Jobs →
                 </a>
             </center>
@@ -2470,6 +2470,117 @@ router.delete('/jobs/:id', adminAuth, requirePermission('approve_interviews'), a
         res.json({ success: true, message: 'Job has been marked as closed.' });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Failed to close job.' });
+    }
+});
+
+// ==================== BULK EMAIL ====================
+
+/**
+ * POST /api/admin/users/bulk-email
+ * Send bulk email to selected users
+ */
+router.post('/users/bulk-email', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const { userIds, subject, body } = req.body;
+
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ success: false, error: 'No users selected.' });
+        }
+        if (!subject || !subject.trim()) {
+            return res.status(400).json({ success: false, error: 'Email subject is required.' });
+        }
+        if (!body || !body.trim()) {
+            return res.status(400).json({ success: false, error: 'Email body is required.' });
+        }
+
+        const users = await User.find({ _id: { $in: userIds } }).select('email profile').lean();
+
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, error: 'No valid users found.' });
+        }
+
+        const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://www.froscel.com';
+
+        let successCount = 0;
+        let failCount = 0;
+        const errors = [];
+
+        // Send emails in batches of 5 to avoid overwhelming the SMTP server
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < users.length; i += BATCH_SIZE) {
+            const batch = users.slice(i, i + BATCH_SIZE);
+            const results = await Promise.allSettled(
+                batch.map(user => {
+                    const personalizedHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .content { background: #f9fafb; padding: 32px; }
+        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>${subject}</h1>
+        </div>
+        <div class="content">
+            <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
+            <div>${body.replace(/\n/g, '<br/>')}</div>
+            <br/>
+            <p>Best regards,<br/>The Froscel Team</p>
+        </div>
+        <div class="footer">
+            <p>This email was sent by Froscel AI Hiring Platform.</p>
+            <p><a href="${frontendUrl}" style="color: #6366f1;">Visit Platform</a></p>
+        </div>
+    </div>
+</body>
+</html>`.trim();
+
+                    return sendEmail({
+                        to: user.email,
+                        subject: subject,
+                        text: body,
+                        html: personalizedHtml
+                    });
+                })
+            );
+
+            results.forEach((result, idx) => {
+                if (result.status === 'fulfilled' && result.value?.success !== false) {
+                    successCount++;
+                } else {
+                    failCount++;
+                    errors.push(batch[idx].email);
+                }
+            });
+        }
+
+        // Audit log
+        await auditLog(req, 'bulk_email_sent', 'system', null, {
+            metadata: {
+                totalRecipients: users.length,
+                successCount,
+                failCount,
+                subject
+            }
+        });
+
+        res.json({
+            success: true,
+            message: `Email sent to ${successCount} user(s).${failCount > 0 ? ` ${failCount} failed.` : ''}`,
+            data: { successCount, failCount, failedEmails: errors }
+        });
+
+    } catch (error) {
+        console.error('Bulk email error:', error);
+        res.status(500).json({ success: false, error: 'Failed to send bulk email.' });
     }
 });
 
