@@ -24,7 +24,7 @@ class SessionStore {
             turnCount: 0,
             consecutiveFailures: 0,
             isProcessing: false, // Lock to prevent concurrent triggers
-            maxTurns: data.maxTurns || 15
+            maxTurns: data.maxTurns || 11
         };
 
         const session = { ...defaultState, ...data };

@@ -47,7 +47,7 @@ const setupAdaptiveNamespace = (io) => {
                 candidateId,
                 jobId,
                 jobSkills: activeSkills,
-                maxTurns: maxTurns || 15
+                maxTurns: maxTurns || 11
             });
             session.roundType = currentRoundType;
 
