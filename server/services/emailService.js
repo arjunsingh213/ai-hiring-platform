@@ -1,34 +1,15 @@
 /**
  * Email Service
  * Handles sending email notifications for the platform
- * Uses Nodemailer with configurable transport
+ * Uses Resend HTTP API (no SMTP ports needed)
  */
 
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Email configuration from environment variables
-const emailConfig = {
-    host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-        user: process.env.EMAIL_USER || process.env.SMTP_USER || '',
-        pass: process.env.EMAIL_PASSWORD || process.env.SMTP_PASS || ''
-    }
-};
-
-// Create transporter (lazy initialization)
-let transporter = null;
-
-function getTransporter() {
-    if (!transporter && emailConfig.auth.user && emailConfig.auth.pass) {
-        transporter = nodemailer.createTransport(emailConfig);
-    }
-    return transporter;
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
- * Send an email
+ * Send an email via Resend
  * @param {Object} options - Email options
  * @param {string} options.to - Recipient email
  * @param {string} options.subject - Email subject
@@ -36,27 +17,26 @@ function getTransporter() {
  * @param {string} options.html - HTML content (optional)
  */
 async function sendEmail({ to, subject, text, html }) {
-    const transport = getTransporter();
-
-    if (!transport) {
-        console.log(`📧 [EMAIL NOT CONFIGURED] Would send to: ${to}`);
-        console.log(`   Subject: ${subject}`);
-        return { success: false, message: 'Email not configured' };
-    }
+    const fromAddress = process.env.RESEND_FROM || 'Froscel <onboarding@resend.dev>';
 
     try {
-        const result = await transport.sendMail({
-            from: process.env.EMAIL_FROM || process.env.SMTP_FROM || '"AI Hiring Platform" <noreply@aihiring.com>',
-            to,
+        const { data, error } = await resend.emails.send({
+            from: fromAddress,
+            to: [to],
             subject,
             text,
             html: html || text
         });
 
-        console.log(`📧 Email sent to: ${to}`);
-        return { success: true, messageId: result.messageId };
+        if (error) {
+            console.error(`[Resend] Error sending to ${to}:`, error);
+            return { success: false, error: error.message };
+        }
+
+        console.log(`[Resend] Email sent to: ${to}, id: ${data?.id}`);
+        return { success: true, messageId: data?.id };
     } catch (error) {
-        console.error('Email send error:', error);
+        console.error('[Resend] Send error:', error);
         return { success: false, error: error.message };
     }
 }
@@ -315,6 +295,5 @@ module.exports = {
     sendEmail,
     sendInterviewReminderEmail,
     sendRetryReminderEmail,
-    sendVideoInterviewInvitation,
-    getTransporter
+    sendVideoInterviewInvitation
 };

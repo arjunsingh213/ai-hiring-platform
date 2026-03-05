@@ -1,4 +1,6 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const escapeHtml = (unsafe) => {
     if (!unsafe) return '';
@@ -11,41 +13,27 @@ const escapeHtml = (unsafe) => {
 };
 
 const sendEmail = async (options) => {
-    const smtpPort = parseInt(process.env.SMTP_PORT) || 465;
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: smtpPort,
-        secure: smtpPort === 465, // true for 465 (SSL), false for 587 (TLS)
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
-    });
+    const fromAddress = process.env.RESEND_FROM || 'Froscel <onboarding@resend.dev>';
 
-    // Verify SMTP connection first
     try {
-        await transporter.verify();
-    } catch (verifyErr) {
-        console.error('[SMTP] Connection verification FAILED:', verifyErr.message);
-        console.error('[SMTP] Config: host=' + (process.env.SMTP_HOST || 'smtp.gmail.com') +
-            ', port=' + (process.env.SMTP_PORT || 587) +
-            ', user=' + (process.env.SMTP_USER ? process.env.SMTP_USER.slice(0, 5) + '***' : 'NOT SET'));
-        throw verifyErr;
+        const { data, error } = await resend.emails.send({
+            from: fromAddress,
+            to: [options.email],
+            subject: options.subject,
+            html: options.html
+        });
+
+        if (error) {
+            console.error(`[Resend] Error sending to ${options.email}:`, error);
+            throw new Error(error.message || 'Resend email failed');
+        }
+
+        console.log(`[Resend] Email sent to ${options.email}, id: ${data?.id}`);
+        return data;
+    } catch (err) {
+        console.error(`[Resend] Failed to send email to ${options.email}:`, err.message);
+        throw err;
     }
-
-    // Define email options
-    const mailOptions = {
-        from: process.env.SMTP_FROM || '"AI Hiring Platform" <noreply@aihiring.com>',
-        to: options.email,
-        subject: options.subject,
-        html: options.html
-    };
-
-    // Send email
-    const result = await transporter.sendMail(mailOptions);
-    console.log(`[SMTP] Email sent to ${options.email}, messageId: ${result.messageId}`);
-    return result;
 };
 
 const sendVerificationEmail = async (user, token) => {
@@ -79,10 +67,9 @@ const sendVerificationEmail = async (user, token) => {
             subject: 'Verify your email address - AI Hiring Platform',
             html: message
         });
-        console.log(`[SMTP] Verification email sent to ${user.email}`);
+        console.log(`[Resend] Verification email sent to ${user.email}`);
     } catch (error) {
-        console.error(`[SMTP] FAILED to send verification email to ${user.email}:`, error.message);
-        // Don't throw to avoid blocking signup, but error is now clearly logged
+        console.error(`[Resend] FAILED to send verification email to ${user.email}:`, error.message);
     }
 };
 
@@ -162,7 +149,6 @@ const sendWorkEmailOTP = async (user, email, otp) => {
 };
 
 const sendJobInvitationEmail = async (user, job) => {
-    // Generate an absolute link to view the specific job on the frontend
     const frontendUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://www.froscel.com';
     const jobLink = `${frontendUrl}/jobs/${job._id}`;
 
