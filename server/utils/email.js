@@ -13,14 +13,25 @@ const escapeHtml = (unsafe) => {
 const sendEmail = async (options) => {
     // Create transporter
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com', // Default to Gmail for now
-        port: process.env.SMTP_PORT || 587,
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
         secure: false, // true for 465, false for other ports
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS
         }
     });
+
+    // Verify SMTP connection first
+    try {
+        await transporter.verify();
+    } catch (verifyErr) {
+        console.error('[SMTP] Connection verification FAILED:', verifyErr.message);
+        console.error('[SMTP] Config: host=' + (process.env.SMTP_HOST || 'smtp.gmail.com') +
+            ', port=' + (process.env.SMTP_PORT || 587) +
+            ', user=' + (process.env.SMTP_USER ? process.env.SMTP_USER.slice(0, 5) + '***' : 'NOT SET'));
+        throw verifyErr;
+    }
 
     // Define email options
     const mailOptions = {
@@ -31,7 +42,9 @@ const sendEmail = async (options) => {
     };
 
     // Send email
-    await transporter.sendMail(mailOptions);
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`[SMTP] Email sent to ${options.email}, messageId: ${result.messageId}`);
+    return result;
 };
 
 const sendVerificationEmail = async (user, token) => {
@@ -65,11 +78,10 @@ const sendVerificationEmail = async (user, token) => {
             subject: 'Verify your email address - AI Hiring Platform',
             html: message
         });
-        console.log(`Verification email sent to ${user.email}`);
+        console.log(`[SMTP] Verification email sent to ${user.email}`);
     } catch (error) {
-        console.error('Error sending verification email:', error);
-        // Don't throw error to prevent blocking signup flow, but log it
-        // In production, you might want to handle this more robustly
+        console.error(`[SMTP] FAILED to send verification email to ${user.email}:`, error.message);
+        // Don't throw to avoid blocking signup, but error is now clearly logged
     }
 };
 
