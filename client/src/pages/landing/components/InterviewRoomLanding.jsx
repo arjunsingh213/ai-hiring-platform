@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from './Header';
 import Footer from './Footer';
@@ -10,50 +10,82 @@ const JOB_TYPES = {
         title: 'AI Interview for Frontend Engineers',
         description: 'Evaluate React, Vue, Angular, and CSS mastery with live code challenges, real-time rendering previews, and AI-powered behavioral analysis.',
         skills: ['React', 'TypeScript', 'CSS Architecture', 'Performance Optimization', 'A11y'],
-        icon: '🎨',
+        icon: '\u{1F3A8}',
     },
     'backend-engineer': {
         title: 'AI Interview for Backend Engineers',
         description: 'Assess API design, database optimization, system architecture, and server-side logic with real code execution in Node.js, Python, Java, and Go.',
         skills: ['Node.js', 'Python', 'SQL', 'System Design', 'Microservices'],
-        icon: '⚙️',
+        icon: '\u2699\uFE0F',
     },
     'fullstack-developer': {
         title: 'AI Interview for Full Stack Developers',
         description: 'End-to-end skill evaluation covering frontend frameworks, backend APIs, database design, DevOps pipelines, and deployment strategies.',
         skills: ['React', 'Node.js', 'MongoDB', 'Docker', 'CI/CD'],
-        icon: '🔗',
+        icon: '\u{1F517}',
     },
     'data-scientist': {
         title: 'AI Interview for Data Scientists',
         description: 'Evaluate statistical modeling, ML pipeline design, Python data libraries, and ability to communicate insights from complex datasets.',
         skills: ['Python', 'TensorFlow', 'SQL', 'Statistics', 'Data Visualization'],
-        icon: '📊',
+        icon: '\u{1F4CA}',
     },
     'devops-engineer': {
         title: 'AI Interview for DevOps Engineers',
         description: 'Assess infrastructure-as-code proficiency, CI/CD pipeline design, container orchestration, and cloud platform expertise.',
         skills: ['Docker', 'Kubernetes', 'AWS/GCP', 'Terraform', 'Linux'],
-        icon: '🚀',
+        icon: '\u{1F680}',
     },
     'mobile-developer': {
         title: 'AI Interview for Mobile Developers',
         description: 'Evaluate native and cross-platform mobile development skills including React Native, Flutter, Swift, and Kotlin with real device testing scenarios.',
         skills: ['React Native', 'Flutter', 'Swift', 'Kotlin', 'App Architecture'],
-        icon: '📱',
+        icon: '\u{1F4F1}',
     },
 };
 
 const ALL_TYPES = Object.entries(JOB_TYPES);
 
 const InterviewRoomLanding = () => {
-    const { jobType } = useParams();
+    const location = useLocation();
+    // Extract job type from URL path (e.g. /interview-room/frontend-engineer)
+    const jobType = useMemo(() => {
+        const segments = location.pathname.split('/').filter(Boolean);
+        if (segments.length >= 2 && segments[0] === 'interview-room') {
+            return segments[1];
+        }
+        return null;
+    }, [location.pathname]);
     const data = jobType ? JOB_TYPES[jobType] : null;
 
     // Scroll to top on route change
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [jobType]);
+
+    // Dynamic SEO: update document title and meta description per page
+    useEffect(() => {
+        if (data) {
+            document.title = `${data.title} | Froscel AI Hiring Platform`;
+            const metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) metaDesc.setAttribute('content', data.description);
+            const canonical = document.querySelector('link[rel="canonical"]');
+            if (canonical) canonical.setAttribute('href', `https://froscel.com/interview-room/${jobType}`);
+        } else {
+            document.title = 'AI-Powered Interview Rooms | Froscel';
+            const metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) metaDesc.setAttribute('content', 'Enterprise-grade AI interview rooms for every engineering role. Live code execution, AI scoring, and bias-free assessments.');
+            const canonical = document.querySelector('link[rel="canonical"]');
+            if (canonical) canonical.setAttribute('href', 'https://froscel.com/interview-room');
+        }
+        return () => {
+            document.title = 'Froscel | AI-Powered Hiring Infrastructure & Video Interviews';
+            const metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) metaDesc.setAttribute('content', 'Scale technical hiring with enterprise-grade AI video interviews, live code evaluation in 9+ languages, and the AI Talent Passport. Bias-free, verifiable skill assessments for modern teams.');
+            const canonical = document.querySelector('link[rel="canonical"]');
+            if (canonical) canonical.setAttribute('href', 'https://froscel.com/');
+        };
+    }, [data, jobType]);
 
     // Force light theme
     useEffect(() => {
@@ -95,7 +127,7 @@ const InterviewRoomLanding = () => {
                                         <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                 </Link>
-                                <Link to="/" className={styles.secondaryBtn}>← Back to Home</Link>
+                                <Link to="/" className={styles.secondaryBtn}>&larr; Back to Home</Link>
                             </div>
                         </motion.div>
                     </section>
@@ -104,19 +136,19 @@ const InterviewRoomLanding = () => {
                         <h2>What's Included in Every <span className={styles.gradient}>Froscel Interview</span></h2>
                         <div className={styles.featureGrid}>
                             <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>🎥 Secure WebRTC Video</h3>
+                                <h3>{'\u{1F3A5}'} Secure WebRTC Video</h3>
                                 <p>Enterprise-grade encrypted video calls with SFU architecture for panel interviews.</p>
                             </motion.div>
                             <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>💻 Live Code Editor</h3>
+                                <h3>{'\u{1F4BB}'} Live Code Editor</h3>
                                 <p>Monaco Editor with real-time execution in 9+ languages including Python, Java, and Go.</p>
                             </motion.div>
                             <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>🤖 AI Co-Interviewer</h3>
+                                <h3>{'\u{1F916}'} AI Co-Interviewer</h3>
                                 <p>Adaptive follow-up questions, real-time scoring, and post-interview intelligence reports.</p>
                             </motion.div>
                             <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>🛡️ Advanced Proctoring</h3>
+                                <h3>{'\u{1F6E1}\uFE0F'} Advanced Proctoring</h3>
                                 <p>Face detection, tab monitoring, and violation timestamping for fair assessments.</p>
                             </motion.div>
                         </div>

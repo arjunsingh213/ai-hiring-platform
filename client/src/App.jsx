@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
@@ -136,7 +136,15 @@ function App() {
               {/* Growth SEO Pages - Public, no auth required */}
               <Route path="/interview-room" element={<InterviewRoomLanding />} />
 
-              {/* Froscel Interview Room™ — must be above the SEO :jobType catch-all */}
+              {/* SEO Interview Room Pages — explicit public routes for each job type */}
+              <Route path="/interview-room/frontend-engineer" element={<InterviewRoomLanding />} />
+              <Route path="/interview-room/backend-engineer" element={<InterviewRoomLanding />} />
+              <Route path="/interview-room/fullstack-developer" element={<InterviewRoomLanding />} />
+              <Route path="/interview-room/data-scientist" element={<InterviewRoomLanding />} />
+              <Route path="/interview-room/devops-engineer" element={<InterviewRoomLanding />} />
+              <Route path="/interview-room/mobile-developer" element={<InterviewRoomLanding />} />
+
+              {/* Froscel Interview Room™ — actual room codes (protected) */}
               <Route path="/interview-room/:roomCode" element={
                 <ProtectedRoute>
                   <InterviewRoom />
@@ -144,6 +152,7 @@ function App() {
               } />
 
               <Route path="/glossary" element={<GlossaryPage />} />
+              <Route path="/glossery" element={<Navigate to="/glossary" replace />} />
               <Route path="/blog" element={<BlogPage />} />
 
               {/* Job Share Link - Public redirect based on auth state */}

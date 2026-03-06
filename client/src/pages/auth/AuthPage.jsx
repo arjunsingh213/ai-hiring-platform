@@ -20,6 +20,24 @@ const AuthPage = () => {
         };
     }, []);
 
+    // SEO meta tags
+    useEffect(() => {
+        const isLogin = location.pathname === '/login';
+        document.title = isLogin
+            ? 'Login | Froscel AI Hiring Platform'
+            : 'Sign Up | Froscel AI Hiring Platform';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', isLogin
+            ? 'Log in to Froscel to access AI-powered interviews, manage your talent passport, and explore job opportunities.'
+            : 'Sign up for Froscel to access AI-powered video interviews, live code evaluation, and the AI Talent Passport. Start free today.'
+        );
+        const canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.setAttribute('href', `https://froscel.com${location.pathname}`);
+        return () => {
+            document.title = 'Froscel | AI-Powered Hiring Infrastructure & Video Interviews';
+        };
+    }, [location.pathname]);
+
     // Detect initial mode from URL path - /login starts in sign-in mode
     const isLoginPath = location.pathname === '/login';
 
