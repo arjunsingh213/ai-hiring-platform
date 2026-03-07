@@ -107,7 +107,7 @@ class GoogleSheetService {
             user.role || '',
             user.status || 'active',
             user.isVerified ? 'Yes' : 'No',
-            profile.phone || '',
+            profile.mobile || '',
             user.createdAt ? new Date(user.createdAt).toISOString() : '',
             user.lastLogin ? new Date(user.lastLogin).toISOString() : '',
 
