@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import {
+    Code2,
+    Database,
+    Layers,
+    LineChart,
+    Rocket,
+    Smartphone,
+    Video,
+    TerminalSquare,
+    BrainCircuit,
+    ShieldCheck,
+    ArrowRight
+} from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
 import styles from './InterviewRoomLanding.module.css';
@@ -8,39 +21,51 @@ import styles from './InterviewRoomLanding.module.css';
 const JOB_TYPES = {
     'frontend-engineer': {
         title: 'AI Interview for Frontend Engineers',
+        shortTitle: 'Frontend Engineer',
         description: 'Evaluate React, Vue, Angular, and CSS mastery with live code challenges, real-time rendering previews, and AI-powered behavioral analysis.',
-        skills: ['React', 'TypeScript', 'CSS Architecture', 'Performance Optimization', 'A11y'],
-        icon: '\u{1F3A8}',
+        skills: ['React', 'TypeScript', 'CSS', 'Performance', 'A11y'],
+        icon: Code2,
+        color: '#3B82F6' // blue-500
     },
     'backend-engineer': {
         title: 'AI Interview for Backend Engineers',
+        shortTitle: 'Backend Engineer',
         description: 'Assess API design, database optimization, system architecture, and server-side logic with real code execution in Node.js, Python, Java, and Go.',
         skills: ['Node.js', 'Python', 'SQL', 'System Design', 'Microservices'],
-        icon: '\u2699\uFE0F',
+        icon: Database,
+        color: '#10B981' // emerald-500
     },
     'fullstack-developer': {
         title: 'AI Interview for Full Stack Developers',
+        shortTitle: 'Full Stack Developer',
         description: 'End-to-end skill evaluation covering frontend frameworks, backend APIs, database design, DevOps pipelines, and deployment strategies.',
         skills: ['React', 'Node.js', 'MongoDB', 'Docker', 'CI/CD'],
-        icon: '\u{1F517}',
+        icon: Layers,
+        color: '#8B5CF6' // violet-500
     },
     'data-scientist': {
         title: 'AI Interview for Data Scientists',
+        shortTitle: 'Data Scientist',
         description: 'Evaluate statistical modeling, ML pipeline design, Python data libraries, and ability to communicate insights from complex datasets.',
-        skills: ['Python', 'TensorFlow', 'SQL', 'Statistics', 'Data Visualization'],
-        icon: '\u{1F4CA}',
+        skills: ['Python', 'TensorFlow', 'SQL', 'Statistics', 'Data Viz'],
+        icon: LineChart,
+        color: '#F59E0B' // amber-500
     },
     'devops-engineer': {
         title: 'AI Interview for DevOps Engineers',
+        shortTitle: 'DevOps Engineer',
         description: 'Assess infrastructure-as-code proficiency, CI/CD pipeline design, container orchestration, and cloud platform expertise.',
-        skills: ['Docker', 'Kubernetes', 'AWS/GCP', 'Terraform', 'Linux'],
-        icon: '\u{1F680}',
+        skills: ['Docker', 'Kubernetes', 'AWS', 'Terraform', 'Linux'],
+        icon: Rocket,
+        color: '#EF4444' // red-500
     },
     'mobile-developer': {
         title: 'AI Interview for Mobile Developers',
+        shortTitle: 'Mobile Developer',
         description: 'Evaluate native and cross-platform mobile development skills including React Native, Flutter, Swift, and Kotlin with real device testing scenarios.',
-        skills: ['React Native', 'Flutter', 'Swift', 'Kotlin', 'App Architecture'],
-        icon: '\u{1F4F1}',
+        skills: ['React Native', 'Flutter', 'Swift', 'Kotlin', 'Architecture'],
+        icon: Smartphone,
+        color: '#06B6D4' // cyan-500
     },
 };
 
@@ -48,7 +73,8 @@ const ALL_TYPES = Object.entries(JOB_TYPES);
 
 const InterviewRoomLanding = () => {
     const location = useLocation();
-    // Extract job type from URL path (e.g. /interview-room/frontend-engineer)
+
+    // Extract job type from URL path
     const jobType = useMemo(() => {
         const segments = location.pathname.split('/').filter(Boolean);
         if (segments.length >= 2 && segments[0] === 'interview-room') {
@@ -58,12 +84,12 @@ const InterviewRoomLanding = () => {
     }, [location.pathname]);
     const data = jobType ? JOB_TYPES[jobType] : null;
 
-    // Scroll to top on route change
+    // Scroll to top
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [jobType]);
 
-    // Dynamic SEO: update document title and meta description per page
+    // SEO Meta Tags
     useEffect(() => {
         if (data) {
             document.title = `${data.title} | Froscel AI Hiring Platform`;
@@ -78,13 +104,6 @@ const InterviewRoomLanding = () => {
             const canonical = document.querySelector('link[rel="canonical"]');
             if (canonical) canonical.setAttribute('href', 'https://froscel.com/interview-room');
         }
-        return () => {
-            document.title = 'Froscel | AI-Powered Hiring Infrastructure & Video Interviews';
-            const metaDesc = document.querySelector('meta[name="description"]');
-            if (metaDesc) metaDesc.setAttribute('content', 'Scale technical hiring with enterprise-grade AI video interviews, live code evaluation in 9+ languages, and the AI Talent Passport. Bias-free, verifiable skill assessments for modern teams.');
-            const canonical = document.querySelector('link[rel="canonical"]');
-            if (canonical) canonical.setAttribute('href', 'https://froscel.com/');
-        };
     }, [data, jobType]);
 
     // Force light theme
@@ -96,73 +115,93 @@ const InterviewRoomLanding = () => {
         };
     }, []);
 
-    // Individual job type page
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }
+    };
+
+    // --- Individual Job Role Page ---
     if (data) {
+        const IconComponent = data.icon;
         return (
             <div className={styles.page}>
                 <Header />
-                <main>
-                    <section className={styles.hero}>
+                <main className={styles.mainContent}>
+                    {/* Hero Section */}
+                    <section className={styles.heroDetailed}>
+                        <div className={styles.heroBackground}></div>
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6 }}
+                            className={styles.heroContent}
+                            initial="hidden"
+                            animate="show"
+                            variants={containerVariants}
                         >
-                            <span className={styles.icon}>{data.icon}</span>
-                            <h1 className={styles.title}>
+                            <motion.div variants={itemVariants} className={styles.iconWrapper} style={{ backgroundColor: `${data.color}15`, color: data.color }}>
+                                <IconComponent size={32} strokeWidth={1.5} />
+                            </motion.div>
+                            <motion.h1 variants={itemVariants} className={styles.heroTitle}>
                                 {data.title.split('Interview for').map((part, i) => (
-                                    i === 1 ? <><br /><span className={styles.gradient}>Interview for {part}</span></> : part
+                                    i === 1 ? <span key={i}><br /><span className={styles.textGradient}>Interview for{part}</span></span> : <span key={i}>{part}</span>
                                 ))}
-                            </h1>
-                            <p className={styles.description}>{data.description}</p>
-                            <div className={styles.skills}>
-                                {data.skills.map((skill) => (
-                                    <span key={skill} className={styles.skillTag}>{skill}</span>
+                            </motion.h1>
+                            <motion.p variants={itemVariants} className={styles.heroSubtitle}>
+                                {data.description}
+                            </motion.p>
+
+                            <motion.div variants={itemVariants} className={styles.skillTagsRow}>
+                                {data.skills.map(skill => (
+                                    <span key={skill} className={styles.skillPill}>{skill}</span>
                                 ))}
-                            </div>
-                            <div className={styles.cta}>
-                                <Link to="/signup" className={styles.primaryBtn}>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants} className={styles.ctaGroup}>
+                                <Link to="/signup" className={styles.btnPrimary}>
                                     Start Free Interview
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ marginLeft: '8px' }}>
-                                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+                                    <ArrowRight size={18} />
                                 </Link>
-                                <Link to="/" className={styles.secondaryBtn}>&larr; Back to Home</Link>
-                            </div>
+                                <Link to="/interview-room" className={styles.btnSecondary}>
+                                    View All Roles
+                                </Link>
+                            </motion.div>
                         </motion.div>
                     </section>
 
-                    <section className={styles.features}>
-                        <h2>What's Included in Every <span className={styles.gradient}>Froscel Interview</span></h2>
-                        <div className={styles.featureGrid}>
-                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>{'\u{1F3A5}'} Secure WebRTC Video</h3>
-                                <p>Enterprise-grade encrypted video calls with SFU architecture for panel interviews.</p>
-                            </motion.div>
-                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>{'\u{1F4BB}'} Live Code Editor</h3>
-                                <p>Monaco Editor with real-time execution in 9+ languages including Python, Java, and Go.</p>
-                            </motion.div>
-                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>{'\u{1F916}'} AI Co-Interviewer</h3>
-                                <p>Adaptive follow-up questions, real-time scoring, and post-interview intelligence reports.</p>
-                            </motion.div>
-                            <motion.div className={styles.featureCard} whileHover={{ y: -5 }}>
-                                <h3>{'\u{1F6E1}\uFE0F'} Advanced Proctoring</h3>
-                                <p>Face detection, tab monitoring, and violation timestamping for fair assessments.</p>
-                            </motion.div>
+                    {/* Features Section */}
+                    <section className={styles.platformFeatures}>
+                        <div className={styles.sectionHeader}>
+                            <h2>Included in Every Interview</h2>
+                            <p>Enterprise-grade infrastructure for technical assessments.</p>
                         </div>
-                    </section>
 
-                    <section className={styles.otherRoles}>
-                        <h2>Explore Other Roles</h2>
-                        <div className={styles.roleGrid}>
-                            {ALL_TYPES.filter(([key]) => key !== jobType).map(([key, role]) => (
-                                <Link key={key} to={`/interview-room/${key}`} className={styles.roleCard}>
-                                    <span>{role.icon}</span>
-                                    <span>{role.title.replace('AI Interview for ', '')}</span>
-                                </Link>
-                            ))}
+                        <div className={styles.featureCardsContainer}>
+                            <motion.div className={styles.featCard} whileHover={{ y: -4 }}>
+                                <div className={styles.featIcon}><Video size={24} /></div>
+                                <h3>WebRTC Video</h3>
+                                <p>Secure, low-latency encrypted video calls with SFU architecture tailored for engineering panels.</p>
+                            </motion.div>
+                            <motion.div className={styles.featCard} whileHover={{ y: -4 }}>
+                                <div className={styles.featIcon}><TerminalSquare size={24} /></div>
+                                <h3>Live Code Engine</h3>
+                                <p>Monaco-powered IDE with instant execution capabilities across 9+ modern programming languages.</p>
+                            </motion.div>
+                            <motion.div className={styles.featCard} whileHover={{ y: -4 }}>
+                                <div className={styles.featIcon}><BrainCircuit size={24} /></div>
+                                <h3>AI Co-Interviewer</h3>
+                                <p>Context-aware follow-ups, objective, bias-free real-time scoring, and detailed talent extraction.</p>
+                            </motion.div>
+                            <motion.div className={styles.featCard} whileHover={{ y: -4 }}>
+                                <div className={styles.featIcon}><ShieldCheck size={24} /></div>
+                                <h3>Advanced Proctoring</h3>
+                                <p>Passive integrity tracking, tab monitoring, and anomaly detection ensuring fully fair assessments.</p>
+                            </motion.div>
                         </div>
                     </section>
                 </main>
@@ -171,48 +210,68 @@ const InterviewRoomLanding = () => {
         );
     }
 
-    // Index page listing all job types
+    // --- Main Directory Page ---
     return (
         <div className={styles.page}>
             <Header />
-            <main>
-                <section className={styles.hero}>
+            <main className={styles.mainContent}>
+                <section className={styles.heroMain}>
+                    <div className={styles.heroGlow}></div>
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
+                        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        className={styles.heroCenter}
                     >
-                        <h1 className={styles.title}>
-                            AI-Powered <br />
-                            <span className={styles.gradient}>Technical Interviews</span>
+                        <span className={styles.eyebrow}>AI-Powered Evaluation</span>
+                        <h1 className={styles.mainTitle}>
+                            Technical Interviews,<br />
+                            <span className={styles.textGradient}>Engineered for Scale.</span>
                         </h1>
-                        <p className={styles.description}>
-                            Enterprise-grade interview rooms tailored for every engineering role. Live code execution, AI scoring, and bias-free assessments.
+                        <p className={styles.mainSubtitle}>
+                            Select a role to explore enterprise-grade interview rooms.
+                            Built with live code execution, objective AI scoring, and verifiable talent passports.
                         </p>
                     </motion.div>
                 </section>
-                <section className={styles.allRoles}>
-                    <div className={styles.roleGrid}>
-                        {ALL_TYPES.map(([key, role], index) => (
-                            <motion.div
-                                key={key}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                            >
-                                <Link to={`/interview-room/${key}`} className={styles.roleCardLarge}>
-                                    <span className={styles.roleIcon}>{role.icon}</span>
-                                    <h2>{role.title}</h2>
-                                    <p>{role.description}</p>
-                                    <div className={styles.skills}>
-                                        {role.skills.slice(0, 3).map((s) => (
-                                            <span key={s} className={styles.skillTag}>{s}</span>
-                                        ))}
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </div>
+
+                <section className={styles.rolesGridSection}>
+                    <motion.div
+                        className={styles.rolesGridContainer}
+                        initial="hidden"
+                        animate="show"
+                        variants={containerVariants}
+                    >
+                        {ALL_TYPES.map(([key, role]) => {
+                            const IconComp = role.icon;
+                            return (
+                                <motion.div key={key} variants={itemVariants}>
+                                    <Link to={`/interview-room/${key}`} className={styles.directoryCard}>
+                                        <div className={styles.cardHeader}>
+                                            <div className={styles.cardIconBox} style={{ color: role.color, backgroundColor: `${role.color}10` }}>
+                                                <IconComp size={28} strokeWidth={1.5} />
+                                            </div>
+                                            <div className={styles.cardArrow}>
+                                                <ArrowRight size={20} />
+                                            </div>
+                                        </div>
+                                        <div className={styles.cardBody}>
+                                            <h2 className={styles.cardTitle}>{role.shortTitle}</h2>
+                                            <p className={styles.cardDesc}>{role.description}</p>
+                                        </div>
+                                        <div className={styles.cardFooter}>
+                                            {role.skills.slice(0, 3).map(skill => (
+                                                <span key={skill} className={styles.miniSkill}>{skill}</span>
+                                            ))}
+                                            {role.skills.length > 3 && (
+                                                <span className={styles.miniSkill}>+{role.skills.length - 3}</span>
+                                            )}
+                                        </div>
+                                    </Link>
+                                </motion.div>
+                            );
+                        })}
+                    </motion.div>
                 </section>
             </main>
             <Footer />
