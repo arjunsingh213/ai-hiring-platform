@@ -12,6 +12,7 @@ import SettingsPage from './SettingsPage';
 import OfferAcceptancePage from './OfferAcceptancePage';
 import OnboardingPortal from './OnboardingPortal';
 import LeaderboardPage from './LeaderboardPage';
+import JobBanner from '../../components/jobseeker/JobBanner';
 import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
@@ -28,6 +29,7 @@ const JobSeekerDashboard = () => {
             <Sidebar />
             <TopNav />
             <div className="dashboard-main">
+                <JobBanner />
                 <Routes>
                     <Route path="/" element={<Navigate to="home" replace />} />
                     <Route path="home" element={<HomeFeed />} />

@@ -18,7 +18,7 @@ const UserControl = () => {
     const [viewingATPUser, setViewingATPUser] = useState(null);
     const [atpProjects, setAtpProjects] = useState([]);
     const [showModal, setShowModal] = useState(null);
-    const [formData, setFormData] = useState({ reason: '', newScore: 0, inviteJobId: '' });
+    const [formData, setFormData] = useState({ reason: '', newScore: 0, inviteJobId: '', inviteType: 'job_specific' });
     const [actionLoading, setActionLoading] = useState(false);
     const [resumeData, setResumeData] = useState(null);
     const [activities, setActivities] = useState([]);
@@ -139,7 +139,7 @@ const UserControl = () => {
             if (data.success) {
                 setShowModal(null);
                 setSelectedUser(null);
-                setFormData({ reason: '', newScore: 0, inviteJobId: '' });
+                setFormData({ reason: '', newScore: 0, inviteJobId: '', inviteType: 'job_specific' });
                 fetchUsers();
             } else {
                 alert(data.error || 'Action failed');
@@ -197,11 +197,17 @@ const UserControl = () => {
     };
 
     const handleInviteUser = async () => {
-        if (!formData.inviteJobId || !selectedUser) return;
+        if (!selectedUser) return;
+        if (formData.inviteType === 'job_specific' && !formData.inviteJobId) return;
+
         setActionLoading(true);
         try {
             const token = localStorage.getItem('adminToken');
-            const res = await fetch(`${API_URL}/admin/jobs/${formData.inviteJobId}/invite/${selectedUser._id}`, {
+            const url = formData.inviteType === 'job_specific'
+                ? `${API_URL}/admin/jobs/${formData.inviteJobId}/invite/${selectedUser._id}`
+                : `${API_URL}/admin/users/${selectedUser._id}/invite-platform`;
+
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -211,8 +217,8 @@ const UserControl = () => {
             const data = await res.json();
             if (data.success) {
                 setShowModal(null);
-                setFormData({ ...formData, inviteJobId: '' });
-                alert('Job invitation email sent successfully!');
+                setFormData({ ...formData, inviteJobId: '', inviteType: 'job_specific' });
+                alert('Invitation sent successfully!');
             } else {
                 alert(data.error || 'Failed to send invitation');
             }
@@ -749,29 +755,62 @@ const UserControl = () => {
 
                             {showModal === 'invite' ? (
                                 <div className="admin-form-group">
-                                    <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>
-                                        Select Target Job *
+                                    <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '12px', display: 'block' }}>
+                                        Invitation Type
                                     </label>
-                                    <select
-                                        value={formData.inviteJobId}
-                                        onChange={(e) => setFormData({ ...formData, inviteJobId: e.target.value })}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            background: '#0f172a',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRadius: '8px',
-                                            color: '#f8fafc',
-                                            fontSize: '0.9rem',
-                                            WebkitAppearance: 'none'
-                                        }}
-                                    >
-                                        <option value="">-- Choose an internal Active Job --</option>
-                                        {activeJobs.map(job => (
-                                            <option key={job._id} value={job._id}>{job.title} ({job.company?.name || 'Froscel'})</option>
-                                        ))}
-                                    </select>
-                                    <p style={{ marginTop: '10px', fontSize: '0.8rem', color: '#94a3b8' }}>This will trigger a professional email and an inside-platform system alert containing the job applying link attached.</p>
+                                    <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f8fafc', cursor: 'pointer' }}>
+                                            <input
+                                                type="radio"
+                                                name="inviteType"
+                                                value="job_specific"
+                                                checked={formData.inviteType === 'job_specific'}
+                                                onChange={(e) => setFormData({ ...formData, inviteType: e.target.value })}
+                                            />
+                                            Job Specific Interview
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f8fafc', cursor: 'pointer' }}>
+                                            <input
+                                                type="radio"
+                                                name="inviteType"
+                                                value="platform"
+                                                checked={formData.inviteType === 'platform'}
+                                                onChange={(e) => setFormData({ ...formData, inviteType: e.target.value })}
+                                            />
+                                            Platform Interview
+                                        </label>
+                                    </div>
+
+                                    {formData.inviteType === 'job_specific' && (
+                                        <>
+                                            <label style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>
+                                                Select Target Job *
+                                            </label>
+                                            <select
+                                                value={formData.inviteJobId}
+                                                onChange={(e) => setFormData({ ...formData, inviteJobId: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    background: '#0f172a',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '8px',
+                                                    color: '#f8fafc',
+                                                    fontSize: '0.9rem',
+                                                    WebkitAppearance: 'none'
+                                                }}
+                                            >
+                                                <option value="">-- Choose an internal Active Job --</option>
+                                                {activeJobs.map(job => (
+                                                    <option key={job._id} value={job._id}>{job.title} ({job.company?.name || 'Froscel'})</option>
+                                                ))}
+                                            </select>
+                                            <p style={{ marginTop: '10px', fontSize: '0.8rem', color: '#94a3b8' }}>This will trigger a professional email and an inside-platform system alert containing the job applying link attached.</p>
+                                        </>
+                                    )}
+                                    {formData.inviteType === 'platform' && (
+                                        <p style={{ marginTop: '10px', fontSize: '0.85rem', color: '#94a3b8' }}>This will send an email and notification inviting the user to complete their Platform Interview to establish their AI Talent Passport.</p>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="admin-form-group">
@@ -856,7 +895,7 @@ const UserControl = () => {
                                         handleAction(selectedUser._id, showModal, endpoints[showModal]);
                                     }
                                 }}
-                                disabled={actionLoading || (showModal === 'invite' ? !formData.inviteJobId : (showModal !== 'unsuspend' && !formData.reason))}
+                                disabled={actionLoading || (showModal === 'invite' ? (formData.inviteType === 'job_specific' && !formData.inviteJobId) : (showModal !== 'unsuspend' && !formData.reason))}
                             >
                                 {actionLoading ? 'Processing...' : 'Confirm'}
                             </button>

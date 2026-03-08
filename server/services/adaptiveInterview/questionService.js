@@ -3,8 +3,9 @@ const openRouterService = require('../ai/openRouterService');
 class QuestionService {
     /**
      * Generates a conversational follow-up question based on the orchestrator's deterministic state.
+     * For platform interviews, enriches the prompt with resume projects, experience, and desired role.
      */
-    static async generateQuestion({ currentSkill, depthLevel, strategy, testedSubskills, previousAnswer, previousQuestion, roundType = 'technical' }) {
+    static async generateQuestion({ currentSkill, depthLevel, strategy, testedSubskills, previousAnswer, previousQuestion, roundType = 'technical', resumeContext = null }) {
         const subskillsContext = testedSubskills.length > 0
             ? `Avoid repeating these specific areas: ${testedSubskills.join(', ')}`
             : '';
@@ -16,6 +17,30 @@ class QuestionService {
         };
         const persona = personaMap[roundType] || personaMap['technical'];
 
+        // Build resume-enriched context for platform interviews
+        let platformContext = '';
+        if (resumeContext) {
+            const parts = [];
+            if (resumeContext.desiredRole) parts.push(`- Desired Role: ${resumeContext.desiredRole}`);
+            if (resumeContext.experienceLevel) parts.push(`- Experience Level: ${resumeContext.experienceLevel}`);
+            if (resumeContext.domains?.length > 0) parts.push(`- Interested Domains: ${resumeContext.domains.join(', ')}`);
+            if (resumeContext.projects?.length > 0) {
+                const projectsSummary = resumeContext.projects.slice(0, 3).map(p =>
+                    `"${p.name || p.title}" (${p.description?.substring(0, 100) || 'No description'})`
+                ).join('; ');
+                parts.push(`- Candidate's Projects: ${projectsSummary}`);
+            }
+            if (resumeContext.experience?.length > 0) {
+                const expSummary = resumeContext.experience.slice(0, 3).map(e =>
+                    `${e.role || e.title} at ${e.company} (${e.duration || ''})`
+                ).join('; ');
+                parts.push(`- Work Experience: ${expSummary}`);
+            }
+            if (parts.length > 0) {
+                platformContext = `\n\nCANDIDATE PROFILE (from their resume - use this to ask personalized questions):\n${parts.join('\n')}\n\nIMPORTANT: Reference the candidate's ACTUAL projects and experience when asking questions. For example, ask about a specific project they built, or about challenges they faced in their previous role. Make the conversation personal and relevant to THEIR background.`;
+            }
+        }
+
         const systemPrompt = `You are an ${persona}.
 Generate ONE clear, human-sounding response or follow-up question.
 
@@ -24,13 +49,14 @@ Context:
 - Candidate's Statement: "${previousAnswer || 'N/A'}"
 - Your Previous Question: "${previousQuestion}"
 - Strategic Objective (MUST FOLLOW STRICTLY): ${strategy}
+${platformContext}
 
 Guidelines based on Strategic Objective:
 - IF "repeat_question": You MUST simply repeat Your Previous Question politely. (e.g., "Sure, I was asking...")
 - IF "clarify_question": You MUST rephrase Your Previous Question to be simpler and easier to understand.
 - IF "encouragement": The candidate is struggling. You MUST show empathy ("That's completely fine", "No worries at all") and then ask a slightly easier question within the current topic.
-- IF "switch_skill": The candidate indicated they do not know the answer. You MUST dynamically and naturally acknowledge this with a varied empathetic transition (e.g., "No problem at all", "That's completely fine", "Not to worry, let's move on"). Do not repeat the exact same phrase every time. Then, you MUST ask a completely new, basic question entirely about the new Current Topic (${currentSkill}). DO NOT ask about or reference Your Previous Question (${previousQuestion}).
-- IF "natural_conversation": The candidate made small talk. Respond naturally to their comment briefly, then steer back.
+- IF "switch_skill": The candidate indicated they do not know the answer. You MUST dynamically acknowledge this with a completely unique, natural, and varied empathetic transition (e.g., "Got it", "Fair enough", "Makes sense", "Let's move to another topic"). NEVER, UNDER ANY CIRCUMSTANCES, use the exact phrases "Let's switch gears" or "No problem at all". Then, you MUST ask a completely new, basic question entirely about the new Current Topic (${currentSkill}). DO NOT ask about or reference Your Previous Question (${previousQuestion}).
+- IF "natural_conversation": The candidate made small talk or gave a short affirmative answer (like "Yes", "Sure"). Respond naturally to their comment briefly, then steer back or ask the next logical follow-up.
 - OTHERWISE (technical drill): Build directly on their previous statement to probe for specific technical details or decision-making logic.
 
 Tone Rules:
@@ -77,6 +103,52 @@ Return ONLY the raw spoken text.`;
         } catch (e) {
             console.error('[QuestionService] Trinity fallback failed:', e.message);
             return `Could you elaborate more on your experience with ${currentSkill}?`;
+        }
+    }
+
+    /**
+     * Specifically generates the FIRST question of a new round, bypassing the need for a previous answer or strategy.
+     */
+    static async generateOpeningQuestion({ roundType, skills, resumeContext }) {
+        const personaMap = {
+            'hr': 'empathetic and professional HR Recruiter focusing on cultural fit, work history, and soft skills (ABSOLUTELY NO technical architecture/coding questions)',
+            'behavioral': 'expert Behavioral Interviewer focusing intensely on past experiences, how the candidate handled conflict/situations, and soft skills (ABSOLUTELY NO technical drill-downs)',
+            'technical': 'expert technical interviewer conducting a deep-dive technical round'
+        };
+        const persona = personaMap[roundType] || personaMap['technical'];
+
+        let platformContext = '';
+        if (resumeContext) {
+            const parts = [];
+            if (resumeContext.desiredRole) parts.push(`- Desired Role: ${resumeContext.desiredRole}`);
+            if (resumeContext.experienceLevel) parts.push(`- Experience Level: ${resumeContext.experienceLevel}`);
+            if (resumeContext.domains?.length > 0) parts.push(`- Interested Domains: ${resumeContext.domains.join(', ')}`);
+            if (skills?.length > 0) parts.push(`- Core Skills: ${skills.join(', ')}`);
+            if (resumeContext.projects?.length > 0) {
+                const projectsSummary = resumeContext.projects.slice(0, 2).map(p =>
+                    `"${p.name || p.title}" (${p.description?.substring(0, 100) || ''})`
+                ).join('; ');
+                parts.push(`- Projects: ${projectsSummary}`);
+            }
+            if (parts.length > 0) {
+                platformContext = `\nCANDIDATE PROFILE:\n${parts.join('\n')}\n`;
+            }
+        } else if (skills?.length > 0) {
+            platformContext = `\nCANDIDATE SKILLS: ${skills.join(', ')}\n`;
+        }
+
+        const systemPrompt = `You are an ${persona}.
+You are starting a brand new interview round (${roundType}). The candidate is already in the call with you, so DO NOT say "Hello" or "Welcome".
+Just dive directly into the first question of this new round in a natural conversational way.
+${platformContext}
+Generate EXACTLY ONE opening question appropriate for a ${roundType} round based on their profile.
+Return ONLY the raw spoken text.`;
+
+        try {
+            return await this._callTrinityFallback(systemPrompt, skills?.[0] || 'your background');
+        } catch (error) {
+            console.error('[QuestionService] Trinity opening failed, falling back to Gemini:', error.message);
+            return await this._callGeminiDirectly(systemPrompt);
         }
     }
 }

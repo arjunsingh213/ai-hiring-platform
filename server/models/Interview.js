@@ -397,6 +397,12 @@ const interviewSchema = new mongoose.Schema({
         }
     },
 
+    // Platform interview metadata (resume context, role, skills, etc.)
+    metadata: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
+
     // Candidate visibility control
     resultVisibleToCandidate: {
         type: Boolean,

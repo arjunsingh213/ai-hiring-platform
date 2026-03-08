@@ -6,6 +6,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
     const [avatarState, setAvatarState] = useState('idle');
     const [currentQuestionText, setCurrentQuestionText] = useState("Connecting to AI Interviewer...");
     const [partialTranscript, setPartialTranscript] = useState('');
+    const [liveTranscript, setLiveTranscript] = useState('');
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [volumeLevel, setVolumeLevel] = useState(0);
 
@@ -22,6 +23,8 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
     const safetyTimerRef = useRef(null);
 
     const configRef = useRef({});
+    const recognitionRef = useRef(null);
+    const finalTranscriptRef = useRef('');
 
     // Mutable refs for callbacks
     const currentQuestionTextRef = useRef(currentQuestionText);
@@ -31,21 +34,41 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
     useEffect(() => { currentQuestionTextRef.current = currentQuestionText; }, [currentQuestionText]);
     useEffect(() => { avatarStateRef.current = avatarState; }, [avatarState]);
 
+    const [configLoaded, setConfigLoaded] = useState(false);
+
     useEffect(() => {
         const fetchConfig = async () => {
             if (!interviewId) return;
+            setConfigLoaded(false);
             try {
                 const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/interviews/${interviewId}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await response.json();
                 if (data.success) {
+                    const interview = data.data;
+                    const isPlatform = interview.interviewType === 'platform';
+
                     configRef.current = {
                         interviewId,
-                        candidateId: data.data.userId?._id || data.data.userId,
-                        jobId: data.data.jobId?._id || data.data.jobId,
-                        jobSkills: data.data.jobId?.requirements?.skills || []
+                        candidateId: interview.userId?._id || interview.userId,
+                        jobId: interview.jobId?._id || interview.jobId || null,
+                        jobSkills: isPlatform
+                            ? (interview.metadata?.resumeSkills || [])
+                            : (interview.jobId?.requirements?.skills || []),
+                        // Platform interview extras
+                        interviewType: isPlatform ? 'platform' : 'job_specific',
+                        resumeSkills: isPlatform ? (interview.metadata?.resumeSkills || []) : null,
+                        resumeContext: isPlatform ? {
+                            desiredRole: interview.metadata?.desiredRole,
+                            experienceLevel: interview.metadata?.experienceLevel,
+                            domains: interview.metadata?.jobDomains || [],
+                            projects: interview.metadata?.resumeProjects || [],
+                            experience: interview.metadata?.resumeExperience || []
+                        } : null
                     };
+                    console.log(`[Voice] Config loaded (${isPlatform ? 'PLATFORM' : 'JOB'}):`, configRef.current.jobSkills?.slice(0, 3));
+                    setConfigLoaded(true);
                 }
             } catch (err) {
                 console.error('[Voice] Failed to fetch interview config:', err);
@@ -57,7 +80,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
     const stopRecording = useCallback(async () => {
         if (!isRecordingSessionActive.current) return null;
         isRecordingSessionActive.current = false;
-        console.log('[Voice] 🛑 Stopping Mic');
+        console.log('[Voice] Stopping Mic');
 
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop();
@@ -66,6 +89,11 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
+        }
+
+        // Stop live speech recognition
+        if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
         }
 
         setIsSpeaking(false);
@@ -118,6 +146,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
 
             let silenceStart = Date.now();
             let isUserCurrentlySpeaking = false;
+            let speakingStartTime = null;
 
             const checkVolume = () => {
                 if (!analyserRef.current || !isRecordingSessionActive.current) return;
@@ -131,11 +160,18 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
                 // ONLY trigger VAD logic if we are supposed to be listening (not speaking, not processing)
                 if (avatarStateRef.current === 'listening') {
                     if (average > 4) { // Slightly higher threshold to ignore static
-                        if (!isUserCurrentlySpeaking) isUserCurrentlySpeaking = true;
+                        if (!isUserCurrentlySpeaking) {
+                            isUserCurrentlySpeaking = true;
+                            speakingStartTime = Date.now();
+                        }
                         silenceStart = Date.now();
-                    } else if (isUserCurrentlySpeaking && Date.now() - silenceStart > 1500) { // Slightly longer silence buffer
-                        isUserCurrentlySpeaking = false;
-                        stopRecording();
+                    } else if (isUserCurrentlySpeaking) {
+                        const hasSpokenEnough = speakingStartTime && (Date.now() - speakingStartTime > 2000);
+                        if (hasSpokenEnough && Date.now() - silenceStart > 4000) {
+                            isUserCurrentlySpeaking = false;
+                            speakingStartTime = null;
+                            stopRecording();
+                        }
                     }
                 }
 
@@ -143,8 +179,48 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
             };
 
             checkVolume();
+
+            // Start live speech recognition for real-time transcript
+            finalTranscriptRef.current = '';
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                    const recognition = new SpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.lang = 'en-US';
+                    recognitionRef.current = recognition;
+
+                    recognition.onresult = (event) => {
+                        let currentInterim = '';
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                // Append finalized text to our accumulated ref
+                                finalTranscriptRef.current = (finalTranscriptRef.current + ' ' + transcript).trim();
+                            } else {
+                                currentInterim = transcript;
+                            }
+                        }
+                        // Display: all finalized text + current interim (no duplication)
+                        const display = currentInterim
+                            ? (finalTranscriptRef.current + ' ' + currentInterim).trim()
+                            : finalTranscriptRef.current;
+                        setLiveTranscript(display);
+                    };
+
+                    recognition.onerror = (e) => {
+                        if (e.error !== 'aborted') console.log('[Voice] SpeechRecognition error:', e.error);
+                    };
+
+                    recognition.start();
+                    console.log('[Voice] Live speech recognition started');
+                }
+            } catch (e) {
+                console.log('[Voice] SpeechRecognition not available:', e.message);
+            }
         } catch (error) {
-            console.error('[Voice] ❌ Mic failed:', error);
+            console.error('[Voice] Mic failed:', error);
             setStatus('error');
             isRecordingSessionActive.current = false;
         }
@@ -195,7 +271,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
     useEffect(() => { nativeTTSRef.current = speakWithNativeTTS; }, [speakWithNativeTTS]);
 
     useEffect(() => {
-        if (!interviewId || !isEnabled) return;
+        if (!interviewId || !isEnabled || !configLoaded) return;
 
         // Reset state for new connection (important for multi-round interviews)
         setStatus('connecting');
@@ -214,13 +290,17 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
         socketRef.current = newSocket;
 
         newSocket.on('connect', () => {
-            const { interviewId, candidateId, jobId, jobSkills } = configRef.current;
+            const config = configRef.current;
             newSocket.emit('start_interview', {
-                interviewId,
-                candidateId,
-                jobId,
-                jobSkills,
-                currentRoundIndex: resetTrigger
+                interviewId: config.interviewId,
+                candidateId: config.candidateId,
+                jobId: config.jobId,
+                jobSkills: config.jobSkills,
+                currentRoundIndex: resetTrigger,
+                // Platform interview extras
+                interviewType: config.interviewType || 'job_specific',
+                resumeSkills: config.resumeSkills,
+                resumeContext: config.resumeContext
             });
         });
 
@@ -236,6 +316,8 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
                 setCurrentQuestionText(data.text);
                 setAvatarState('speaking');
                 setPartialTranscript('');
+                setLiveTranscript('');
+                finalTranscriptRef.current = '';
                 audioChunksRef.current = [];
                 isPlayingRef.current = false;
                 hasReceivedAudioRef.current = false;
@@ -310,7 +392,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
             window.speechSynthesis.cancel();
         };
         // MUST ONLY DEPEND ON interviewId OR resetTrigger to flush state correctly between rounds
-    }, [interviewId, resetTrigger, isEnabled]);
+    }, [interviewId, resetTrigger, isEnabled, configLoaded]);
 
     const forceSilenceDetection = () => stopRecording();
 
@@ -324,6 +406,7 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
         avatarState,
         currentQuestionText,
         partialTranscript,
+        liveTranscript,
         isSpeaking,
         volumeLevel,
         startRecording,

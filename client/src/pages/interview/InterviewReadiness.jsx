@@ -398,7 +398,16 @@ const InterviewReadiness = ({
         }
     };
 
-    const pipelineRounds = job?.interviewPipeline?.rounds?.length > 0 ? job.interviewPipeline.rounds : null;
+    const pipelineRounds = job?.interviewPipeline?.rounds?.length > 0
+        ? job.interviewPipeline.rounds
+        : interview?.pipelineConfig?.rounds?.length > 0
+            ? interview.pipelineConfig.rounds.map((r, i) => ({
+                roundNumber: i + 1,
+                title: r.title,
+                roundType: r.roundType,
+                description: r.roundType === 'coding' ? 'Coding challenge' : `${r.questionConfig?.questionCount || 8} voice questions`
+            }))
+            : null;
 
     // Mobile/tablet detection
     const isMobileOrTablet = () => {
@@ -591,28 +600,21 @@ const InterviewReadiness = ({
                                     <div className="struct-item">
                                         <div className="struct-icon tech">1</div>
                                         <div className="struct-info">
-                                            <strong>Core Skills Assessment</strong>
-                                            <span>Based on your domain expertise</span>
+                                            <strong>Technical / Domain Assessment</strong>
+                                            <span>8 voice questions based on your skills</span>
                                         </div>
                                     </div>
                                     <div className="struct-item">
                                         <div className="struct-icon behav">2</div>
                                         <div className="struct-info">
-                                            <strong>Deep Dive / Scenario</strong>
-                                            <span>Applied problem solving</span>
-                                        </div>
-                                    </div>
-                                    <div className="struct-item">
-                                        <div className="struct-icon situ">3</div>
-                                        <div className="struct-info">
-                                            <strong>HR & Communication</strong>
-                                            <span>Soft skills & collaboration</span>
+                                            <strong>Behavioral & Soft Skills</strong>
+                                            <span>8 voice questions on communication</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="coding-note" style={{ marginTop: '8px', padding: '12px 16px', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '8px', fontSize: '0.85rem', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span>💻</span>
-                                    <span>Coding round will be added only if programming languages are detected in your resume</span>
+                                    <span>A coding round may be added based on your role, experience, and detected programming skills</span>
                                 </div>
                             </div>
                         )}

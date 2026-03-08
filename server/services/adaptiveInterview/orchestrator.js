@@ -13,7 +13,8 @@ class Orchestrator {
         const session = SessionStore.getSession(socket.id);
         if (!session) return;
 
-        console.log(`[Adaptive] Processing answer for ${socket.id}. Turn ${session.turnCount + 1}/${session.maxTurns}`);
+        const isPlatform = session.interviewType === 'platform';
+        console.log(`[Adaptive] Processing answer for ${socket.id}. Turn ${session.turnCount + 1}/${session.maxTurns} (${isPlatform ? 'PLATFORM' : 'JOB'})`);
 
         // Add to buffer
         session.transcriptBuffer.push({ role: 'candidate', text: answerText });
@@ -36,7 +37,10 @@ class Orchestrator {
         }
 
         const isMaxTurnsReached = session.turnCount >= session.maxTurns - 1;
-        const isPoorPerformanceExit = session.consecutiveFailures >= 4;
+
+        // Platform interviews: NO early exit for poor performance — all turns must complete
+        // Job-specific interviews: Keep the existing early exit after 4 consecutive failures
+        const isPoorPerformanceExit = !isPlatform && session.consecutiveFailures >= 4;
 
         if (isMaxTurnsReached || isPoorPerformanceExit) {
             let exitMessage = "It seems we've covered a lot of ground today. Thank you so much for your time, that concludes this round of the interview!";
@@ -116,7 +120,9 @@ class Orchestrator {
             testedSubskills: session.testedSubskills,
             previousAnswer: answerText,
             previousQuestion: previousQuestion, // Expose previous question for repeat/clarify
-            roundType: session.roundType // Pass roundType to adjust AI persona
+            roundType: session.roundType, // Pass roundType to adjust AI persona
+            // Platform-specific context for enriched questions
+            resumeContext: session.resumeContext
         });
 
         session.transcriptBuffer.push({ role: 'interviewer', text: nextQuestion });
@@ -131,8 +137,6 @@ class Orchestrator {
         // --- TTS Generation (Streaming Buffer) ---
         try {
             const audioBuffer = await TTSService.generateAudio(nextQuestion);
-            // Simulate streaming chunks (In a real scenario with elevenlabs websocket, this would stream natively. 
-            // Here we chunk the buffer over standard socket io events to simulate streaming playback)
             this._streamAudioBuffer(socket, audioBuffer);
         } catch (e) {
             console.error('[Adaptive] TTS Failed:', e);
@@ -203,36 +207,41 @@ class Orchestrator {
     /**
      * Fire and forget DB save
      */
-    static async _persistTurnAsync(session, answerText, nextQuestionText, analysis) {
+    static async _persistTurnAsync(session, candidateAnswer, aiQuestion, analysis = null) {
         if (!session.interviewId) return; // Mocking locally
 
         try {
-            const mappedDifficulty = this._mapDepthToDifficulty(analysis.depth_level);
+            const timeSpent = Date.now() - session.turnStartTime;
+            session.turnStartTime = Date.now(); // reset for next turn
+
+            const currentRoundIndex = session.currentRoundIndex || 0;
 
             await Interview.findByIdAndUpdate(session.interviewId, {
                 $push: {
                     responses: {
                         questionIndex: session.turnCount - 1,
-                        answer: answerText,
-                        timeSpent: 0,
-                        evaluation: {
-                            score: analysis.clarity_score * 100,
-                            feedback: analysis.weakness_detected || 'Good response',
-                            topicsAddressed: analysis.skill_detected !== "unknown" ? [analysis.skill_detected] : []
-                        }
+                        answer: candidateAnswer,
+                        timeSpent,
+                        evaluation: analysis ? {
+                            score: analysis.clarity_score * 10 || 5, // rough estimate out of 10
+                            feedback: `Skill: ${analysis.skill_detected}. Depth: ${analysis.depth_level}. Strategy: ${analysis.follow_up_strategy}`,
+                            weakness_detected: analysis.weakness_detected || ''
+                        } : null,
+                        roundIndex: currentRoundIndex
                     },
                     questions: {
-                        question: nextQuestionText,
-                        generatedBy: 'adaptive',
+                        question: aiQuestion,
                         category: session.currentSkill,
-                        difficulty: mappedDifficulty,
-                        roundIndex: 0
+                        difficulty: analysis ? analysis.depth_level : 'medium',
+                        generatedBy: 'adaptive',
+                        assessingSkill: session.currentSkill,
+                        roundIndex: currentRoundIndex
                     }
                 }
             });
             console.log(`[Adaptive] DB Persisted turn async for ${session.interviewId}`);
         } catch (e) {
-            console.error('[Adaptive] DB persistence failed:', e.message);
+            console.error('[Adaptive] DB persistence failed:', e);
         }
     }
 }

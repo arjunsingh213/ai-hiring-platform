@@ -331,6 +331,220 @@ router.post('/start', userAuth, async (req, res) => {
 });
 
 /**
+ * POST /api/onboarding-interview/start-voice
+ * Start a new platform interview using the video room environment
+ * Creates an Interview document with dynamic pipelineConfig
+ * Returns interviewId for Socket.IO voice connection
+ */
+router.post('/start-voice', userAuth, async (req, res) => {
+    try {
+        const {
+            userId,
+            parsedResume,
+            desiredRole,
+            experienceLevel,
+            yearsOfExperience,
+            jobDomains
+        } = req.body;
+
+        console.log('[PLATFORM-VOICE] Starting video room interview');
+        console.log('[PLATFORM-VOICE] Role:', desiredRole, '| Exp:', experienceLevel, yearsOfExperience ? `(${yearsOfExperience}y)` : '');
+
+        // Check for existing in-progress platform interview
+        const existingInterview = await Interview.findOne({
+            userId,
+            interviewType: 'platform',
+            status: { $in: ['scheduled', 'in_progress'] }
+        });
+
+        if (existingInterview) {
+            // If old interview has no metadata (pre-schema fix), delete it so a fresh one is created
+            if (!existingInterview.metadata) {
+                console.log('[PLATFORM-VOICE] Found stale interview without metadata, removing:', existingInterview._id);
+                await Interview.findByIdAndDelete(existingInterview._id);
+            } else {
+                console.log('[PLATFORM-VOICE] Resuming existing interview:', existingInterview._id);
+                return res.json({
+                    success: true,
+                    interviewId: existingInterview._id,
+                    pipelineConfig: existingInterview.pipelineConfig,
+                    currentRoundIndex: existingInterview.currentRoundIndex || 0,
+                    resumeContext: existingInterview.metadata ? {
+                        desiredRole: existingInterview.metadata.desiredRole,
+                        experienceLevel: existingInterview.metadata.experienceLevel,
+                        domains: existingInterview.metadata.jobDomains || [],
+                        projects: existingInterview.metadata.resumeProjects || [],
+                        experience: existingInterview.metadata.resumeExperience || []
+                    } : null,
+                    resumeSkills: existingInterview.metadata?.resumeSkills || [],
+                    resuming: true
+                });
+            }
+        }
+
+        // Import role template utilities
+        const { getRoleCategory, getExperienceTier } = require('../utils/roleQuestionTemplates');
+        const roleCategory = getRoleCategory(desiredRole);
+        const expTier = getExperienceTier(experienceLevel, yearsOfExperience);
+
+        // ─── DYNAMIC BLUEPRINT GENERATION ─────────────────────────
+        // Determine if coding round should be included
+        const technicalCategories = ['development', 'data', 'devops', 'qa', 'database', 'security'];
+        const isTechnicalRole = technicalCategories.includes(roleCategory);
+        const isExperienced = expTier !== 'fresher';
+        const hasTechnicalSkills = (parsedResume?.skills || []).length > 0;
+        const hasRelevantExperience = (parsedResume?.experience || []).length > 0;
+
+        // Include coding round only for experienced candidates in technical roles
+        // who have relevant technical skills and work experience
+        const shouldIncludeCoding = isTechnicalRole && isExperienced && hasTechnicalSkills && hasRelevantExperience;
+
+        console.log(`[PLATFORM-VOICE] Blueprint: role=${roleCategory}, exp=${expTier}, coding=${shouldIncludeCoding}`);
+
+        // Build pipelineConfig rounds (same structure as job-specific interviews)
+        const pipelineRounds = [];
+
+        // Round 1: Technical Voice (always present)
+        pipelineRounds.push({
+            roundType: isTechnicalRole ? 'technical' : 'behavioral',
+            title: isTechnicalRole
+                ? (isExperienced ? 'Technical Deep Dive' : 'Technical Fundamentals')
+                : 'Domain Knowledge',
+            questionConfig: { questionCount: 8 },
+            order: 1
+        });
+
+        // Round 2: Coding (conditional) or Behavioral
+        if (shouldIncludeCoding) {
+            // Extract programming languages from resume skills
+            const rawSkills = parsedResume?.skills || [];
+            const skillNames = rawSkills.map(s => (typeof s === 'object' && s.name) ? s.name : s);
+            const codingLanguages = skillNames.filter(s =>
+                /javascript|python|java|c\+\+|c#|typescript|go|rust|ruby|php|swift|kotlin/i.test(s)
+            ).slice(0, 3);
+
+            pipelineRounds.push({
+                roundType: 'coding',
+                title: 'Coding Challenge',
+                codingConfig: {
+                    difficulty: expTier === '5+' ? 'hard' : (expTier === '3-5' ? 'medium' : 'easy'),
+                    languages: codingLanguages.length > 0 ? codingLanguages : ['JavaScript'],
+                    topics: skillNames.slice(0, 5),
+                    timePerProblem: 25
+                },
+                order: 2
+            });
+        }
+
+        // Final Round: Behavioral/HR Voice (always present)
+        pipelineRounds.push({
+            roundType: 'behavioral',
+            title: 'Behavioral & Soft Skills',
+            questionConfig: { questionCount: 8 },
+            order: shouldIncludeCoding ? 3 : 2
+        });
+
+        const pipelineConfig = {
+            rounds: pipelineRounds,
+            settings: {
+                maxTurnsPerRound: 8,
+                interviewType: 'platform'
+            }
+        };
+
+        // ─── EXTRACT RESUME CONTEXT FOR VOICE AI ─────────────────
+        const rawSkills = parsedResume?.skills || [];
+        const resumeSkills = rawSkills.map(s => (typeof s === 'object' && s.name) ? s.name : s).slice(0, 10);
+        const resumeProjects = (parsedResume?.projects || []).slice(0, 3).map(p => ({
+            name: p.name || p.title || 'Untitled Project',
+            description: (p.description || '').substring(0, 200)
+        }));
+        const resumeExperience = (parsedResume?.experience || []).slice(0, 3).map(e => ({
+            role: e.role || e.title || e.position || 'Role',
+            company: e.company || e.organization || 'Company',
+            duration: e.duration || e.period || ''
+        }));
+
+        // ─── GENERATE FIRST QUESTION ─────────────────────────────
+        const firstRound = pipelineRounds[0];
+        const questionContext = buildQuestionPrompt({
+            desiredRole,
+            experienceLevel,
+            yearsOfExperience: yearsOfExperience || 0,
+            roleCategory,
+            resumeSkills,
+            resumeProjects: parsedResume?.projects?.slice(0, 2) || [],
+            jobDomains: jobDomains || [],
+            round: 1,
+            roundFocus: isTechnicalRole
+                ? ['technical concepts', 'problem-solving', 'architecture']
+                : ['domain expertise', 'process knowledge', 'stakeholder management'],
+            difficulty: isExperienced ? 'medium' : 'easy',
+            competencies: ['technical knowledge', 'communication', 'analytical thinking']
+        });
+
+        const firstQuestion = await geminiService.generateAdaptiveQuestion(questionContext);
+
+        // ─── CREATE INTERVIEW DOCUMENT ───────────────────────────
+        const interview = new Interview({
+            userId,
+            interviewType: 'platform',
+            status: 'in_progress',
+            pipelineConfig,
+            currentRoundIndex: 0,
+            questions: [{
+                question: firstQuestion,
+                generatedBy: 'adaptive',
+                category: resumeSkills[0] || desiredRole,
+                difficulty: isExperienced ? 'medium' : 'easy',
+                roundIndex: 0
+            }],
+            responses: [],
+            metadata: {
+                desiredRole,
+                experienceLevel,
+                yearsOfExperience: parseInt(yearsOfExperience) || 0,
+                jobDomains: jobDomains || [],
+                roleCategory,
+                resumeSkills,
+                resumeProjects,
+                resumeExperience,
+                startedAt: new Date()
+            }
+        });
+
+        await interview.save();
+        console.log(`[PLATFORM-VOICE] Created interview ${interview._id} with ${pipelineRounds.length} rounds`);
+
+        res.json({
+            success: true,
+            interviewId: interview._id,
+            pipelineConfig,
+            currentRoundIndex: 0,
+            firstQuestion,
+            // Pass resume context for the voice socket connection
+            resumeContext: {
+                desiredRole,
+                experienceLevel,
+                domains: jobDomains || [],
+                projects: resumeProjects,
+                experience: resumeExperience
+            },
+            resumeSkills,
+            resuming: false
+        });
+
+    } catch (error) {
+        console.error('[PLATFORM-VOICE] Start failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to start platform interview',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
  * Helper function to build question generation prompt
  */
 function buildQuestionPrompt(context) {

@@ -1864,6 +1864,104 @@ router.post('/jobs/:jobId/invite/:userId', adminAuth, requirePermission('view_us
 });
 
 /**
+ * POST /api/admin/users/:userId/invite-platform
+ * Send an invitation email to a candidate to establish their AI Talent Passport
+ */
+router.post('/users/:userId/invite-platform', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const candidate = await User.findById(userId);
+
+        if (!candidate) {
+            return res.status(404).json({
+                success: false,
+                error: 'Candidate not found.'
+            });
+        }
+
+        const frontendUrl = process.env.FRONTEND_URL || 'https://www.froscel.com';
+        const platformInterviewUrl = `${frontendUrl}/onboarding/jobseeker`;
+
+        // 1. Send an industry-standard email
+        const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { background: #f9fafb; padding: 32px; }
+        .detail-card { background: white; border-radius: 10px; padding: 20px; margin: 16px 0; border: 1px solid #e5e7eb; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; margin-top: 10px; margin-bottom: 20px;}
+        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>You're Invited to Establish Your AI Talent Passport</h1>
+        </div>
+        <div class="content">
+            <p>Hi <strong>${candidate.profile?.name || 'there'}</strong>,</p>
+            <p>Froscel invites you to complete our Platform Interview to build your AI Talent Passport. Stand out to top recruiters by showcasing your domain expertise, communication, and problem-solving skills.</p>
+            <div class="detail-card">
+                <p><strong>Next Step:</strong> Click the button below to start your adaptive, multi-round AI interview. The process evaluates your unique skills and establishes a verified score for our employer network.</p>
+            </div>
+            <center style="margin: 24px 0;">
+                <a href="${platformInterviewUrl}" class="cta-button">
+                    Start Platform Interview →
+                </a>
+            </center>
+            <p>Best of luck!<br/>The AI Hiring Platform Team</p>
+        </div>
+        <div class="footer">
+            <p>This email was sent by AI Hiring Platform.</p>
+        </div>
+    </div>
+</body>
+</html>`.trim();
+
+        await sendEmail({
+            to: candidate.email,
+            subject: 'Invitation: Establish Your AI Talent Passport on Froscel',
+            text: 'You have been invited to complete a Platform Interview to build your AI Talent Passport. Log into your dashboard to start.',
+            html
+        });
+
+        // 2. Add an in-app Notification for the candidate
+        const notification = new Notification({
+            userId: candidate._id,
+            type: 'system',
+            title: 'Platform Interview Invitation',
+            message: 'You have been invited to complete a Platform Interview to establish your AI Talent Passport!',
+            actionUrl: '/onboarding/jobseeker',
+            actionText: 'Start Interview'
+        });
+        await notification.save();
+
+        // 3. Log Audit
+        await auditLog(req, 'invite_platform_interview', 'user', candidate._id, {
+            reason: 'Admin trigger for Platform Interview',
+            metadata: { targetEmail: candidate.email }
+        });
+
+        return res.json({
+            success: true,
+            message: \`Invitation successfully sent to \${candidate.profile?.name || candidate.email}.\`
+        });
+
+    } catch (error) {
+        console.error('Platform interview invitation failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to dispatch the platform interview invitation.'
+        });
+    }
+});
+
+/**
  * POST /api/admin/:id/force-reset-password
  * Force password reset for admin (super_admin only)
  */
@@ -1879,7 +1977,7 @@ router.post('/:id/force-reset-password', adminAuth, requirePermission('manage_ad
         }
 
         // Generate temporary password
-        const tempPassword = `Reset${Date.now()}!`;
+        const tempPassword = `Reset${ Date.now() }!`;
         targetAdmin.password = tempPassword;
         targetAdmin.mustResetPassword = true;
         await targetAdmin.save();
@@ -2144,7 +2242,7 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
         if (!applicant) return res.status(404).json({ success: false, error: 'Applicant not found' });
         if (applicant.status !== 'applied') {
-            return res.status(400).json({ success: false, error: `Applicant already has status: ${applicant.status}` });
+            return res.status(400).json({ success: false, error: `Applicant already has status: ${ applicant.status }` });
         }
 
         // Update status to interviewing
@@ -2162,7 +2260,7 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
                 userId,
                 type: 'application_status',
                 title: 'Application Approved!',
-                message: `Your application for "${job.title}" at ${job.company?.name || 'the company'} has been approved! You can now proceed to the interview.`,
+                message: `Your application for "${job.title}" at ${ job.company?.name || 'the company' } has been approved! You can now proceed to the interview.`,
                 relatedEntity: { entityType: 'job', entityId: job._id },
                 actionUrl: '/jobseeker/jobs',
                 actionText: 'View Jobs',
@@ -2172,49 +2270,49 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
             // Send email
             if (user?.email) {
                 const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .content { background: #f9fafb; padding: 32px; }
-        .detail-card { background: white; border-radius: 10px; padding: 20px; margin: 16px 0; border: 1px solid #e5e7eb; }
-        .cta-button { display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
-        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Application Approved!</h1>
-        </div>
-        <div class="content">
-            <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
-            <p>Great news! Your application for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong> has been approved.</p>
-            <div class="detail-card">
-                <p><strong>Next Step:</strong> You can now take the job-specific interview. Log in to your dashboard to get started.</p>
-            </div>
-            <center style="margin: 24px 0;">
-                <a href="${frontendUrl}/jobseeker/jobs" class="cta-button">
-                    View Jobs →
-                </a>
-            </center>
-            <p>Best of luck!<br/>The AI Hiring Platform Team</p>
-        </div>
-        <div class="footer">
-            <p>This email was sent by AI Hiring Platform.</p>
-        </div>
-    </div>
-</body>
-</html>`.trim();
+            < !DOCTYPE html >
+                <html>
+                    <head>
+                        <style>
+                            body {font - family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                            .container {max - width: 600px; margin: 0 auto; }
+                            .header {background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
+                            .header h1 {margin: 0; font-size: 24px; }
+                            .content {background: #f9fafb; padding: 32px; }
+                            .detail-card {background: white; border-radius: 10px; padding: 20px; margin: 16px 0; border: 1px solid #e5e7eb; }
+                            .cta-button {display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
+                            .footer {text - align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>Application Approved!</h1>
+                            </div>
+                            <div class="content">
+                                <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
+                                <p>Great news! Your application for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong> has been approved.</p>
+                                <div class="detail-card">
+                                    <p><strong>Next Step:</strong> You can now take the job-specific interview. Log in to your dashboard to get started.</p>
+                                </div>
+                                <center style="margin: 24px 0;">
+                                    <a href="${frontendUrl}/jobseeker/jobs" class="cta-button">
+                                        View Jobs →
+                                    </a>
+                                </center>
+                                <p>Best of luck!<br />The AI Hiring Platform Team</p>
+                            </div>
+                            <div class="footer">
+                                <p>This email was sent by AI Hiring Platform.</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>`.trim();
 
                 await sendEmail({
                     to: user.email,
-                    subject: `Application Approved — ${job.title}`,
-                    text: `Your application for ${job.title} has been approved! Log in to proceed to the interview.`,
+                    subject: `Application Approved — ${ job.title } `,
+                    text: `Your application for ${ job.title } has been approved! Log in to proceed to the interview.`,
                     html
                 });
             }
@@ -2253,7 +2351,7 @@ router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) =
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
         if (!applicant) return res.status(404).json({ success: false, error: 'Applicant not found' });
         if (applicant.status !== 'applied') {
-            return res.status(400).json({ success: false, error: `Applicant already has status: ${applicant.status}` });
+            return res.status(400).json({ success: false, error: `Applicant already has status: ${ applicant.status } ` });
         }
 
         // Update status
@@ -2271,7 +2369,7 @@ router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) =
                 userId,
                 type: 'application_status',
                 title: 'Application Update',
-                message: `Your application for "${job.title}" has been reviewed. Unfortunately, we are moving forward with other candidates at this time.`,
+                message: `Your application for "${job.title}" has been reviewed.Unfortunately, we are moving forward with other candidates at this time.`,
                 relatedEntity: { entityType: 'job', entityId: job._id },
                 actionUrl: '/jobseeker/jobs',
                 actionText: 'Browse More Jobs',
@@ -2281,67 +2379,67 @@ router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) =
             // Send email
             if (user?.email) {
                 const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .content { background: #f9fafb; padding: 32px; }
-        .cta-button { display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
-        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Application Update</h1>
-        </div>
-        <div class="content">
-            <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
-            <p>Thank you for applying for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong>.</p>
-            <p>After careful review, we've decided to move forward with other candidates for this position. We encourage you to continue exploring other opportunities on our platform.</p>
-            <center style="margin: 24px 0;">
-                <a href="${process.env.FRONTEND_URL || 'https://www.froscel.com'}/jobseeker/jobs" class="cta-button">
-                    Browse More Jobs →
-                </a>
-            </center>
-            <p>Best regards,<br/>The AI Hiring Platform Team</p>
-        </div>
-        <div class="footer">
-            <p>This email was sent by AI Hiring Platform.</p>
-        </div>
-    </div>
-</body>
-</html>`.trim();
+            < !DOCTYPE html >
+                <html>
+                    <head>
+                        <style>
+                            body {font - family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+                            .container {max - width: 600px; margin: 0 auto; }
+                            .header {background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
+                            .header h1 {margin: 0; font-size: 24px; }
+                            .content {background: #f9fafb; padding: 32px; }
+                            .cta-button {display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
+                            .footer {text - align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>Application Update</h1>
+                            </div>
+                            <div class="content">
+                                <p>Hi <strong>${user.profile?.name || 'there'}</strong>,</p>
+                                <p>Thank you for applying for <strong>${job.title}</strong> at <strong>${job.company?.name || 'the company'}</strong>.</p>
+                                <p>After careful review, we've decided to move forward with other candidates for this position. We encourage you to continue exploring other opportunities on our platform.</p>
+                                <center style="margin: 24px 0;">
+                                    <a href="${process.env.FRONTEND_URL || 'https://www.froscel.com'}/jobseeker/jobs" class="cta-button">
+                                        Browse More Jobs →
+                                    </a>
+                                </center>
+                                <p>Best regards,<br />The AI Hiring Platform Team</p>
+                            </div>
+                            <div class="footer">
+                                <p>This email was sent by AI Hiring Platform.</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>`.trim();
 
                 await sendEmail({
                     to: user.email,
-                    subject: `Application Update — ${job.title}`,
-                    text: `Thank you for applying for ${job.title}. After review, we've decided to move forward with other candidates.`,
-                    html
-                });
+                    subject: `Application Update — ${ job.title } `,
+                    text: `Thank you for applying for ${ job.title }.After review, we've decided to move forward with other candidates.`,
+        html
+    });
             }
 
-            // Audit log
-            await auditLog(req, 'reject_application', 'job', job._id, {
-                userId, jobTitle: job.title, reason
-            });
+// Audit log
+await auditLog(req, 'reject_application', 'job', job._id, {
+    userId, jobTitle: job.title, reason
+});
         } catch (setupError) {
-            console.error('Failed to send rejection notifications/email:', setupError);
-            // Non-fatal error since DB update succeeded
-        }
+    console.error('Failed to send rejection notifications/email:', setupError);
+    // Non-fatal error since DB update succeeded
+}
 
-        res.json({
-            success: true,
-            message: 'Application rejected. Candidate has been notified.'
-        });
+res.json({
+    success: true,
+    message: 'Application rejected. Candidate has been notified.'
+});
     } catch (error) {
-        console.error('Reject application error:', error);
-        res.status(500).json({ success: false, error: 'Failed to reject application' });
-    }
+    console.error('Reject application error:', error);
+    res.status(500).json({ success: false, error: 'Failed to reject application' });
+}
 });
 
 /**

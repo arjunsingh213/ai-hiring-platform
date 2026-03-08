@@ -1,0 +1,89 @@
+.job-banner-container {
+    background-color: #e4eefe;
+    /* Light blue background similar to the screenshot */
+    color: #1a1a1a;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    border-bottom: 1px solid #c2d6f9;
+    font-size: 14px;
+    width: 100%;
+    z-index: 10;
+}
+
+.job-banner-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 40px;
+    /* Space for close button */
+    word-break: break-word;
+}
+
+.job-banner-highlight {
+    font-weight: 600;
+    color: #1e3a8a;
+    /* Darker blue text */
+    flex-shrink: 0;
+}
+
+.job-banner-text {
+    color: #334155;
+}
+
+.job-banner-text strong {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.job-banner-link {
+    background: none;
+    border: none;
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: color 0.2s ease;
+}
+
+.job-banner-link:hover {
+    color: #1d4ed8;
+}
+
+.job-banner-close {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.job-banner-close:hover {
+    background-color: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .job-banner-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

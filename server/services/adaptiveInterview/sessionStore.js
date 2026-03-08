@@ -11,6 +11,7 @@ class SessionStore {
             interviewId: data.interviewId || null,
             candidateId: data.candidateId || null,
             jobId: data.jobId || null,
+            interviewType: data.interviewType || 'job_specific', // 'platform' or 'job_specific'
             jobSkills: data.jobSkills || [],
             currentSkill: data.jobSkills?.[0] || null,
             skillCoverageMap: {}, // Track questions asked per skill
@@ -24,7 +25,9 @@ class SessionStore {
             turnCount: 0,
             consecutiveFailures: 0,
             isProcessing: false, // Lock to prevent concurrent triggers
-            maxTurns: data.maxTurns || 11
+            maxTurns: data.maxTurns || 11,
+            // Platform interview context (from user's resume + onboarding)
+            resumeContext: data.resumeContext || null // { desiredRole, experienceLevel, domains, projects, experience }
         };
 
         const session = { ...defaultState, ...data };

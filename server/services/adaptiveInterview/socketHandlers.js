@@ -56,37 +56,95 @@ const setupAdaptiveNamespace = (io) => {
                 currentSkill: session.currentSkill
             });
 
-            // Push initial question if it exists in DB
-            try {
-                if (interview && interview.questions.length > 0) {
-                    // Try to find the latest question for the *current* round specifically
-                    const currentRoundQs = interview.questions.filter(q =>
-                        q.roundIndex === interview.currentRoundIndex ||
-                        q.roundIndex === currentRoundIndex ||
-                        // Fallback for older data without roundIndex: just assume if there's questions, we use the last
-                        q.roundIndex === undefined
-                    );
+            socket.emit('session_initialized', {
+                status: 'ready',
+                currentSkill: session.currentSkill
+            });
 
-                    const lastQuestion = currentRoundQs.length > 0
-                        ? currentRoundQs[currentRoundQs.length - 1]
-                        : interview.questions[interview.questions.length - 1];
+            // Restore conversation state for this ROUND specifically
+            const currentRoundQs = (interview?.questions || []).filter(q =>
+                q.roundIndex === currentRoundIndex || (currentRoundIndex === 0 && q.roundIndex === undefined)
+            );
 
-                    console.log(`[Adaptive] 🤖 Emitting initial question: "${lastQuestion.question.substring(0, 50)}..."`);
-                    socket.emit('ai_question_text', { text: lastQuestion.question });
+            // Restore session counters based on this round's questions/responses
+            const currentRoundResponses = (interview?.responses || []).filter(r =>
+                r.roundIndex === currentRoundIndex || (currentRoundIndex === 0 && r.roundIndex === undefined)
+            );
+            session.turnCount = currentRoundResponses.length;
 
-                    // Generate and stream audio for the initial question
-                    try {
-                        const audioBuffer = await TTSService.generateAudio(lastQuestion.question);
-                        Orchestrator._streamAudioBuffer(socket, audioBuffer);
-                    } catch (e) {
-                        console.error('[Adaptive] Initial TTS Failed:', e);
-                        socket.emit('tts_error', { message: 'Voice generation failed, falling back to text.' });
-                    }
-                } else {
-                    console.log(`[Adaptive] ⚠️ No initial questions found in DB for interview ${interviewId}`);
+            // Build transcript buffer (only for current round context)
+            currentRoundQs.forEach((q, i) => {
+                session.transcriptBuffer.push({ role: 'interviewer', text: q.question });
+                const ans = currentRoundResponses.find(r => r.questionIndex === i);
+                if (ans) {
+                    session.transcriptBuffer.push({ role: 'candidate', text: ans.answer });
                 }
-            } catch (err) {
-                console.error('[Adaptive] ❌ Failed to fetch initial question:', err.message);
+            });
+
+            // Emit the active question for this round
+            if (currentRoundQs.length > 0) {
+                const lastQuestion = currentRoundQs[currentRoundQs.length - 1].question;
+                console.log(`[Adaptive] Resuming round ${currentRoundIndex}. Emitting last question.`);
+                socket.emit('ai_question_text', { text: lastQuestion });
+
+                try {
+                    const audioBuffer = await TTSService.generateAudio(lastQuestion);
+                    Orchestrator._streamAudioBuffer(socket, audioBuffer);
+                } catch (e) {
+                    console.error('[Adaptive] TTS Failed on resume:', e);
+                }
+            } else if (currentRoundIndex > 0) {
+                // BUG FIX #5: Platform interview transitioning to a NEW round with NO questions yet
+                console.log(`[Adaptive] No questions found for round ${currentRoundIndex}. Auto-generating opening question...`);
+
+                const QuestionService = require('./questionService');
+                const resumeContext = interview?.metadata ? {
+                    desiredRole: interview.metadata.desiredRole,
+                    experienceLevel: interview.metadata.experienceLevel,
+                    domains: interview.metadata.jobDomains || [],
+                    projects: interview.metadata.resumeProjects || [],
+                    experience: interview.metadata.resumeExperience || []
+                } : null;
+
+                const openingQuestion = await QuestionService.generateOpeningQuestion({
+                    roundType: currentRoundType,
+                    skills: activeSkills,
+                    resumeContext: resumeContext
+                });
+
+                console.log(`[Adaptive] Generated opening question: "${openingQuestion}"`);
+
+                // Add it to the session and emit
+                session.transcriptBuffer.push({ role: 'interviewer', text: openingQuestion });
+                socket.emit('ai_question_text', { text: openingQuestion });
+
+                // Generate Audio
+                try {
+                    const audioBuffer = await TTSService.generateAudio(openingQuestion);
+                    Orchestrator._streamAudioBuffer(socket, audioBuffer);
+                } catch (e) {
+                    console.error('[Adaptive] TTS Failed for opening question:', e);
+                }
+
+                // Persist it immediately to the DB so it's logged as the first question of this round index
+                try {
+                    await Interview.findByIdAndUpdate(interviewId, {
+                        $push: {
+                            questions: {
+                                question: openingQuestion,
+                                category: session.currentSkill,
+                                difficulty: 'medium',
+                                generatedBy: 'adaptive',
+                                assessingSkill: session.currentSkill,
+                                roundIndex: currentRoundIndex
+                            }
+                        }
+                    });
+                } catch (dbErr) {
+                    console.error('[Adaptive] Failed to persist opening question automatically:', dbErr);
+                }
+            } else {
+                console.log(`[Adaptive] Warning: No initial question found for Round 0 in interview ${interviewId}`);
             }
         });
 
