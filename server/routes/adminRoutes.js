@@ -1949,7 +1949,7 @@ router.post('/users/:userId/invite-platform', adminAuth, requirePermission('view
 
         return res.json({
             success: true,
-            message: \`Invitation successfully sent to \${candidate.profile?.name || candidate.email}.\`
+            message: `Invitation successfully sent to ${candidate.profile?.name || candidate.email}.`
         });
 
     } catch (error) {
@@ -1977,7 +1977,7 @@ router.post('/:id/force-reset-password', adminAuth, requirePermission('manage_ad
         }
 
         // Generate temporary password
-        const tempPassword = `Reset${ Date.now() }!`;
+        const tempPassword = `Reset${Date.now()}!`;
         targetAdmin.password = tempPassword;
         targetAdmin.mustResetPassword = true;
         await targetAdmin.save();
@@ -2242,7 +2242,7 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
         if (!applicant) return res.status(404).json({ success: false, error: 'Applicant not found' });
         if (applicant.status !== 'applied') {
-            return res.status(400).json({ success: false, error: `Applicant already has status: ${ applicant.status }` });
+            return res.status(400).json({ success: false, error: `Applicant already has status: ${applicant.status}` });
         }
 
         // Update status to interviewing
@@ -2260,7 +2260,7 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
                 userId,
                 type: 'application_status',
                 title: 'Application Approved!',
-                message: `Your application for "${job.title}" at ${ job.company?.name || 'the company' } has been approved! You can now proceed to the interview.`,
+                message: `Your application for "${job.title}" at ${job.company?.name || 'the company'} has been approved! You can now proceed to the interview.`,
                 relatedEntity: { entityType: 'job', entityId: job._id },
                 actionUrl: '/jobseeker/jobs',
                 actionText: 'View Jobs',
@@ -2311,8 +2311,8 @@ router.post('/applications/:jobId/:userId/approve', adminAuth, async (req, res) 
 
                 await sendEmail({
                     to: user.email,
-                    subject: `Application Approved — ${ job.title } `,
-                    text: `Your application for ${ job.title } has been approved! Log in to proceed to the interview.`,
+                    subject: `Application Approved — ${job.title} `,
+                    text: `Your application for ${job.title} has been approved! Log in to proceed to the interview.`,
                     html
                 });
             }
@@ -2351,7 +2351,7 @@ router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) =
         const applicant = job.applicants.find(a => a.userId.toString() === userId);
         if (!applicant) return res.status(404).json({ success: false, error: 'Applicant not found' });
         if (applicant.status !== 'applied') {
-            return res.status(400).json({ success: false, error: `Applicant already has status: ${ applicant.status } ` });
+            return res.status(400).json({ success: false, error: `Applicant already has status: ${applicant.status} ` });
         }
 
         // Update status
@@ -2417,29 +2417,29 @@ router.post('/applications/:jobId/:userId/reject', adminAuth, async (req, res) =
 
                 await sendEmail({
                     to: user.email,
-                    subject: `Application Update — ${ job.title } `,
-                    text: `Thank you for applying for ${ job.title }.After review, we've decided to move forward with other candidates.`,
-        html
-    });
+                    subject: `Application Update — ${job.title} `,
+                    text: `Thank you for applying for ${job.title}.After review, we've decided to move forward with other candidates.`,
+                    html
+                });
             }
 
-// Audit log
-await auditLog(req, 'reject_application', 'job', job._id, {
-    userId, jobTitle: job.title, reason
-});
+            // Audit log
+            await auditLog(req, 'reject_application', 'job', job._id, {
+                userId, jobTitle: job.title, reason
+            });
         } catch (setupError) {
-    console.error('Failed to send rejection notifications/email:', setupError);
-    // Non-fatal error since DB update succeeded
-}
+            console.error('Failed to send rejection notifications/email:', setupError);
+            // Non-fatal error since DB update succeeded
+        }
 
-res.json({
-    success: true,
-    message: 'Application rejected. Candidate has been notified.'
-});
+        res.json({
+            success: true,
+            message: 'Application rejected. Candidate has been notified.'
+        });
     } catch (error) {
-    console.error('Reject application error:', error);
-    res.status(500).json({ success: false, error: 'Failed to reject application' });
-}
+        console.error('Reject application error:', error);
+        res.status(500).json({ success: false, error: 'Failed to reject application' });
+    }
 });
 
 /**
