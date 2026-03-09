@@ -26,6 +26,7 @@
     word-break: break-word;
 }
 
+/* Dark theme (default for these values) */
 .job-banner-highlight {
     font-weight: 700;
     color: #60a5fa;
@@ -84,6 +85,43 @@
 .job-banner-close:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
+}
+
+/* Light Theme Overrides */
+[data-theme="light"] .job-banner-container {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .job-banner-highlight {
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="light"] .job-banner-text {
+    color: #475569;
+}
+
+[data-theme="light"] .job-banner-text strong {
+    color: #0f172a;
+}
+
+[data-theme="light"] .job-banner-link {
+    color: #2563eb;
+}
+
+[data-theme="light"] .job-banner-link:hover {
+    color: #1d4ed8;
+}
+
+[data-theme="light"] .job-banner-close {
+    color: #64748b;
+}
+
+[data-theme="light"] .job-banner-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #334155;
 }
 
 /* Responsive adjustments */
