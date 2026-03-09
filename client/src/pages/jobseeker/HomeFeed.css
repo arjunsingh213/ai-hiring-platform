@@ -572,6 +572,36 @@
     color: #94A3B8;
 }
 
+/* Post Media Styles for Full-Size Display */
+.post-media {
+    margin-top: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.post-media .media-item {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    background: #000;
+}
+
+.post-media .post-image,
+.post-media .post-video {
+    width: 100%;
+    /* Ensure no cropping happens; display full image */
+    max-height: 600px;
+    object-fit: contain;
+    border-radius: 0;
+}
+
+[data-theme="dark"] .post-media {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--glass-border);
+}
+
 /* Feed Sidebar - Sticky & Independent Scroll */
 .feed-sidebar {
     display: flex;

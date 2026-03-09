@@ -538,6 +538,26 @@ const HomeFeed = () => {
                     {activity.content?.text && (
                         <p className="activity-text">{activity.content.text}</p>
                     )}
+                    {activity.content?.media?.length > 0 && (
+                        <div className="post-media">
+                            {activity.content.media.map((media, idx) => (
+                                <div key={idx} className="media-item">
+                                    {media.type === 'image' && (
+                                        <img
+                                            src={media.url || `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}`.replace('/api', '') + `/uploads/posts/${media.fileId}`}
+                                            alt=""
+                                            className="post-image"
+                                        />
+                                    )}
+                                    {media.type === 'video' && (
+                                        <video controls className="post-video">
+                                            <source src={media.url || `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}`.replace('/api', '') + `/uploads/posts/${media.fileId}`} />
+                                        </video>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Score Circle for achievements */}
                     {activity.content?.score && (
