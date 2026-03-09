@@ -211,7 +211,7 @@ class Orchestrator {
         if (!session.interviewId) return; // Mocking locally
 
         try {
-            const timeSpent = Date.now() - session.turnStartTime;
+            const timeSpent = session.turnStartTime ? Math.round((Date.now() - session.turnStartTime) / 1000) : 0;
             session.turnStartTime = Date.now(); // reset for next turn
 
             const currentRoundIndex = session.currentRoundIndex || 0;
