@@ -25,7 +25,7 @@ class SessionStore {
             turnCount: 0,
             consecutiveFailures: 0,
             isProcessing: false, // Lock to prevent concurrent triggers
-            maxTurns: data.maxTurns || 11,
+            maxTurns: data.maxTurns || 8,
             // Platform interview context (from user's resume + onboarding)
             resumeContext: data.resumeContext || null // { desiredRole, experienceLevel, domains, projects, experience }
         };

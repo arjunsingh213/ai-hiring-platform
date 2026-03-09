@@ -51,7 +51,7 @@ const setupAdaptiveNamespace = (io) => {
                 jobId,
                 interviewType: detectedInterviewType,
                 jobSkills: activeSkills,
-                maxTurns: maxTurns || 11
+                maxTurns: maxTurns || 8
             });
             console.log(`[Adaptive] Session created. Type: ${detectedInterviewType}, MaxTurns: ${session.maxTurns}`);
             session.roundType = currentRoundType;
