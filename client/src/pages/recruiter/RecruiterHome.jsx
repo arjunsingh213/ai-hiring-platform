@@ -91,6 +91,29 @@ const Icons = {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 20V10M12 20V4M6 20V14" />
         </svg>
+    ),
+    more: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="19" cy="12" r="1" />
+            <circle cx="5" cy="12" r="1" />
+        </svg>
+    ),
+    trash: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+        </svg>
+    ),
+    pin: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2L12 10M12 22L12 14M5 10H19M7 14H17M9 6L15 6" />
+        </svg>
+    ),
+    link: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+        </svg>
     )
 };
 
@@ -110,6 +133,7 @@ const RecruiterHome = () => {
     const [commentingPostId, setCommentingPostId] = useState(null);
     const [expandedATP, setExpandedATP] = useState(null);
     const [atpData, setAtpData] = useState({});
+    const [activePostMenu, setActivePostMenu] = useState(null);
     const [stats, setStats] = useState({
         activeJobs: 0,
         totalApplicants: 0,
@@ -128,14 +152,23 @@ const RecruiterHome = () => {
             fetchStats();
         };
 
+        const handleClickOutside = (e) => {
+            if (activePostMenu && !e.target.closest('.post-menu-container')) {
+                setActivePostMenu(null);
+            }
+        };
+
         window.addEventListener('profile-updated', handleUpdate);
         window.addEventListener('user-updated', handleUpdate);
+        document.addEventListener('mousedown', handleClickOutside);
+
         return () => {
             window.removeEventListener('profile-updated', handleUpdate);
             window.removeEventListener('user-updated', handleUpdate);
+            document.removeEventListener('mousedown', handleClickOutside);
             if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
         };
-    }, []);
+    }, [activePostMenu]);
 
     const fetchUser = async () => {
         try {
@@ -151,7 +184,7 @@ const RecruiterHome = () => {
     const fetchPosts = async () => {
         setPostsLoading(true);
         try {
-            const response = await api.get('/posts/feed?type=recruiter');
+            const response = await api.get('/posts/feed?type=all');
             setPosts(response.data?.data || response.data || []);
         } catch (error) {
             console.error('Error fetching posts:', error);
@@ -287,6 +320,40 @@ const RecruiterHome = () => {
         }
     };
 
+    const handleDeletePost = async (postId) => {
+        if (!window.confirm('Are you sure you want to delete this post?')) return;
+        try {
+            await api.delete(`/posts/${postId}`);
+            fetchPosts();
+            toast.success('Post deleted successfully');
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            toast.error('Failed to delete post');
+        }
+    };
+
+    const handlePinPost = async (postId) => {
+        try {
+            await api.patch(`/posts/${postId}/pin`);
+            fetchPosts();
+            setActivePostMenu(null);
+            toast.success('Post arrangement updated');
+        } catch (error) {
+            console.error('Error pinning post:', error);
+            toast.error('Failed to update pin status');
+        }
+    };
+
+    const handleCopyLink = async (postId) => {
+        try {
+            await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
+            toast.success('Link copied to clipboard!');
+            setActivePostMenu(null);
+        } catch (error) {
+            toast.error('Failed to copy link');
+        }
+    };
+
     const getTimeAgo = (date) => {
         const seconds = Math.floor((new Date() - new Date(date)) / 1000);
         if (seconds < 60) return 'Just now';
@@ -347,6 +414,38 @@ const RecruiterHome = () => {
                         </div>
                     </div>
                     <span className="activity-time">{getTimeAgo(post.createdAt)}</span>
+
+                    {/* Three-dot menu */}
+                    <div className="post-menu-container">
+                        <button
+                            className="post-menu-trigger"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setActivePostMenu(activePostMenu === post._id ? null : post._id);
+                            }}
+                        >
+                            {Icons.more}
+                        </button>
+
+                        {activePostMenu === post._id && (
+                            <div className="post-options-dropdown" onClick={(e) => e.stopPropagation()}>
+                                {(post.userId?._id === userId || post.userId === userId) && (
+                                    <button className="post-option delete" onClick={() => handleDeletePost(post._id)}>
+                                        {Icons.trash}
+                                        <span>Delete Post</span>
+                                    </button>
+                                )}
+                                <button className={`post-option ${post.isPinned ? 'pinned' : ''}`} onClick={() => handlePinPost(post._id)}>
+                                    {Icons.pin}
+                                    <span>{post.isPinned ? 'Unpin Post' : 'Pin Post'}</span>
+                                </button>
+                                <button className="post-option" onClick={() => handleCopyLink(post._id)}>
+                                    {Icons.link}
+                                    <span>Copy Link</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="activity-content">

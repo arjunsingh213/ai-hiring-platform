@@ -109,14 +109,15 @@ router.get('/feed', async (req, res) => {
         const { page = 1, limit = 20, type = 'jobseeker' } = req.query;
 
         // Filter posts based on feed type
-        let postTypeFilter;
+        let postTypeFilter = {};
         if (type === 'recruiter') {
             // Recruiter feed: job postings, company updates, and their own general media/text posts
             postTypeFilter = { postType: { $in: ['job_posting', 'company_update', 'media', 'text'] } };
-        } else {
+        } else if (type === 'jobseeker') {
             // Job seeker feed: achievements, ATP, proof of work, text posts
-            postTypeFilter = { postType: { $in: ['achievement', 'atp', 'proof_of_work', 'text'] } };
+            postTypeFilter = { postType: { $in: ['achievement', 'atp', 'proof_of_work', 'text', 'challenge', 'media'] } };
         }
+        // If type === 'all', keep postTypeFilter empty to return everything
 
         const posts = await Post.find({
             visibility: 'public',
