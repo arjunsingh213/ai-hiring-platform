@@ -438,16 +438,15 @@ const OnboardingInterview = ({
                 codingResults: codingResults || null
             });
 
-            // Axios wraps the response body in response.data
-            const resData = response.data || response;
-            if (resData.success) {
-                setResults(resData.data);
+            // api.js interceptor already unwraps response.data, so 'response' IS the server body
+            if (response.success) {
+                setResults(response.data);
                 toast.success('Interview submitted! Showing results...');
                 await finalizeVideoRecording(formattedViolations, interviewId);
                 stopCamera();
                 setCompleted(true);
             } else {
-                throw new Error(resData.error || 'Submission failed');
+                throw new Error(response.error || 'Submission failed');
             }
         } catch (error) {
             console.error('Interview submission error:', error);
