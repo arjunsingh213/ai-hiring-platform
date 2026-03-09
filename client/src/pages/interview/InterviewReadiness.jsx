@@ -376,7 +376,6 @@ const InterviewReadiness = ({
     const allSystemsReady = cameraStatus === 'ready' &&
         micStatus === 'ready' &&
         (internetStatus === 'ready' || internetStatus === 'slow') &&
-        (noiseStatus === 'quiet' || noiseStatus === 'idle') &&
         faceStatus === 'captured';
 
     const canStart = allSystemsReady && consentChecked;
@@ -729,20 +728,6 @@ const InterviewReadiness = ({
                                         </button>
                                         {audioURL && <button className="play-btn" onClick={playRecording}><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>Play</button>}
                                     </div>
-
-                                    <div className="noise-check">
-                                        <div className="noise-header">
-                                            <span>Background Noise</span>
-                                            <span className={`noise-badge ${noiseStatus}`}>
-                                                {noiseStatus === 'idle' ? 'Not Checked' : noiseStatus === 'checking' ? 'Checking...' : noiseStatus === 'quiet' ? 'Quiet' : 'Too Noisy'}
-                                            </span>
-                                        </div>
-                                        {isCheckingNoise && <div className="noise-meter"><div className="noise-bar" style={{ width: `${noiseLevel}%` }}></div></div>}
-                                        <button className={`noise-btn ${noiseStatus === 'noisy' ? 'retry' : ''}`} onClick={checkBackgroundNoise} disabled={isCheckingNoise}>
-                                            {isCheckingNoise ? 'Listening...' : noiseStatus === 'noisy' ? 'Check Again' : 'Check Environment'}
-                                        </button>
-                                        {noiseStatus === 'noisy' && <p className="noise-warning">Find a quieter location.</p>}
-                                    </div>
                                 </>
                             )}
 
@@ -779,7 +764,6 @@ const InterviewReadiness = ({
                             <div className={`req-item ${cameraStatus === 'ready' ? 'done' : ''}`}><span className="req-check">{cameraStatus === 'ready' ? '✓' : '○'}</span>Camera</div>
                             <div className={`req-item ${faceStatus === 'captured' ? 'done' : ''}`}><span className="req-check">{faceStatus === 'captured' ? '✓' : '○'}</span>Face captured</div>
                             <div className={`req-item ${micStatus === 'ready' ? 'done' : ''}`}><span className="req-check">{micStatus === 'ready' ? '✓' : '○'}</span>Microphone</div>
-                            <div className={`req-item ${noiseStatus === 'quiet' ? 'done' : noiseStatus === 'noisy' ? 'warning' : ''}`}><span className="req-check">{noiseStatus === 'quiet' ? '✓' : noiseStatus === 'noisy' ? '!' : '○'}</span>Quiet</div>
                             <div className={`req-item ${internetStatus === 'ready' || internetStatus === 'slow' ? 'done' : ''}`}><span className="req-check">{internetStatus === 'ready' || internetStatus === 'slow' ? '✓' : '○'}</span>Internet</div>
                             <div className={`req-item ${consentChecked ? 'done' : ''}`}><span className="req-check">{consentChecked ? '✓' : '○'}</span>Consent</div>
                         </div>
