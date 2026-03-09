@@ -42,13 +42,18 @@ const setupAdaptiveNamespace = (io) => {
                 ];
             }
 
+            // Determine interview type from Interview document (platform vs job_specific)
+            const detectedInterviewType = interview?.interviewType || (data.interviewType || 'job_specific');
+
             const session = SessionStore.createSession(socket.id, {
                 interviewId,
                 candidateId,
                 jobId,
+                interviewType: detectedInterviewType,
                 jobSkills: activeSkills,
                 maxTurns: maxTurns || 11
             });
+            console.log(`[Adaptive] Session created. Type: ${detectedInterviewType}, MaxTurns: ${session.maxTurns}`);
             session.roundType = currentRoundType;
 
             socket.emit('session_initialized', {

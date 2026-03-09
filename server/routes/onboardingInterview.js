@@ -923,13 +923,46 @@ router.post('/generate-questions', userAuth, async (req, res) => {
  */
 router.post('/submit', userAuth, async (req, res) => {
     try {
-        const { userId, questionsAndAnswers, parsedResume, desiredRole, blueprint } = req.body;
+        let { userId, questionsAndAnswers, parsedResume, desiredRole, blueprint, interviewId } = req.body;
 
-        if (!userId || !questionsAndAnswers || questionsAndAnswers.length === 0) {
+        if (!userId) {
             return res.status(400).json({
                 success: false,
-                error: 'User ID and answers are required'
+                error: 'User ID is required'
             });
+        }
+
+        // Voice interviews store Q&A server-side via socket.
+        // If the client sends an empty array, load Q&A from the existing Interview document.
+        if (!questionsAndAnswers || questionsAndAnswers.length === 0) {
+            console.log('[SUBMIT] No Q&A in request body — loading from DB (voice interview)...');
+            let existingInterview = null;
+            if (interviewId) {
+                existingInterview = await Interview.findById(interviewId);
+            }
+            if (!existingInterview) {
+                // Fallback: find the most recent interview for this user
+                existingInterview = await Interview.findOne({ userId }).sort({ createdAt: -1 });
+            }
+
+            if (existingInterview && existingInterview.questions && existingInterview.questions.length > 0) {
+                console.log(`[SUBMIT] Found ${existingInterview.questions.length} questions from DB interview ${existingInterview._id}`);
+                questionsAndAnswers = existingInterview.questions.map((q, idx) => {
+                    const response = existingInterview.responses?.[idx];
+                    return {
+                        question: q.question || q.text || '',
+                        answer: response?.answer || response?.text || '',
+                        category: q.category || 'technical',
+                        round: q.roundIndex || q.round || 0,
+                        difficulty: q.difficulty || 'medium'
+                    };
+                });
+                // Update interviewId so we can update this document later
+                if (!interviewId) interviewId = existingInterview._id;
+            } else {
+                console.warn('[SUBMIT] No existing interview Q&A found in DB. Using minimal evaluation.');
+                questionsAndAnswers = [];
+            }
         }
 
         console.log('[SUBMIT] Evaluating interview for user:', userId);

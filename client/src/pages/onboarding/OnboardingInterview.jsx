@@ -438,14 +438,16 @@ const OnboardingInterview = ({
                 codingResults: codingResults || null
             });
 
-            if (response.success) {
-                setResults(response.data);
+            // Axios wraps the response body in response.data
+            const resData = response.data || response;
+            if (resData.success) {
+                setResults(resData.data);
                 toast.success('Interview submitted! Showing results...');
                 await finalizeVideoRecording(formattedViolations, interviewId);
                 stopCamera();
                 setCompleted(true);
             } else {
-                throw new Error(response.error || 'Submission failed');
+                throw new Error(resData.error || 'Submission failed');
             }
         } catch (error) {
             console.error('Interview submission error:', error);
