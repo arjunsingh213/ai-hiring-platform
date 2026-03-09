@@ -1014,13 +1014,39 @@ router.post('/submit', userAuth, async (req, res) => {
             evaluation = calculateStrictScore(questionsAndAnswers, validationResult);
         }
 
-        // Apply penalty for empty/skipped answers
-        if (validationResult.emptyCount > 0 && evaluation) {
-            const penalty = Math.round((validationResult.emptyCount / questionsAndAnswers.length) * 30);
-            evaluation.overallScore = Math.max(0, (evaluation.overallScore || 70) - penalty);
-            evaluation.technicalScore = Math.max(0, (evaluation.technicalScore || 70) - penalty);
-            evaluation.hrScore = Math.max(0, (evaluation.hrScore || 70) - penalty);
-            console.log(`[SUBMIT] Applied ${penalty}% penalty for ${validationResult.emptyCount} empty answers`);
+        // Apply strict penalty for empty AND short/gibberish answers
+        if (evaluation && questionsAndAnswers.length > 0) {
+            const { emptyCount, shortCount, validCount, completionRate } = validationResult;
+            const totalBadAnswers = emptyCount + shortCount;
+            const totalQuestions = questionsAndAnswers.length;
+
+            if (totalBadAnswers > 0) {
+                // Penalty based on proportion of bad answers (empty + short)
+                const badRatio = totalBadAnswers / totalQuestions;
+                // Heavy penalty: bad answers contribute a penalty up to 70% of the score
+                const penalty = Math.round(badRatio * 70);
+
+                evaluation.overallScore = Math.max(0, (evaluation.overallScore || 0) - penalty);
+                evaluation.technicalScore = Math.max(0, (evaluation.technicalScore || 0) - penalty);
+                evaluation.hrScore = Math.max(0, (evaluation.hrScore || 0) - penalty);
+                if (evaluation.communication !== undefined) evaluation.communication = Math.max(0, evaluation.communication - penalty);
+                if (evaluation.confidence !== undefined) evaluation.confidence = Math.max(0, evaluation.confidence - penalty);
+                if (evaluation.relevance !== undefined) evaluation.relevance = Math.max(0, evaluation.relevance - penalty);
+
+                console.log(`[SUBMIT] Applied ${penalty}% penalty for ${emptyCount} empty + ${shortCount} short answers (${totalBadAnswers}/${totalQuestions} bad)`);
+            }
+
+            // Cap score based on completion rate — can't score higher than what you actually answered
+            // e.g., if only 16% valid answers, max score is ~16% of 100
+            if (completionRate < 50) {
+                const maxAllowedScore = Math.round(completionRate * 1.5); // generous multiplier
+                if (evaluation.overallScore > maxAllowedScore) {
+                    console.log(`[SUBMIT] Capping score from ${evaluation.overallScore} to ${maxAllowedScore} (completion rate: ${completionRate}%)`);
+                    evaluation.overallScore = maxAllowedScore;
+                    evaluation.technicalScore = Math.min(evaluation.technicalScore || 0, maxAllowedScore);
+                    evaluation.hrScore = Math.min(evaluation.hrScore || 0, maxAllowedScore);
+                }
+            }
         }
 
         console.log('[SUBMIT] Final evaluation score:', evaluation?.overallScore);
