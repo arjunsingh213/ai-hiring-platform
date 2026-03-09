@@ -413,7 +413,7 @@ const RecruiterHome = () => {
                             </span>
                         </div>
                     </div>
-                    <span className="activity-time">{getTimeAgo(post.createdAt)}</span>
+                    <span className="activity-time" style={{ marginLeft: 'auto', marginRight: '16px' }}>{getTimeAgo(post.createdAt)}</span>
 
                     {/* Three-dot menu */}
                     <div className="post-menu-container">
