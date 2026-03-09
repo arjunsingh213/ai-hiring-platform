@@ -151,7 +151,7 @@ const RecruiterHome = () => {
     const fetchPosts = async () => {
         setPostsLoading(true);
         try {
-            const response = await api.get('/posts/feed');
+            const response = await api.get('/posts/feed?type=recruiter');
             setPosts(response.data?.data || response.data || []);
         } catch (error) {
             console.error('Error fetching posts:', error);

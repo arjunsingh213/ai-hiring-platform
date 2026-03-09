@@ -111,8 +111,8 @@ router.get('/feed', async (req, res) => {
         // Filter posts based on feed type
         let postTypeFilter;
         if (type === 'recruiter') {
-            // Recruiter feed: job postings and company updates only
-            postTypeFilter = { postType: { $in: ['job_posting', 'company_update'] } };
+            // Recruiter feed: job postings, company updates, and their own general media/text posts
+            postTypeFilter = { postType: { $in: ['job_posting', 'company_update', 'media', 'text'] } };
         } else {
             // Job seeker feed: achievements, ATP, proof of work, text posts
             postTypeFilter = { postType: { $in: ['achievement', 'atp', 'proof_of_work', 'text'] } };
