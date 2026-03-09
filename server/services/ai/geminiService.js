@@ -440,7 +440,7 @@ Return a JSON object with per-question analysis AND overall scores:
     ]
 }
 
-Return ONLY the JSON. Be honest and strict — do not inflate scores for poor answers.`;
+CRITICAL: You MUST process the text and return ONLY the JSON format above. If the text is completely gibberish, empty, or nonsensical, DO NOT apologize or output text. Instead, return the JSON with all scores set to 0.`;
 
         try {
             const response = await this._callWithCacheAndRateLimit('answer_evaluation', prompt, {
@@ -455,10 +455,21 @@ Return ONLY the JSON. Be honest and strict — do not inflate scores for poor an
 
             const jsonMatch = response.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                console.log('[GeminiService] Evaluation completed via Gemini');
-                return JSON.parse(jsonMatch[0]);
+                try {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    console.log('[GeminiService] Evaluation completed via Gemini');
+                    return parsed;
+                } catch (parseError) {
+                    console.error('[GeminiService] JSON parse error:', parseError.message);
+                    console.error('[GeminiService] RAW Response that failed parsing:', response);
+                    // Fall through to fallback
+                }
+            } else {
+                console.error('[GeminiService] Evaluation returned non-JSON text:', response);
             }
-            throw new Error('Failed to parse evaluation JSON');
+
+            console.log('[GeminiService] Falling back to programmatic scoring...');
+            return this.calculateFallbackScore(questionsAndAnswers);
         } catch (error) {
             console.error('[GeminiService] Evaluation error:', error.message);
             return this.calculateFallbackScore(questionsAndAnswers);
