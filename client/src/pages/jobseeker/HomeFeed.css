@@ -2333,7 +2333,7 @@
 
 .post-image {
     width: 100%;
-    max-height: 500px;
+    height: auto;
     object-fit: contain;
     display: block;
     border-radius: 0;
@@ -2342,15 +2342,9 @@
 
 .post-video {
     width: 100%;
-    max-height: 500px;
+    height: auto;
     border-radius: 0;
     display: block;
-}
-
-.post-video {
-    width: 100%;
-    max-height: 400px;
-    border-radius: 16px;
 }
 
 /* Action Buttons Enhanced */
