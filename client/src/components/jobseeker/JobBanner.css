@@ -1,52 +1,59 @@
 .job-banner-container {
-    background-color: #e4eefe;
-    /* Light blue background similar to the screenshot */
-    color: #1a1a1a;
-    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    padding: 14px 20px;
     display: flex;
     justify-content: flex-start;
     align-items: center;
     position: relative;
-    border-bottom: 1px solid #c2d6f9;
     font-size: 14px;
     width: 100%;
+    margin-top: 36px;
+    margin-bottom: 24px;
     z-index: 10;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .job-banner-content {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
     padding-right: 40px;
-    /* Space for close button */
     word-break: break-word;
 }
 
 .job-banner-highlight {
-    font-weight: 600;
-    color: #1e3a8a;
-    /* Darker blue text */
+    font-weight: 700;
+    color: #60a5fa;
     flex-shrink: 0;
+    background: rgba(59, 130, 246, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
 }
 
 .job-banner-text {
-    color: #334155;
+    color: #cbd5e1;
 }
 
 .job-banner-text strong {
     font-weight: 600;
-    color: #1e293b;
+    color: #f8fafc;
 }
 
 .job-banner-link {
-    background: none;
+    background: transparent;
     border: none;
-    color: #2563eb;
+    color: #60a5fa;
     text-decoration: underline;
-    text-underline-offset: 2px;
+    text-underline-offset: 4px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     padding: 0;
     font-size: 14px;
     flex-shrink: 0;
@@ -54,36 +61,45 @@
 }
 
 .job-banner-link:hover {
-    color: #1d4ed8;
+    color: #93c5fd;
 }
 
 .job-banner-close {
-    background: none;
+    background: transparent;
     border: none;
-    color: #64748b;
+    color: #94a3b8;
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
     position: absolute;
-    right: 12px;
+    right: 16px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: all 0.2s ease;
 }
 
 .job-banner-close:hover {
-    background-color: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .job-banner-container {
+        padding: 12px 16px;
+        margin-top: 42px;
+    }
+
     .job-banner-content {
         flex-direction: column;
         align-items: flex-start;
-        gap: 4px;
+        gap: 8px;
+    }
+
+    .job-banner-highlight {
+        margin-bottom: 4px;
     }
 }
