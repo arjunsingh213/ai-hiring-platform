@@ -377,43 +377,70 @@ Return ONLY the question text. Generate EXACTLY ONE question. Do NOT provide a l
             `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer || '(no answer)'}`
         ).join('\n\n');
 
-        const prompt = `You are an expert interview evaluator. Evaluate the following interview responses for a "${jobContext.jobTitle || 'Software Developer'}" position.
+        const prompt = `You are a STRICT and FAIR expert interview evaluator. You must evaluate each answer BY ITS CONTENT AND RELEVANCE to the question asked, not by word count.
+
+POSITION: "${jobContext.jobTitle || 'Software Developer'}"
 
 JOB DESCRIPTION:
-${jobContext.jobDescription ? jobContext.jobDescription.substring(0, 1000) : 'Not provided'}
+${jobContext.jobDescription ? jobContext.jobDescription.substring(0, 1000) : 'General position'}
 
 REQUIRED SKILLS:
 ${jobContext.requiredSkills?.join(', ') || 'Not specified'}
 
-INTERVIEW RESPONSES:
+INTERVIEW TRANSCRIPT:
 ${qaText}
 
-Evaluate and return a JSON object:
+═══ EVALUATION CRITERIA (per question) ═══
+
+For EACH answer, evaluate these dimensions:
+1. **Relevance** (0-100): Does the answer actually address the question asked? Completely off-topic or random text = 0.
+2. **Technical Accuracy** (0-100): Is the technical content correct? Wrong facts = low score. "I don't know" honestly = 10-15 (not 0, for honesty).
+3. **Communication** (0-100): Is the answer coherent, structured, and understandable? Random words/languages/gibberish = 0.
+4. **Confidence** (0-100): Does the candidate demonstrate composure? Gracefully saying "I'm not sure about this topic but..." = 20-30. Panicking or random noise = 0.
+
+═══ CRITICAL SCORING RULES ═══
+
+🚨 BE STRICT BUT FAIR:
+- **Gibberish, random characters, mixed random languages, or nonsensical text** (e.g. "काத்வள் காரணம்", "んんんんん", "asdf") → Score ALL dimensions 0-5. These are NOT valid answers.
+- **Single word fillers** like "Okay", "Thank you", "No", "Well..." → Score 0-5 across all dimensions. These do not answer the question.
+- **"I don't know" or "Not sure"** said genuinely → Score: Relevance 10, Technical 0, Communication 15, Confidence 15. This is honest but shows lack of knowledge.
+- **Partial but relevant answers** with some correct content → Score fairly based on what they got right (30-60 range).
+- **Good answers with speech-to-text errors/typos** → Do NOT penalize for "flot" instead of "float", "riact" instead of "React". Evaluate the INTENT and KNOWLEDGE, not spelling.
+- **Strong, detailed, correct answers** → Score 70-100.
+
+🧮 OVERALL SCORE CALCULATION:
+- overallScore = weighted average of ALL per-question scores
+- If most answers are gibberish/empty/single-word, the overall MUST be below 20.
+- If most answers show genuine knowledge with some weak areas, score 40-70.
+- Only score 70+ if the candidate demonstrates consistent, solid knowledge.
+
+Return a JSON object with per-question analysis AND overall scores:
 {
-    "overallScore": 75,
-    "technicalScore": 70,
-    "communicationScore": 80,
-    "confidenceScore": 70,
-    "relevanceScore": 80,
-    "strengths": ["strength1", "strength2", "strength3"],
+    "overallScore": <0-100>,
+    "technicalScore": <0-100>,
+    "communicationScore": <0-100>,
+    "confidenceScore": <0-100>,
+    "relevanceScore": <0-100>,
+    "strengths": ["strength1", "strength2"],
     "weaknesses": ["weakness1", "weakness2"],
     "areasToImprove": [
-        {"area": "Area Name", "suggestion": "How to improve", "priority": "high"}
+        {"area": "Area Name", "suggestion": "How to improve", "priority": "high|medium|low"}
     ],
-    "feedback": "Overall feedback paragraph"
+    "feedback": "Overall feedback paragraph describing the candidate's performance honestly",
+    "questionAnalysis": [
+        {
+            "questionIndex": 0,
+            "score": <0-100>,
+            "relevance": <0-100>,
+            "technical": <0-100>,
+            "communication": <0-100>,
+            "confidence": <0-100>,
+            "feedback": "Brief feedback for this specific answer"
+        }
+    ]
 }
 
-Return EACH score as a number from 0-100.
-Return EACH score as a number from 0-100.
-CRITICAL SCORING RULES:
-1. ALLOW TYPOS & SPEECH-TO-TEXT ERRORS: "flot" instead of "cloud", "double" instead of "tuple", etc. are ACCEPTABLE. Do not penalize for phonetic spelling errors.
-2. GIBBERISH (random keys like "asdf") = 0 points.
-3. VERY SHORT answers (less than 5 words) = 5-15 points.
-4. SKIPPED questions: Score 0 for that question.
-5. If the answer demonstrates understanding of the concept despite typos, give full credit for technical content.
-6. A score above 70 should be given for answers that are technically correct, even if they have grammar issues.
-
-Return ONLY the JSON.`;
+Return ONLY the JSON. Be honest and strict — do not inflate scores for poor answers.`;
 
         try {
             const response = await this._callWithCacheAndRateLimit('answer_evaluation', prompt, {

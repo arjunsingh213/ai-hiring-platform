@@ -442,7 +442,9 @@ const OnboardingInterview = ({
             if (response.success) {
                 setResults(response.data);
                 toast.success('Interview submitted! Showing results...');
-                await finalizeVideoRecording(formattedViolations, interviewId);
+                // Extract interviewId from response so the video upload links to the correct Interview document
+                const submittedInterviewId = response.data?.interviewId || interviewId;
+                await finalizeVideoRecording(formattedViolations, submittedInterviewId);
                 stopCamera();
                 setCompleted(true);
             } else {

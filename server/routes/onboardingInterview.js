@@ -1033,449 +1033,436 @@ router.post('/submit', userAuth, async (req, res) => {
                 if (evaluation.confidence !== undefined) evaluation.confidence = Math.max(0, evaluation.confidence - penalty);
                 if (evaluation.relevance !== undefined) evaluation.relevance = Math.max(0, evaluation.relevance - penalty);
 
-                console.log(`[SUBMIT] Applied ${penalty}% penalty for ${emptyCount} empty + ${shortCount} short answers (${totalBadAnswers}/${totalQuestions} bad)`);
+                console.log(`[SUBMIT] AI evaluation: ${evaluation.overallScore} (valid: ${validCount}/${totalQuestions})`);
             }
 
-            // Cap score based on completion rate — can't score higher than what you actually answered
-            // e.g., if only 16% valid answers, max score is ~16% of 100
-            if (completionRate < 50) {
-                const maxAllowedScore = Math.round(completionRate * 1.5); // generous multiplier
-                if (evaluation.overallScore > maxAllowedScore) {
-                    console.log(`[SUBMIT] Capping score from ${evaluation.overallScore} to ${maxAllowedScore} (completion rate: ${completionRate}%)`);
-                    evaluation.overallScore = maxAllowedScore;
-                    evaluation.technicalScore = Math.min(evaluation.technicalScore || 0, maxAllowedScore);
-                    evaluation.hrScore = Math.min(evaluation.hrScore || 0, maxAllowedScore);
-                }
-            }
-        }
+            console.log('[SUBMIT] Final evaluation score:', evaluation?.overallScore);
 
-        console.log('[SUBMIT] Final evaluation score:', evaluation?.overallScore);
+            // Prepare interview results
+            const interviewResults = {
+                score: evaluation.overallScore ?? 0,
+                technicalScore: evaluation.technicalScore ?? 0,
+                hrScore: evaluation.hrScore ?? 0,
+                strengths: evaluation.strengths || [],
+                weaknesses: evaluation.weaknesses || [],
+                feedback: evaluation.feedback || 'Interview completed',
+                completedAt: new Date(),
+                questionsAnswered: questionsAndAnswers.length,
+                responses: questionsAndAnswers.map(qa => ({
+                    question: qa.question,
+                    answer: qa.answer,
+                    category: qa.category,
+                    round: qa.round
+                }))
+            };
 
-        // Prepare interview results
-        const interviewResults = {
-            score: evaluation.overallScore || 70,
-            technicalScore: evaluation.technicalScore || 70,
-            hrScore: evaluation.hrScore || 70,
-            strengths: evaluation.strengths || [],
-            weaknesses: evaluation.weaknesses || [],
-            feedback: evaluation.feedback || 'Interview completed',
-            completedAt: new Date(),
-            questionsAnswered: questionsAndAnswers.length,
-            responses: questionsAndAnswers.map(qa => ({
-                question: qa.question,
-                answer: qa.answer,
-                category: qa.category,
-                round: qa.round
-            }))
-        };
-
-        // Save interview results and create Interview document for admin review
-        let newInterview = null;
-        try {
-            // ==================== ADMIN REVIEW INTEGRATION ====================
-            // Interview goes to "pending_review" - admin must approve before candidate sees results
-
-            const passed = calculatePassStatus(evaluation);
-
-            await User.findByIdAndUpdate(userId, {
-                $set: {
-                    'jobSeekerProfile.onboardingInterview': interviewResults,
-                    'jobSeekerProfile.interviewScore': evaluation.overallScore || 10,
-                    // Set status to passed/failed immediately
-                    'platformInterview.status': passed ? 'passed' : 'failed',
-                    'platformInterview.lastAttemptAt': new Date()
-                },
-                $inc: { 'platformInterview.attempts': 1 }
-            });
-            console.log(`Interview submitted. AI Result: ${passed ? 'PASSED' : 'FAILED'}`);
-
-            // Create Interview document with adminReview fields for admin dashboard
+            // Save interview results and create Interview document for admin review
+            let newInterview = null;
             try {
-                // Calculate high severity flags count for auto-escalation
-                const proctoringFlags = req.body.proctoringFlags || [];
-                const highSeverityCount = proctoringFlags.filter(f => f.severity === 'high').length;
-                const totalFlags = proctoringFlags.length;
+                // ==================== ADMIN REVIEW INTEGRATION ====================
+                // Interview goes to "pending_review" - admin must approve before candidate sees results
 
-                // Determine priority level based on flags
-                let priorityLevel = 'normal';
-                let autoEscalated = false;
-                let escalationReason = null;
+                const passed = calculatePassStatus(evaluation);
 
-                if (highSeverityCount > 3) {
-                    priorityLevel = 'critical';
-                    autoEscalated = true;
-                    escalationReason = `Auto-escalated: ${highSeverityCount} high-severity cheating flags detected`;
-                } else if (highSeverityCount > 1 || totalFlags > 5) {
-                    priorityLevel = 'high';
-                    autoEscalated = true;
-                    escalationReason = 'Auto-escalated: Multiple cheating flags detected';
-                }
-
-                newInterview = await Interview.create({
-                    userId,
-                    interviewType: 'platform',
-                    status: 'completed', // Changed from pending_review to completed
-                    passed: passed,
-                    resultVisibleToCandidate: true, // Show results immediately
-
-                    // Scoring from AI (Aligned with schema)
-                    scoring: {
-                        overallScore: evaluation.overallScore ?? 0,
-                        technicalScore: evaluation.technicalScore ?? 0,
-                        communicationScore: (evaluation.communicationScore ?? evaluation.communication ?? evaluation.hrScore ?? 0),
-                        confidenceScore: evaluation.confidenceScore ?? evaluation.confidence ?? 0,
-                        relevanceScore: evaluation.relevanceScore ?? evaluation.relevance ?? 0,
-                        strengths: evaluation.strengths || [],
-                        weaknesses: evaluation.weaknesses || [],
-                        detailedFeedback: evaluation.feedback || 'Platform interview completed'
+                await User.findByIdAndUpdate(userId, {
+                    $set: {
+                        'jobSeekerProfile.onboardingInterview': interviewResults,
+                        'jobSeekerProfile.interviewScore': evaluation.overallScore || 10,
+                        // Set status to passed/failed immediately
+                        'platformInterview.status': passed ? 'passed' : 'failed',
+                        'platformInterview.lastAttemptAt': new Date()
                     },
-
-                    // Questions and Responses
-                    questions: questionsAndAnswers.map((qa, idx) => ({
-                        question: qa.question,
-                        category: qa.category || (idx < 5 ? 'technical' : 'behavioral'),
-                        difficulty: 'medium',
-                        generatedBy: 'ai'
-                    })),
-                    responses: questionsAndAnswers.map((qa, idx) => ({
-                        questionIndex: idx,
-                        answer: qa.answer,
-                        evaluation: {
-                            score: evaluation.questionAnalysis?.[idx]?.score || 50,
-                            feedback: evaluation.questionAnalysis?.[idx]?.feedback || ''
-                        }
-                    })),
-
-                    // Proctoring data with timestamps
-                    proctoring: {
-                        flags: proctoringFlags.map(f => ({
-                            type: f.type,
-                            timestamp: f.timestamp ? new Date(f.timestamp) : new Date(),
-                            severity: f.severity || 'medium',
-                            description: f.description || ''
-                        })),
-                        totalFlags: totalFlags,
-                        riskLevel: highSeverityCount > 2 ? 'high' : totalFlags > 3 ? 'medium' : 'low'
-                    },
-
-                    // Video recording with cheating markers (if provided)
-                    videoRecording: req.body.videoRecording ? {
-                        publicId: req.body.videoRecording.publicId,
-                        url: req.body.videoRecording.url,
-                        secureUrl: req.body.videoRecording.secureUrl,
-                        duration: req.body.videoRecording.duration,
-                        format: req.body.videoRecording.format || 'webm',
-                        uploadedAt: new Date(),
-                        fileSize: req.body.videoRecording.fileSize,
-                        // Cheating markers with timestamps for video seeking
-                        cheatingMarkers: proctoringFlags.map(f => ({
-                            flagType: f.type,
-                            timestamp: f.videoTimestamp || 0, // Seconds from video start
-                            duration: f.duration || 5,
-                            severity: f.severity || 'medium',
-                            description: f.description || '',
-                            aiConfidence: f.confidence || 80
-                        })),
-                        totalFlagsInVideo: totalFlags,
-                        highSeverityFlagsCount: highSeverityCount
-                    } : null,
-
-                    // Admin Review Fields
-                    adminReview: {
-                        status: 'pending_review',
-                        aiScore: evaluation.overallScore || 10, // Store original AI score
-                        priorityLevel: priorityLevel,
-                        autoEscalated: autoEscalated,
-                        escalationReason: escalationReason
-                    },
-
-                    completedAt: new Date(),
-                    startedAt: new Date(Date.now() - 20 * 60 * 1000)
+                    $inc: { 'platformInterview.attempts': 1 }
                 });
-                console.log(`Interview document created for admin review. Priority: ${priorityLevel}`);
-            } catch (interviewError) {
-                console.error('Failed to create Interview document:', interviewError);
-            }
+                console.log(`Interview submitted. AI Result: ${passed ? 'PASSED' : 'FAILED'}`);
 
-            // ==================== AI TALENT PASSPORT UPDATE - ENABLED ====================
-            // Updates ATP in real-time after interview completion:
-            // 1) Per-question skill XP based on performance
-            // 2) Cognitive metrics from evaluation breakdown
-            // 3) Domain-level skill scores
-            // 4) Skill history audit trail
-            try {
-                const SkillNode = require('../models/SkillNode');
-                const atpUser = await User.findById(userId);
+                // Create Interview document with adminReview fields for admin dashboard
+                try {
+                    // Calculate high severity flags count for auto-escalation
+                    const proctoringFlags = req.body.proctoringFlags || [];
+                    const highSeverityCount = proctoringFlags.filter(f => f.severity === 'high').length;
+                    const totalFlags = proctoringFlags.length;
 
-                if (atpUser) {
-                    // --- 1. Update cognitive metrics ---
-                    if (!atpUser.aiTalentPassport.cognitiveMetrics) {
-                        atpUser.aiTalentPassport.cognitiveMetrics = {};
+                    // Determine priority level based on flags
+                    let priorityLevel = 'normal';
+                    let autoEscalated = false;
+                    let escalationReason = null;
+
+                    if (highSeverityCount > 3) {
+                        priorityLevel = 'critical';
+                        autoEscalated = true;
+                        escalationReason = `Auto-escalated: ${highSeverityCount} high-severity cheating flags detected`;
+                    } else if (highSeverityCount > 1 || totalFlags > 5) {
+                        priorityLevel = 'high';
+                        autoEscalated = true;
+                        escalationReason = 'Auto-escalated: Multiple cheating flags detected';
                     }
-                    const cm = atpUser.aiTalentPassport.cognitiveMetrics;
-                    const prevCount = cm.evaluationCount || 0;
-                    // Running average across all interviews
-                    const blend = (prev, curr) => prevCount > 0
-                        ? Math.round((prev * prevCount + curr) / (prevCount + 1))
-                        : Math.round(curr);
 
-                    cm.technicalAccuracy = blend(cm.technicalAccuracy || 0, evaluation.technicalScore || 0);
-                    cm.communicationClarity = blend(cm.communicationClarity || 0, evaluation.communication || 0);
-                    cm.problemDecomposition = blend(cm.problemDecomposition || 0, evaluation.relevance || 0);
-                    cm.conceptDepth = blend(cm.conceptDepth || 0, evaluation.confidence || 0);
-                    cm.codeQuality = blend(cm.codeQuality || 0, evaluation.technicalScore || 0);
-                    cm.lastEvaluatedAt = new Date();
-                    cm.evaluationCount = prevCount + 1;
+                    newInterview = await Interview.create({
+                        userId,
+                        interviewType: 'platform',
+                        status: 'completed', // Changed from pending_review to completed
+                        passed: passed,
+                        resultVisibleToCandidate: true, // Show results immediately
 
-                    // --- 2. Per-question skill XP update ---
-                    const userSkillNodes = await SkillNode.find({ userId });
-                    const userSkills = atpUser.jobSeekerProfile?.skills?.map(s => s.name?.toLowerCase()) || [];
-                    const userDomains = atpUser.jobSeekerProfile?.jobDomains || [];
-                    const skillHistory = [];
+                        // Scoring from AI (Aligned with schema)
+                        scoring: {
+                            overallScore: evaluation.overallScore ?? 0,
+                            technicalScore: evaluation.technicalScore ?? 0,
+                            communicationScore: (evaluation.communicationScore ?? evaluation.communication ?? evaluation.hrScore ?? 0),
+                            confidenceScore: evaluation.confidenceScore ?? evaluation.confidence ?? 0,
+                            relevanceScore: evaluation.relevanceScore ?? evaluation.relevance ?? 0,
+                            strengths: evaluation.strengths || [],
+                            weaknesses: evaluation.weaknesses || [],
+                            detailedFeedback: evaluation.feedback || 'Platform interview completed'
+                        },
 
-                    // Difficulty weight map
-                    const difficultyWeight = { easy: 1, medium: 2, hard: 3, extreme: 5 };
-
-                    for (let i = 0; i < questionsAndAnswers.length; i++) {
-                        const qa = questionsAndAnswers[i];
-                        const qScore = evaluation.questionAnalysis?.[i]?.score || 0;
-                        const qDifficulty = qa.difficulty || 'medium';
-                        const weight = difficultyWeight[qDifficulty] || 2;
-
-                        // Performance threshold — only award XP for score >= 50
-                        if (qScore < 50) continue;
-
-                        // Confidence multiplier: score mapped to 0.5-1.5
-                        const confidenceMultiplier = 0.5 + (qScore / 100);
-
-                        // XP = Difficulty Weight × Performance Score × Confidence Multiplier / 10
-                        const xpGain = Math.round(weight * qScore * confidenceMultiplier / 10);
-
-                        // Try to match question to a skill (by category or detected skill in question text)
-                        const questionText = (qa.question || '').toLowerCase();
-                        const category = (qa.category || '').toLowerCase();
-
-                        // Find matching SkillNodes by checking if skill name appears in question
-                        for (const node of userSkillNodes) {
-                            const skillLower = node.skillName.toLowerCase();
-                            if (questionText.includes(skillLower) || category.includes(skillLower)) {
-                                // Update SkillNode XP
-                                node.xp = (node.xp || 0) + xpGain;
-                                node.lastChallengeAt = new Date();
-                                await node.save();
-
-                                skillHistory.push({
-                                    source: 'interview',
-                                    sourceId: newInterview ? newInterview._id : null,
-                                    skillName: node.skillName,
-                                    domains: node.domainCategories || [],
-                                    xpDelta: xpGain,
-                                    scoreDelta: Math.round(qScore * 0.5),
-                                    detail: `Interview Q${i + 1}: "${qa.question?.substring(0, 60)}..." (Score: ${qScore})`,
-                                    timestamp: new Date()
-                                });
+                        // Questions and Responses
+                        questions: questionsAndAnswers.map((qa, idx) => ({
+                            question: qa.question,
+                            category: qa.category || (idx < 5 ? 'technical' : 'behavioral'),
+                            difficulty: 'medium',
+                            generatedBy: 'ai'
+                        })),
+                        responses: questionsAndAnswers.map((qa, idx) => ({
+                            questionIndex: idx,
+                            answer: qa.answer,
+                            evaluation: {
+                                score: evaluation.questionAnalysis?.[idx]?.score || 50,
+                                feedback: evaluation.questionAnalysis?.[idx]?.feedback || ''
                             }
+                        })),
+
+                        // Proctoring data with timestamps
+                        proctoring: {
+                            flags: proctoringFlags.map(f => ({
+                                type: f.type,
+                                timestamp: f.timestamp ? new Date(f.timestamp) : new Date(),
+                                severity: f.severity || 'medium',
+                                description: f.description || ''
+                            })),
+                            totalFlags: totalFlags,
+                            riskLevel: highSeverityCount > 2 ? 'high' : totalFlags > 3 ? 'medium' : 'low'
+                        },
+
+                        // Video recording with cheating markers (if provided)
+                        videoRecording: req.body.videoRecording ? {
+                            publicId: req.body.videoRecording.publicId,
+                            url: req.body.videoRecording.url,
+                            secureUrl: req.body.videoRecording.secureUrl,
+                            duration: req.body.videoRecording.duration,
+                            format: req.body.videoRecording.format || 'webm',
+                            uploadedAt: new Date(),
+                            fileSize: req.body.videoRecording.fileSize,
+                            // Cheating markers with timestamps for video seeking
+                            cheatingMarkers: proctoringFlags.map(f => ({
+                                flagType: f.type,
+                                timestamp: f.videoTimestamp || 0, // Seconds from video start
+                                duration: f.duration || 5,
+                                severity: f.severity || 'medium',
+                                description: f.description || '',
+                                aiConfidence: f.confidence || 80
+                            })),
+                            totalFlagsInVideo: totalFlags,
+                            highSeverityFlagsCount: highSeverityCount
+                        } : null,
+
+                        // Admin Review Fields
+                        adminReview: {
+                            status: 'pending_review',
+                            aiScore: evaluation.overallScore || 10, // Store original AI score
+                            priorityLevel: priorityLevel,
+                            autoEscalated: autoEscalated,
+                            escalationReason: escalationReason
+                        },
+
+                        completedAt: new Date(),
+                        startedAt: new Date(Date.now() - 20 * 60 * 1000)
+                    });
+                    console.log(`Interview document created for admin review. Priority: ${priorityLevel}`);
+                } catch (interviewError) {
+                    console.error('Failed to create Interview document:', interviewError);
+                }
+
+                // ==================== AI TALENT PASSPORT UPDATE - ENABLED ====================
+                // Updates ATP in real-time after interview completion:
+                // 1) Per-question skill XP based on performance
+                // 2) Cognitive metrics from evaluation breakdown
+                // 3) Domain-level skill scores
+                // 4) Skill history audit trail
+                try {
+                    const SkillNode = require('../models/SkillNode');
+                    const atpUser = await User.findById(userId);
+
+                    if (atpUser) {
+                        // --- 1. Update cognitive metrics ---
+                        if (!atpUser.aiTalentPassport.cognitiveMetrics) {
+                            atpUser.aiTalentPassport.cognitiveMetrics = {};
                         }
-                    }
+                        const cm = atpUser.aiTalentPassport.cognitiveMetrics;
+                        const prevCount = cm.evaluationCount || 0;
+                        // Running average across all interviews
+                        const blend = (prev, curr) => prevCount > 0
+                            ? Math.round((prev * prevCount + curr) / (prevCount + 1))
+                            : Math.round(curr);
 
-                    // --- 3. Update domain-level ATP scores ---
-                    if (!atpUser.aiTalentPassport.domainScores) {
-                        atpUser.aiTalentPassport.domainScores = [];
-                    }
+                        cm.technicalAccuracy = blend(cm.technicalAccuracy || 0, evaluation.technicalScore || 0);
+                        cm.communicationClarity = blend(cm.communicationClarity || 0, evaluation.communication || 0);
+                        cm.problemDecomposition = blend(cm.problemDecomposition || 0, evaluation.relevance || 0);
+                        cm.conceptDepth = blend(cm.conceptDepth || 0, evaluation.confidence || 0);
+                        cm.codeQuality = blend(cm.codeQuality || 0, evaluation.technicalScore || 0);
+                        cm.lastEvaluatedAt = new Date();
+                        cm.evaluationCount = prevCount + 1;
 
-                    for (const domain of userDomains) {
-                        let domainEntry = atpUser.aiTalentPassport.domainScores.find(
-                            d => d.domain === domain
-                        );
-                        if (!domainEntry) {
-                            atpUser.aiTalentPassport.domainScores.push({
-                                domain,
-                                domainScore: 0,
-                                skills: [],
-                                lastUpdated: new Date()
-                            });
-                            domainEntry = atpUser.aiTalentPassport.domainScores[
-                                atpUser.aiTalentPassport.domainScores.length - 1
-                            ];
-                        }
+                        // --- 2. Per-question skill XP update ---
+                        const userSkillNodes = await SkillNode.find({ userId });
+                        const userSkills = atpUser.jobSeekerProfile?.skills?.map(s => s.name?.toLowerCase()) || [];
+                        const userDomains = atpUser.jobSeekerProfile?.jobDomains || [];
+                        const skillHistory = [];
 
-                        // Sync skills from SkillNodes that belong to this domain
-                        const domainNodes = userSkillNodes.filter(n =>
-                            (n.domainCategories || []).includes(domain)
-                        );
-                        for (const node of domainNodes) {
-                            let skillEntry = domainEntry.skills.find(
-                                s => s.skillName.toLowerCase() === node.skillName.toLowerCase()
-                            );
-                            if (!skillEntry) {
-                                domainEntry.skills.push({
-                                    skillName: node.skillName,
-                                    score: 0, level: 1, xp: node.xp || 0,
-                                    validationScore: 0, riskIndex: 0,
-                                    recencyScore: 100, confidence: 0,
-                                    lastAssessedAt: new Date(),
-                                    challengePerformance: 0,
-                                    interviewPerformance: 0,
-                                    projectValidation: 0
-                                });
-                                skillEntry = domainEntry.skills[domainEntry.skills.length - 1];
-                            }
+                        // Difficulty weight map
+                        const difficultyWeight = { easy: 1, medium: 2, hard: 3, extreme: 5 };
 
-                            // Update interview performance for this skill
-                            skillEntry.interviewPerformance = Math.min(100,
-                                Math.max(skillEntry.interviewPerformance || 0, evaluation.technicalScore || 0)
-                            );
-                            skillEntry.xp = node.xp || 0;
-                            skillEntry.level = Math.min(5, Math.max(1, (node.level || 0) + 1));
-                            skillEntry.riskIndex = node.riskScore || 0;
-                            skillEntry.confidence = Math.round(
-                                (skillEntry.challengePerformance * 0.4 +
-                                    skillEntry.interviewPerformance * 0.5 +
-                                    skillEntry.projectValidation * 0.1) || 0
-                            );
-                            skillEntry.recencyScore = 100; // Just assessed
-                            skillEntry.lastAssessedAt = new Date();
+                        for (let i = 0; i < questionsAndAnswers.length; i++) {
+                            const qa = questionsAndAnswers[i];
+                            const qScore = evaluation.questionAnalysis?.[i]?.score || 0;
+                            const qDifficulty = qa.difficulty || 'medium';
+                            const weight = difficultyWeight[qDifficulty] || 2;
 
-                            // Skill Score = Challenge×40% + Interview×50% + Project×10%
-                            skillEntry.score = Math.round(
-                                (skillEntry.challengePerformance || 0) * 0.4 +
-                                (skillEntry.interviewPerformance || 0) * 0.5 +
-                                (skillEntry.projectValidation || 0) * 0.1
-                            );
-                        }
+                            // Performance threshold — only award XP for score >= 50
+                            if (qScore < 50) continue;
 
-                        // Recalculate domain score (average of all skill scores)
-                        if (domainEntry.skills.length > 0) {
-                            domainEntry.domainScore = Math.round(
-                                domainEntry.skills.reduce((sum, s) => sum + (s.score || 0), 0) /
-                                domainEntry.skills.length
-                            );
-                            // Risk-adjusted ATP = domainScore * (1 - avg risk / 100)
-                            const avgRisk = domainEntry.skills.reduce((sum, s) => sum + (s.riskIndex || 0), 0) /
-                                domainEntry.skills.length;
-                            domainEntry.riskAdjustedATP = Math.round(domainEntry.domainScore * (1 - avgRisk / 100));
-                            domainEntry.domainStabilityIndex = Math.round(100 - avgRisk);
-                            domainEntry.marketReadinessScore = Math.round(
-                                domainEntry.domainScore * 0.6 + cm.technicalAccuracy * 0.2 + cm.communicationClarity * 0.2
-                            );
-                        }
-                        domainEntry.lastUpdated = new Date();
-                    }
+                            // Confidence multiplier: score mapped to 0.5-1.5
+                            const confidenceMultiplier = 0.5 + (qScore / 100);
 
-                    // --- 4. Append skill history ---
-                    if (!atpUser.aiTalentPassport.interviewSkillHistory) {
-                        atpUser.aiTalentPassport.interviewSkillHistory = [];
-                    }
-                    atpUser.aiTalentPassport.interviewSkillHistory.push(...skillHistory);
+                            // XP = Difficulty Weight × Performance Score × Confidence Multiplier / 10
+                            const xpGain = Math.round(weight * qScore * confidenceMultiplier / 10);
 
-                    // Update overall ATP scores
-                    atpUser.aiTalentPassport.communicationScore = cm.communicationClarity;
-                    atpUser.aiTalentPassport.problemSolvingScore = cm.problemDecomposition;
-                    atpUser.aiTalentPassport.lastUpdated = new Date();
+                            // Try to match question to a skill (by category or detected skill in question text)
+                            const questionText = (qa.question || '').toLowerCase();
+                            const category = (qa.category || '').toLowerCase();
 
-                    // Recalculate talentScore weighted average
-                    const ds = atpUser.aiTalentPassport.domainScore || 0;
-                    const cs = cm.communicationClarity || 0;
-                    const ps = cm.problemDecomposition || 0;
-                    const prof = atpUser.aiTalentPassport.professionalismScore || 0;
-                    const gd = atpUser.aiTalentPassport.gdScore || 50;
-                    atpUser.aiTalentPassport.talentScore = Math.min(100, Math.round(
-                        ds * 0.25 + cs * 0.20 + ps * 0.25 + prof * 0.20 + gd * 0.10
-                    ));
+                            // Find matching SkillNodes by checking if skill name appears in question
+                            for (const node of userSkillNodes) {
+                                const skillLower = node.skillName.toLowerCase();
+                                if (questionText.includes(skillLower) || category.includes(skillLower)) {
+                                    // Update SkillNode XP
+                                    node.xp = (node.xp || 0) + xpGain;
+                                    node.lastChallengeAt = new Date();
+                                    await node.save();
 
-                    await atpUser.save();
-                    console.log(`[ATP] Updated ATP for user ${userId} with ${skillHistory.length} skill entries`);
-
-                    // --- 5. Emit WebSocket events for real-time frontend updates ---
-                    try {
-                        // Emit cognitive metrics update
-                        emitCognitiveUpdate(userId, {
-                            technicalAccuracy: cm.technicalAccuracy,
-                            communicationClarity: cm.communicationClarity,
-                            problemDecomposition: cm.problemDecomposition,
-                            conceptDepth: cm.conceptDepth,
-                            codeQuality: cm.codeQuality
-                        });
-
-                        // Emit domain updates for each affected domain
-                        for (const domain of userDomains) {
-                            const de = atpUser.aiTalentPassport.domainScores.find(d => d.domain === domain);
-                            if (de) {
-                                emitDomainUpdate(userId, domain, de.domainScore, de.riskAdjustedATP);
-                                // Emit individual skill updates
-                                for (const sk of de.skills) {
-                                    emitSkillUpdate(userId, sk.skillName, domain, {
-                                        xp: sk.xp, level: sk.level,
-                                        score: sk.score, confidence: sk.confidence,
-                                        riskIndex: sk.riskIndex
+                                    skillHistory.push({
+                                        source: 'interview',
+                                        sourceId: newInterview ? newInterview._id : null,
+                                        skillName: node.skillName,
+                                        domains: node.domainCategories || [],
+                                        xpDelta: xpGain,
+                                        scoreDelta: Math.round(qScore * 0.5),
+                                        detail: `Interview Q${i + 1}: "${qa.question?.substring(0, 60)}..." (Score: ${qScore})`,
+                                        timestamp: new Date()
                                     });
                                 }
                             }
                         }
-                    } catch (wsErr) {
-                        console.log('[ATP-WS] WebSocket emission failed (non-blocking):', wsErr.message);
+
+                        // --- 3. Update domain-level ATP scores ---
+                        if (!atpUser.aiTalentPassport.domainScores) {
+                            atpUser.aiTalentPassport.domainScores = [];
+                        }
+
+                        for (const domain of userDomains) {
+                            let domainEntry = atpUser.aiTalentPassport.domainScores.find(
+                                d => d.domain === domain
+                            );
+                            if (!domainEntry) {
+                                atpUser.aiTalentPassport.domainScores.push({
+                                    domain,
+                                    domainScore: 0,
+                                    skills: [],
+                                    lastUpdated: new Date()
+                                });
+                                domainEntry = atpUser.aiTalentPassport.domainScores[
+                                    atpUser.aiTalentPassport.domainScores.length - 1
+                                ];
+                            }
+
+                            // Sync skills from SkillNodes that belong to this domain
+                            const domainNodes = userSkillNodes.filter(n =>
+                                (n.domainCategories || []).includes(domain)
+                            );
+                            for (const node of domainNodes) {
+                                let skillEntry = domainEntry.skills.find(
+                                    s => s.skillName.toLowerCase() === node.skillName.toLowerCase()
+                                );
+                                if (!skillEntry) {
+                                    domainEntry.skills.push({
+                                        skillName: node.skillName,
+                                        score: 0, level: 1, xp: node.xp || 0,
+                                        validationScore: 0, riskIndex: 0,
+                                        recencyScore: 100, confidence: 0,
+                                        lastAssessedAt: new Date(),
+                                        challengePerformance: 0,
+                                        interviewPerformance: 0,
+                                        projectValidation: 0
+                                    });
+                                    skillEntry = domainEntry.skills[domainEntry.skills.length - 1];
+                                }
+
+                                // Update interview performance for this skill
+                                skillEntry.interviewPerformance = Math.min(100,
+                                    Math.max(skillEntry.interviewPerformance || 0, evaluation.technicalScore || 0)
+                                );
+                                skillEntry.xp = node.xp || 0;
+                                skillEntry.level = Math.min(5, Math.max(1, (node.level || 0) + 1));
+                                skillEntry.riskIndex = node.riskScore || 0;
+                                skillEntry.confidence = Math.round(
+                                    (skillEntry.challengePerformance * 0.4 +
+                                        skillEntry.interviewPerformance * 0.5 +
+                                        skillEntry.projectValidation * 0.1) || 0
+                                );
+                                skillEntry.recencyScore = 100; // Just assessed
+                                skillEntry.lastAssessedAt = new Date();
+
+                                // Skill Score = Challenge×40% + Interview×50% + Project×10%
+                                skillEntry.score = Math.round(
+                                    (skillEntry.challengePerformance || 0) * 0.4 +
+                                    (skillEntry.interviewPerformance || 0) * 0.5 +
+                                    (skillEntry.projectValidation || 0) * 0.1
+                                );
+                            }
+
+                            // Recalculate domain score (average of all skill scores)
+                            if (domainEntry.skills.length > 0) {
+                                domainEntry.domainScore = Math.round(
+                                    domainEntry.skills.reduce((sum, s) => sum + (s.score || 0), 0) /
+                                    domainEntry.skills.length
+                                );
+                                // Risk-adjusted ATP = domainScore * (1 - avg risk / 100)
+                                const avgRisk = domainEntry.skills.reduce((sum, s) => sum + (s.riskIndex || 0), 0) /
+                                    domainEntry.skills.length;
+                                domainEntry.riskAdjustedATP = Math.round(domainEntry.domainScore * (1 - avgRisk / 100));
+                                domainEntry.domainStabilityIndex = Math.round(100 - avgRisk);
+                                domainEntry.marketReadinessScore = Math.round(
+                                    domainEntry.domainScore * 0.6 + cm.technicalAccuracy * 0.2 + cm.communicationClarity * 0.2
+                                );
+                            }
+                            domainEntry.lastUpdated = new Date();
+                        }
+
+                        // --- 4. Append skill history ---
+                        if (!atpUser.aiTalentPassport.interviewSkillHistory) {
+                            atpUser.aiTalentPassport.interviewSkillHistory = [];
+                        }
+                        atpUser.aiTalentPassport.interviewSkillHistory.push(...skillHistory);
+
+                        // Update overall ATP scores
+                        atpUser.aiTalentPassport.communicationScore = cm.communicationClarity;
+                        atpUser.aiTalentPassport.problemSolvingScore = cm.problemDecomposition;
+                        atpUser.aiTalentPassport.lastUpdated = new Date();
+
+                        // Recalculate talentScore weighted average
+                        const ds = atpUser.aiTalentPassport.domainScore || 0;
+                        const cs = cm.communicationClarity || 0;
+                        const ps = cm.problemDecomposition || 0;
+                        const prof = atpUser.aiTalentPassport.professionalismScore || 0;
+                        const gd = atpUser.aiTalentPassport.gdScore || 50;
+                        atpUser.aiTalentPassport.talentScore = Math.min(100, Math.round(
+                            ds * 0.25 + cs * 0.20 + ps * 0.25 + prof * 0.20 + gd * 0.10
+                        ));
+
+                        await atpUser.save();
+                        console.log(`[ATP] Updated ATP for user ${userId} with ${skillHistory.length} skill entries`);
+
+                        // --- 5. Emit WebSocket events for real-time frontend updates ---
+                        try {
+                            // Emit cognitive metrics update
+                            emitCognitiveUpdate(userId, {
+                                technicalAccuracy: cm.technicalAccuracy,
+                                communicationClarity: cm.communicationClarity,
+                                problemDecomposition: cm.problemDecomposition,
+                                conceptDepth: cm.conceptDepth,
+                                codeQuality: cm.codeQuality
+                            });
+
+                            // Emit domain updates for each affected domain
+                            for (const domain of userDomains) {
+                                const de = atpUser.aiTalentPassport.domainScores.find(d => d.domain === domain);
+                                if (de) {
+                                    emitDomainUpdate(userId, domain, de.domainScore, de.riskAdjustedATP);
+                                    // Emit individual skill updates
+                                    for (const sk of de.skills) {
+                                        emitSkillUpdate(userId, sk.skillName, domain, {
+                                            xp: sk.xp, level: sk.level,
+                                            score: sk.score, confidence: sk.confidence,
+                                            riskIndex: sk.riskIndex
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (wsErr) {
+                            console.log('[ATP-WS] WebSocket emission failed (non-blocking):', wsErr.message);
+                        }
                     }
+                } catch (atpError) {
+                    console.error('[ATP] Failed to update ATP (non-blocking):', atpError.message);
                 }
-            } catch (atpError) {
-                console.error('[ATP] Failed to update ATP (non-blocking):', atpError.message);
+                // ==================== END ATP UPDATE ====================
+            } catch (dbError) {
+                console.error('Failed to save to DB (continuing anyway):', dbError);
             }
-            // ==================== END ATP UPDATE ====================
-        } catch (dbError) {
-            console.error('Failed to save to DB (continuing anyway):', dbError);
+
+            res.json({
+                success: true,
+                data: {
+                    interviewId: newInterview ? newInterview._id : null,
+                    // Structure scores to match frontend InterviewResultsPreview component expectations
+                    scoring: {
+                        overallScore: evaluation.overallScore ?? 0,
+                        technicalScore: evaluation.technicalScore ?? 0,
+                        hrScore: evaluation.hrScore ?? 0,
+                        communication: evaluation.communication ?? calculateCommunicationScore(questionsAndAnswers),
+                        confidence: evaluation.confidence ?? 0,
+                        relevance: evaluation.relevance ?? 0,
+                        problemSolving: evaluation.problemSolving ?? 0
+                    },
+                    score: evaluation.overallScore ?? 0, // keep legacy field just in case
+
+                    // STRICT PASS CRITERIA:
+                    // Must have: Overall >= 60 AND both Technical & HR >= 50 AND Communication >= 40
+                    passed: calculatePassStatus(evaluation),
+
+                    // Strengths & Weaknesses
+                    strengths: evaluation.strengths || ((evaluation.overallScore ?? 0) >= 40 ? ['Completed interview'] : []),
+                    weaknesses: evaluation.weaknesses || ((evaluation.overallScore ?? 0) < 40 ? ['Needs to provide more substantive answers'] : []),
+                    areasToImprove: evaluation.areasToImprove || generateImprovementAreas(evaluation),
+
+                    // Detailed feedback
+                    feedback: evaluation.feedback || ((evaluation.overallScore ?? 0) < 30
+                        ? 'Your answers were insufficient. Please provide thoughtful, detailed responses.'
+                        : 'Thank you for completing the interview!'),
+                    technicalFeedback: evaluation.technicalFeedback || 'Review your technical fundamentals and practice problem-solving.',
+                    communicationFeedback: evaluation.communicationFeedback || 'Practice structuring your answers with examples.',
+
+                    // Recommendations (Combined from areasToImprove)
+                    recommendations: evaluation.recommendations || evaluation.areasToImprove || [
+                        'Practice with mock interviews',
+                        'Prepare specific examples from your experience',
+                        'Research common interview questions for your role'
+                    ],
+
+                    // Question-level analysis
+                    questionAnalysis: generateQuestionAnalysis(questionsAndAnswers)
+                }
+            });
+
+        } catch (error) {
+            console.error('Interview submission error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message || 'Failed to submit interview'
+            });
         }
-
-        res.json({
-            success: true,
-            data: {
-                interviewId: newInterview ? newInterview._id : null,
-                // Structure scores to match frontend InterviewResultsPreview component expectations
-                scoring: {
-                    overallScore: evaluation.overallScore ?? 10,
-                    technicalScore: evaluation.technicalScore ?? 10,
-                    hrScore: evaluation.hrScore ?? 10,
-                    communication: evaluation.communication ?? calculateCommunicationScore(questionsAndAnswers),
-                    confidence: evaluation.confidence ?? 10,
-                    relevance: evaluation.relevance ?? 10,
-                    problemSolving: evaluation.problemSolving ?? 10
-                },
-                score: evaluation.overallScore ?? 10, // keep legacy field just in case
-
-                // STRICT PASS CRITERIA:
-                // Must have: Overall >= 60 AND both Technical & HR >= 50 AND Communication >= 40
-                passed: calculatePassStatus(evaluation),
-
-                // Strengths & Weaknesses
-                strengths: evaluation.strengths || ((evaluation.overallScore ?? 0) >= 40 ? ['Completed interview'] : []),
-                weaknesses: evaluation.weaknesses || ((evaluation.overallScore ?? 0) < 40 ? ['Needs to provide more substantive answers'] : []),
-                areasToImprove: evaluation.areasToImprove || generateImprovementAreas(evaluation),
-
-                // Detailed feedback
-                feedback: evaluation.feedback || ((evaluation.overallScore ?? 0) < 30
-                    ? 'Your answers were insufficient. Please provide thoughtful, detailed responses.'
-                    : 'Thank you for completing the interview!'),
-                technicalFeedback: evaluation.technicalFeedback || 'Review your technical fundamentals and practice problem-solving.',
-                communicationFeedback: evaluation.communicationFeedback || 'Practice structuring your answers with examples.',
-
-                // Recommendations (Combined from areasToImprove)
-                recommendations: evaluation.recommendations || evaluation.areasToImprove || [
-                    'Practice with mock interviews',
-                    'Prepare specific examples from your experience',
-                    'Research common interview questions for your role'
-                ],
-
-                // Question-level analysis
-                questionAnalysis: generateQuestionAnalysis(questionsAndAnswers)
-            }
-        });
-
-    } catch (error) {
-        console.error('Interview submission error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to submit interview'
-        });
-    }
-});
+    });
 
 /**
  * Rule-based scoring fallback
