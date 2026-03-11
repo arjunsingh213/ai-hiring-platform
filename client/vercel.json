@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://ai-hiring-platformserver.vercel.app/api/$1"
+            "destination": "https://ai-hiring-platform.onrender.com/api/$1"
         },
         {
             "source": "/((?!api/).*)",
