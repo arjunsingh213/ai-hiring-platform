@@ -26,9 +26,9 @@ const Sidebar = () => {
 
     const navItems = [
         { path: '/jobseeker/home', icon: 'home', label: 'Home' },
-        { path: '/jobseeker/messages', icon: 'message', label: 'Messages' },
-        { path: '/jobseeker/interviews', icon: 'video', label: 'Interviews' },
         { path: '/jobseeker/jobs', icon: 'briefcase', label: 'Jobs' },
+        { path: '/jobseeker/interviews', icon: 'video', label: 'Interviews' },
+        { path: '/jobseeker/messages', icon: 'message', label: 'Messages' },
         { path: '/jobseeker/settings', icon: 'settings', label: 'Settings' },
     ];
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from '../../components/jobseeker/Sidebar';
 import MobileNav from '../../components/MobileNav';
 import TopNav from '../../components/TopNav';
@@ -17,6 +17,7 @@ import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
     const [isCollapsed, setIsCollapsed] = React.useState(localStorage.getItem('sidebar-collapsed') === 'true');
+    const location = useLocation();
 
     React.useEffect(() => {
         const handleToggle = (e) => setIsCollapsed(e.detail);

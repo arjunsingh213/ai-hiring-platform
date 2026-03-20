@@ -2,7 +2,7 @@
 .top-nav {
     position: fixed;
     top: 16px;
-    left: calc(var(--sidebar-width, 240px) + 16px);
+    left: calc(var(--sidebar-width, 240px) + 32px);
     right: 16px;
     height: 58px;
     background: var(--glass-bg);
