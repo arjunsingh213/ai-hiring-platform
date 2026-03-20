@@ -30,7 +30,6 @@ const RecruiterSidebar = () => {
         { path: '/recruiter/home', icon: 'home', label: 'Home' },
         { path: '/recruiter/my-jobs', icon: 'jobs', label: 'My Jobs' },
         { path: '/recruiter/applications', icon: 'pipeline', label: 'Talent Pipeline' },
-        { path: '/recruiter/candidates', icon: 'trophy', label: 'Leaderboard' },
         { path: '/recruiter/post-job', icon: 'briefcase', label: 'Post Job' },
         { path: '/recruiter/analytics', icon: 'chart', label: 'Analytics' },
         { path: '/recruiter/messages', icon: 'message', label: 'Messages' },

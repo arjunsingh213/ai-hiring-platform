@@ -229,6 +229,19 @@ const TopNav = () => {
                                 <button
                                     className="menu-item"
                                     onClick={() => {
+                                        navigate(isRecruiter ? '/recruiter/candidates' : '/jobseeker/candidates');
+                                        setShowDropdown(false);
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 9H4.5C3.67 9 3 8.33 3 7.5V4.5C3 3.67 3.67 3 4.5 3H6M18 9H19.5C20.33 9 21 8.33 21 7.5V4.5C21 3.67 20.33 3 19.5 3H18M6 3H18V10C18 13.31 15.31 16 12 16C8.69 16 6 13.31 6 10V3Z" />
+                                        <path d="M12 16V21M8 21H16" />
+                                    </svg>
+                                    <span>Leaderboard</span>
+                                </button>
+                                <button
+                                    className="menu-item"
+                                    onClick={() => {
                                         navigate(isRecruiter ? '/recruiter/settings' : '/jobseeker/settings');
                                         setShowDropdown(false);
                                     }}
