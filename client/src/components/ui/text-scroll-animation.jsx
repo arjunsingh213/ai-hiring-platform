@@ -86,14 +86,14 @@ const TextScrollAnimation = () => {
   const imageCenterIndex = Math.floor(unsplashImages.length / 2);
 
   return (
-    <div className="w-full bg-black relative flex flex-col gap-24 md:gap-32 py-20 z-20">
+    <div className="w-full bg-black relative">
       {/* Block 1 */}
       <div
         ref={targetRef}
-        className="relative box-border flex items-center justify-center w-full px-6 z-10"
+        className="relative box-border flex h-[210vh] items-center justify-center gap-[2vw] overflow-hidden bg-transparent p-[2vw] pointer-events-none z-10"
       >
         <div
-          className="font-heading italic w-full max-w-5xl text-center text-6xl md:text-8xl lg:text-[7.5rem] leading-[0.9] tracking-tighter text-white"
+          className="font-heading italic w-full max-w-4xl text-center text-7xl md:text-[8rem] leading-[0.9] tracking-tighter text-white"
           style={{ perspective: "500px" }}
         >
           {characters.map((char, index) => (
@@ -111,9 +111,9 @@ const TextScrollAnimation = () => {
       {/* Block 2 */}
       <div
         ref={targetRef2}
-        className="relative box-border flex flex-col items-center justify-center w-full px-6"
+        className="relative -mt-[150vh] box-border flex h-[210vh] flex-col items-center justify-center gap-[2vw] overflow-hidden bg-black p-[2vw]"
       >
-        <div className="flex flex-col items-center text-center z-10 max-w-4xl mx-auto">
+        <div className="flex flex-col items-center text-center z-10 max-w-4xl mx-auto px-6 mt-16 lg:mt-0">
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-heading italic text-white mb-6 leading-[0.9] tracking-tight">
             Universal Compatibility.
           </h2>
@@ -143,7 +143,7 @@ const TextScrollAnimation = () => {
       {/* Block 3 */}
       <div
         ref={targetRef3}
-        className="relative box-border flex flex-col items-center justify-center w-full px-6"
+        className="relative -mt-[145vh] box-border flex h-[210vh] flex-col items-center justify-center gap-[2vw] overflow-hidden bg-black p-[2vw]"
       >
         <div className="flex flex-col items-center text-center z-10 max-w-4xl mx-auto px-6 mt-16 lg:mt-0">
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-heading italic text-white mb-6 leading-[0.9] tracking-tight">

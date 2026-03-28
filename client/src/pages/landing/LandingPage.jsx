@@ -276,7 +276,7 @@ const LandingPage = () => {
         </section>
 
         {/* SECTION 2 - FEATURE CAROUSEL */}
-        <div className="w-full bg-black py-12">
+        <div className="w-full bg-black py-12 relative z-30">
           <FeatureCarousel 
             reports={featuresData} 
             title="Core Infrastructure" 
@@ -285,12 +285,12 @@ const LandingPage = () => {
         </div>
 
         {/* SECTION 3 - SCROLL ANIMATION */}
-        <div className="relative w-full z-20 mt-8 md:mt-16">
+        <div className="relative w-full z-20">
           <TextScrollAnimation />
         </div>
 
         {/* SECTION 4 - START SECTION */}
-        <section id="solutions" className="w-full min-h-[500px] py-20 px-6 md:px-16 lg:px-24 relative flex items-center justify-center">
+        <section id="solutions" className="w-full min-h-[500px] py-20 px-6 md:px-16 lg:px-24 relative flex items-center justify-center z-20 bg-black">
           {/* HLS Video Background */}
           <div className="absolute inset-0 z-0">
             <HlsVideo
