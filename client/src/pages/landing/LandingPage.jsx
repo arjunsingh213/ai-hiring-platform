@@ -290,7 +290,7 @@ const LandingPage = () => {
         </div>
 
         {/* SECTION 4 - START SECTION */}
-        <section id="solutions" className="w-full min-h-[700px] py-32 px-6 md:px-16 lg:px-24 relative flex items-center justify-center">
+        <section id="solutions" className="w-full min-h-[500px] py-20 px-6 md:px-16 lg:px-24 relative flex items-center justify-center">
           {/* HLS Video Background */}
           <div className="absolute inset-0 z-0">
             <HlsVideo
@@ -318,8 +318,8 @@ const LandingPage = () => {
         </section>
 
         {/* SECTION 5 - FEATURES CHESS */}
-        <section id="platform" className="w-full py-24 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto bg-black relative z-10">
-          <div className="flex flex-col items-center text-center mb-20">
+        <section id="platform" className="w-full py-16 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto bg-black relative z-10">
+          <div className="flex flex-col items-center text-center mb-12">
             <div className="liquid-glass rounded-full px-4 py-1 text-xs font-medium text-white/80 font-body mb-6 border border-white/10">
               Capabilities
             </div>
@@ -329,7 +329,7 @@ const LandingPage = () => {
           </div>
 
           {/* Row 1 */}
-          <div className="flex flex-col lg:flex-row items-center gap-16 mb-32">
+          <div className="flex flex-col lg:flex-row items-center gap-16 mb-20">
             <div className="lg:w-1/2 flex flex-col items-start text-left">
               <h3 className="text-3xl md:text-4xl font-heading italic text-white mb-6">Built to match. Designed to perform.</h3>
               <p className="text-white/60 font-body font-light text-base mb-8 max-w-md leading-relaxed">
@@ -382,8 +382,8 @@ const LandingPage = () => {
         </section>
 
         {/* SECTION 6 - FEATURES GRID */}
-        <section id="process" className="w-full py-24 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto bg-black relative z-10">
-          <div className="flex flex-col items-center text-center mb-16">
+        <section id="process" className="w-full py-16 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto bg-black relative z-10">
+          <div className="flex flex-col items-center text-center mb-12">
             <div className="liquid-glass rounded-full px-4 py-1 text-xs font-medium text-white/80 font-body mb-6 border border-white/10">
               Why Us
             </div>
@@ -428,7 +428,7 @@ const LandingPage = () => {
         </section>
 
         {/* SECTION 7 - STATS */}
-        <section className="w-full relative py-32 flex items-center justify-center">
+        <section className="w-full relative py-20 flex items-center justify-center">
           <div className="absolute inset-0 z-0">
             <HlsVideo
               src="https://stream.mux.com/NcU3HlHeF7CUL86azTTzpy3Tlb00d6iF3BmCdFslMJYM.m3u8"
@@ -462,14 +462,14 @@ const LandingPage = () => {
 
 
         {/* SECTION 8.5 - CONTACT FORM */}
-        <section id="contact" className="w-full py-24 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto flex flex-col items-center justify-center relative z-10">
+        <section id="contact" className="w-full py-16 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto flex flex-col items-center justify-center relative z-10">
           <div data-theme="dark" className="w-full max-w-2xl">
             <ContactForm />
           </div>
         </section>
 
         {/* SECTION 9 - CTA FOOTER */}
-        <section id="pricing" className="w-full min-h-[800px] relative flex flex-col items-center justify-center pt-32 pb-8 px-6">
+        <section id="pricing" className="w-full min-h-[500px] relative flex flex-col items-center justify-center pt-24 pb-8 px-6">
           <div className="absolute inset-0 z-0">
             <HlsVideo
               src="https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8"
