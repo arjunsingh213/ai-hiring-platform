@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AI Hiring Platform - Full Stack Application",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npx --yes localtunnel --port 5173\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",

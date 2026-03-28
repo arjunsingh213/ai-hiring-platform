@@ -62,12 +62,14 @@ const BlogPage = () => {
         window.scrollTo(0, 0);
     }, []);
 
-    // Force light theme
+    // Force dark theme
     useEffect(() => {
         const previousTheme = document.documentElement.getAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.body.style.backgroundColor = 'black';
         return () => {
             if (previousTheme) document.documentElement.setAttribute('data-theme', previousTheme);
+            document.body.style.backgroundColor = '';
         };
     }, []);
 

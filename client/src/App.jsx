@@ -28,6 +28,7 @@ const InterviewReport = lazy(() => import('./pages/recruiter/InterviewReport'));
 const InterviewRoomLanding = lazy(() => import('./pages/landing/components/InterviewRoomLanding'));
 const GlossaryPage = lazy(() => import('./pages/landing/components/GlossaryPage'));
 const BlogPage = lazy(() => import('./pages/landing/components/BlogPage'));
+const PublicJobsPage = lazy(() => import('./pages/landing/components/PublicJobsPage'));
 
 // Shared Pages
 const JobShareRedirect = lazy(() => import('./pages/shared/JobShareRedirect'));
@@ -130,8 +131,8 @@ function App() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               {/* Public Routes - No authentication required */}
-              <Route path="/" element={<LandingPageNew />} />
-              <Route path="/landing-old" element={<LandingPage />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing-old" element={<LandingPageNew />} />
 
               {/* Growth SEO Pages - Public, no auth required */}
               <Route path="/interview-room" element={<InterviewRoomLanding />} />
@@ -154,6 +155,7 @@ function App() {
               <Route path="/glossary" element={<GlossaryPage />} />
               <Route path="/glossery" element={<Navigate to="/glossary" replace />} />
               <Route path="/blog" element={<BlogPage />} />
+              <Route path="/jobs" element={<PublicJobsPage />} />
 
               {/* Job Share Link - Public redirect based on auth state */}
               <Route path="/jobs/:jobId" element={<JobShareRedirect />} />

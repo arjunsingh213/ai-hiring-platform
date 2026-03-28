@@ -1,111 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import styles from './Header.module.css';
-
-// Import Froscel logo
-import froscelLogo from '../../../assets/froscel-logo.png';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
-    const [isScrolled, setIsScrolled] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    const navItems = [
-        { label: 'AI Interview', href: '/interview-room' },
-        { label: 'Glossary', href: '/glossary' },
-        { label: 'Blog', href: '/blog' },
-        { label: 'Features', href: '/#features' },
-    ];
-
     return (
-        <motion.header
-            className={`${styles.header} ${isScrolled ? styles.scrolled : ''}`}
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-            <div className={styles.container}>
+        <div className="fixed top-8 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+            <motion.nav 
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="w-[95%] max-w-7xl liquid-glass-strong rounded-full px-8 py-3.5 flex items-center justify-between border border-white/10 shadow-2xl backdrop-blur-2xl pointer-events-auto"
+            >
                 {/* Logo */}
-                <Link to="/" className={styles.logo}>
-                    <img
-                        src="/logo.png"
-                        alt="Logo"
-                        className={styles.logoIcon}
-                    />
-                    <span className={styles.logoText}>Froscel</span>
-                </Link>
-
-                {/* Desktop Navigation */}
-                <nav className={styles.nav}>
-                    {navItems.map((item) => (
-                        <a
-                            key={item.label}
-                            href={item.href}
-                            className={styles.navLink}
-                        >
-                            {item.label}
-                        </a>
-                    ))}
-                </nav>
-
-                {/* Auth Buttons */}
-                <div className={styles.auth}>
-                    <Link to="/login" className={styles.loginBtn}>
-                        Log in
-                    </Link>
-                    <Link to="/signup" className={styles.signupBtn}>
-                        Get Started
+                <div className="flex-1 flex justify-start">
+                    <Link to="/" className="flex items-center gap-2 group">
+                        <img src="/logo.png" alt="Froscel" className="w-8 h-8 object-contain" />
+                        <span className="text-xl font-bold tracking-tight text-white group-hover:text-white/90 transition-colors">
+                            Froscel
+                        </span>
                     </Link>
                 </div>
 
-                {/* Mobile Menu Button */}
-                <button
-                    className={styles.mobileMenuBtn}
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label="Toggle menu"
-                >
-                    <span className={`${styles.hamburger} ${isMobileMenuOpen ? styles.open : ''}`} />
-                </button>
-            </div>
+                {/* Center Links */}
+                <div className="hidden lg:flex flex-none items-center justify-center gap-6 xl:gap-8">
+                    <Link to="/jobs" className="text-[14px] lg:text-[15px] font-medium transition-colors !text-white">Jobs</Link>
+                    <Link to="/interview-room" className="text-[14px] lg:text-[15px] font-medium transition-colors !text-white">Interview Room</Link>
+                    <Link to="/blog" className="text-[14px] lg:text-[15px] font-medium transition-colors !text-white">Blog</Link>
+                    <Link to="/glossary" className="text-[14px] lg:text-[15px] font-medium transition-colors !text-white">Glossary</Link>
+                    <Link to="/#contact" className="text-[14px] lg:text-[15px] font-medium transition-colors !text-white">Contact</Link>
+                </div>
 
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <motion.div
-                    className={styles.mobileMenu}
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {navItems.map((item) => (
-                        <a
-                            key={item.label}
-                            href={item.href}
-                            className={styles.mobileNavLink}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                            {item.label}
-                        </a>
-                    ))}
-                    <div className={styles.mobileAuth}>
-                        <Link to="/login" className={styles.mobileLoginBtn}>
-                            Log in
-                        </Link>
-                        <Link to="/signup" className={styles.mobileSignupBtn}>
-                            Get Started
-                        </Link>
-                    </div>
-                </motion.div>
-            )}
-        </motion.header>
+                {/* CTA */}
+                <div className="flex-1 flex items-center justify-end gap-6">
+                    <Link to="/signup" className="hidden sm:block text-[15px] font-medium transition-colors !text-white hover:text-white/80">
+                        Sign up
+                    </Link>
+                    <Link to="/login" className="login-btn-landing bg-white !text-black px-7 py-2.5 rounded-full text-[15px] font-bold hover:bg-white/90 transition-colors shadow-lg">
+                        Sign In
+                    </Link>
+                </div>
+            </motion.nav>
+        </div>
     );
 };
 

@@ -1,7 +1,7 @@
 /* Footer.module.css — Editorial Dark Footer */
 .footer {
     padding: 5rem 2rem 2rem;
-    background: #0F172A;
+    background: #000000;
     color: white;
     position: relative;
 }
@@ -43,14 +43,14 @@
     font-family: 'Instrument Serif', Georgia, serif;
     font-size: 1.25rem;
     font-weight: 400;
-    color: #0090FF;
+    color: #FFFFFF !important;
 }
 
 .description {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9375rem;
     line-height: 1.75;
-    color: #94A3B8;
+    color: rgba(255, 255, 255, 0.6) !important;
     margin: 0 0 1.75rem;
 }
 
@@ -65,7 +65,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #94A3B8;
+    color: rgba(255, 255, 255, 0.6) !important;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
@@ -73,9 +73,9 @@
 }
 
 .socialLink:hover {
-    color: white;
-    background: rgba(0, 144, 255, 0.1);
-    border-color: rgba(0, 144, 255, 0.3);
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
     transform: translateY(-2px);
 }
 
@@ -87,7 +87,7 @@
     font-family: 'DM Sans', sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.4) !important;
     margin: 0 0 1.25rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -105,13 +105,13 @@
 .link {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9375rem;
-    color: #94A3B8;
+    color: rgba(255, 255, 255, 0.6) !important;
     text-decoration: none;
     transition: all 0.25s ease;
 }
 
 .link:hover {
-    color: white;
+    color: white !important;
     transform: translateX(3px);
 }
 
@@ -124,7 +124,7 @@
 .copyright {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.8125rem;
-    color: #64748B;
+    color: rgba(255, 255, 255, 0.4) !important;
     margin: 0;
     letter-spacing: 0.02em;
 }

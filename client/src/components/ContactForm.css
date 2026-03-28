@@ -147,3 +147,67 @@
         font-size: 1.5rem;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES (For Landing Pages)
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .contact-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(40px) !important;
+    -webkit-backdrop-filter: blur(40px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .form-header h3 {
+    color: #FFFFFF !important;
+    font-family: 'Instrument Serif', Georgia, serif !important;
+    font-size: 3rem !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 0.5rem !important;
+}
+
+[data-theme="dark"] .form-header p {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 300 !important;
+    font-size: 1.1rem !important;
+}
+
+[data-theme="dark"] .form-group label {
+    color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .submit-btn {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .submit-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15) !important;
+}

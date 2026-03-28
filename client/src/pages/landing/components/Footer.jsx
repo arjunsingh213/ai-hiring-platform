@@ -5,7 +5,6 @@ import { fadeIn, TIMINGS, EASE_OUT } from '../animations/animations';
 import styles from './Footer.module.css';
 
 // Import Froscel logo
-import froscelLogo from '../../../assets/froscel-logo.png';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();

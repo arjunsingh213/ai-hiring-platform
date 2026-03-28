@@ -1,8 +1,8 @@
 /* GlossaryPage.module.css — Editorial Sub-Page */
 .page {
     min-height: 100vh;
-    background: #FAFBFF;
-    color: #1E293B;
+    background: #000000;
+    color: #FFFFFF;
     font-family: 'DM Sans', -apple-system, sans-serif;
     position: relative;
     overflow-x: hidden;
@@ -33,7 +33,7 @@
 }
 
 .backLink {
-    color: #0090FF;
+    color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.875rem;
@@ -45,27 +45,27 @@
 }
 
 .backLink:hover {
-    color: #0F172A;
+    color: #FFFFFF;
 }
 
 .title {
     font-family: 'Instrument Serif', Georgia, serif;
     font-size: clamp(2.25rem, 5vw, 3.5rem);
     font-weight: 400;
-    color: #0F172A;
+    color: #FFFFFF;
     letter-spacing: -0.03em;
     margin-bottom: 1.5rem;
     line-height: 1.1;
 }
 
 .gradient {
-    color: #0090FF;
+    color: #FFFFFF;
     font-style: italic;
 }
 
 .subtitle {
     font-family: 'DM Sans', sans-serif;
-    color: #64748B;
+    color: rgba(255, 255, 255, 0.6);
     font-size: 1.125rem;
     line-height: 1.7;
     max-width: 600px;
@@ -87,26 +87,26 @@
 }
 
 .termCard {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 28px 32px;
     scroll-margin-top: 100px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: none;
     transition: all 0.3s ease;
 }
 
 .termCard:hover {
     transform: translateY(-2px);
-    border-color: rgba(0, 144, 255, 0.2);
-    box-shadow: 0 8px 24px rgba(0, 144, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.05);
 }
 
 .termTitle {
     font-family: 'Instrument Serif', Georgia, serif;
     font-size: 1.35rem;
     font-weight: 400;
-    color: #0F172A;
+    color: #FFFFFF;
     margin-bottom: 10px;
     letter-spacing: -0.01em;
 }
@@ -114,7 +114,7 @@
 .termDef {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9375rem;
-    color: #64748B;
+    color: rgba(255, 255, 255, 0.6);
     line-height: 1.75;
 }
 
@@ -129,14 +129,14 @@
     font-family: 'Instrument Serif', Georgia, serif;
     font-size: 1.75rem;
     font-weight: 400;
-    color: #0F172A;
+    color: #FFFFFF;
     margin-bottom: 24px;
     letter-spacing: -0.01em;
 }
 
 .primaryBtn {
-    background: #0090FF;
-    color: white;
+    background: #FFFFFF;
+    color: #000000;
     padding: 0.875rem 2rem;
     border-radius: 8px;
     font-family: 'DM Sans', sans-serif;
@@ -147,13 +147,13 @@
     align-items: center;
     gap: 0.5rem;
     transition: all 0.25s ease;
-    box-shadow: 0 2px 8px rgba(0, 144, 255, 0.2);
+    box-shadow: none;
 }
 
 .primaryBtn:hover {
-    background: #0080E5;
+    background: rgba(255, 255, 255, 0.9);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 144, 255, 0.3);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
 }
 
 @media (max-width: 640px) {

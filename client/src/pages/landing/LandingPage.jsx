@@ -1,494 +1,513 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Typed from 'typed.js';
-import './LandingPage.css';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, useInView, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import Lenis from 'lenis';
+import Hls from 'hls.js';
+import { ArrowUpRight, Play, Zap, CheckCircle, BarChart3, Shield } from 'lucide-react';
+import LandingLoader from './components/LandingLoader';
 import ContactForm from '../../components/ContactForm';
+import { TextScrollAnimation } from '../../components/ui/text-scroll-animation';
+import { BGPattern } from '../../components/ui/bg-pattern';
+import { ShareholderReports as FeatureCarousel } from '../../components/ui/carousel';
+import './LandingPage.css';
 
-// Import assets
-import heroDashboard from './assets/hero-dashboard-1600x900.webp';
-import passportSnapshot from './assets/passport-snapshot-1200x800.webp';
-import recruiterReport from './assets/recruiter-report-1200x700.webp';
-import codeIde from './assets/code-ide-1400x900.webp';
-import workSample from './assets/work-sample-800x600.webp';
-import avatar1 from './assets/avatars-set-1-256x256.webp';
-import avatar2 from './assets/avatars-set-2-256x256.webp';
-import avatar3 from './assets/avatars-set-3-256x256.webp';
-import avatar4 from './assets/avatars-set-4-256x256.webp';
-import avatar5 from './assets/avatars-set-5-256x256.webp';
+// ----------------------------------------------------
+// BlurText Component
+// ----------------------------------------------------
+const BlurText = ({ text, className }) => {
+  const words = text.split(' ');
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
 
-gsap.registerPlugin(ScrollTrigger);
+  return (
+    <div ref={ref} className={className} style={{ display: 'inline-block' }}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ filter: 'blur(10px)', opacity: 0, y: 50 }}
+          animate={isInView ? { filter: 'blur(0px)', opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.35, delay: i * 0.1 }}
+          style={{ display: 'inline-block', marginRight: '0.25em' }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </div>
+  );
+};
 
-const LandingPage = () => {
-    const [scrolled, setScrolled] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const typedRef = useRef(null);
-    const heroRef = useRef(null);
-    const dashboardRef = useRef(null);
+// ----------------------------------------------------
+// HLS Video Component
+// ----------------------------------------------------
+const HlsVideo = ({ src, poster, className, style }) => {
+  const videoRef = useRef(null);
 
-    // Force light theme on landing page
-    useEffect(() => {
-        const previousTheme = document.documentElement.getAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', 'light');
-
-        return () => {
-            if (previousTheme) {
-                document.documentElement.setAttribute('data-theme', previousTheme);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 50);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    // Typed.js initialization
-    useEffect(() => {
-        const typed = new Typed(typedRef.current, {
-            strings: [
-                'AI-powered interviews',
-                'Verified talent profiles',
-                'Smart job matching',
-                'Faster hiring process'
-            ],
-            typeSpeed: 80,
-            backSpeed: 50,
-            backDelay: 2000,
-            loop: true,
-            smartBackspace: true,
-        });
-
-        return () => typed.destroy();
-    }, []);
-
-    // GSAP animations
-    useEffect(() => {
-        // Initial state for reveal-up elements
-        gsap.set('.reveal-up', {
-            opacity: 0,
-            y: 60,
-        });
-
-        // Dashboard 3D perspective animation - Pixaai style
-        if (dashboardRef.current) {
-            // Set initial state with CSS variables for perspective
-            gsap.set(dashboardRef.current, {
-                transformPerspective: 1200,
-                rotateX: 70,
-                scale: 0.8,
-                y: 50,
-            });
-
-            // Animate on scroll - straightens the tilted dashboard
-            gsap.to(dashboardRef.current, {
-                rotateX: 0,
-                scale: 1,
-                y: 0,
-                ease: 'none',
-                scrollTrigger: {
-                    trigger: heroRef.current,
-                    start: window.innerWidth > 1024 ? 'top 95%' : 'top 70%',
-                    end: 'bottom bottom',
-                    scrub: 1,
-                }
-            });
-        }
-
-        // Reveal animations for each section
-        const sections = document.querySelectorAll('section');
-        sections.forEach((section) => {
-            const revealElements = section.querySelectorAll('.reveal-up');
-
-            gsap.to(revealElements, {
-                opacity: 1,
-                y: 0,
-                duration: 0.8,
-                stagger: 0.15,
-                ease: 'power2.out',
-                scrollTrigger: {
-                    trigger: section,
-                    start: 'top 80%',
-                    end: 'top 50%',
-                    toggleActions: 'play none none reverse',
-                }
-            });
-        });
-
-        return () => {
-            ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-        };
-    }, []);
-
-    const scrollToSection = (id) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-        setMobileMenuOpen(false);
+  useEffect(() => {
+    let hls;
+    if (Hls.isSupported() && videoRef.current) {
+      hls = new Hls({ enableWorker: false });
+      hls.loadSource(src);
+      hls.attachMedia(videoRef.current);
+    } else if (videoRef.current && videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+      videoRef.current.src = src;
+    }
+    return () => {
+      if (hls) hls.destroy();
     };
+  }, [src]);
 
-    return (
-        <div className="landing-page">
-            {/* Navigation */}
-            <header className={`landing-nav ${scrolled ? 'nav-scrolled' : ''}`}>
-                <div className="nav-container">
-                    <Link to="/" className="nav-logo">
-                        <span className="logo-text">HireAI</span>
-                    </Link>
+  return (
+    <video
+      ref={videoRef}
+      className={className}
+      style={style}
+      poster={poster}
+      muted
+      playsInline
+      loop
+      autoPlay
+    />
+  );
+};
 
-                    <nav className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-                        <a onClick={() => scrollToSection('hero')} className="nav-link">Home</a>
-                        <a onClick={() => scrollToSection('features')} className="nav-link">Features</a>
-                        <a onClick={() => scrollToSection('benefits')} className="nav-link">Benefits</a>
-                        <a onClick={() => scrollToSection('how-it-works')} className="nav-link">How It Works</a>
+// ----------------------------------------------------
+// ScrollThesis Component
+// ----------------------------------------------------
+const ScrollThesis = () => {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-                        <div className="nav-actions">
-                            <Link to="/login" className="nav-link login-link">Sign In</Link>
-                            <Link to="/onboarding/role-selection" className="btn-get-started">
-                                <span>Get Started</span>
-                                <i className="bi bi-arrow-right"></i>
-                            </Link>
-                        </div>
-                    </nav>
+  // Point 1: Fades in (0-0.2), Holds (0.2-0.4), and pushes UP blending into Point 2 (0.4-0.55)
+  const opacity1 = useTransform(scrollYProgress, [0, 0.2, 0.4, 0.55], [0, 1, 1, 0]);
+  const y1 = useTransform(scrollYProgress, [0, 0.2, 0.4, 0.55], [120, 0, 0, -120]);
+  const blur1 = useTransform(scrollYProgress, [0, 0.2, 0.4, 0.55], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
 
-                    <button
-                        className="mobile-menu-btn"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        <i className={`bi ${mobileMenuOpen ? 'bi-x' : 'bi-list'}`}></i>
-                    </button>
-                </div>
-            </header>
+  // Point 2: Pushes UP blending in exactly as Point 1 leaves (0.4-0.55), Holds (0.55-0.8), fades out by 1.0
+  const opacity2 = useTransform(scrollYProgress, [0.4, 0.55, 0.8, 1.0], [0, 1, 1, 0]);
+  const y2 = useTransform(scrollYProgress, [0.4, 0.55, 0.8, 1.0], [120, 0, 0, -120]);
+  const blur2 = useTransform(scrollYProgress, [0.4, 0.55, 0.8, 1.0], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
 
-            {/* Hero Section */}
-            <section id="hero" className="hero-section" ref={heroRef}>
-                <div className="purple-bg-grad hero-grad-1"></div>
-                <div className="purple-bg-grad hero-grad-2"></div>
+  return (
+    <div ref={containerRef} className="relative w-full h-[500vh] bg-black">
+      <div className="sticky top-0 h-screen w-full flex items-center justify-center p-6 overflow-hidden">
 
-                <div className="hero-content">
-                    <h1 className="reveal-up hero-title">
-                        <span className="hero-title-bold">Revolutionize Your Hiring</span>
-                        <br />
-                        <span className="hero-title-light">with AI-Powered Interviews</span>
-                    </h1>
+        {/* Point 1 */}
+        <motion.div
+          style={{ opacity: opacity1, y: y1, filter: blur1 }}
+          className="absolute inset-0 flex items-center justify-center px-4 sm:px-12 md:px-24 max-w-5xl mx-auto pointer-events-none"
+        >
+          <p className="text-3xl md:text-5xl lg:text-[5rem] text-white/80 font-heading italic text-center leading-[1.1] tracking-tight">
+            Every breakthrough product<br />runs on elite engineering.
+          </p>
+        </motion.div>
 
-                    <p className="reveal-up hero-subtitle">
-                        <span ref={typedRef}></span>
-                    </p>
+        {/* Point 2 */}
+        <motion.div
+          style={{ opacity: opacity2, y: y2, filter: blur2 }}
+          className="absolute inset-0 flex items-center justify-center px-4 sm:px-12 md:px-24 max-w-5xl mx-auto pointer-events-none"
+        >
+          <p className="text-3xl md:text-5xl lg:text-[5rem] text-white/80 font-heading italic text-center leading-[1.1] tracking-tight">
+            <span className="text-white">Froscel</span> conducts the technical interviews<br />and verifies the talent that builds the future.
+          </p>
+        </motion.div>
 
-                    <p className="reveal-up hero-description">
-                        The all-in-one AI platform for job seekers and recruiters. Automated interviews,
-                        verified talent profiles, and smart matching to find the perfect fit.
-                    </p>
+      </div>
+    </div>
+  );
+};
 
-                    <div className="reveal-up hero-cta">
-                        <Link to="/onboarding/role-selection" className="btn-primary-lg">
-                            <span>Start Free</span>
-                            <i className="bi bi-arrow-right"></i>
-                        </Link>
-                        <button onClick={() => scrollToSection('how-it-works')} className="btn-outline-lg">
-                            <i className="bi bi-play-circle"></i>
-                            <span>See How It Works</span>
-                        </button>
-                    </div>
+// ----------------------------------------------------
+// Main Landing Page
+// ----------------------------------------------------
+const LandingPage = () => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
-                    {/* Social Proof */}
-                    <div className="reveal-up social-proof">
-                        <div className="avatar-stack">
-                            <img src={avatar1} alt="User" className="avatar" />
-                            <img src={avatar2} alt="User" className="avatar" />
-                            <img src={avatar3} alt="User" className="avatar" />
-                            <img src={avatar4} alt="User" className="avatar" />
-                            <img src={avatar5} alt="User" className="avatar" />
-                        </div>
-                        <div className="social-proof-text">
-                            <span className="count">10,000+</span>
-                            <span className="label">professionals trust HireAI</span>
-                        </div>
-                    </div>
-                </div>
+  const featuresData = [
+    {
+      id: "ai-interviews",
+      quarter: "AI Technical Rounds",
+      period: "Automated coding & system design environments",
+      imageSrc: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
+      isNew: true,
+    },
+    {
+      id: "talent-passport",
+      quarter: "Talent Passport",
+      period: "Verified skill profiles authenticated by AI",
+      imageSrc: "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=800&q=80",
+    },
+    {
+      id: "proctoring",
+      quarter: "Holographic Proctoring",
+      period: "Next-gen fraud detection and behavioral tracking",
+      imageSrc: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",
+    },
+    {
+      id: "stack-sync",
+      quarter: "20+ Tech Stacks",
+      period: "Real-time dev environments for any language",
+      imageSrc: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80",
+    },
+    {
+      id: "behavioral",
+      quarter: "Behavioral Signals",
+      period: "Deep analysis of communication & problem solving",
+      imageSrc: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
+    },
+  ];
 
-                {/* Hero Dashboard Preview */}
-                <div className="reveal-up dashboard-container">
-                    <div className="animated-border dashboard-wrapper" ref={dashboardRef}>
-                        <img
-                            src={heroDashboard}
-                            alt="HireAI Platform Dashboard"
-                            className="dashboard-image"
-                        />
-                    </div>
-                </div>
-            </section>
+  // Vanilla Lenis Initialization
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.5,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smooth: true,
+      smoothTouch: false,
+    });
 
-            {/* Features Section */}
-            <section id="features" className="features-section">
-                <div className="section-container">
-                    <div className="reveal-up section-header">
-                        <h2 className="section-title">
-                            <span className="title-bold">Experience the Power</span>
-                            <br />
-                            <span className="title-light">of AI-Driven Hiring</span>
-                        </h2>
-                        <p className="section-subtitle">
-                            Everything you need to streamline your hiring process or land your dream job
-                        </p>
-                    </div>
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
 
-                    <div className="features-grid">
-                        <div className="reveal-up feature-card">
-                            <div className="feature-image">
-                                <img src={codeIde} alt="AI Interviews" />
-                            </div>
-                            <h3>AI-Powered Interviews</h3>
-                            <p>
-                                Intelligent interviews that adapt to each candidate's background.
-                                Technical, HR, and behavioral assessments powered by advanced AI.
-                            </p>
-                            <a href="#" className="feature-link">
-                                <span>Learn more</span>
-                                <i className="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
 
-                        <div className="reveal-up feature-card">
-                            <div className="feature-image">
-                                <img src={passportSnapshot} alt="AI Talent Passport" />
-                            </div>
-                            <h3>AI Talent Passport</h3>
-                            <p>
-                                Your verified digital credential showcasing skills, interview scores,
-                                and achievements. Stand out to recruiters with proof of competence.
-                            </p>
-                            <a href="#" className="feature-link">
-                                <span>Learn more</span>
-                                <i className="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
+  // Force dark theme on landing page body to prevent Froscel global light styles from bleeding
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.body.style.backgroundColor = 'black';
+    return () => {
+      document.body.style.backgroundColor = '';
+    };
+  }, []);
 
-                        <div className="reveal-up feature-card">
-                            <div className="feature-image">
-                                <img src={recruiterReport} alt="Recruiter Tools" />
-                            </div>
-                            <h3>Recruiter Dashboard</h3>
-                            <p>
-                                Powerful analytics, candidate scoring, and AI-matched talent.
-                                Reduce time-to-hire by 80% with intelligent automation.
-                            </p>
-                            <a href="#" className="feature-link">
-                                <span>Learn more</span>
-                                <i className="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
+  return (
+    <div className="landing-page-v2 bg-black text-white relative flex flex-col items-center overflow-x-hidden min-h-screen">
 
-                    {/* Wide Feature Card */}
-                    <div className="reveal-up feature-card-wide">
-                        <div className="wide-card-content">
-                            <h3>Smart Job Matching</h3>
-                            <p>
-                                Our AI analyzes your skills, experience, and interview performance
-                                to recommend the perfect roles. No more endless scrolling—get matched
-                                with opportunities that fit you.
-                            </p>
-                            <Link to="/onboarding/role-selection" className="feature-link">
-                                <span>Start matching</span>
-                                <i className="bi bi-arrow-right"></i>
-                            </Link>
-                        </div>
-                        <div className="wide-card-image">
-                            <img src={workSample} alt="Job Matching" />
-                        </div>
-                    </div>
-                </div>
-            </section>
+      <AnimatePresence mode="wait">
+        {isLoading && <LandingLoader onComplete={() => setIsLoading(false)} />}
+      </AnimatePresence>
 
-            {/* Benefits Section */}
-            <section id="benefits" className="benefits-section">
-                <div className="section-container">
-                    <div className="benefits-layout">
-                        <div className="benefits-sticky">
-                            <h2 className="reveal-up benefits-title">
-                                Why Choose HireAI?
-                            </h2>
-                            <p className="reveal-up benefits-subtitle">
-                                Join thousands of professionals transforming their careers and hiring processes
-                            </p>
-                            <Link to="/onboarding/role-selection" className="reveal-up btn-outline-dark">
-                                Get Started Free
-                            </Link>
-                        </div>
+      <div
+        className="w-full flex-1 flex flex-col items-center"
+        style={{ opacity: isLoading ? 0 : 1, transition: "opacity 0.6s ease-out" }}
+      >
 
-                        <div className="benefits-list">
-                            <div className="reveal-up benefit-item">
-                                <div className="benefit-icon">
-                                    <i className="bi bi-robot"></i>
-                                </div>
-                                <div className="benefit-content">
-                                    <h4>AI Interview Engine</h4>
-                                    <p>
-                                        Advanced AI generates personalized questions based on your resume
-                                        and role requirements. Real-time evaluation and instant feedback.
-                                    </p>
-                                </div>
-                            </div>
+        {/* SECTION 1 - NAVBAR */}
+        <div className="fixed top-8 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+          <nav className="w-[95%] max-w-7xl liquid-glass-strong rounded-full px-8 py-3.5 flex items-center justify-between border border-white/10 shadow-2xl backdrop-blur-2xl pointer-events-auto">
 
-                            <div className="reveal-up benefit-item">
-                                <div className="benefit-icon">
-                                    <i className="bi bi-shield-check"></i>
-                                </div>
-                                <div className="benefit-content">
-                                    <h4>Verified Profiles</h4>
-                                    <p>
-                                        Every candidate is verified through AI proctoring and skill assessments.
-                                        Build trust with authentic, verified credentials.
-                                    </p>
-                                </div>
-                            </div>
+            {/* Logo */}
+            <div className="flex-1 flex justify-start">
+              <Link to="/" className="flex items-center gap-2 group">
+                <img src="/logo.png" alt="Froscel" className="w-8 h-8 object-contain" />
+                <span className="text-xl font-bold tracking-tight text-white group-hover:text-white/90 transition-colors">
+                  Froscel
+                </span>
+              </Link>
+            </div>
 
-                            <div className="reveal-up benefit-item">
-                                <div className="benefit-icon">
-                                    <i className="bi bi-graph-up-arrow"></i>
-                                </div>
-                                <div className="benefit-content">
-                                    <h4>Data-Driven Insights</h4>
-                                    <p>
-                                        Comprehensive analytics on interview performance, skill gaps,
-                                        and improvement areas. Make informed hiring decisions.
-                                    </p>
-                                </div>
-                            </div>
+            {/* Center Links */}
+            <div className="hidden lg:flex flex-none items-center justify-center gap-6 xl:gap-8">
+              <Link to="/jobs" className="text-[15px] font-medium transition-colors" style={{ color: '#ffffff' }}>Jobs</Link>
+              <Link to="/interview-room" className="text-[15px] font-medium transition-colors" style={{ color: '#ffffff' }}>Interview Room</Link>
+              <Link to="/blog" className="text-[14px] lg:text-[15px] font-medium transition-colors" style={{ color: '#ffffff' }}>Blog</Link>
+              <Link to="/glossary" className="text-[14px] lg:text-[15px] font-medium transition-colors" style={{ color: '#ffffff' }}>Glossary</Link>
+              <a href="#pricing" className="text-[14px] lg:text-[15px] font-medium transition-colors" style={{ color: '#ffffff' }}>Contact</a>
+            </div>
 
-                            <div className="reveal-up benefit-item">
-                                <div className="benefit-icon">
-                                    <i className="bi bi-lightning-charge"></i>
-                                </div>
-                                <div className="benefit-content">
-                                    <h4>80% Faster Hiring</h4>
-                                    <p>
-                                        Automate screening, interviews, and evaluations.
-                                        Reduce time-to-hire from weeks to days with AI efficiency.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* How It Works Section */}
-            <section id="how-it-works" className="how-it-works-section">
-                <div className="section-container">
-                    <div className="reveal-up section-header">
-                        <h2 className="section-title">
-                            <span className="title-bold">How It Works</span>
-                        </h2>
-                        <p className="section-subtitle">
-                            Get started in minutes with our streamlined process
-                        </p>
-                    </div>
-
-                    <div className="steps-grid">
-                        <div className="reveal-up step-card">
-                            <div className="step-number">01</div>
-                            <h3>Create Your Profile</h3>
-                            <p>Upload your resume and let AI extract your skills, experience, and qualifications automatically.</p>
-                        </div>
-                        <div className="reveal-up step-card">
-                            <div className="step-number">02</div>
-                            <h3>Complete AI Interview</h3>
-                            <p>Take a personalized AI interview that evaluates your technical and soft skills in real-time.</p>
-                        </div>
-                        <div className="reveal-up step-card">
-                            <div className="step-number">03</div>
-                            <h3>Get Your Talent Passport</h3>
-                            <p>Receive your verified AI Talent Passport with scores and credentials to share with recruiters.</p>
-                        </div>
-                        <div className="reveal-up step-card">
-                            <div className="step-number">04</div>
-                            <h3>Get Matched & Hired</h3>
-                            <p>Our AI matches you with perfect opportunities. Apply, interview, and get hired faster.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="cta-section">
-                <div className="purple-bg-grad cta-grad"></div>
-                <div className="section-container">
-                    <div className="reveal-up cta-content">
-                        <h2>Ready to Transform Your Hiring?</h2>
-                        <p>Join 10,000+ professionals using AI to make better hiring decisions</p>
-                        <div className="cta-buttons">
-                            <Link to="/onboarding/role-selection" className="btn-primary-lg">
-                                <span>Start Free Today</span>
-                                <i className="bi bi-arrow-right"></i>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Contact Section */}
-            <section id="contact" className="contact-section">
-                <div className="section-container">
-                    <div className="reveal-up section-header">
-                        <h2 className="section-title">
-                            <span className="title-bold">Get In Touch</span>
-                        </h2>
-                        <p className="section-subtitle">
-                            Have questions? We're here to help.
-                        </p>
-                    </div>
-                    <div className="reveal-up contact-wrapper">
-                        <ContactForm />
-                    </div>
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="landing-footer">
-                <div className="footer-container">
-                    <div className="footer-main">
-                        <div className="footer-brand">
-                            <span className="logo-text">HireAI</span>
-                            <p>Revolutionizing hiring with AI-powered interviews and verified talent profiles.</p>
-                        </div>
-                        <div className="footer-links-grid">
-                            <div className="footer-column">
-                                <h5>Platform</h5>
-                                <a href="#features">Features</a>
-                                <a href="#benefits">Benefits</a>
-                                <a href="#how-it-works">How It Works</a>
-                            </div>
-                            <div className="footer-column">
-                                <h5>Company</h5>
-                                <a href="#">About Us</a>
-                                <a href="#">Careers</a>
-                                <a onClick={() => scrollToSection('contact')} style={{ cursor: 'pointer' }}>Contact</a>
-                            </div>
-                            <div className="footer-column">
-                                <h5>Legal</h5>
-                                <a href="#">Privacy Policy</a>
-                                <a href="#">Terms of Service</a>
-                                <a href="#">Cookie Policy</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="footer-bottom">
-                        <p>&copy; 2024 HireAI. All rights reserved.</p>
-                        <div className="footer-social">
-                            <a href="#"><i className="bi bi-linkedin"></i></a>
-                            <a href="#"><i className="bi bi-twitter-x"></i></a>
-                            <a href="#"><i className="bi bi-github"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            {/* CTA */}
+            <div className="flex-1 flex items-center justify-end gap-6">
+              <Link to="/signup" className="hidden sm:block text-[15px] font-medium transition-colors" style={{ color: '#ffffff' }}>
+                Sign up
+              </Link>
+              <Link to="/login" className="login-btn-landing bg-white px-7 py-2.5 rounded-full text-[15px] font-bold hover:bg-white/90 transition-colors shadow-lg">
+                Sign In
+              </Link>
+            </div>
+          </nav>
         </div>
-    );
+
+        {/* HERO SECTION */}
+        <section className="relative w-full flex flex-col items-center bg-black overflow-hidden pt-32 pb-0">
+          {/* Video Background Layer */}
+          <div className="absolute inset-0 z-0">
+            {/* Main Hero Background Video */}
+            <HlsVideo
+              src="https://stream.mux.com/v69RSH02ba1kvni8vByDjcOB02Ps900vG7Z6W200M4SAbk.m3u8"
+              className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 mix-blend-screen"
+            />
+          </div>
+
+          <div className="absolute inset-0 z-0 w-full h-[150%] pointer-events-none opacity-50">
+            <BGPattern variant="grid" mask="fade-bottom" fill="rgba(255,255,255,0.06)" />
+          </div>
+
+          {/* Hero Content */}
+          <div className="relative z-20 flex flex-col items-center text-center mt-12 md:mt-24 max-w-5xl px-4">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8">
+              <span className="px-2 py-0.5 rounded-full bg-white text-black text-[10px] font-bold tracking-wider uppercase">NEW</span>
+              <span className="text-sm font-medium text-white/80">Introducing AI-powered hiring.</span>
+            </motion.div>
+
+            <h1 className="text-7xl md:text-8xl tracking-tight mb-8">
+              The Hiring Platform Your <br />
+              <span className="opacity-90">Team Deserves</span>
+            </h1>
+
+            <p className="text-[17px] text-white/60 mb-12 max-w-2xl font-light font-body leading-relaxed">
+              Verified talent. Automated technical rounds. Built by AI, refined by experts. <br /> This is hiring, wildly reimagined.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <Link to="/onboarding/role-selection" className="liquid-glass-strong rounded-full px-8 py-4 flex items-center gap-2 font-medium hover:bg-white/5 transition-colors border border-white/10" style={{ color: '#ffffff' }}>
+                Start Hiring Free <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2 - FEATURE CAROUSEL */}
+        <div className="w-full bg-black py-12">
+          <FeatureCarousel 
+            reports={featuresData} 
+            title="Core Infrastructure" 
+            subtitle="The OS for high-performance engineering teams"
+          />
+        </div>
+
+        {/* SECTION 3 - SCROLL ANIMATION */}
+        <div className="relative w-full z-20 mt-8 md:mt-16">
+          <TextScrollAnimation />
+        </div>
+
+        {/* SECTION 4 - START SECTION */}
+        <section id="solutions" className="w-full min-h-[700px] py-32 px-6 md:px-16 lg:px-24 relative flex items-center justify-center">
+          {/* HLS Video Background */}
+          <div className="absolute inset-0 z-0">
+            <HlsVideo
+              src="https://stream.mux.com/9JXDljEVWYwWu01PUkAemafDugK89o01BR6zqJ3aS9u00A.m3u8"
+              className="w-full h-full object-cover opacity-40 mix-blend-lighten"
+            />
+            <div className="absolute top-0 left-0 right-0 h-[200px] bg-gradient-to-b from-black to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-[200px] bg-gradient-to-t from-black to-transparent" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
+            <div className="liquid-glass rounded-full px-4 py-1 text-xs font-medium text-white/80 font-body mb-6 border border-white/10">
+              How It Works
+            </div>
+            <h2 className="text-5xl md:text-6xl lg:text-[4.5rem] font-heading italic text-white mb-6 leading-[0.9] tracking-tight">
+              You need talent.<br />We find it.
+            </h2>
+            <p className="text-lg text-white/60 font-body font-light mb-10 leading-relaxed max-w-xl">
+              Create your profile. Our AI assesses candidates, verifies skills, and matches you with top talent. All in days, not months.
+            </p>
+            <Link to="/onboarding/role-selection" className="liquid-glass-strong rounded-full px-8 py-4 flex items-center gap-2 text-white font-medium hover:bg-white/10 transition-colors border border-white/10">
+              Start Matching <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
+
+        {/* SECTION 5 - FEATURES CHESS */}
+        <section id="platform" className="w-full py-24 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto bg-black relative z-10">
+          <div className="flex flex-col items-center text-center mb-20">
+            <div className="liquid-glass rounded-full px-4 py-1 text-xs font-medium text-white/80 font-body mb-6 border border-white/10">
+              Capabilities
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white tracking-tight leading-[0.9]">
+              Pro features. Zero complexity.
+            </h2>
+          </div>
+
+          {/* Row 1 */}
+          <div className="flex flex-col lg:flex-row items-center gap-16 mb-32">
+            <div className="lg:w-1/2 flex flex-col items-start text-left">
+              <h3 className="text-3xl md:text-4xl font-heading italic text-white mb-6">Built to match. Designed to perform.</h3>
+              <p className="text-white/60 font-body font-light text-base mb-8 max-w-md leading-relaxed">
+                Every question is intentional. Our AI assesses your unique background and dynamically generates technical, HR, and behavioral rounds to test exactly what matters.
+              </p>
+              <button className="liquid-glass-strong rounded-full px-6 py-3 text-white font-medium text-sm border border-white/10 hover:bg-white/5 transition-colors">
+                Learn more
+              </button>
+            </div>
+            <div className="lg:w-1/2 w-full h-[400px] liquid-glass rounded-2xl overflow-hidden border border-white/5 relative flex items-center justify-center bg-black">
+              {/* Native Video Loop */}
+              <video
+                src="/focs.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                loading="lazy"
+                className="w-[70%] h-[70%] object-contain mix-blend-screen"
+                style={{ transform: "translateZ(0)" }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent mix-blend-overlay pointer-events-none"></div>
+            </div>
+          </div>
+
+          {/* Row 2 */}
+          <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
+            <div className="lg:w-1/2 flex flex-col items-start text-left">
+              <h3 className="text-3xl md:text-4xl font-heading italic text-white mb-6">Verified Profiles. Automatically.</h3>
+              <p className="text-white/60 font-body font-light text-base mb-8 max-w-md leading-relaxed">
+                Stand out with an AI Talent Passport. Share your scores, verify your skills, and prove your competence to top recruiters instantly. No manual updates. Ever.
+              </p>
+              <button className="text-white font-body text-sm hover:text-white/70 transition-colors flex items-center gap-2">
+                See how it works <ArrowUpRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="lg:w-1/2 w-full h-[400px] liquid-glass rounded-2xl overflow-hidden border border-white/5 relative flex items-center justify-center">
+              {/* Fake UI mockup */}
+              <div className="w-64 h-80 rounded-2xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md p-6 flex flex-col items-center gap-6">
+                <img
+                  src="/verification_badge_3d.png"
+                  alt="AI Talent Passport Badge"
+                  className="w-32 h-32 object-contain mix-blend-screen drop-shadow-[0_0_25px_rgba(100,50,255,0.4)]"
+                />
+                <div className="w-3/4 h-4 rounded-full bg-white/20"></div>
+                <div className="w-full h-8 rounded-full bg-success/20 border border-success/30 flex items-center justify-center text-[10px] text-success font-bold uppercase tracking-widest">Verified Badge</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 6 - FEATURES GRID */}
+        <section id="process" className="w-full py-24 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto bg-black relative z-10">
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="liquid-glass rounded-full px-4 py-1 text-xs font-medium text-white/80 font-body mb-6 border border-white/10">
+              Why Us
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white tracking-tight leading-[0.9]">
+              The difference is everything.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="liquid-glass rounded-2xl p-8 border border-white/5 hover:border-white/10 transition-colors">
+              <div className="w-12 h-12 rounded-full liquid-glass-strong flex items-center justify-center mb-6 border border-white/10">
+                <Zap className="w-5 h-5 text-white/80" />
+              </div>
+              <h3 className="text-xl font-heading italic text-white mb-3">Days, Not Months</h3>
+              <p className="text-white/60 font-body font-light text-sm leading-relaxed">80% faster hiring timeline. Concept to hire at a pace that redefines fast.</p>
+            </div>
+
+            <div className="liquid-glass rounded-2xl p-8 border border-white/5 hover:border-white/10 transition-colors">
+              <div className="w-12 h-12 rounded-full liquid-glass-strong flex items-center justify-center mb-6 border border-white/10">
+                <CheckCircle className="w-5 h-5 text-white/80" />
+              </div>
+              <h3 className="text-xl font-heading italic text-white mb-3">Obsessively Verified</h3>
+              <p className="text-white/60 font-body font-light text-sm leading-relaxed">Every skill tested. Every attribute mapped. Every detail considered and refined.</p>
+            </div>
+
+            <div className="liquid-glass rounded-2xl p-8 border border-white/5 hover:border-white/10 transition-colors">
+              <div className="w-12 h-12 rounded-full liquid-glass-strong flex items-center justify-center mb-6 border border-white/10">
+                <BarChart3 className="w-5 h-5 text-white/80" />
+              </div>
+              <h3 className="text-xl font-heading italic text-white mb-3">Built to Convert</h3>
+              <p className="text-white/60 font-body font-light text-sm leading-relaxed">Advanced analytics and insights informed by data for smart hiring decisions.</p>
+            </div>
+
+            <div className="liquid-glass rounded-2xl p-8 border border-white/5 hover:border-white/10 transition-colors">
+              <div className="w-12 h-12 rounded-full liquid-glass-strong flex items-center justify-center mb-6 border border-white/10">
+                <Shield className="w-5 h-5 text-white/80" />
+              </div>
+              <h3 className="text-xl font-heading italic text-white mb-3">Secure by Default</h3>
+              <p className="text-white/60 font-body font-light text-sm leading-relaxed">Enterprise-grade protection and fraud-prevention comes standard.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 7 - STATS */}
+        <section className="w-full relative py-32 flex items-center justify-center">
+          <div className="absolute inset-0 z-0">
+            <HlsVideo
+              src="https://stream.mux.com/NcU3HlHeF7CUL86azTTzpy3Tlb00d6iF3BmCdFslMJYM.m3u8"
+              className="w-full h-full object-cover opacity-30 mix-blend-screen"
+              style={{ filter: 'saturate(0)' }}
+            />
+            <div className="absolute top-0 left-0 right-0 h-[200px] bg-gradient-to-b from-black to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-[200px] bg-gradient-to-t from-black to-transparent" />
+          </div>
+
+          <div className="relative z-10 w-full max-w-5xl px-6">
+            <div className="liquid-glass rounded-3xl p-12 md:p-16 border border-white/10 bg-black/40 backdrop-blur-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+                <div className="flex flex-col gap-2">
+                  <span className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white">98%</span>
+                  <span className="text-white/60 font-body font-light text-sm uppercase tracking-widest">Satisfaction</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white">80%</span>
+                  <span className="text-white/60 font-body font-light text-sm uppercase tracking-widest">Faster Hires</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white">5 days</span>
+                  <span className="text-white/60 font-body font-light text-sm uppercase tracking-widest">Avg Delivery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+
+        {/* SECTION 8.5 - CONTACT FORM */}
+        <section id="contact" className="w-full py-24 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto flex flex-col items-center justify-center relative z-10">
+          <div data-theme="dark" className="w-full max-w-2xl">
+            <ContactForm />
+          </div>
+        </section>
+
+        {/* SECTION 9 - CTA FOOTER */}
+        <section id="pricing" className="w-full min-h-[800px] relative flex flex-col items-center justify-center pt-32 pb-8 px-6">
+          <div className="absolute inset-0 z-0">
+            <HlsVideo
+              src="https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8"
+              className="w-full h-full object-cover opacity-50 mix-blend-screen"
+            />
+            <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-black to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-[200px] bg-gradient-to-t from-black to-transparent" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center mb-auto pt-20">
+            <h2 className="text-5xl md:text-6xl lg:text-[5.5rem] font-heading italic text-white mb-6 leading-[0.85] tracking-tight">
+              Your next team<br />starts here.
+            </h2>
+            <p className="text-lg text-white/60 font-body font-light mb-10 max-w-md leading-relaxed">
+              Start hiring today. See what AI-powered recruitment infrastructure can do for your business.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/onboarding/role-selection" className="liquid-glass-strong rounded-full px-8 py-4 text-white font-medium hover:bg-white/10 transition-colors border border-white/10 flex items-center justify-center gap-2">
+                Start Free Trial <ArrowUpRight className="w-4 h-4" />
+              </Link>
+              <button className="bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-white/90 transition-colors">
+                Book a Demo
+              </button>
+            </div>
+          </div>
+
+          <footer className="relative z-10 w-full max-w-6xl mt-auto pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-white/40 text-xs font-body font-light">
+            <p>© 2026 Froscel Platform. All rights reserved.</p>
+            <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <a href="/#contact" className="hover:text-white transition-colors">Contact</a>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </div>
+  );
 };
 
 export default LandingPage;

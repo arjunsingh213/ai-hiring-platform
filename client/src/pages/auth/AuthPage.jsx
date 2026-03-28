@@ -7,10 +7,10 @@ const AuthPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Force light theme on auth pages
+    // Force dark theme on auth pages to match landing page
     useEffect(() => {
         const previousTheme = document.documentElement.getAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-theme', 'dark');
 
         return () => {
             // Restore previous theme when leaving auth page

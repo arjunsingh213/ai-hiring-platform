@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import './AuthPage.css';
-import froscelLogo from '../../assets/froscel-logo.png';
 
 const LoginPage = () => {
     const navigate = useNavigate();
