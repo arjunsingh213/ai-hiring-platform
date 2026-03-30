@@ -362,9 +362,9 @@ const LandingPage = () => {
               <p className="text-white/60 font-body font-light text-base mb-8 max-w-md leading-relaxed">
                 Stand out with an AI Talent Passport. Share your scores, verify your skills, and prove your competence to top recruiters instantly. No manual updates. Ever.
               </p>
-              <button className="text-white font-body text-sm hover:text-white/70 transition-colors flex items-center gap-2">
+              <Link to="/onboarding/role-selection" className="liquid-glass rounded-full px-6 py-3 text-white text-sm font-medium hover:bg-white/10 transition-colors border border-white/10 flex items-center gap-2">
                 See how it works <ArrowUpRight className="w-3 h-3" />
-              </button>
+              </Link>
             </div>
             <div className="lg:w-1/2 w-full h-[400px] liquid-glass rounded-2xl overflow-hidden border border-white/5 relative flex items-center justify-center">
               {/* Fake UI mockup */}
@@ -374,7 +374,7 @@ const LandingPage = () => {
                   alt="AI Talent Passport Badge"
                   className="w-32 h-32 object-contain mix-blend-screen drop-shadow-[0_0_25px_rgba(100,50,255,0.4)]"
                 />
-                <div className="w-3/4 h-4 rounded-full bg-white/20"></div>
+
                 <div className="w-full h-8 rounded-full bg-success/20 border border-success/30 flex items-center justify-center text-[10px] text-success font-bold uppercase tracking-widest">Verified Badge</div>
               </div>
             </div>
@@ -470,14 +470,7 @@ const LandingPage = () => {
 
         {/* SECTION 9 - CTA FOOTER */}
         <section id="pricing" className="w-full min-h-[500px] relative flex flex-col items-center justify-center pt-24 pb-8 px-6">
-          <div className="absolute inset-0 z-0">
-            <HlsVideo
-              src="https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8"
-              className="w-full h-full object-cover opacity-50 mix-blend-screen"
-            />
-            <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-black to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 h-[200px] bg-gradient-to-t from-black to-transparent" />
-          </div>
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-black via-zinc-950 to-black" />
 
           <div className="relative z-10 flex flex-col items-center text-center mb-auto pt-20">
             <h2 className="text-5xl md:text-6xl lg:text-[5.5rem] font-heading italic text-white mb-6 leading-[0.85] tracking-tight">

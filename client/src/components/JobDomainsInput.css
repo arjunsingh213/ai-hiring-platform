@@ -127,3 +127,59 @@
         transform: translateY(0);
     }
 }
+
+/* ===== DARK THEME OVERRIDES (MATCHING AUTH/ONBOARDING AESTHETIC) ===== */
+.onboarding .domain-chip {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.onboarding .remove-domain-btn {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.onboarding .remove-domain-btn:hover {
+    color: #FFFFFF !important;
+}
+
+.onboarding .domain-search-input {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+}
+
+.onboarding .domain-search-input:focus {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.onboarding .domain-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.onboarding .domain-suggestions-dropdown {
+    background: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+}
+
+.onboarding .domain-suggestion-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.onboarding .domain-suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.onboarding .domain-name,
+.onboarding .add-custom {
+    color: #FFFFFF !important;
+}
+
+.onboarding .domain-roles,
+.onboarding .no-suggestions,
+.onboarding .domain-helper-text {
+    color: rgba(255, 255, 255, 0.6) !important;
+}

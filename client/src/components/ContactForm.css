@@ -161,10 +161,10 @@
 
 [data-theme="dark"] .form-header h3 {
     color: #FFFFFF !important;
-    font-family: 'Instrument Serif', Georgia, serif !important;
-    font-size: 3rem !important;
-    font-style: italic !important;
-    font-weight: 400 !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+    font-size: 2rem !important;
+    font-style: normal !important;
+    font-weight: 600 !important;
     letter-spacing: -0.02em !important;
     margin-bottom: 0.5rem !important;
 }

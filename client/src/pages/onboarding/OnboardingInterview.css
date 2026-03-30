@@ -2687,3 +2687,98 @@
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+/* ========================================================================= */
+/* DARK EDITORIAL TECH THEME OVERRIDES (MATCHING ONBOARDING APP AESTHETICS)  */
+/* ========================================================================= */
+
+.onboarding-interview .interview-header {
+    background: rgba(15, 15, 20, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.onboarding-interview .round-badge.tech,
+.onboarding-interview .round-badge.hr {
+    background: rgba(40, 90, 255, 0.9) !important; /* Bold solid functional color */
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(80, 130, 255, 0.5) !important;
+}
+
+.onboarding-interview .question-counter,
+.onboarding-interview .round-counter {
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.onboarding-interview .camera-section {
+    background: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+.onboarding-interview .voice-interview-card {
+    background: rgba(10, 10, 15, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8) !important;
+}
+
+.onboarding-interview .avatar-ring {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.onboarding-interview .avatar-ring::before,
+.onboarding-interview .avatar-ring::after {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.onboarding-interview .avatar-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1) !important;
+}
+
+.onboarding-interview .user-transcript {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+.onboarding-interview .user-transcript .transcript-text {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.onboarding-interview .processing-indicator {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.onboarding-interview .processing-indicator .loading-spinner {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    border-top-color: #FFFFFF !important;
+}
+
+.onboarding-interview .question-text {
+    color: #FFFFFF !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+.onboarding-interview .question-label,
+.onboarding-interview .transcript-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+.onboarding-interview .question-icon,
+.onboarding-interview .transcript-icon {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.onboarding-interview .voice-done-btn,
+.onboarding-interview .btn-next {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1) !important;
+}
+.onboarding-interview .voice-done-btn:hover,
+.onboarding-interview .btn-next:hover {
+    background: #E2E8F0 !important;
+}

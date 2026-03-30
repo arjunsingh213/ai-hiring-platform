@@ -154,3 +154,57 @@
 .skills-suggestions::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* ===== DARK THEME OVERRIDES (MATCHING AUTH/ONBOARDING AESTHETIC) ===== */
+.onboarding .skills-input-wrapper,
+.skills-input-wrapper.dark-mode-override {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.onboarding .skills-input-wrapper:focus-within,
+.skills-input-wrapper.dark-mode-override:focus-within {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+.onboarding .skill-tag,
+.skill-tag.dark-mode-override {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+.onboarding .skill-remove,
+.skill-remove.dark-mode-override {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+.onboarding .skill-remove:hover,
+.skill-remove.dark-mode-override:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #FFFFFF !important;
+}
+.onboarding .skills-input-field,
+.skills-input-field.dark-mode-override {
+    color: #FFFFFF !important;
+}
+.onboarding .skills-input-field::placeholder,
+.skills-input-field.dark-mode-override::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+.onboarding .skills-suggestions,
+.skills-suggestions.dark-mode-override {
+    background: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+}
+.onboarding .skill-suggestion,
+.skill-suggestion.dark-mode-override {
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.onboarding .skill-suggestion:hover,
+.onboarding .skill-suggestion.selected,
+.skill-suggestion.dark-mode-override:hover,
+.skill-suggestion.dark-mode-override.selected {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+}

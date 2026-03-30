@@ -1208,3 +1208,305 @@
     color: #475569;
     line-height: 1.5;
 }
+
+/* ===== ENFORCED GLOBAL DARK THEME OVERRIDES (DARK EDITORIAL TECH AESTHETIC) ===== */
+
+/* Page Background */
+.readiness-page {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+}
+
+/* Header */
+.readiness-header {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.header-left h1 {
+    color: #FFFFFF !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+    font-weight: 600 !important;
+}
+.header-left .job-info {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Typography & Headings inside sections */
+.section h2 {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+.section-desc {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Component Panels */
+.left-panel .guidelines-list li,
+.left-panel .round-card,
+.left-panel .struct-item,
+.consent-checkbox {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+
+/* Card Titles / Strong texts */
+.guidelines-list li, 
+.round-info strong, 
+.struct-info strong {
+    color: #FFFFFF !important;
+}
+.round-info span, 
+.struct-info span {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* System Check Card (Right Panel) */
+.system-check-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(40px) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
+}
+.card-header h2 {
+    color: #FFFFFF !important;
+}
+.card-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.check-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Checks specific styling */
+.check-name {
+    color: #FFFFFF !important;
+}
+.check-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+.check-icon svg {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Badges */
+.check-badge.idle { background: rgba(255, 255, 255, 0.05) !important; color: rgba(255, 255, 255, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.check-badge.testing { background: rgba(99, 102, 241, 0.2) !important; color: #818cf8 !important; border: 1px solid rgba(99, 102, 241, 0.3) !important; }
+.check-badge.ready { background: rgba(16, 185, 129, 0.15) !important; color: #34d399 !important; border: 1px solid rgba(16, 185, 129, 0.3) !important; }
+.check-badge.slow { background: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; border: 1px solid rgba(245, 158, 11, 0.3) !important; }
+.check-badge.error { background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.3) !important; }
+
+/* Info badges and states */
+.progress-container {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+.progress-bar {
+    background: #FFFFFF !important; /* monochromatic */
+}
+.round-time {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Camera Preview Wrapper */
+.camera-preview {
+    background: #000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Main Call to Action Buttons */
+.start-btn.active, 
+.capture-btn {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1) !important;
+}
+
+.start-btn.active:hover, 
+.capture-btn:hover {
+    background: #E2E8F0 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Secondary Action Buttons (Tests, Retake, Run All) */
+.system-check-card .run-all-btn, 
+.retake-btn, 
+.test-btn {
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: #FFFFFF !important;
+    font-weight: 500 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.system-check-card .run-all-btn:hover, 
+.retake-btn:hover, 
+.test-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Disabled & Alternate Buttons */
+.start-btn, 
+.test-btn:disabled, 
+.declaration-btn {
+    background: rgba(255, 255, 255, 0.02) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.declaration-btn.accepted {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+}
+.declaration-note {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-left: 3px solid rgba(255, 255, 255, 0.5) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Declaration / Action specific */
+.action-box {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.2) !important;
+}
+.action-box p {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Status Summary Badge */
+.status-summary {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+.status-summary.ready {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.2) !important;
+    color: #34d399 !important;
+}
+
+/* Coding Note */
+.coding-note {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Structural Icons */
+.struct-icon.tech, .struct-icon.behav, .struct-icon.situ {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+}
+
+/* Mic Controls */
+.mic-controls .record-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.mic-controls .record-btn:hover { background: rgba(255, 255, 255, 0.1) !important; }
+.mic-controls .play-btn {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+.mic-controls .play-btn:hover { background: rgba(16, 185, 129, 0.25) !important; }
+
+/* Declaration Prompt (White Box) Overrides */
+.declaration-prompt {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+}
+.declaration-prompt:hover {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.declaration-label {
+    color: #FFFFFF !important;
+}
+.declaration-icon-text svg {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+.declaration-prompt:has(.declaration-btn.accepted) .declaration-icon-text svg {
+    color: #10b981 !important;
+}
+.declaration-prompt:has(.declaration-btn.accepted) .declaration-label {
+    color: #34d399 !important;
+}
+
+/* Requirement Checklist (Bottom Right Box) Overrides */
+.requirement-checklist {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 12px;
+}
+.req-item {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+.req-item.done {
+    color: #34d399 !important;
+}
+.req-check {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+.req-item.done .req-check {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+    color: #34d399 !important;
+}
+
+/* ===== FACE VERIFICATION CAPTURE MODAL - DARK OVERRIDES ===== */
+.capture-modal-overlay {
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+}
+.capture-modal {
+    background: rgba(10, 10, 15, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6) !important;
+}
+.capture-modal h3 {
+    color: #FFFFFF !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+.capture-modal > p {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+.capture-preview {
+    background: #000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.cancel-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+}
+.capture-action-btn {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+.capture-action-btn:hover:not(.disabled) {
+    background: #E2E8F0 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1) !important;
+}
+.capture-action-btn.disabled {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    cursor: not-allowed !important;
+}

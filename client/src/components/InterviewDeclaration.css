@@ -371,3 +371,119 @@
     background: rgba(15, 23, 42, 0.6);
     border-top-color: rgba(255, 255, 255, 0.1);
 }
+
+/* ===== ENFORCED GLOBAL DARK THEME OVERRIDES (ONBOARDING) ===== */
+/* Because the modal is mounted globally, we can use body:has(.onboarding) or force styles globally */
+body:has(.onboarding) .declaration-content,
+.declaration-content.dark-mode-override {
+    background: rgba(10, 10, 15, 0.9) !important;
+    backdrop-filter: blur(40px) !important;
+    -webkit-backdrop-filter: blur(40px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
+}
+
+body:has(.onboarding) .declaration-header,
+.declaration-header.dark-mode-override {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body:has(.onboarding) .declaration-icon,
+.declaration-icon.dark-mode-override {
+    background: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+body:has(.onboarding) .declaration-icon svg {
+    stroke: #FFFFFF !important;
+}
+
+body:has(.onboarding) .declaration-header h2,
+.declaration-header.dark-mode-override h2 {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+
+body:has(.onboarding) .declaration-subtitle,
+.declaration-subtitle.dark-mode-override {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Notice */
+body:has(.onboarding) .declaration-notice,
+.declaration-notice.dark-mode-override {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+body:has(.onboarding) .declaration-notice p,
+.declaration-notice.dark-mode-override p {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Items */
+body:has(.onboarding) .declaration-item,
+.declaration-item.dark-mode-override {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+body:has(.onboarding) .declaration-item:hover,
+.declaration-item.dark-mode-override:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: none !important;
+}
+body:has(.onboarding) .declaration-item-content h4,
+.declaration-item-content.dark-mode-override h4 {
+    color: #FFFFFF !important;
+}
+body:has(.onboarding) .declaration-item-content p,
+.declaration-item-content.dark-mode-override p {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Footer & Buttons */
+body:has(.onboarding) .declaration-footer,
+.declaration-footer.dark-mode-override {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body:has(.onboarding) .declaration-footer .btn-secondary {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+body:has(.onboarding) .declaration-footer .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+}
+
+body:has(.onboarding) .declaration-footer .btn-primary {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+body:has(.onboarding) .declaration-footer .btn-primary:hover:not(.btn-disabled) {
+    background: #E2E8F0 !important;
+    transform: translateY(-1px) !important;
+}
+body:has(.onboarding) .declaration-footer .btn-primary.btn-disabled,
+body:has(.onboarding) .declaration-footer .btn-disabled {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Warning block (if any) */
+body:has(.onboarding) .declaration-warning,
+.declaration-warning.dark-mode-override {
+    background: rgba(245, 158, 11, 0.05) !important;
+    border: 1px solid rgba(245, 158, 11, 0.2) !important;
+}
+body:has(.onboarding) .declaration-warning p,
+.declaration-warning.dark-mode-override p {
+    color: #FDE68A !important;
+}

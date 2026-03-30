@@ -131,3 +131,47 @@
 .confirm-dialog-btn:active {
     transform: translateY(0);
 }
+
+/* ===== DARK THEME OVERRIDES (MATCHING ONBOARDING AESTHETIC) ===== */
+/* Since modals might be appended to body, we might need a global dark mode class or just a general override */
+body:has(.onboarding) .confirm-dialog {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(40px) !important;
+    -webkit-backdrop-filter: blur(40px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
+}
+
+body:has(.onboarding) .confirm-dialog-title {
+    color: #FFFFFF !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+
+body:has(.onboarding) .confirm-dialog-message {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+
+body:has(.onboarding) .confirm-dialog-btn-cancel {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body:has(.onboarding) .confirm-dialog-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+}
+
+body:has(.onboarding) .confirm-dialog-btn-info {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1) !important;
+    font-weight: 600 !important;
+}
+
+body:has(.onboarding) .confirm-dialog-btn-info:hover {
+    background: #E2E8F0 !important;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2) !important;
+    transform: translateY(-2px) !important;
+}

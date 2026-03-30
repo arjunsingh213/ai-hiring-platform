@@ -226,3 +226,98 @@
         height: 40px;
     }
 }
+
+/* ===== DARK THEME OVERRIDES ===== */
+.method-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+.method-card:hover {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.method-card.recommended-card {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.recommended-badge {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1) !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+
+.method-card h3 {
+    color: #FFFFFF !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+
+.method-card p {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-family: 'Inter', 'Barlow', sans-serif !important;
+}
+
+.method-icon {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.method-icon svg {
+    color: #FFFFFF !important;
+}
+
+.method-icon.secondary {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.method-icon.secondary svg {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.benefits-list li {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.benefits-list svg {
+    color: #FFFFFF !important;
+}
+
+.primary-button {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+}
+
+.primary-button:hover {
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2) !important;
+}
+
+.secondary-button {
+    background: transparent !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.secondary-button:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.privacy-note {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.privacy-note svg {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.progress-bar-small {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.progress-fill-small {
+    background: #FFFFFF !important;
+}

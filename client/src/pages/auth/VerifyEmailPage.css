@@ -4,7 +4,7 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-md);
-    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    background: #000000;
 }
 
 .verify-card {
@@ -12,6 +12,12 @@
     padding: 3rem;
     max-width: 480px;
     width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
 }
 
 .verify-icon {
@@ -26,8 +32,8 @@
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid var(--bg-tertiary);
-    border-top-color: var(--primary);
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #FFFFFF;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -38,18 +44,53 @@
     }
 }
 
+.verify-card h2 {
+    color: #FFFFFF;
+    font-family: 'Inter', 'Barlow', sans-serif;
+    font-weight: 600;
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+}
+
 .verify-message {
     margin: var(--spacing-md) 0;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
     line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
 }
 
 .redirect-text {
     margin-top: var(--spacing-lg);
     font-size: 0.875rem;
-    color: var(--text-tertiary);
+    color: rgba(255, 255, 255, 0.4);
 }
 
-.btn-primary {
+.verify-card .btn-primary {
     margin-top: var(--spacing-lg);
+    background: #FFFFFF;
+    color: #000000;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.verify-card .btn-primary:hover {
+    background: #E2E8F0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+}
+
+/* Icon styling overrides */
+.icon-success svg {
+    stroke: #34d399;
+}
+
+.icon-error svg {
+    stroke: #f87171;
 }

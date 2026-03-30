@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Barlow:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Barlow:wght@300;400;500;600&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind components;
 @tailwind utilities;
@@ -67,16 +67,22 @@
   }
 }
 
-/* Make sure headings inside the new layout are consistent */
+/* Heading reset — fallback to Barlow for all headings */
 .landing-page-v2 h1,
 .landing-page-v2 h2,
 .landing-page-v2 h3,
 .landing-page-v2 h4 {
   margin: 0;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Hero / statement headings — opt-in via utility class */
+.landing-page-v2 .font-heading {
   font-family: 'Instrument Serif', serif;
   font-style: italic;
-  font-weight: 400; /* Serif mostly looks best normal weight when italicized heavily */
-  color: #ffffff;
+  font-weight: 400;
 }
 
 /* Override global Froscel link styles */

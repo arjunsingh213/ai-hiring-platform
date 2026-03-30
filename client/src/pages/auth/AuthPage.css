@@ -68,10 +68,10 @@
 }
 
 .form-container h1 {
-    font-size: 2.75rem;
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
+    font-size: 1.75rem;
+    font-family: 'Inter', 'Barlow', sans-serif;
+    font-style: normal;
+    font-weight: 600;
     letter-spacing: -0.02em;
     color: #FFFFFF;
     margin-bottom: 1.5rem;
@@ -136,11 +136,11 @@
 .input-group select {
     width: 100%;
     padding: 0.875rem 1rem;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 10px;
     font-size: 0.9375rem;
-    color: #FFFFFF;
+    color: #FFFFFF !important;
     transition: all 0.2s ease;
     outline: none;
 }
@@ -160,13 +160,13 @@
 .input-group input:-webkit-autofill,
 .input-group input:-webkit-autofill:hover,
 .input-group input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #FFFFFF;
-    -webkit-box-shadow: 0 0 0px 1000px #050505 inset;
+    -webkit-text-fill-color: #FFFFFF !important;
+    -webkit-box-shadow: 0 0 0px 1000px #080808 inset !important;
     transition: background-color 5000s ease-in-out 0s;
 }
 
 .input-group input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0px 1000px #050505 inset, 0 0 0 4px rgba(255, 255, 255, 0.1);
+    -webkit-box-shadow: 0 0 0px 1000px #080808 inset, 0 0 0 4px rgba(255, 255, 255, 0.1) !important;
 }
 
 .input-group select {
@@ -216,7 +216,7 @@
 .checkbox-row input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: var(--primary, #007DFF);
+    accent-color: #FFFFFF;
 }
 
 /* ===== Buttons ===== */
@@ -276,6 +276,7 @@
     margin-bottom: 1rem;
     text-decoration: none;
     transition: color 0.2s;
+    font-family: 'Inter', 'Barlow', sans-serif;
 }
 
 .forgot-link:hover {
@@ -435,11 +436,11 @@
 }
 
 .overlay-panel h2 {
-    font-size: 3.5rem;
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
-    letter-spacing: -0.02em;
+    font-size: 2.5rem;
+    font-family: 'Inter', 'Barlow', sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: -0.03em;
     margin-bottom: 1rem;
     color: #FFFFFF;
     line-height: 1.1;
@@ -492,11 +493,11 @@
 }
 
 .verify-overlay-panel h2 {
-    font-size: 3.5rem;
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
-    letter-spacing: -0.02em;
+    font-size: 2.5rem;
+    font-family: 'Inter', 'Barlow', sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: -0.03em;
     margin-bottom: 1rem;
     color: #FFFFFF;
     line-height: 1.1;
@@ -543,10 +544,10 @@
 }
 
 .verify-content-panel h1 {
-    font-size: 2.5rem;
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
+    font-size: 1.75rem;
+    font-family: 'Inter', 'Barlow', sans-serif;
+    font-style: normal;
+    font-weight: 600;
     letter-spacing: -0.02em;
     color: #FFFFFF;
     margin-bottom: 1rem;
@@ -583,10 +584,10 @@
 }
 
 .verify-sent-panel h1 {
-    font-size: 2.5rem;
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
+    font-size: 1.75rem;
+    font-family: 'Inter', 'Barlow', sans-serif;
+    font-style: normal;
+    font-weight: 600;
     letter-spacing: -0.02em;
     color: #FFFFFF;
     margin-bottom: 1rem;
@@ -813,7 +814,7 @@
 
 /* ===== Terms & Conditions Link ===== */
 .terms-link {
-    color: #007DFF !important;
+    color: rgba(255, 255, 255, 0.7) !important;
     font-weight: 600;
     text-decoration: underline !important;
     cursor: pointer !important;
@@ -821,6 +822,6 @@
 }
 
 .terms-link:hover {
-    color: #0056b3 !important;
+    color: #FFFFFF !important;
     text-decoration: underline !important;
 }
