@@ -10,11 +10,11 @@
 }
 
 .atp-ring-track {
-    stroke: var(--atp-border);
+    stroke: rgba(255, 255, 255, 0.06);
 }
 
 .atp-ring-progress {
-    filter: drop-shadow(0 0 8px currentColor);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.15));
 }
 
 .atp-score-content {
@@ -29,7 +29,7 @@
 .atp-score-value {
     font-size: 2.5rem;
     font-weight: 800;
-    color: var(--atp-text-main);
+    color: #ffffff;
     line-height: 1;
 }
 
@@ -38,10 +38,22 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--atp-text-muted);
+    color: rgba(255, 255, 255, 0.4);
     margin-top: 4px;
 }
 
 [data-theme='light'] .atp-ring-track {
-    stroke: rgba(0, 0, 0, 0.05);
+    stroke: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .atp-ring-progress {
+    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
+}
+
+[data-theme='light'] .atp-score-value {
+    color: #0f172a;
+}
+
+[data-theme='light'] .atp-score-label {
+    color: #94a3b8;
 }

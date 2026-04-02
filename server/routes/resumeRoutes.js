@@ -160,8 +160,82 @@ router.post('/upload', userAuth, upload.single('resume'), async (req, res) => {
         await resume.save();
         console.log(`[Resume] Saved resume for user ${userId} with ${parsedData.skills?.length || 0} skills`);
 
-        // Update user with resume reference
-        await User.findByIdAndUpdate(userId, { resume: resume._id });
+        // Update user with resume reference AND auto-populate profile from parsed data
+        const profileUpdate = {
+            resume: resume._id,
+            isOnboardingComplete: true
+        };
+
+        // Auto-fill profile.name from resume if not already set
+        const existingUser = await User.findById(userId).select('profile.name profile.mobile jobSeekerProfile');
+        const pInfo = parsedData.personalInfo || {};
+
+        if (!existingUser?.profile?.name && pInfo.name) {
+            profileUpdate['profile.name'] = pInfo.name;
+        }
+        if (!existingUser?.profile?.mobile && (pInfo.phone || pInfo.mobile)) {
+            profileUpdate['profile.mobile'] = pInfo.phone || pInfo.mobile;
+        }
+
+        // Auto-fill jobSeekerProfile fields from resume
+        if (parsedData.skills && parsedData.skills.length > 0) {
+            profileUpdate['jobSeekerProfile.skills'] = parsedData.skills.map(s => ({
+                name: typeof s === 'string' ? s : s.name,
+                level: 'intermediate'
+            }));
+        }
+        if (parsedData.experience && parsedData.experience.length > 0) {
+            profileUpdate['jobSeekerProfile.experience'] = parsedData.experience.map(exp => {
+                // Safely parse dates — AI may return various formats
+                let startDate, endDate;
+                try { startDate = exp.startDate ? new Date(exp.startDate) : undefined; } catch(e) { startDate = undefined; }
+                try { endDate = exp.endDate ? new Date(exp.endDate) : undefined; } catch(e) { endDate = undefined; }
+                // If date is invalid, set to undefined
+                if (startDate && isNaN(startDate.getTime())) startDate = undefined;
+                if (endDate && isNaN(endDate.getTime())) endDate = undefined;
+
+                return {
+                    title: exp.title || exp.position || '',
+                    company: exp.company || exp.organization || '',
+                    location: exp.location || '',
+                    startDate,
+                    endDate,
+                    current: exp.current || false,
+                    description: exp.description || ''
+                };
+            });
+        }
+        if (parsedData.education && parsedData.education.length > 0) {
+            // Helper: extract numeric year from strings like "2020 — 2024", "2024", "May 2024"
+            const parseYear = (val) => {
+                if (!val) return undefined;
+                if (typeof val === 'number' && !isNaN(val)) return val;
+                const str = String(val);
+                // Find all 4-digit numbers, take the last one (graduation year)
+                const matches = str.match(/\d{4}/g);
+                if (matches && matches.length > 0) {
+                    return parseInt(matches[matches.length - 1], 10);
+                }
+                return undefined;
+            };
+
+            profileUpdate['jobSeekerProfile.education'] = parsedData.education.map(edu => ({
+                degree: edu.degree || '',
+                institution: edu.institution || edu.school || '',
+                year: parseYear(edu.year || edu.graduationYear),
+                field: edu.field || edu.major || '',
+                grade: edu.grade || edu.gpa || ''
+            }));
+        }
+        // Auto-fill portfolio links
+        if (pInfo.linkedin) profileUpdate['jobSeekerProfile.portfolioLinks.linkedin'] = pInfo.linkedin;
+        if (pInfo.github) profileUpdate['jobSeekerProfile.portfolioLinks.github'] = pInfo.github;
+        if (pInfo.portfolio) profileUpdate['jobSeekerProfile.portfolioLinks.portfolio'] = pInfo.portfolio;
+        // Store full parsed resume for interview use
+        profileUpdate['jobSeekerProfile.parsedResume'] = parsedData;
+
+        await User.findByIdAndUpdate(userId, { $set: profileUpdate });
+        console.log(`[Resume] Auto-populated user profile for ${userId} (onboarding marked complete)`);
 
         res.status(201).json({
             success: true,

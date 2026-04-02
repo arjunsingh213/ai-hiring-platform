@@ -4,13 +4,13 @@ import api from '../../services/api';
 import './ResumeSkillIntelligence.css';
 
 const LEVEL_LABELS = ['Unverified', 'Basic', 'Intermediate', 'Advanced', 'Expert'];
-const LEVEL_COLORS = ['#94a3b8', '#60a5fa', '#a78bfa', '#f59e0b', '#10b981'];
+const LEVEL_COLORS = ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0.5)', 'rgba(255,255,255,0.7)', '#ffffff'];
 const XP_THRESHOLDS = [0, 100, 300, 600, 1000];
 const VERIFICATION_BADGES = {
-    not_verified: { label: 'Not Verified', color: '#94a3b8', icon: '○' },
-    in_progress: { label: 'In Progress', color: '#60a5fa', icon: '◐' },
-    verified: { label: 'Verified', color: '#a78bfa', icon: '◉' },
-    expert: { label: 'Expert', color: '#10b981', icon: '★' }
+    not_verified: { label: 'Not Verified', color: 'rgba(255,255,255,0.3)', icon: '○' },
+    in_progress: { label: 'In Progress', color: 'rgba(255,255,255,0.5)', icon: '◐' },
+    verified: { label: 'Verified', color: 'rgba(255,255,255,0.75)', icon: '◉' },
+    expert: { label: 'Expert', color: '#ffffff', icon: '★' }
 };
 
 const ResumeSkillIntelligence = ({ userId, user, onSkillsUpdated }) => {

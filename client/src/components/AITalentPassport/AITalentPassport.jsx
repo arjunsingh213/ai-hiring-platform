@@ -15,7 +15,7 @@ import './AITalentPassport.css';
    ═══════════════════════════════════════════════════ */
 
 const LEVEL_LABELS = { 1: 'Basic', 2: 'Intermediate', 3: 'Advanced', 4: 'Professional', 5: 'Expert' };
-const LEVEL_COLORS = { 1: '#ef4444', 2: '#f59e0b', 3: '#3b82f6', 4: '#8b5cf6', 5: '#10b981' };
+const LEVEL_COLORS = { 1: 'rgba(255,255,255,0.25)', 2: 'rgba(255,255,255,0.4)', 3: 'rgba(255,255,255,0.55)', 4: 'rgba(255,255,255,0.75)', 5: '#ffffff' };
 const XP_THRESHOLDS = { 1: 0, 2: 100, 3: 300, 4: 600, 5: 1000 };
 
 const GRAPH_OPTIONS = [
@@ -719,15 +719,15 @@ function renderChart(type, { radarData, barData, lineData, areaData, riskData, x
         case 'bar':
             return (
                 <ResponsiveContainer width="100%" height={chartHeight}>
-                    <BarChart data={barData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
+                    <BarChart data={barData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }} maxBarSize={40}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--atp-grid)" />
                         <XAxis dataKey="name" tick={{ fill: 'var(--atp-axis)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
                         <YAxis domain={[0, 100]} tick={{ fill: 'var(--atp-axis)', fontSize: 11 }} />
                         <Tooltip content={<BarTooltip />} />
                         <Legend />
-                        <Bar dataKey="challenge" name="Challenge" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="interview" name="Interview" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="project" name="Project" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="challenge" name="Challenge" fill="rgba(255,255,255,0.7)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="interview" name="Interview" fill="rgba(255,255,255,0.45)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="project" name="Project" fill="rgba(255,255,255,0.25)" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </BarChart>
                 </ResponsiveContainer>
             );
@@ -764,15 +764,15 @@ function renderChart(type, { radarData, barData, lineData, areaData, riskData, x
         case 'risk':
             return (
                 <ResponsiveContainer width="100%" height={chartHeight}>
-                    <BarChart data={riskData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
+                    <BarChart data={riskData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }} maxBarSize={40}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--atp-grid)" />
                         <XAxis dataKey="name" tick={{ fill: 'var(--atp-axis)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
                         <YAxis domain={[0, 100]} tick={{ fill: 'var(--atp-axis)', fontSize: 11 }} />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="risk" name="Risk Index" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="confidence" name="Confidence" fill="#10b981" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="recency" name="Recency" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="risk" name="Risk Index" fill="rgba(255,255,255,0.5)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="confidence" name="Confidence" fill="rgba(255,255,255,0.7)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="recency" name="Recency" fill="rgba(255,255,255,0.35)" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </BarChart>
                 </ResponsiveContainer>
             );
@@ -810,7 +810,7 @@ const ATPRing = ({ score, size = 130 }) => {
     const radius = 45;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (score / 100) * circumference;
-    const color = score >= 80 ? 'var(--atp-success)' : score >= 60 ? 'var(--atp-warning)' : 'var(--atp-risk)';
+    const color = score >= 80 ? '#ffffff' : score >= 60 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)';
     const label = score >= 80 ? 'Strong' : score >= 60 ? 'Good' : 'Developing';
 
     return (
@@ -1008,17 +1008,17 @@ function getStrengthLabel(score) {
 }
 
 function getScoreGradient(score) {
-    if (score >= 80) return 'linear-gradient(90deg, #059669, #10b981)';
-    if (score >= 60) return 'linear-gradient(90deg, #d97706, #f59e0b)';
-    if (score >= 40) return 'linear-gradient(90deg, #2563eb, #3b82f6)';
-    return 'linear-gradient(90deg, #dc2626, #ef4444)';
+    if (score >= 80) return 'linear-gradient(90deg, rgba(255,255,255,0.7), #ffffff)';
+    if (score >= 60) return 'linear-gradient(90deg, rgba(255,255,255,0.4), rgba(255,255,255,0.7))';
+    if (score >= 40) return 'linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.45))';
+    return 'linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.25))';
 }
 
 function getNodeColor(depth) {
-    if (depth >= 80) return '#10b981';
-    if (depth >= 60) return '#4ab4ff';
-    if (depth >= 40) return '#f59e0b';
-    return '#ef4444';
+    if (depth >= 80) return '#ffffff';
+    if (depth >= 60) return 'rgba(255,255,255,0.7)';
+    if (depth >= 40) return 'rgba(255,255,255,0.45)';
+    return 'rgba(255,255,255,0.25)';
 }
 
 function hashCode(str) {

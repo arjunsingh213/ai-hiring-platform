@@ -221,7 +221,7 @@ const AuthPage = () => {
                     };
                     navigate(isSafeRedirect(redirectPath) ? redirectPath : '/');
                 } else if (user.role === 'jobseeker') {
-                    navigate('/jobseeker/home');
+                    navigate('/jobseeker/jobs');
                 } else {
                     navigate('/recruiter/home');
                 }

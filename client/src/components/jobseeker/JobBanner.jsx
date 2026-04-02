@@ -39,7 +39,7 @@ const JobBanner = () => {
 
     const handleApply = () => {
         if (topJob) {
-            navigate(`/jobseeker/jobs?id=${topJob._id}`);
+            navigate(`/jobseeker/jobs/${topJob._id}`);
         }
     };
 

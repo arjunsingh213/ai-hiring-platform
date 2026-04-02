@@ -495,6 +495,32 @@ router.post('/:id/apply', userAuth, requireRole('jobseeker'), async (req, res) =
         const userId = req.userId; // Securely get user ID from token
         const { answers } = req.body;
 
+        // ── MANDATORY PROFILE CHECK ──
+        // Block application if user profile is incomplete
+        const applicantUser = await User.findById(userId);
+        if (!applicantUser) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const missingFields = [];
+        if (!applicantUser.profile?.name) missingFields.push('Full Name');
+        if (!applicantUser.profile?.mobile) missingFields.push('Phone Number');
+        if (!applicantUser.profile?.dob) missingFields.push('Date of Birth');
+        if (!applicantUser.profile?.photo) missingFields.push('Profile Photo');
+        if (!applicantUser.resume) missingFields.push('Resume');
+        if (!applicantUser.jobSeekerProfile?.desiredRole) missingFields.push('Desired Role');
+        if (!applicantUser.jobSeekerProfile?.jobDomains || applicantUser.jobSeekerProfile.jobDomains.length === 0) missingFields.push('Job Domains');
+
+        if (missingFields.length > 0) {
+            console.log(`[JOB APPLY BLOCKED] User ${userId} missing: ${missingFields.join(', ')}`);
+            return res.status(400).json({
+                success: false,
+                error: `Please complete your profile before applying. Missing: ${missingFields.join(', ')}`,
+                missingFields,
+                profileIncomplete: true
+            });
+        }
+
         const job = await Job.findById(req.params.id);
         if (!job) {
             return res.status(404).json({ success: false, error: 'Job not found' });

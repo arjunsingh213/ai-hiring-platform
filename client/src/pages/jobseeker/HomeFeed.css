@@ -1358,9 +1358,9 @@
 [data-theme="dark"] .achievement-modal .input,
 [data-theme="dark"] .achievement-modal input,
 [data-theme="dark"] .achievement-modal textarea {
-    background: rgba(51, 65, 85, 0.8) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    color: #F1F5F9 !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .form-group .input::placeholder,
@@ -1372,8 +1372,9 @@
 [data-theme="dark"] .form-group .input:focus,
 [data-theme="dark"] .achievement-modal input:focus,
 [data-theme="dark"] .achievement-modal textarea:focus {
+    background: rgba(255, 255, 255, 0.05) !important;
     border-color: #0090FF !important;
-    box-shadow: 0 0 0 4px rgba(0, 144, 255, 0.2) !important;
+    box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.2) !important;
 }
 
 [data-theme="dark"] .skill-chip {
@@ -2597,13 +2598,13 @@
 }
 
 [data-theme="dark"] .activity-card {
-    background: rgba(30, 41, 59, 0.4);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .post-creator-card {
-    background: rgba(30, 41, 59, 0.4);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .activity-title,
@@ -2618,16 +2619,18 @@
 }
 
 [data-theme="dark"] .sidebar-card {
-    background: rgba(30, 41, 59, 0.4);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
 }
 
 [data-theme="dark"] .quick-stat-card {
-    background: rgba(30, 41, 59, 0.4);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
-
-/* ═══════════════════════════════════════════════════════════════
    SIDEBAR PROFILE CARD FIXES
    ═══════════════════════════════════════════════════════════════ */
 
@@ -2762,4 +2765,494 @@
 
 [data-theme="dark"] .profile-cta:hover {
     background: var(--primary);
+}
+
+/* ========================================================================= */
+/* DARK EDITORIAL TECH THEME OVERRIDES                                       */
+/* ========================================================================= */
+
+[data-theme="dark"] .activity-feed {
+    background: #000000 !important;
+}
+
+[data-theme="dark"] .activity-tabs {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+}
+
+[data-theme="dark"] .tab-btn {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .tab-btn.active,
+[data-theme="dark"] .tab-btn.active:hover {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .tab-btn:hover:not(.active) {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .tab-indicator {
+    background: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .header-title h1 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .header-subtitle {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .sidebar-card-header h3 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .sidebar-card-header .header-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+}
+
+/* Post Creator Card Override */
+[data-theme="dark"] .post-creator-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .creator-input {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme="dark"] .creator-input:focus {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .creator-input::placeholder {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .creator-avatar {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .creator-action {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-theme="dark"] .creator-action:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Base Activity Cards Override */
+[data-theme="dark"] .activity-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .activity-card.challenge {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-left: 3px solid rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .activity-card.challenge::after {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .activity-title {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .activity-text {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+[data-theme="dark"] .activity-user-info a {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .activity-time {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Badges / Post Types */
+[data-theme="dark"] .activity-type-badge {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .activity-type-badge.type-achievement,
+[data-theme="dark"] .activity-type-badge.type-atp,
+[data-theme="dark"] .activity-type-badge.type-proof,
+[data-theme="dark"] .activity-type-badge.type-job,
+[data-theme="dark"] .activity-type-badge.type-company {
+    color: #ffffff !important;
+}
+
+/* Stats Summary Widget Overrides */
+[data-theme="dark"] .stats-summary {
+    background: transparent !important;
+    border: none !important;
+}
+
+[data-theme="dark"] .stat-item {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .stat-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .stat-info .stat-value {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .stat-info .stat-label {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Modals Override */
+[data-theme="dark"] .achievement-modal,
+[data-theme="dark"] .feedback-modal {
+    background: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .modal-header h2 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .modal-body label {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="dark"] .modal-body input,
+[data-theme="dark"] .modal-body textarea,
+[data-theme="dark"] .modal-body select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* High Contrast Buttons */
+[data-theme="dark"] button.create-challenge-btn,
+[data-theme="dark"] button.post-achievement-btn,
+[data-theme="dark"] button.post-btn,
+[data-theme="dark"] button.join-challenge-btn,
+[data-theme="dark"] .view-atp-btn,
+[data-theme="dark"] .stat-item.talent-score-panel {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+}
+
+[data-theme="dark"] button.cancel-btn {
+    background: transparent !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .view-atp-btn:hover,
+[data-theme="dark"] button.post-achievement-btn:hover,
+[data-theme="dark"] button.create-challenge-btn:hover,
+[data-theme="dark"] button.post-btn:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Quick Stats Row Overrides */
+[data-theme="dark"] .quick-stat-card,
+[data-theme="dark"] .quick-stat-card.premium {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .quick-stat-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .quick-stat-number {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .quick-stat-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-size: 0.7rem !important;
+}
+
+[data-theme="dark"] .quick-stat-card.highlighted {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Overriding any gradient or colors on Score display */
+[data-theme="dark"] .score-display,
+[data-theme="dark"] .atp-preview {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .atp-icon {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .score-value,
+[data-theme="dark"] .score-label,
+[data-theme="dark"] .atp-header h4,
+[data-theme="dark"] .atp-header p {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .score-ring-progress,
+[data-theme="dark"] .atp-ring-progress {
+    stroke: #ffffff !important;
+}
+
+[data-theme="dark"] .score-ring-bg,
+[data-theme="dark"] .atp-ring-bg {
+    stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .skill-tag {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK EDITORIAL TECH — Sidebar & Actions
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .quick-action-btn {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.25s ease !important;
+}
+
+[data-theme="dark"] .quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    transform: translateX(4px) !important;
+}
+
+[data-theme="dark"] .quick-action-btn svg {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .quick-action-btn svg:first-child {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-theme="dark"] .quick-action-btn:hover svg {
+    color: #ffffff !important;
+}
+
+/* Action buttons (like, comment, share) */
+[data-theme="dark"] .action-btn {
+    color: rgba(255, 255, 255, 0.5) !important;
+    background: transparent !important;
+}
+
+[data-theme="dark"] .action-btn:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] .action-btn.upvote.liked {
+    color: #ffffff !important;
+}
+
+/* Activity actions bar */
+[data-theme="dark"] .activity-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Company Profile Section (Recruiter Sidebar) */
+[data-theme="dark"] .company-info {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .company-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .company-domain {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Stat Trend Labels */
+[data-theme="dark"] .stat-trend {
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="dark"] .stat-trend.positive {
+    color: #10B981 !important;
+}
+
+[data-theme="dark"] .stat-trend.neutral {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .stat-trend.negative {
+    color: #EF4444 !important;
+}
+
+/* Premium Stats Container */
+[data-theme="dark"] .premium-stats-container {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Quick Actions List */
+[data-theme="dark"] .quick-actions-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+/* Empty State */
+[data-theme="dark"] .empty-state {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .empty-state h3 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .empty-state p {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .empty-icon {
+    color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Creator actions bar */
+[data-theme="dark"] .creator-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Post card hover */
+[data-theme="dark"] .activity-card:hover {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .quick-stat-card:hover {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Media items in posts */
+[data-theme="dark"] .post-media {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+[data-theme="dark"] .post-image {
+    border-radius: 12px !important;
+}
+
+/* Avatar placeholder */
+[data-theme="dark"] .avatar-placeholder {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .avatar-placeholder.premium {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Comment section */
+[data-theme="dark"] .comment-input-wrapper {
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .comment-input-wrapper input,
+[data-theme="dark"] .comment-input-wrapper textarea {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .comment-input-wrapper input::placeholder,
+[data-theme="dark"] .comment-input-wrapper textarea::placeholder {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Post options dropdown */
+[data-theme="dark"] .post-options-dropdown {
+    background: rgba(10, 10, 15, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .post-option {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="dark"] .post-option:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .post-option.delete:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #EF4444 !important;
+}
+
+/* Sparkline Charts — ensure no weird background */
+[data-theme="dark"] .sparkline-chart {
+    opacity: 0.6 !important;
+}
+
+/* Scrollbar styling for dark mode feed */
+[data-theme="dark"] .activities-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+[data-theme="dark"] .activities-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+[data-theme="dark"] .activities-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+[data-theme="dark"] .activities-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
 }

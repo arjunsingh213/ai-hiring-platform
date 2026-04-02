@@ -1,0 +1,357 @@
+/* ===========================
+   Complete Profile Modal
+   Dark Editorial Tech aesthetic
+   =========================== */
+
+/* Overlay — full screen dark blur */
+.cpm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: cpmFadeIn 0.2s ease;
+}
+
+@keyframes cpmFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal */
+.cpm-modal {
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 540px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 36px;
+    position: relative;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+    animation: cpmSlideUp 0.3s ease;
+}
+
+@keyframes cpmSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+.cpm-modal::-webkit-scrollbar {
+    width: 6px;
+}
+.cpm-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+.cpm-modal::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+/* Close Button */
+.cpm-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.15s;
+}
+.cpm-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Header */
+.cpm-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+.cpm-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: rgba(255, 255, 255, 0.8);
+}
+.cpm-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+}
+.cpm-header p {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Loading */
+.cpm-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 0;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.875rem;
+}
+.cpm-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    animation: cpmSpin 0.8s linear infinite;
+}
+@keyframes cpmSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Resume needed */
+.cpm-resume-needed {
+    text-align: center;
+    padding: 24px 0;
+}
+.cpm-resume-icon {
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 16px;
+}
+.cpm-resume-needed h3 {
+    font-size: 1.125rem;
+    color: #ffffff;
+    margin: 0 0 8px;
+}
+.cpm-resume-needed p {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0 0 24px;
+}
+
+/* Form */
+.cpm-form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+/* Field */
+.cpm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.cpm-field label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.01em;
+}
+.cpm-hint {
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.75rem;
+}
+.cpm-field input,
+.cpm-field select {
+    padding: 11px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.03);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    font-family: inherit;
+}
+.cpm-field input:focus,
+.cpm-field select:focus {
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+.cpm-field input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+/* Fix date input color */
+.cpm-field input[type="date"] {
+    color-scheme: dark;
+}
+
+/* Photo upload */
+.cpm-photo-field {
+    align-items: center;
+}
+.cpm-photo-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.cpm-photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+}
+.cpm-photo-preview:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.03);
+}
+.cpm-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.cpm-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.35);
+}
+.cpm-photo-placeholder span {
+    font-size: 0.6875rem;
+    font-weight: 500;
+}
+.cpm-photo-hint {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.25);
+    margin: 0;
+}
+.cpm-mini-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: cpmSpin 0.8s linear infinite;
+}
+
+/* Domain chips */
+.cpm-domains {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cpm-domain-chip {
+    padding: 7px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+.cpm-domain-chip:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+}
+.cpm-domain-chip.selected {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+/* Actions */
+.cpm-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+.cpm-btn-secondary {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 50px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.cpm-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.cpm-btn-primary {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: #ffffff;
+    color: #000000;
+    border-radius: 50px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    text-decoration: none;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.cpm-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+}
+.cpm-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 540px) {
+    .cpm-modal {
+        padding: 28px 20px;
+        max-height: 92vh;
+        border-radius: 16px;
+    }
+    .cpm-header h2 {
+        font-size: 1.25rem;
+    }
+    .cpm-actions {
+        flex-direction: column;
+    }
+}

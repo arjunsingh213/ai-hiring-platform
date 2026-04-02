@@ -313,3 +313,85 @@
 [data-theme="dark"] .sidebar-empty svg {
     color: var(--text-muted);
 }
+
+/* ========================================================================= */
+/* DARK EDITORIAL TECH THEME OVERRIDES                                       */
+/* ========================================================================= */
+
+[data-theme="dark"] .top-candidates-sidebar {
+    background: rgba(15, 15, 20, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .sidebar-header h3 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .domain-tab {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .domain-tab:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .domain-tab.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .active-domain-badge {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .badge-name,
+[data-theme="dark"] .badge-icon {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .candidate-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] .candidate-card:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .candidate-info h4 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .candidate-info p {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .candidate-score {
+    background: #000000 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .top-candidates-sidebar .avatar-placeholder {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .sidebar-footer {
+    border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .view-all-link {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .view-all-link:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}

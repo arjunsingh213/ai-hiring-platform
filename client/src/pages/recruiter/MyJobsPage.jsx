@@ -362,7 +362,7 @@ const MyJobsPage = () => {
                                 <div className="content-section">
                                     <h3>Compensation</h3>
                                     <p>
-                                        {selectedJob.jobDetails?.salary?.currency || 'USD'} {selectedJob.jobDetails?.salary?.min?.toLocaleString() || 0} - {selectedJob.jobDetails?.salary?.max?.toLocaleString() || 0} / year
+                                        {selectedJob.jobDetails?.salary?.currency || 'USD'} {selectedJob.jobDetails?.salary?.min?.toLocaleString() || 0} - {selectedJob.jobDetails?.salary?.max?.toLocaleString() || 0} / {selectedJob.jobDetails?.salary?.period === 'hourly' ? 'hr' : selectedJob.jobDetails?.salary?.period === 'monthly' ? 'mo' : 'yr'}
                                     </p>
                                 </div>
 

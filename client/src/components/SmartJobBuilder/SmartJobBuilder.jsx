@@ -403,7 +403,10 @@ const SmartJobBuilder = ({ onJobReady, onSwitchToManual }) => {
             <div className="sjb-right-pane">
                 <div className="sjb-draft-header">
                     <h3>Smart Job Draft</h3>
-                    <button className="btn btn-ghost btn-sm" onClick={onSwitchToManual}>Switch to Manual</button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {draft && <button className="btn btn-outline btn-sm" onClick={() => onSwitchToManual(draft)}>Edit Draft</button>}
+                        <button className="btn btn-ghost btn-sm" onClick={() => onSwitchToManual()}>Switch to Manual</button>
+                    </div>
                 </div>
 
                 <div className="sjb-draft-content">

@@ -1,11 +1,11 @@
 /* ========================================
    Resume & Skill Intelligence Component
-   Premium dark theme with glassmorphism
+   Dark Editorial Tech — Monochrome Design
    ======================================== */
 
 .rsi-container {
     background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
     padding: 0;
     overflow: hidden;
@@ -19,7 +19,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     background: var(--bg-soft);
 }
 
@@ -33,11 +33,11 @@
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    background: rgba(255, 255, 255, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #a5b4fc;
+    color: var(--text-primary);
 }
 
 .rsi-title {
@@ -59,7 +59,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: #0F172A;
     color: white;
     border: none;
     border-radius: 10px;
@@ -70,9 +70,19 @@
     white-space: nowrap;
 }
 
+[data-theme="dark"] .rsi-upload-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+}
+
 .rsi-upload-btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .rsi-upload-btn:hover:not(:disabled) {
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
 }
 
 .rsi-upload-btn:disabled {
@@ -89,6 +99,11 @@
     animation: rsi-spin 0.8s linear infinite;
 }
 
+[data-theme="dark"] .rsi-spinner {
+    border-color: rgba(0, 0, 0, 0.3);
+    border-top-color: #000000;
+}
+
 @keyframes rsi-spin {
     to {
         transform: rotate(360deg);
@@ -99,28 +114,40 @@
 .rsi-progress-bar {
     padding: 12px 24px;
     background: var(--bg-soft);
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .rsi-progress-track {
     height: 4px;
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 6px;
 }
 
+[data-theme="light"] .rsi-progress-track {
+    background: rgba(0, 0, 0, 0.06);
+}
+
 .rsi-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6366f1, #a78bfa);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), #ffffff);
     border-radius: 4px;
     transition: width 0.3s ease;
 }
 
+[data-theme="light"] .rsi-progress-fill {
+    background: linear-gradient(90deg, #94A3B8, #0F172A);
+}
+
 .rsi-progress-text {
     font-size: 0.72rem;
-    color: #a5b4fc;
+    color: rgba(255, 255, 255, 0.5);
     font-weight: 500;
+}
+
+[data-theme="light"] .rsi-progress-text {
+    color: #64748b;
 }
 
 /* Resume Info */
@@ -130,7 +157,7 @@
     justify-content: space-between;
     padding: 10px 24px;
     background: var(--bg-soft);
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .rsi-resume-file {
@@ -142,7 +169,7 @@
 }
 
 .rsi-resume-file svg {
-    color: #6366f1;
+    color: var(--text-primary);
 }
 
 .rsi-level-badge {
@@ -155,23 +182,45 @@
 }
 
 .rsi-level-beginner {
-    background: rgba(96, 165, 250, 0.15);
-    color: #60a5fa;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .rsi-level-intermediate {
-    background: rgba(167, 139, 250, 0.15);
-    color: #a78bfa;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .rsi-level-advanced {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
 .rsi-level-expert {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .rsi-level-beginner {
+    background: rgba(0, 0, 0, 0.04);
+    color: #94A3B8;
+}
+
+[data-theme="light"] .rsi-level-intermediate {
+    background: rgba(0, 0, 0, 0.06);
+    color: #64748b;
+}
+
+[data-theme="light"] .rsi-level-advanced {
+    background: rgba(0, 0, 0, 0.08);
+    color: #0F172A;
+}
+
+[data-theme="light"] .rsi-level-expert {
+    background: #0F172A;
+    color: #ffffff;
+    border: none;
 }
 
 /* Loading */
@@ -185,7 +234,7 @@
 .rsi-skeleton {
     height: 60px;
     border-radius: 10px;
-    background: rgba(99, 102, 241, 0.06);
+    background: rgba(255, 255, 255, 0.03);
     overflow: hidden;
     position: relative;
 }
@@ -193,7 +242,7 @@
 .rsi-skeleton-shimmer {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.08), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
     animation: rsi-shimmer 1.5s infinite;
 }
 
@@ -235,7 +284,7 @@
 
 .rsi-empty-cta {
     padding: 10px 24px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: #0F172A;
     color: white;
     border: none;
     border-radius: 10px;
@@ -245,9 +294,14 @@
     transition: all 0.2s;
 }
 
+[data-theme="dark"] .rsi-empty-cta {
+    background: #ffffff;
+    color: #000000;
+}
+
 .rsi-empty-cta:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 /* Domain Groups */
@@ -256,7 +310,11 @@
 }
 
 .rsi-domain-group {
-    border-bottom: 1px solid rgba(99, 102, 241, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="light"] .rsi-domain-group {
+    border-bottom-color: rgba(0, 0, 0, 0.04);
 }
 
 .rsi-domain-group:last-child {
@@ -277,7 +335,11 @@
 }
 
 .rsi-domain-header:hover {
-    background: rgba(99, 102, 241, 0.04);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="light"] .rsi-domain-header:hover {
+    background: rgba(0, 0, 0, 0.02);
 }
 
 .rsi-domain-info {
@@ -295,13 +357,21 @@
     font-size: 0.72rem;
     color: var(--text-muted);
     padding: 2px 8px;
-    background: var(--bg-soft);
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
 }
 
+[data-theme="light"] .rsi-domain-count {
+    background: rgba(0, 0, 0, 0.04);
+}
+
 .rsi-chevron {
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.35);
     transition: transform 0.25s ease;
+}
+
+[data-theme="light"] .rsi-chevron {
+    color: #94a3b8;
 }
 
 .rsi-domain-header.expanded .rsi-chevron {
@@ -315,16 +385,25 @@
 }
 
 .rsi-skill-node {
-    background: var(--bg-soft);
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     padding: 14px 16px;
     margin-bottom: 8px;
     transition: border-color 0.2s;
 }
 
+[data-theme="light"] .rsi-skill-node {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
 .rsi-skill-node:hover {
-    border-color: rgba(99, 102, 241, 0.2);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="light"] .rsi-skill-node:hover {
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .rsi-skill-top {
@@ -376,7 +455,7 @@
 .rsi-action-btn {
     background: none;
     border: none;
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.35);
     cursor: pointer;
     padding: 4px;
     font-size: 0.8rem;
@@ -384,8 +463,12 @@
     transition: background 0.15s;
 }
 
+[data-theme="light"] .rsi-action-btn {
+    color: #94a3b8;
+}
+
 .rsi-action-btn:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .rsi-action-delete:hover {
@@ -402,22 +485,31 @@
 
 .rsi-skill-edit input {
     padding: 4px 8px;
-    background: var(--bg-soft);
-    border: 1px solid var(--primary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     color: var(--text-primary);
     font-size: 0.82rem;
     outline: none;
 }
 
+[data-theme="light"] .rsi-skill-edit input {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
 .rsi-skill-edit input:focus {
-    border-color: #6366f1;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .rsi-skill-edit input:focus {
+    border-color: #0F172A;
 }
 
 .rsi-skill-edit button {
     background: none;
     border: none;
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.35);
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 4px;
@@ -457,8 +549,12 @@
     left: 50%;
     right: -50%;
     height: 2px;
-    background: rgba(99, 102, 241, 0.12);
+    background: rgba(255, 255, 255, 0.06);
     z-index: 0;
+}
+
+[data-theme="light"] .rsi-level-step::after {
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .rsi-level-step:last-child::after {
@@ -474,11 +570,16 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: rgba(99, 102, 241, 0.12);
-    border: 2px solid rgba(99, 102, 241, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     position: relative;
     z-index: 1;
     transition: all 0.3s;
+}
+
+[data-theme="light"] .rsi-level-dot {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .rsi-level-step.active .rsi-level-dot {
@@ -494,13 +595,21 @@
 
 .rsi-level-label {
     font-size: 0.6rem;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.25);
     text-align: center;
     white-space: nowrap;
 }
 
-.rsi-level-step.active .rsi-level-label {
+[data-theme="light"] .rsi-level-label {
     color: #94a3b8;
+}
+
+.rsi-level-step.active .rsi-level-label {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .rsi-level-step.active .rsi-level-label {
+    color: #64748b;
 }
 
 .rsi-level-step.current .rsi-level-label {
@@ -522,19 +631,31 @@
 .rsi-xp-text {
     font-size: 0.72rem;
     font-weight: 700;
-    color: #a5b4fc;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .rsi-xp-text {
+    color: #0F172A;
 }
 
 .rsi-xp-next {
     font-size: 0.68rem;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .rsi-xp-next {
+    color: #94a3b8;
 }
 
 .rsi-xp-track {
     height: 4px;
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 4px;
     overflow: hidden;
+}
+
+[data-theme="light"] .rsi-xp-track {
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .rsi-xp-fill {
@@ -547,6 +668,10 @@
 .rsi-challenges-count {
     margin-top: 6px;
     font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+[data-theme="light"] .rsi-challenges-count {
     color: #94a3b8;
 }
 
@@ -555,8 +680,13 @@
     display: flex;
     justify-content: space-around;
     padding: 16px 24px;
-    border-top: 1px solid rgba(99, 102, 241, 0.08);
-    background: rgba(99, 102, 241, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="light"] .rsi-stats-bar {
+    border-top-color: rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.02);
 }
 
 .rsi-stat {
@@ -572,9 +702,24 @@
 
 .rsi-stat-label {
     font-size: 0.68rem;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.35);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+[data-theme="light"] .rsi-stat-label {
+    color: #94a3b8;
+}
+
+/* Dark mode container overrides */
+[data-theme="dark"] .rsi-container {
+    background: rgba(15, 15, 20, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .rsi-header {
+    background: rgba(15, 15, 20, 0.9) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Responsive */

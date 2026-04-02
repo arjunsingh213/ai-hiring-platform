@@ -91,13 +91,14 @@
     position: fixed;
     top: 80px;
     left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(15, 15, 15, 0.95);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     z-index: 1000;

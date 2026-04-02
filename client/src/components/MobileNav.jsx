@@ -81,11 +81,11 @@ const MobileNav = () => {
         { path: '/recruiter/applications', icon: 'pipeline', label: 'Apps' },
         { path: '/recruiter/messages', icon: 'message', label: 'Chat' },
     ] : [
-        { path: '/jobseeker/home', icon: 'home', label: 'Home' },
         { path: '/jobseeker/jobs', icon: 'briefcase', label: 'Jobs' },
-        { path: '/jobseeker/candidates', icon: 'trophy', label: 'Top' },
-        { path: '/jobseeker/messages', icon: 'message', label: 'Chat' },
         { path: '/jobseeker/interviews', icon: 'calendar', label: 'Intv' },
+        { path: '/jobseeker/home', icon: 'home', label: 'Home' },
+        { path: '/jobseeker/messages', icon: 'message', label: 'Chat' },
+        { path: '/jobseeker/candidates', icon: 'trophy', label: 'Top' },
     ];
 
     return (
@@ -109,7 +109,6 @@ const MobileNav = () => {
                                         />
                                     )}
                                 </div>
-                                <span className="mobile-nav-label">{item.label}</span>
                             </>
                         )}
                     </NavLink>

@@ -67,7 +67,7 @@ const LoginPage = () => {
                         navigate('/onboarding/role-selection');
                     }
                 } else if (user.role === 'jobseeker') {
-                    navigate('/jobseeker/home');
+                    navigate('/jobseeker/jobs');
                 } else {
                     navigate('/recruiter/home');
                 }

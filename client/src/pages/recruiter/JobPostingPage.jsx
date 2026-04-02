@@ -29,7 +29,8 @@ const JobPostingPage = () => {
         remote: false,
         salaryMin: '',
         salaryMax: '',
-        currency: 'USD'
+        currency: 'USD',
+        salaryPeriod: 'yearly'
     });
     const [loading, setLoading] = useState(false);
 
@@ -73,7 +74,8 @@ const JobPostingPage = () => {
                 remote: existingJob.jobDetails?.remote || false,
                 salaryMin: existingJob.jobDetails?.salary?.min?.toString() || '',
                 salaryMax: existingJob.jobDetails?.salary?.max?.toString() || '',
-                currency: existingJob.jobDetails?.salary?.currency || 'USD'
+                currency: existingJob.jobDetails?.salary?.currency || 'USD',
+                salaryPeriod: existingJob.jobDetails?.salary?.period || 'yearly'
             });
 
             // Pre-fill interview pipeline if exists
@@ -115,7 +117,7 @@ const JobPostingPage = () => {
                         min: parseInt(formData.salaryMin) || 0,
                         max: parseInt(formData.salaryMax) || 0,
                         currency: formData.currency,
-                        period: 'yearly'
+                        period: formData.salaryPeriod || 'yearly'
                     }
                 },
                 status: 'active'
@@ -198,7 +200,43 @@ const JobPostingPage = () => {
     if (!isManualMode) {
         return (
             <SmartJobBuilder
-                onSwitchToManual={() => setIsManualMode(true)}
+                onSwitchToManual={(draftData) => {
+                    if (draftData?.role_title) {
+                        const cleanNumber = (val) => {
+                            if (typeof val === 'number') return val;
+                            if (!val) return 0;
+                            const cleaned = val.toString().replace(/[^0-9.]/g, '');
+                            return parseFloat(cleaned) || 0;
+                        };
+                        const sMin = cleanNumber(draftData.salary_range?.min);
+                        const sMax = cleanNumber(draftData.salary_range?.max);
+
+                        setFormData(prev => ({
+                            ...prev,
+                            title: draftData.role_title || '',
+                            description: `Compensation: ${draftData.salary_range?.currency || 'USD'} ${sMin.toLocaleString()} - ${sMax.toLocaleString()}\n` +
+                                `Education: ${draftData.qualifications?.join(', ') || 'Not Specified'}\n\n` +
+                                (draftData.responsibilities?.join('\n\n• ')
+                                    ? `Responsibilities:\n• ${draftData.responsibilities.join('\n• ')}`
+                                    : ''),
+                            skills: [...(draftData.required_skills || []), ...(draftData.preferred_skills || [])].join(', ') || '',
+                            minExperience: draftData.experience_model === 'learning_with_guidance' ? '0' :
+                                           draftData.experience_model === 'feature_owner' ? '3' :
+                                           draftData.experience_model === 'system_owner' ? '5' : '8',
+                            maxExperience: draftData.experience_model === 'learning_with_guidance' ? '2' :
+                                           draftData.experience_model === 'feature_owner' ? '5' :
+                                           draftData.experience_model === 'system_owner' ? '8' : '15',
+                            education: draftData.qualifications?.join(', ') || '',
+                            type: draftData.type || 'full-time',
+                            location: draftData.location || 'Remote',
+                            remote: true,
+                            salaryMin: sMin.toString(),
+                            salaryMax: sMax.toString(),
+                            currency: draftData.salary_range?.currency || 'USD'
+                        }));
+                    }
+                    setIsManualMode(true);
+                }}
                 onJobReady={async (smartData) => {
                     setLoading(true);
                     try {
@@ -220,7 +258,7 @@ const JobPostingPage = () => {
                                     min: parseFloat(smartData.salaryMin) || 0,
                                     max: parseFloat(smartData.salaryMax) || 0,
                                     currency: smartData.currency || 'USD',
-                                    period: 'yearly'
+                                    period: smartData.salaryPeriod || 'yearly'
                                 }
                             },
                             status: 'active'
@@ -244,7 +282,8 @@ const JobPostingPage = () => {
                                 remote: true,
                                 salaryMin: smartData.salaryMin || '0',
                                 salaryMax: smartData.salaryMax || '0',
-                                currency: smartData.currency || 'USD'
+                                currency: smartData.currency || 'USD',
+                                salaryPeriod: smartData.salaryPeriod || 'yearly'
                             });
 
                             // Map smartPipeline directly if present
@@ -499,6 +538,20 @@ const JobPostingPage = () => {
                                 <option value="INR">INR</option>
                             </select>
                         </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Period</label>
+                            <select
+                                name="salaryPeriod"
+                                value={formData.salaryPeriod}
+                                onChange={handleChange}
+                                className="input"
+                            >
+                                <option value="yearly">Yearly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="hourly">Hourly</option>
+                            </select>
+                        </div>
                     </div>
                 </section>
 
@@ -579,7 +632,7 @@ const JobPostingPage = () => {
                                             </div>
                                             <div className="overview-item">
                                                 <label>Compensation:</label>
-                                                <span>{formData.currency} {parseFloat(formData.salaryMin).toLocaleString()} - {parseFloat(formData.salaryMax).toLocaleString()} / yr</span>
+                                                <span>{formData.currency} {parseFloat(formData.salaryMin).toLocaleString()} - {parseFloat(formData.salaryMax).toLocaleString()} / {formData.salaryPeriod === 'hourly' ? 'hr' : formData.salaryPeriod === 'monthly' ? 'mo' : 'yr'}</span>
                                             </div>
                                             <div className="overview-item">
                                                 <label>Education:</label>

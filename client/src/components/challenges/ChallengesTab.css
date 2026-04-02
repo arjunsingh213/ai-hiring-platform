@@ -57,11 +57,12 @@
 }
 
 .segment-btn:hover {
-    color: #cbd5e1;
+    color: #ffffff;
 }
 
-.segment-btn.active {
-    color: #fff;
+.segment-btn.active,
+.segment-btn.active:hover {
+    color: #000000 !important;
 }
 
 .segment-icon {
@@ -74,9 +75,9 @@
     left: 4px;
     height: calc(100% - 8px);
     border-radius: 11px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: #ffffff;
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 2px 12px rgba(255, 255, 255, 0.15);
     z-index: 0;
 }
 
@@ -86,15 +87,15 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
+    background: #ffffff;
+    color: #000000;
     border: none;
     border-radius: 12px;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     margin-bottom: 20px;
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
 }
 
 /* ---- Challenge Grid ---- */
@@ -954,12 +955,12 @@
 .create-modal-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1000;
+    z-index: 99999;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
 }
 
@@ -967,7 +968,7 @@
     width: 100%;
     max-width: 720px;
     max-height: 90vh;
-    background: #1e293b;
+    background: rgba(15, 15, 20, 0.95);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     overflow-y: auto;
@@ -1008,11 +1009,11 @@
 }
 
 .step-dot.active {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: #ffffff;
 }
 
 .step-dot.completed {
-    background: #10b981;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .form-group {
@@ -1044,7 +1045,7 @@
 .form-select:focus,
 .form-textarea:focus {
     outline: none;
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .form-textarea {
@@ -1180,15 +1181,15 @@
 }
 
 .modal-btn.primary {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: #ffffff;
     border: none;
-    color: white;
+    color: #000000;
 }
 
 .modal-btn.success {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: #ffffff;
     border: none;
-    color: white;
+    color: #000000;
 }
 
 .modal-btn:disabled {

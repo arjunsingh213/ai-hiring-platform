@@ -1,9 +1,14 @@
+/* ═══════════════════════════════════════════════════════════════
+   INTERVIEWS PAGE — Dark Editorial Tech Design System
+   ═══════════════════════════════════════════════════════════════ */
+
 .interviews-page {
     max-width: 1200px;
     margin: 0 auto;
     padding-top: var(--spacing-lg);
 }
 
+/* ── Page Header ───────────────────────────────────────────── */
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -16,6 +21,9 @@
 .page-header h1 {
     font-size: 2rem;
     margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
 }
 
 .header-actions {
@@ -23,40 +31,55 @@
     gap: var(--spacing-md);
 }
 
+/* ── Tabs — Minimalist Underline ───────────────────────────── */
 .interview-tabs {
     display: flex;
-    gap: var(--spacing-md);
+    gap: 0;
     margin-bottom: var(--spacing-2xl);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Tab Button Styles */
 .interview-tabs .tab-btn {
     padding: var(--spacing-md) var(--spacing-xl);
     background: transparent;
     border: none;
-    color: var(--text-secondary);
+    color: #64748B;
     font-weight: 600;
     font-size: 0.9375rem;
     cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all var(--transition-fast);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.25s ease;
+    position: relative;
+    top: 1px;
 }
 
 .interview-tabs .tab-btn:hover {
-    color: var(--text-primary);
-    background: var(--bg-hover);
+    color: #0F172A;
 }
 
 .interview-tabs .tab-btn.active {
-    background: var(--gradient-primary);
-    color: white !important;
-    border-bottom-color: var(--primary);
-    box-shadow: var(--shadow-md);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    color: #0F172A !important;
+    border-bottom-color: #000000;
+    background: transparent;
+    box-shadow: none;
+    text-shadow: none;
 }
 
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+/* ── Content Area ──────────────────────────────────────────── */
 .interviews-content {
     min-height: 400px;
 }
@@ -68,8 +91,20 @@
     gap: var(--spacing-xl);
 }
 
+/* ── Interview Cards — Glassmorphism ───────────────────────── */
 .interview-card {
     padding: var(--spacing-2xl);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
 }
 
 .interview-card .card-header {
@@ -80,48 +115,68 @@
 }
 
 .company-logo {
-    width: 60px;
-    height: 60px;
-    background: var(--gradient-primary);
-    border-radius: var(--radius-lg);
+    width: 52px;
+    height: 52px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--text-muted);
     flex-shrink: 0;
+    font-size: 1.25rem;
 }
 
 .interview-card h3 {
     margin: 0 0 var(--spacing-xs) 0;
-    font-size: 1.125rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .interview-type {
     color: var(--text-muted);
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     margin: 0;
-    text-transform: capitalize;
+    font-weight: 500;
 }
 
+/* ── Interview Details Block ───────────────────────────────── */
 .interview-details {
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-lg);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
 }
 
+.interview-details p {
+    margin: var(--spacing-sm) 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.interview-details p strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ── Pipeline Timeline ─────────────────────────────────────── */
 .interview-timeline-container {
     margin-top: var(--spacing-lg);
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
     padding-top: var(--spacing-md);
 }
 
 .interview-timeline-container h4 {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
     margin: 0 0 var(--spacing-md) 0;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
 }
 
 .interview-pipeline-mini {
@@ -145,7 +200,7 @@
     width: 36px;
     height: 36px;
     background: var(--bg-primary);
-    border: 2px solid var(--border-color);
+    border: 2px solid rgba(0, 0, 0, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -156,14 +211,14 @@
 }
 
 .pipeline-step.completed .step-marker {
-    border-color: var(--success);
-    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.04);
 }
 
 .pipeline-step.active .step-marker {
-    border-color: var(--primary);
-    background: rgba(37, 99, 235, 0.1);
-    box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+    border-color: #000000;
+    background: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
     transform: scale(1.1);
 }
 
@@ -171,12 +226,12 @@
     position: absolute;
     top: -4px;
     right: -4px;
-    background: var(--success);
+    background: #000000;
     color: white;
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -192,7 +247,8 @@
 }
 
 .pipeline-step.active .step-label {
-    color: var(--primary);
+    color: var(--text-primary);
+    font-weight: 700;
 }
 
 .pipeline-step.completed .step-label {
@@ -205,25 +261,117 @@
     left: 50%;
     width: 100%;
     height: 2px;
-    background: var(--border-color);
+    background: rgba(0, 0, 0, 0.08);
     z-index: -1;
 }
 
 .pipeline-step.completed .step-connector {
-    background: var(--success);
+    background: var(--text-primary);
 }
 
-.interview-details p {
-    margin: var(--spacing-sm) 0;
-    color: var(--text-secondary);
-}
-
+/* ── Buttons — Monochrome Editorial ────────────────────────── */
 .interview-card .btn {
     width: 100%;
 }
 
+.interview-card .btn-primary,
+.interviews-page .btn-primary {
+    background: #000000;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.01em;
+}
+
+.interview-card .btn-primary:hover,
+.interviews-page .btn-primary:hover {
+    background: #1a1a1a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.interview-card .btn-primary:disabled {
+    background: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.4);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.interview-card .btn-secondary,
+.interviews-page .btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 0.85rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.interview-card .btn-secondary:hover,
+.interviews-page .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* ── Room Code Tag ─────────────────────────────────────────── */
+.room-code-tag {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+}
+
+[data-theme="dark"] .room-code-tag {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+/* ── Live Button Pulse ─────────────────────────────────────── */
+.btn-live {
+    animation: livePulse 2s infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.15); }
+    50% { box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.05); }
+}
+
+[data-theme="dark"] .btn-live {
+    animation: livePulseDark 2s infinite;
+}
+
+@keyframes livePulseDark {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.05); }
+}
+
+/* ── Assessment Cards ──────────────────────────────────────── */
 .assessment-card {
     padding: var(--spacing-2xl);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.assessment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
 }
 
 .assessment-header {
@@ -235,50 +383,55 @@
 
 .assessment-header h3 {
     margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     text-transform: capitalize;
 }
 
+/* ── Score Circle — Monochrome ─────────────────────────────── */
 .assessment-score {
     text-align: center;
     margin-bottom: var(--spacing-xl);
 }
 
-.score-circle {
+.interviews-page .score-circle {
     width: 120px;
     height: 120px;
     margin: 0 auto;
     border-radius: 50%;
-    background: var(--gradient-primary);
+    background: #000000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
-.score-value {
+.interviews-page .score-value {
+    position: static;
+    transform: none;
     font-size: 2.5rem;
     font-weight: 700;
     line-height: 1;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: white !important;
 }
 
-.score-label {
+.interviews-page .score-label {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.7) !important;
 }
 
+/* ── Assessment Details ────────────────────────────────────── */
 .assessment-details {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
 }
 
 .detail-item {
@@ -288,18 +441,20 @@
 }
 
 .detail-item .label {
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-size: 0.875rem;
 }
 
 .detail-item .value {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
 }
 
 .strengths h4 {
     margin-bottom: var(--spacing-md);
-    font-size: 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 .strengths ul {
@@ -313,24 +468,25 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    font-size: 0.9rem;
 }
 
 .strengths li::before {
     content: '✓';
-    color: var(--text-success);
+    color: var(--text-primary);
     font-weight: 700;
 }
 
-/* Active Round Info styles */
+/* ── Active Round Info ─────────────────────────────────────── */
 .active-round-info {
     margin-top: var(--spacing-lg);
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
     overflow: hidden;
 }
 
 .card-highlight-mini {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .round-details-box {
@@ -349,29 +505,30 @@
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-muted);
+    letter-spacing: 0.06em;
 }
 
 .round-method-tag {
     font-size: 0.7rem;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
     font-weight: 600;
 }
 
 .round-method-tag.ai {
-    background: rgba(37, 99, 235, 0.1);
-    color: var(--primary);
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
 }
 
 .round-method-tag.human {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
 }
 
 .round-desc {
     font-size: 0.9rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.5;
     margin-bottom: var(--spacing-md);
 }
 
@@ -380,9 +537,10 @@
     flex-direction: column;
     gap: 8px;
     margin-bottom: var(--spacing-md);
-    padding: var(--spacing-sm);
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 10px;
 }
 
 .meta-item {
@@ -394,13 +552,14 @@
 }
 
 .meta-item a {
-    color: var(--primary);
-    text-decoration: none;
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
     font-weight: 600;
 }
 
 .meta-item a:hover {
-    text-decoration: underline;
+    color: var(--text-secondary);
 }
 
 .human-round-status {
@@ -416,60 +575,34 @@
 .status-indicator {
     width: 8px;
     height: 8px;
-    background: #f59e0b;
+    background: var(--text-muted);
     border-radius: 50%;
-    box-shadow: 0 0 5px #f59e0b;
     animation: blink 1.5s infinite;
 }
 
 @keyframes blink {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
-@media (max-width: 768px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-md);
-    }
-
-    .header-actions {
-        width: 100%;
-        flex-direction: column;
-    }
-
-    .interviews-grid,
-    .assessments-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Platform Interview Banner */
+/* ── Platform Interview Banner — Frosted Glass ─────────────── */
 .platform-interview-banner {
     display: flex;
     align-items: center;
     gap: var(--spacing-xl);
     padding: var(--spacing-2xl);
     margin-bottom: var(--spacing-2xl);
-    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
-    border-radius: var(--radius-xl);
-    color: #1e40af;
-    border: 1px solid #bfdbfe;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    color: var(--text-primary);
 }
 
 .platform-interview-banner.banner-success {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #065f46;
-    border-color: #6ee7b7;
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.06);
 }
 
 .banner-icon {
@@ -477,10 +610,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 60px;
-    background: rgba(37, 99, 235, 0.1);
-    border-radius: var(--radius-lg);
+    width: 56px;
+    height: 56px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    color: var(--text-primary);
 }
 
 .banner-content {
@@ -489,12 +624,17 @@
 
 .banner-content h2 {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 1.5rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
 }
 
 .banner-content p {
     margin: 0;
-    opacity: 0.9;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 .retry-message {
@@ -503,19 +643,19 @@
 }
 
 .retry-message.retry-locked {
-    opacity: 0.8;
+    opacity: 0.6;
 }
 
-/* Rejection Notice Styles */
+/* ── Rejection Notice ──────────────────────────────────────── */
 .rejection-notice {
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
     margin-top: var(--spacing-lg);
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.12) 100%);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
 }
 
 .rejection-icon {
@@ -525,9 +665,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
-    color: #f87171;
+    color: var(--text-muted);
 }
 
 .rejection-content {
@@ -536,37 +676,62 @@
 
 .rejection-content strong {
     display: block;
-    color: #fca5a5;
+    color: var(--text-primary);
     margin-bottom: var(--spacing-sm);
+    font-size: 0.9rem;
 }
 
 .rejection-reason {
     margin: var(--spacing-sm) 0 !important;
     padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(0, 0, 0, 0.2);
-    border-left: 3px solid rgba(239, 68, 68, 0.5);
-    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.03);
+    border-left: 3px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
     color: var(--text-secondary);
     font-style: italic;
+    font-size: 0.85rem;
 }
 
 .platform-interview-banner .btn-large {
     padding: var(--spacing-lg) var(--spacing-2xl);
     font-size: 1rem;
     white-space: nowrap;
+    background: #000000;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
 }
 
-/* Professional Success Status */
+.platform-interview-banner .btn-large:hover {
+    background: #1a1a1a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.platform-interview-banner .btn-large:disabled {
+    background: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.35);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── Platform Status Success ───────────────────────────────── */
 .platform-status-success {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
     padding: var(--spacing-xl) var(--spacing-2xl);
     margin-bottom: var(--spacing-2xl);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.08) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-left: 4px solid rgba(16, 185, 129, 0.6);
-    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-left: 4px solid #000000;
+    border-radius: 16px;
 }
 
 .platform-status-success .status-icon {
@@ -575,9 +740,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(16, 185, 129, 0.15);
-    border-radius: var(--radius-md);
-    color: #059669;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    color: var(--text-primary);
     flex-shrink: 0;
 }
 
@@ -587,8 +752,8 @@
 
 .platform-status-success .status-content h3 {
     margin: 0 0 var(--spacing-xs) 0;
-    font-size: 1.125rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--text-primary);
 }
 
@@ -598,14 +763,16 @@
     font-size: 0.875rem;
 }
 
+/* ── Card Highlight ────────────────────────────────────────── */
 .card-highlight {
-    box-shadow: 0 10px 40px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 
-/* Platform Interview Card */
+/* ── Platform Interview Card ───────────────────────────────── */
 .card-platform {
-    border: 2px solid var(--primary);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     position: relative;
+    overflow: visible;
 }
 
 .card-platform::before {
@@ -613,30 +780,40 @@
     position: absolute;
     top: 0;
     right: 0;
-    background: var(--gradient-primary);
+    left: auto;
+    height: auto;
+    background: #000000;
     color: white;
-    padding: var(--spacing-xs) var(--spacing-md);
-    border-radius: 0 var(--radius-lg) 0 var(--radius-md);
-    font-size: 0.75rem;
-    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 0 16px 0 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    z-index: 2;
 }
 
 .platform-logo {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    background: rgba(0, 0, 0, 0.06);
     font-size: 1.5rem;
+    color: var(--text-primary);
 }
 
 .interview-info {
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-md);
-    background: rgba(79, 70, 229, 0.1);
-    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
 }
 
 .interview-info h4 {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 0.875rem;
-    color: var(--primary);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
 }
 
 .interview-info ul {
@@ -648,95 +825,104 @@
     color: var(--text-secondary);
     font-size: 0.875rem;
     padding: var(--spacing-xs) 0;
+    line-height: 1.5;
 }
 
-/* Job Interview Card */
+/* ── Job Interview Card ────────────────────────────────────── */
 .card-job {
-    border-left: 4px solid var(--success);
+    border-left: 4px solid #000000;
 }
 
-/* Status badges */
+/* Remove inherited .card::before gradient line from non-platform interview cards */
+.interview-card.card:not(.card-platform)::before,
+.assessment-card.card:not(.card-platform)::before {
+    display: none;
+}
+
+/* ── Status Badges — Monochrome ────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
 .badge-pending {
-    background: #fbbf24;
-    color: #78350f;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
 }
 
-.badge-failed {
-    background: #ef4444;
-    color: white;
+.badge-failed,
+.badge-danger {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
 }
 
-.badge-in_progress {
-    background: #3b82f6;
-    color: white;
+.badge-in_progress,
+.badge-info {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
 }
 
 .badge-passed,
 .badge-success {
-    background: #10b981;
-    color: white;
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
 }
 
 .badge-skipped {
-    background: #6b7280;
-    color: white;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-muted);
 }
 
 .badge-pending_review {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-    animation: pulse 2s infinite;
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+    animation: none;
 }
 
 @keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.8;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
 }
 
-.badge-danger {
-    background: #ef4444;
-    color: white;
-}
-
-/* Pending Review Banner Styles */
+/* ── Pending Review Banner ─────────────────────────────────── */
 .platform-interview-banner.pending-review {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border-color: #f59e0b;
-    color: #92400e;
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
 }
 
 .platform-interview-banner.pending-review .banner-icon {
-    background: rgba(245, 158, 11, 0.15);
-    color: #d97706;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
 }
 
 .review-note {
     margin-top: var(--spacing-md) !important;
     font-weight: 500;
     font-style: italic;
-    opacity: 0.85;
+    opacity: 0.7;
+    font-size: 0.85rem;
 }
 
-/* Review Timeline Card */
+/* ── Review Timeline ───────────────────────────────────────── */
 .review-timeline {
     margin-bottom: var(--spacing-lg);
-    padding: var(--spacing-md);
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(217, 119, 6, 0.05));
-    border-radius: var(--radius-md);
-    border-left: 3px solid #f59e0b;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+    border-left: 3px solid #000000;
 }
 
 .review-timeline h4 {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 0.875rem;
-    color: #d97706;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 700;
 }
 
 .review-timeline ul {
@@ -746,21 +932,56 @@
 
 .review-timeline li {
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     padding: var(--spacing-xs) 0;
+    line-height: 1.5;
 }
 
-/* Under Review Card Variant */
+/* ── Under Review Card Variant ─────────────────────────────── */
 .card-platform.under-review {
-    border-color: #f59e0b;
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .card-platform.under-review::before {
     content: 'Under Review';
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: #000000;
 }
 
-/* Loading state */
+/* ── Empty State ───────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    grid-column: 1 / -1;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+}
+
+.empty-state svg {
+    color: var(--text-muted);
+    opacity: 0.4;
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-state h3 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-lg) 0;
+}
+
+.empty-state .btn-primary {
+    display: inline-block;
+    width: auto;
+}
+
+/* ── Loading State ─────────────────────────────────────────── */
 .loading-state {
     display: flex;
     flex-direction: column;
@@ -774,17 +995,16 @@
 .loading-spinner-large {
     width: 48px;
     height: 48px;
-    border: 4px solid var(--border-color);
-    border-top-color: var(--primary);
+    border: 3px solid rgba(0, 0, 0, 0.06);
+    border-top-color: #000000;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
+
 
 /* ═══════════════════════════════════════════════════════════════
    DARK MODE OVERRIDES
@@ -795,145 +1015,441 @@
 }
 
 [data-theme="dark"] .page-header h1 {
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
+/* Dark Tabs */
 [data-theme="dark"] .interview-tabs {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .interview-tabs .tab-btn {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="dark"] .interview-tabs .tab-btn:hover {
-    color: var(--text-primary);
-    background: rgba(51, 65, 85, 0.4);
+    color: rgba(255, 255, 255, 0.9);
+    background: transparent;
 }
 
+[data-theme="dark"] .interview-tabs .tab-btn.active {
+    color: #ffffff !important;
+    border-bottom-color: #ffffff;
+    background: transparent;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+[data-theme="dark"] .tab-count {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Dark Cards */
 [data-theme="dark"] .interview-card,
 [data-theme="dark"] .assessment-card {
-    background: transparent;
-    border: none;
-    box-shadow: none;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+[data-theme="dark"] .interview-card:hover,
+[data-theme="dark"] .assessment-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .interview-card h3 {
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .interview-type {
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.4);
 }
 
+[data-theme="dark"] .company-logo {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Dark Details */
 [data-theme="dark"] .interview-details,
 [data-theme="dark"] .assessment-details {
-    background: transparent !important;
-    border: none;
-    padding: var(--spacing-md) 0;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="dark"] .interview-details p {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .interview-details p strong {
+    color: #ffffff;
 }
 
 [data-theme="dark"] .detail-item .label {
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.4);
 }
 
 [data-theme="dark"] .detail-item .value {
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .strengths h4 {
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .strengths li {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
-/* Platform Interview Banner Dark Mode */
+[data-theme="dark"] .strengths li::before {
+    color: #ffffff;
+}
+
+/* Dark Buttons */
+[data-theme="dark"] .interview-card .btn-primary,
+[data-theme="dark"] .interviews-page .btn-primary {
+    background: #ffffff;
+    color: #000000;
+}
+
+[data-theme="dark"] .interview-card .btn-primary:hover,
+[data-theme="dark"] .interviews-page .btn-primary:hover {
+    background: #e5e5e5;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .interview-card .btn-primary:disabled {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .interview-card .btn-secondary,
+[data-theme="dark"] .interviews-page .btn-secondary {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .interview-card .btn-secondary:hover,
+[data-theme="dark"] .interviews-page .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark Score — must override HomeFeed.css global [data-theme="dark"] .score-value { color: #fff !important } */
+[data-theme="dark"] .interviews-page .score-circle {
+    background: #ffffff;
+    color: #000000;
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .interviews-page .score-circle .score-value {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .interviews-page .score-circle .score-label {
+    color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Dark Banner */
 [data-theme="dark"] .platform-interview-banner {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
-    border-color: rgba(99, 102, 241, 0.3);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .platform-interview-banner.banner-success {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme="dark"] .banner-icon {
-    background: rgba(99, 102, 241, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .banner-content h2 {
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .banner-content p {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
+[data-theme="dark"] .platform-interview-banner .btn-large {
+    background: #ffffff;
+    color: #000000;
+}
+
+[data-theme="dark"] .platform-interview-banner .btn-large:hover {
+    background: #e5e5e5;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .platform-interview-banner .btn-large:disabled {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark Success */
 [data-theme="dark"] .platform-status-success {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.15) 100%);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+    border-left-color: #ffffff;
+}
+
+[data-theme="dark"] .platform-status-success .status-icon {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .platform-status-success .status-content h3 {
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
 [data-theme="dark"] .platform-status-success .status-content p {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
+/* Dark Info & Timeline */
 [data-theme="dark"] .interview-info {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .interview-info h4 {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="dark"] .interview-info li {
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .loading-state {
-    color: var(--text-muted);
-}
-
-[data-theme="dark"] .loading-spinner-large {
-    border-color: rgba(255, 255, 255, 0.1);
-    border-top-color: var(--primary);
-}
-
-/* Pending Review Dark Mode */
-[data-theme="dark"] .platform-interview-banner.pending-review {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
-    border-color: rgba(245, 158, 11, 0.3);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .platform-interview-banner.pending-review .banner-icon {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 [data-theme="dark"] .review-timeline {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05));
-    border-left-color: rgba(245, 158, 11, 0.6);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
+    border-left-color: #ffffff;
 }
 
 [data-theme="dark"] .review-timeline h4 {
-    color: #f59e0b;
+    color: #ffffff;
 }
 
 [data-theme="dark"] .review-timeline li {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
+/* Dark Rejection */
+[data-theme="dark"] .rejection-notice {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .rejection-icon {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .rejection-content strong {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .rejection-reason {
+    background: rgba(255, 255, 255, 0.03);
+    border-left-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Dark Pipeline */
+[data-theme="dark"] .step-marker {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .pipeline-step.completed .step-marker {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .pipeline-step.active .step-marker {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .step-check {
+    background: #ffffff;
+    color: #000000;
+}
+
+[data-theme="dark"] .step-label {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .pipeline-step.active .step-label {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .pipeline-step.completed .step-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .step-connector {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .pipeline-step.completed .step-connector {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Dark Card Variants */
+[data-theme="dark"] .card-platform {
+    border-color: rgba(255, 255, 255, 0.1);
+    overflow: visible;
+}
+
+[data-theme="dark"] .card-platform::before {
+    background: #ffffff;
+    color: #000000;
+}
+
+[data-theme="dark"] .card-platform.under-review {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .card-platform.under-review::before {
+    background: #ffffff;
+    color: #000000;
+}
+
+[data-theme="dark"] .card-job {
+    border-left-color: #ffffff;
+}
+
+[data-theme="dark"] .platform-logo {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+/* Dark Badges */
+[data-theme="dark"] .badge-pending {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .badge-failed,
+[data-theme="dark"] .badge-danger {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .badge-in_progress,
+[data-theme="dark"] .badge-info {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .badge-passed,
+[data-theme="dark"] .badge-success {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .badge-pending_review {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .badge-skipped {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Dark Round Tags */
+[data-theme="dark"] .round-method-tag.ai {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .round-method-tag.human {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .round-desc {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .human-round-meta {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .meta-item a {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .status-indicator {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Dark Card Highlight */
+[data-theme="dark"] .card-highlight {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .card-highlight-mini {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Dark Empty State */
+[data-theme="dark"] .empty-state {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .empty-state svg {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .empty-state h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .empty-state p {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Dark Pending Review Banner */
+[data-theme="dark"] .platform-interview-banner.pending-review {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .platform-interview-banner.pending-review .banner-icon {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+/* Dark Loading */
+[data-theme="dark"] .loading-state {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .loading-spinner-large {
+    border-color: rgba(255, 255, 255, 0.06);
+    border-top-color: #ffffff;
+}
+
+
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE - INTERVIEWS PAGE
+   RESPONSIVE BREAKPOINTS
    ═══════════════════════════════════════════════════════════════ */
 
 /* Tablet (768px - 1024px) */
@@ -948,7 +1464,7 @@
     }
 
     .banner-content h2 {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
     }
 }
 
@@ -959,8 +1475,16 @@
     }
 
     .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
         padding-top: var(--spacing-sm);
         margin-bottom: var(--spacing-lg);
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
     }
 
     .page-header h1 {
@@ -968,7 +1492,7 @@
     }
 
     .interview-tabs {
-        gap: var(--spacing-xs);
+        gap: 0;
         margin-bottom: var(--spacing-lg);
         flex-wrap: wrap;
     }
@@ -996,8 +1520,8 @@
     }
 
     .company-logo {
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
     }
 
     .interview-card h3 {
@@ -1021,16 +1545,16 @@
     }
 
     .banner-icon {
-        width: 50px;
-        height: 50px;
+        width: 48px;
+        height: 48px;
     }
 
     .banner-content h2 {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
     }
 
     .banner-content p {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .platform-interview-banner .btn-large {
@@ -1089,7 +1613,7 @@
     }
 
     .interview-info h4 {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .interview-info li {
@@ -1145,7 +1669,7 @@
     }
 
     .banner-content h2 {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
 
     .score-circle {

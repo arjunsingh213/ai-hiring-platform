@@ -758,7 +758,7 @@ const HomeFeed = () => {
 
                     {/* Job Posting Link */}
                     {postType === 'job_posting' && activity.content?.jobId && (
-                        <a href={`/jobseeker/jobs?id=${activity.content.jobId}`} className="job-link-card">
+                        <a href={`/jobseeker/jobs/${activity.content.jobId}`} className="job-link-card">
                             <span>View Job Details</span>
                             {Icons.arrow}
                         </a>
@@ -818,18 +818,6 @@ const HomeFeed = () => {
                     <p className="header-subtitle">Explore challenges, achievements, and opportunities</p>
                 </div>
                 <div className="header-actions">
-                    <motion.button
-                        className="btn btn-secondary create-challenge-btn"
-                        onClick={() => {
-                            setAchievementForm({ ...achievementForm, type: 'challenge' });
-                            setShowAchievementModal(true);
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {Icons.star}
-                        Create Challenge
-                    </motion.button>
                     <motion.button
                         className="btn btn-primary post-achievement-btn"
                         onClick={() => {
@@ -1002,7 +990,7 @@ const HomeFeed = () => {
                                 </div>
                             ) : recommendedJobs.length > 0 ? (
                                 recommendedJobs.map((job) => (
-                                    <div key={job._id} className="job-item-sidebar" onClick={() => navigate(`/jobseeker/jobs?id=${job._id}`)}>
+                                    <div key={job._id} className="job-item-sidebar" onClick={() => navigate(`/jobseeker/jobs/${job._id}`)}>
                                         <div className="job-info-mini">
                                             <h4 className="job-title-mini">{job.title}</h4>
                                             <span className="job-type-mini">{job.jobDetails?.type || 'Full-time'}</span>

@@ -92,7 +92,7 @@ const ProtectedRoute = ({
     if (!hasCorrectRole) {
         const userRole = localStorage.getItem('userRole');
         if (userRole === 'jobseeker') {
-            return <Navigate to="/jobseeker/home" replace />;
+            return <Navigate to="/jobseeker/jobs" replace />;
         } else if (userRole === 'recruiter') {
             return <Navigate to="/recruiter/home" replace />;
         } else if (userRole === 'admin') {

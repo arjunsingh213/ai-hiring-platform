@@ -388,3 +388,122 @@
     font-size: 0.9rem;
     color: var(--text-primary);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES (DARK EDITORIAL TECH)
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .sjb-left-pane,
+[data-theme="dark"] .sjb-right-pane {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+}
+
+[data-theme="dark"] .sjb-header,
+[data-theme="dark"] .sjb-draft-header,
+[data-theme="dark"] .sjb-actions {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Chat Bubbles */
+[data-theme="dark"] .sjb-message.system {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(16px) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .sjb-message.user {
+    background: #0090FF !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.2) !important;
+}
+
+/* Input Area */
+[data-theme="dark"] .sjb-chat-input-area {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .sjb-chat-input-area input {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+[data-theme="dark"] .sjb-chat-input-area input:focus {
+    border-color: #0090FF !important;
+    box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .sjb-chat-input-area button {
+    background: #0090FF !important; 
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .sjb-chat-input-area button:disabled {
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+/* Templates & Parsing Styles */
+[data-theme="dark"] .sjb-template-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .sjb-template-card:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: #0090FF !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .sjb-parse-view textarea {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .sjb-parse-view textarea:focus {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: #0090FF !important;
+    box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.2) !important;
+}
+
+/* Right Pane Inner Cards */
+[data-theme="dark"] .sjb-draft-card {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .sjb-draft-card h4 {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: #0090FF !important;
+}
+
+/* Eliminate globally inherited button gradients securely inside SJB bounds */
+[data-theme="dark"] .sjb-actions .btn-primary,
+[data-theme="dark"] .sjb-parse-view .btn-primary {
+    background: #0090FF !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .sjb-actions .btn-primary:hover:not(:disabled),
+[data-theme="dark"] .sjb-parse-view .btn-primary:hover:not(:disabled) {
+    background: #007DFF !important;
+    box-shadow: 0 6px 20px rgba(0, 144, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .sjb-actions .btn-primary:disabled,
+[data-theme="dark"] .sjb-parse-view .btn-primary:disabled {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: none !important;
+}

@@ -345,9 +345,10 @@
    ═══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .job-form {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important;
 }
 
 [data-theme="dark"] .form-section {
@@ -359,18 +360,35 @@
 }
 
 [data-theme="dark"] .checkbox-label {
-    background: rgba(51, 65, 85, 0.4);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .checkbox-label:hover {
-    background: rgba(51, 65, 85, 0.6);
-    border-color: rgba(0, 125, 255, 0.3);
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(0, 144, 255, 0.3) !important;
 }
 
 [data-theme="dark"] .form-actions {
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-primary {
+    background: #0090FF !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+    background: #007DFF !important;
+    box-shadow: 0 6px 20px rgba(0, 144, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .btn-primary:disabled {
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -549,4 +567,160 @@
     .overview-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK EDITORIAL TECH — PIPELINE MODAL & OVERVIEW
+   Froscel Glassmorphism Standard
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Modal Overlay */
+[data-theme="dark"] .pipeline-modal-overlay {
+    background: rgba(0, 0, 0, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+/* Modal Container */
+[data-theme="dark"] .pipeline-modal {
+    background: rgba(12, 12, 16, 0.96) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Modal Header */
+[data-theme="dark"] .pipeline-modal-header {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-header h2 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .pipeline-modal-header h2 svg {
+    color: #0090FF !important;
+}
+
+[data-theme="dark"] .pipeline-modal-header p {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Modal Body */
+[data-theme="dark"] .pipeline-modal-body {
+    background: rgba(12, 12, 16, 0.96) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-body .interview-pipeline-config {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Modal Footer */
+[data-theme="dark"] .pipeline-modal-footer {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-footer .btn-ghost {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-footer .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .pipeline-modal-footer .btn-primary {
+    background: #0090FF !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .pipeline-modal-footer .btn-primary:hover:not(:disabled) {
+    background: #007DFF !important;
+    box-shadow: 0 6px 20px rgba(0, 144, 255, 0.4) !important;
+}
+
+/* Overview Section */
+[data-theme="dark"] .overview-header {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .overview-header h3 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .overview-header p {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .overview-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .overview-card h4 {
+    color: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .overview-item label {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+[data-theme="dark"] .overview-item span {
+    color: #ffffff !important;
+}
+
+/* Mini Pipeline Preview */
+[data-theme="dark"] .round-idx {
+    background: #0090FF !important;
+}
+
+[data-theme="dark"] .round-details {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .round-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .round-badge.ai {
+    background: rgba(0, 144, 255, 0.1) !important;
+    color: #4CC8FF !important;
+}
+
+[data-theme="dark"] .round-badge.human {
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #FBBF24 !important;
+}
+
+[data-theme="dark"] .mini-connector {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Checkbox label inside modal */
+[data-theme="dark"] .pipeline-modal .checkbox-label {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .pipeline-modal .checkbox-label:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(0, 144, 255, 0.3) !important;
 }

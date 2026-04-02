@@ -44,9 +44,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .recruiter-dashboard {
-    background: transparent;
+    background: #000000;
 }
 
 [data-theme="dark"] .recruiter-main {
-    background: transparent;
+    background: #000000;
 }

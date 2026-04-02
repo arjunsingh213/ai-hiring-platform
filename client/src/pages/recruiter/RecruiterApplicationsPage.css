@@ -813,7 +813,7 @@
     height: 100%;
     background: linear-gradient(90deg,
             transparent,
-            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0.1),
             transparent);
     transition: left 0.5s;
 }
@@ -826,45 +826,97 @@
    DARK MODE OVERRIDES
    ═══════════════════════════════════════════════════════════════ */
 
+[data-theme="dark"] .action-btn-hire {
+    background: transparent !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    color: #10B981 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .action-btn-hire:hover:not(:disabled) {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.6) !important;
+}
+
+[data-theme="dark"] .action-btn-reject {
+    background: transparent !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #EF4444 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .action-btn-reject:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+}
+
+[data-theme="dark"] .action-btn-reconsider {
+    background: transparent !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: #F59E0B !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .action-btn-reconsider:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.6) !important;
+}
+
+[data-theme="dark"] .action-btn-message {
+    background: transparent !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    color: #818CF8 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .action-btn-message:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-color: rgba(99, 102, 241, 0.6) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
 [data-theme="dark"] .applications-page {
     background: transparent;
 }
 
-[data-theme="dark"] .filters-section,
+[data-theme="dark"] .applications-page .card,
 [data-theme="dark"] .applicants-list,
-[data-theme="dark"] .applicant-header,
-[data-theme="dark"] .job-context,
-[data-theme="dark"] .interview-results,
-[data-theme="dark"] .notes-section,
+[data-theme="dark"] .interview-results-container,
 [data-theme="dark"] .interview-pending {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: blur(24px) !important;
 }
 
 [data-theme="dark"] .filters-section h3,
 [data-theme="dark"] .applicants-list h3,
 [data-theme="dark"] .interview-results h3,
 [data-theme="dark"] .notes-section h3 {
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .filter-group label {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .applicant-item {
-    background: rgba(51, 65, 85, 0.4);
+    background: rgba(255, 255, 255, 0.01) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 [data-theme="dark"] .applicant-item:hover {
-    background: rgba(51, 65, 85, 0.6);
-    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .applicant-item.active {
-    background: rgba(0, 125, 255, 0.15);
-    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: #0090FF !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.15) !important;
 }
 
 [data-theme="dark"] .applicant-info h4 {
@@ -896,23 +948,24 @@
 }
 
 [data-theme="dark"] .score-inner {
-    background: #1E293B;
+    background: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .score-inner .score-value {
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .score-item .score-label {
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.5) !important;
 }
 
 [data-theme="dark"] .score-bar-container .score-title {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .score-bar {
-    background: rgba(0, 125, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .score-bar-container .score-num {

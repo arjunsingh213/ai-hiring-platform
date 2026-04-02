@@ -993,17 +993,20 @@ textarea.input {
 /* Form Elements Dark Mode - CRITICAL */
 [data-theme="dark"] input,
 [data-theme="dark"] select,
-[data-theme="dark"] textarea {
-  background: rgba(51, 65, 85, 0.6) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+[data-theme="dark"] textarea,
+[data-theme="dark"] .input {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
   color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] input:focus,
 [data-theme="dark"] select:focus,
-[data-theme="dark"] textarea:focus {
-  background: rgba(51, 65, 85, 0.8) !important;
-  border-color: var(--primary) !important;
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] .input:focus {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: #0090FF !important;
+  box-shadow: 0 0 0 2px rgba(0, 144, 255, 0.2) !important;
 }
 
 [data-theme="dark"] input::placeholder,

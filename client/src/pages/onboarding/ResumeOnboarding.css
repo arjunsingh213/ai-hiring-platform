@@ -1,0 +1,340 @@
+/* ===========================
+   Resume Onboarding — Dark Editorial Tech
+   Matches platform's monochrome aesthetic
+   =========================== */
+
+.resume-onboarding {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000000;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+    font-family: 'Inter', 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #ffffff;
+}
+
+/* Ambient background glow - subtle, editorial */
+.resume-onboarding::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Background orbs - very subtle */
+.resume-onboarding-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.ro-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+}
+.ro-orb-1 {
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.03);
+    top: -200px;
+    right: -100px;
+}
+.ro-orb-2 {
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.02);
+    bottom: -150px;
+    left: -100px;
+}
+.ro-orb-3 {
+    width: 250px;
+    height: 250px;
+    background: rgba(255, 255, 255, 0.015);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Main card — glassmorphic dark */
+.resume-onboarding-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 48px 40px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+    animation: ro-fadeIn 0.6s ease-out;
+}
+
+@keyframes ro-fadeIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.ro-header {
+    text-align: center;
+    margin-bottom: 36px;
+}
+.ro-logo {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    color: rgba(255, 255, 255, 0.9);
+}
+.ro-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 10px;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+.ro-header p {
+    font-size: 0.9375rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    line-height: 1.6;
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+/* Dropzone — editorial dark style */
+.ro-dropzone {
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 48px 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02);
+}
+.ro-dropzone:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+}
+.ro-dragging {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    transform: scale(1.01);
+}
+.ro-error-zone {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.ro-upload-icon {
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 20px;
+    transition: color 0.3s;
+}
+.ro-dropzone:hover .ro-upload-icon {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ro-dropzone h3 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+}
+.ro-or {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 0 24px;
+}
+
+.ro-file-types {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.ro-type-badge {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.ro-size-limit {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.25);
+    padding: 4px 8px;
+}
+
+/* Processing state */
+.ro-processing {
+    text-align: center;
+    padding: 36px 0;
+}
+.ro-processing-icon {
+    margin-bottom: 24px;
+}
+.ro-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: ro-spin 0.8s linear infinite;
+    margin: 0 auto;
+}
+@keyframes ro-spin {
+    to { transform: rotate(360deg); }
+}
+
+.ro-processing h3 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+}
+.ro-filename {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 0 28px;
+    word-break: break-all;
+}
+
+/* Progress track */
+.ro-progress-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 28px;
+}
+.ro-progress-fill {
+    height: 100%;
+    background: #ffffff;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+/* Stage indicators */
+.ro-stages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+}
+.ro-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.25);
+    transition: color 0.3s;
+    letter-spacing: -0.01em;
+}
+.ro-stage.active {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+.ro-stage.done {
+    color: rgba(255, 255, 255, 0.5);
+}
+.ro-stage-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: background 0.3s, box-shadow 0.3s;
+}
+.ro-stage.active .ro-stage-dot {
+    background: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+.ro-stage.done .ro-stage-dot {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Error message */
+.ro-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    margin-top: 20px;
+}
+
+/* Footer */
+.ro-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 32px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.01em;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .resume-onboarding {
+        padding: 1rem;
+    }
+    .resume-onboarding-card {
+        padding: 32px 24px;
+        border-radius: 20px;
+    }
+    .ro-header h1 {
+        font-size: 1.5rem;
+    }
+    .ro-header p {
+        font-size: 0.875rem;
+    }
+    .ro-dropzone {
+        padding: 36px 20px;
+    }
+    .ro-stages {
+        gap: 20px;
+    }
+    .ro-stage span {
+        display: none;
+    }
+}
+
+@media (max-width: 400px) {
+    .resume-onboarding-card {
+        padding: 28px 18px;
+    }
+}

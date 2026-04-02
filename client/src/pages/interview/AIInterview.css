@@ -344,21 +344,25 @@
 
 .mini-video-container {
     height: 350px;
-    /* Balanced height */
-    background: #111 !important;
-    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+    background: #000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     position: relative;
     overflow: hidden;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
 }
 
 .mini-video-feed {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     transform: scaleX(-1);
-    /* Mirror */
+    z-index: 1;
 }
 
 .voice-controls {
@@ -369,8 +373,8 @@
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
-    background: rgba(15, 15, 25, 0.8) !important;
-    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    background: rgba(10, 10, 15, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 16px;
 }
 
@@ -539,6 +543,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     color: white;
+    z-index: 10;
 }
 
 .proctoring-warnings {

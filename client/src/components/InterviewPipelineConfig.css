@@ -889,3 +889,308 @@
 .assessment-type-card.selected {
     box-shadow: 0 0 0 1px var(--primary);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK EDITORIAL TECH — INTERVIEW PIPELINE CONFIG
+   Froscel Glassmorphism Standard
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Main container */
+[data-theme="dark"] .interview-pipeline-config {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+}
+
+/* Header */
+[data-theme="dark"] .pipeline-header h3 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .pipeline-subtitle {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Preset Cards */
+[data-theme="dark"] .preset-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .preset-card:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(0, 144, 255, 0.3) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .preset-card.active {
+    background: rgba(0, 144, 255, 0.08) !important;
+    border-color: #0090FF !important;
+    box-shadow: 0 0 20px rgba(0, 144, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .preset-name {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .preset-desc {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .preset-icon {
+    color: #0090FF !important;
+}
+
+[data-theme="dark"] .preset-card.active .preset-icon {
+    color: #4CC8FF !important;
+}
+
+/* Timeline Nodes */
+[data-theme="dark"] .timeline-node {
+    background: linear-gradient(135deg, #0090FF, #0070CC) !important;
+    box-shadow: 0 4px 16px rgba(0, 144, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .timeline-connector {
+    background: linear-gradient(90deg, rgba(0, 144, 255, 0.6), rgba(0, 144, 255, 0.2)) !important;
+}
+
+[data-theme="dark"] .timeline-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .add-round .add-round-btn {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .add-round .add-round-btn:hover {
+    border-color: #0090FF !important;
+    color: #0090FF !important;
+    background: rgba(0, 144, 255, 0.05) !important;
+}
+
+/* Add Round Dropdown Menu */
+[data-theme="dark"] .add-round-menu {
+    background: rgba(15, 15, 20, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .menu-section label {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .menu-item {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .menu-item:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #0090FF !important;
+}
+
+[data-theme="dark"] .menu-divider {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Round Cards */
+[data-theme="dark"] .round-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .round-card:hover {
+    border-color: rgba(0, 144, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .round-card.expanded {
+    border-color: #0090FF !important;
+    box-shadow: 0 4px 20px rgba(0, 144, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .round-header {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+[data-theme="dark"] .round-header:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .round-title {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .round-meta {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .round-number {
+    background: rgba(0, 144, 255, 0.15) !important;
+    color: #4CC8FF !important;
+}
+
+[data-theme="dark"] .round-action-btn {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .round-action-btn:hover:not(:disabled) {
+    background: rgba(0, 144, 255, 0.1) !important;
+    border-color: #0090FF !important;
+    color: #0090FF !important;
+}
+
+[data-theme="dark"] .round-action-btn.delete:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: #EF4444 !important;
+    color: #EF4444 !important;
+}
+
+[data-theme="dark"] .expand-icon {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Round Config Panel */
+[data-theme="dark"] .round-config {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .config-field label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Coding/DSA/Question/Assessment Config */
+[data-theme="dark"] .coding-config,
+[data-theme="dark"] .question-config,
+[data-theme="dark"] .assessment-config,
+[data-theme="dark"] .human-config {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .coding-config h4,
+[data-theme="dark"] .question-config h4,
+[data-theme="dark"] .assessment-config h4,
+[data-theme="dark"] .human-config h4 {
+    color: #ffffff !important;
+}
+
+/* Topic/Skill Tags */
+[data-theme="dark"] .topic-tag,
+[data-theme="dark"] .skill-tag {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .topic-tag:hover,
+[data-theme="dark"] .skill-tag:hover {
+    background: rgba(0, 144, 255, 0.08) !important;
+    border-color: #0090FF !important;
+    color: #0090FF !important;
+}
+
+[data-theme="dark"] .topic-tag.active,
+[data-theme="dark"] .skill-tag.active {
+    background: #0090FF !important;
+    border-color: #0090FF !important;
+    color: #ffffff !important;
+}
+
+/* Empty Rounds State */
+[data-theme="dark"] .empty-rounds {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .empty-rounds p {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .add-type-btn {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .add-type-btn:hover {
+    background: rgba(0, 144, 255, 0.05) !important;
+    border-color: #0090FF !important;
+}
+
+[data-theme="dark"] .add-type-btn .type-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Pipeline Settings */
+[data-theme="dark"] .pipeline-settings {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .settings-toggle {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .settings-toggle:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .settings-panel {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .settings-field label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Criteria Tags */
+[data-theme="dark"] .criteria-tag {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .criteria-tag button {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .criteria-tag button:hover {
+    color: #EF4444 !important;
+}
+
+/* AI/Manual Badges */
+[data-theme="dark"] .ai-badge {
+    background: rgba(0, 144, 255, 0.1) !important;
+    color: #4CC8FF !important;
+}
+
+[data-theme="dark"] .manual-badge {
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #FBBF24 !important;
+}
+
+/* Preset Selector Label */
+[data-theme="dark"] .preset-selector h4,
+[data-theme="dark"] .rounds-preview h4 {
+    color: #ffffff !important;
+}
+
+/* Assessment Type Cards */
+[data-theme="dark"] .assessment-type-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .assessment-type-card:hover {
+    border-color: rgba(0, 144, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .assessment-type-card.selected {
+    box-shadow: 0 0 0 1px #0090FF !important;
+}

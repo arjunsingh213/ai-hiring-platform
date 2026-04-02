@@ -113,7 +113,7 @@ const InterviewsPage = () => {
                     <div className="banner-content">
                         {isPendingReview ? (
                             <>
-                                <h2>✅ Interview Submitted</h2>
+                                <h2>Interview Submitted</h2>
                                 <p>
                                     Thank you! Your interview has been submitted. You can now browse and apply for jobs!
                                 </p>
@@ -569,13 +569,12 @@ const InterviewsPage = () => {
                                             <p><strong>Date:</strong> {new Date(room.scheduledAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
                                             <p><strong>Time:</strong> {new Date(room.scheduledAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
                                             <p><strong>Duration:</strong> {room.duration || 45} min</p>
-                                            <p><strong>Room Code:</strong> <code style={{ background: 'var(--bg-tertiary, #f3f4f6)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>{room.roomCode}</code></p>
+                                            <p><strong>Room Code:</strong> <code className="room-code-tag">{room.roomCode}</code></p>
                                         </div>
                                         {(isUpcoming || isLive) && (
                                             <button
-                                                className="btn btn-primary btn-block"
+                                                className={`btn ${isLive ? 'btn-primary btn-live' : 'btn-primary'} btn-block`}
                                                 onClick={() => navigate(`/interview-room/${room.roomCode}`)}
-                                                style={isLive ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)' } : {}}
                                             >
                                                 {isLive ? 'Join Now' : 'Join Interview'}
                                             </button>
@@ -584,7 +583,6 @@ const InterviewsPage = () => {
                                             <button
                                                 className="btn btn-secondary btn-block"
                                                 onClick={() => navigate(`/interview-room/${room.roomCode}`)}
-                                                style={{ opacity: 0.8 }}
                                             >
                                                 View Details
                                             </button>

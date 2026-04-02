@@ -56,7 +56,7 @@ const PlatformWalkthrough = ({ onComplete }) => {
         if (onComplete) {
             onComplete();
         } else {
-            navigate('/jobseeker/home');
+            navigate('/jobseeker/jobs');
         }
     };
 

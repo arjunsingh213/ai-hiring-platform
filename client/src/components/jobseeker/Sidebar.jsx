@@ -23,9 +23,9 @@ const Sidebar = () => {
     };
 
     const navItems = [
-        { path: '/jobseeker/home', icon: 'home', label: 'Home' },
         { path: '/jobseeker/jobs', icon: 'briefcase', label: 'Jobs' },
         { path: '/jobseeker/interviews', icon: 'video', label: 'Interviews' },
+        { path: '/jobseeker/home', icon: 'home', label: 'Home' },
         { path: '/jobseeker/messages', icon: 'message', label: 'Messages' },
         { path: '/jobseeker/settings', icon: 'settings', label: 'Settings' },
     ];
@@ -33,7 +33,7 @@ const Sidebar = () => {
     return (
         <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
-                <img src="/logo.png" alt="Froscel" className="sidebar-logo" />
+                <img src="/logo_transparent.png" alt="Froscel" className="sidebar-logo" />
                 {!isCollapsed && <h2>Froscel</h2>}
             </div>
             <nav className="sidebar-nav">

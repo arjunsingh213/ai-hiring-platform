@@ -13,6 +13,7 @@ import OfferAcceptancePage from './OfferAcceptancePage';
 import OnboardingPortal from './OnboardingPortal';
 import LeaderboardPage from './LeaderboardPage';
 import JobBanner from '../../components/jobseeker/JobBanner';
+import JobDetailsPage from './JobDetailsPage';
 import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
@@ -29,10 +30,10 @@ const JobSeekerDashboard = () => {
         <div className="dashboard" style={{ '--sidebar-width': isCollapsed ? '80px' : '240px' }}>
             <Sidebar />
             <TopNav />
-            <div className="dashboard-main">
-                <JobBanner />
+            <div className={`dashboard-main ${location.pathname.includes('/jobs/') && location.pathname !== '/jobseeker/jobs' ? 'no-banner' : ''}`}>
+                {!location.pathname.includes('/jobs/') || location.pathname === '/jobseeker/jobs' ? <JobBanner /> : null}
                 <Routes>
-                    <Route path="/" element={<Navigate to="home" replace />} />
+                    <Route path="/" element={<Navigate to="jobs" replace />} />
                     <Route path="home" element={<HomeFeed />} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="messages" element={<MessagingPage />} />
@@ -42,6 +43,7 @@ const JobSeekerDashboard = () => {
                     <Route path="offer/:hiringId" element={<OfferAcceptancePage />} />
                     <Route path="onboarding/:hiringId" element={<OnboardingPortal />} />
                     <Route path="settings" element={<SettingsPage />} />
+                    <Route path="jobs/:id" element={<JobDetailsPage />} />
                 </Routes>
             </div>
             <MobileNav />

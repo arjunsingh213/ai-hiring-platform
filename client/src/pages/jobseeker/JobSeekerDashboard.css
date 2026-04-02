@@ -23,3 +23,11 @@
 }
 
 /* Mobile media queries removed - now managed globally in index.css */
+
+/* ========================================================================= */
+/* DARK EDITORIAL TECH THEME OVERRIDES                                       */
+/* ========================================================================= */
+
+[data-theme="dark"] .dashboard {
+    background: #000000 !important;
+}

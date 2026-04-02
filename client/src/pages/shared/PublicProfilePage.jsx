@@ -316,7 +316,8 @@ const PublicProfilePage = () => {
     const totalApplicants = jobs.reduce((sum, j) => sum + (j.applicants?.length || 0), 0);
 
     return (
-        <div className="profile-page">
+        <div className="public-profile-root">
+            <div className="profile-page">
             {/* Header Card */}
             <motion.div
                 className="profile-header-card"
@@ -681,8 +682,8 @@ const PublicProfilePage = () => {
                                                             <span>Posted {getTimeAgo(job.createdAt)}</span>
                                                         </div>
                                                     </div>
-                                                    <button className="btn btn-sm btn-primary" onClick={() => navigate(`/jobseeker/jobs?id=${job._id}`)}>
-                                                        View
+                                                    <button className="btn btn-sm btn-primary" onClick={() => navigate(`/jobseeker/jobs/${job._id}`)}>
+                                                        View Job 
                                                     </button>
                                                 </div>
                                             ))}
@@ -839,6 +840,7 @@ const PublicProfilePage = () => {
                     />
                 )}
             </AnimatePresence>
+        </div>
         </div>
     );
 };

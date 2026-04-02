@@ -895,14 +895,14 @@
 }
 
 .profile-tab.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: #0F172A;
     color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .profile-tab:hover:not(.active) {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: rgba(0, 0, 0, 0.04);
+    color: #0F172A;
 }
 
 .profile-tab svg {
@@ -1205,97 +1205,249 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DARK MODE OVERRIDES
+   DARK EDITORIAL TECH OVERRIDES
    ═══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .profile-page {
     background: transparent;
 }
 
+[data-theme="dark"] .neural-bg {
+    display: none;
+}
+
+/* Header Card */
 [data-theme="dark"] .profile-header-card {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(15, 15, 20, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-theme="dark"] .profile-header-card::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
 }
 
 [data-theme="dark"] .profile-photo {
-    border-color: rgba(30, 41, 59, 0.9);
+    border-color: rgba(15, 15, 20, 0.9);
 }
 
+[data-theme="dark"] .profile-header-info h1 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .profile-header-info .headline {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .profile-header-info .location {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .profile-header-info .connections {
+    color: #ffffff !important;
+}
+
+/* Edit Profile Button */
+[data-theme="dark"] .profile-header-actions .btn-primary {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .profile-header-actions .btn-primary:hover {
+    background: rgba(255, 255, 255, 0.85) !important;
+    transform: translateY(-2px);
+}
+
+/* Profile Tabs */
+[data-theme="dark"] .profile-tabs {
+    background: rgba(15, 15, 20, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .profile-tab {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .profile-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .profile-tab.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Profile Sections */
 [data-theme="dark"] .profile-section {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(15, 15, 20, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-theme="dark"] .profile-section::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+}
+
+[data-theme="dark"] .profile-section:hover {
+    border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 [data-theme="dark"] .section-header h2 {
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
+/* About */
 [data-theme="dark"] .about-text {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.65);
 }
 
 [data-theme="dark"] .detail-item {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 [data-theme="dark"] .detail-item:hover {
-    background: rgba(51, 65, 85, 0.7);
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
+/* Experience & Education */
 [data-theme="dark"] .experience-item,
 [data-theme="dark"] .education-item {
-    background: rgba(51, 65, 85, 0.4);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 [data-theme="dark"] .experience-item:hover,
 [data-theme="dark"] .education-item:hover {
-    background: rgba(51, 65, 85, 0.6);
-    border-color: rgba(0, 125, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .exp-icon,
+[data-theme="dark"] .edu-icon {
+    background: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
 }
 
 [data-theme="dark"] .exp-content h3,
 [data-theme="dark"] .edu-content h3 {
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .exp-content .company,
 [data-theme="dark"] .edu-content .degree {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 [data-theme="dark"] .exp-content .dates,
 [data-theme="dark"] .edu-content .years {
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.35);
 }
 
 [data-theme="dark"] .exp-content .description {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.55);
 }
 
+/* Skills */
+[data-theme="dark"] .skill-tag {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .skill-tag:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Links */
 [data-theme="dark"] .link-item {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .link-item:hover {
-    background: rgba(51, 65, 85, 0.7);
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
+[data-theme="dark"] .link-item.linkedin,
+[data-theme="dark"] .link-item.github,
+[data-theme="dark"] .link-item.portfolio,
+[data-theme="dark"] .link-item.twitter {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Empty State */
+[data-theme="dark"] .profile-page .empty-state {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Interview Badge */
 [data-theme="dark"] .interview-badge {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(22, 163, 74, 0.4);
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Buttons */
+[data-theme="dark"] .profile-page .btn-primary {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .profile-page .btn-primary:hover {
+    background: rgba(255, 255, 255, 0.85) !important;
+    transform: translateY(-2px);
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .btn-icon {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .banner-edit-btn,
+[data-theme="dark"] .photo-edit-btn {
+    background: rgba(0, 0, 0, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+/* Action buttons in lists */
+[data-theme="dark"] .exp-actions button,
+[data-theme="dark"] .edu-actions button {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .exp-actions button:hover,
+[data-theme="dark"] .edu-actions button:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
 }
 
 /* Modal Dark Mode */
@@ -1303,96 +1455,65 @@
     background: rgba(0, 0, 0, 0.8);
 }
 
-[data-theme="dark"] .modal {
-    background: rgba(30, 41, 59, 0.95);
-    border-color: rgba(255, 255, 255, 0.1);
+[data-theme="dark"] .profile-page .modal {
+    background: rgba(15, 15, 20, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .modal-header {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 [data-theme="dark"] .modal-header h2 {
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .modal-footer {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Form Dark Mode */
 [data-theme="dark"] .form-group label {
-    color: var(--text-primary);
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group textarea {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .form-group input:focus,
 [data-theme="dark"] .form-group textarea:focus {
-    background: rgba(51, 65, 85, 0.7);
-    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05) !important;
 }
 
 [data-theme="dark"] .form-group input::placeholder,
 [data-theme="dark"] .form-group textarea::placeholder {
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.25) !important;
 }
 
-[data-theme="dark"] .btn-secondary {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .btn-secondary:hover {
-    background: rgba(51, 65, 85, 0.7);
-}
-
-[data-theme="dark"] .btn-icon {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .btn-icon:hover {
-    background: rgba(51, 65, 85, 0.7);
-}
-
-[data-theme="dark"] .banner-edit-btn,
-[data-theme="dark"] .photo-edit-btn {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: var(--text-primary);
-}
-
+/* Domain Chips Dark */
 [data-theme="dark"] .domain-chip-edit {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .domain-chip-edit:hover:not(.disabled) {
-    background: rgba(51, 65, 85, 0.7);
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 [data-theme="dark"] .domain-chip-edit.selected {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
-    border-color: #6366F1;
-    color: #A78BFA;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
 }
 
-[data-theme="dark"] .exp-actions button,
-[data-theme="dark"] .edu-actions button {
-    background: rgba(51, 65, 85, 0.5);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .exp-actions button:hover,
-[data-theme="dark"] .edu-actions button:hover {
-    background: rgba(51, 65, 85, 0.8);
+[data-theme="dark"] .domains-selected-count {
+    color: rgba(255, 255, 255, 0.5) !important;
 }

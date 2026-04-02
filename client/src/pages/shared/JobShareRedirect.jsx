@@ -24,7 +24,7 @@ const JobShareRedirect = () => {
             navigate(`/recruiter/my-jobs?id=${jobId}`, { replace: true });
         } else {
             // Job seeker (or any other role) — send to job seeker job listings
-            navigate(`/jobseeker/jobs?id=${jobId}`, { replace: true });
+            navigate(`/jobseeker/jobs/${jobId}`, { replace: true });
         }
     }, [jobId, navigate]);
 

@@ -7,9 +7,9 @@ const ATPScoreRing = ({ score, label = "ATP Score", size = 200 }) => {
     const offset = circumference - (score / 100) * circumference;
 
     const getScoreColor = (s) => {
-        if (s >= 80) return 'var(--atp-success)';
-        if (s >= 60) return 'var(--atp-warning)';
-        return 'var(--atp-risk)';
+        if (s >= 80) return '#ffffff';
+        if (s >= 60) return 'rgba(255, 255, 255, 0.7)';
+        return 'rgba(255, 255, 255, 0.45)';
     };
 
     return (

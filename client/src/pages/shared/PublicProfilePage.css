@@ -1,6 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════
    PROFILE PAGE - Original Purple Theme
    ═══════════════════════════════════════════════════════════════ */
+.public-profile-root {
+    width: 100%;
+    min-height: 100vh;
+}
+[data-theme="dark"] .public-profile-root {
+    background-color: #000000 !important;
+}
 
 .profile-page {
     max-width: 1100px;
@@ -1073,24 +1080,21 @@
    ═══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .profile-page {
-    background-color: var(--bg-dark);
+    background-color: #000000 !important;
 }
 
 [data-theme="dark"] .profile-header-card,
 [data-theme="dark"] .content-card,
 [data-theme="dark"] .sidebar-card,
 [data-theme="dark"] .stat-box {
-    background: #1E293B;
-    /* Slate 800 */
-    border-color: #334155;
-    /* Slate 700 */
+    background: rgba(15, 15, 20, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
 /* Text Colors */
 [data-theme="dark"] .profile-name-block h1 {
-    color: #F8FAFC;
-    /* Slate 50 */
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .profile-headline,
@@ -1103,8 +1107,7 @@
 [data-theme="dark"] .job-company-name,
 [data-theme="dark"] .job-meta,
 [data-theme="dark"] .job-details p {
-    color: #94A3B8;
-    /* Slate 400 */
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .content-card h3,
@@ -1114,44 +1117,43 @@
 [data-theme="dark"] .job-content h4,
 [data-theme="dark"] .job-details h4,
 [data-theme="dark"] .author-name {
-    color: #E2E8F0;
-    /* Slate 200 */
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .profile-company svg,
 [data-theme="dark"] .profile-meta svg {
-    color: #818CF8;
-    /* Indigo 400 */
+    color: #ffffff !important;
 }
 
 /* Stats */
 [data-theme="dark"] .stat-box {
-    background: #0F172A;
-    /* Slate 900 */
+    background: rgba(15, 15, 20, 0.95) !important;
 }
 
 [data-theme="dark"] .stat-box.highlight {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 [data-theme="dark"] .stat-number {
-    text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    text-shadow: none !important;
+    color: #ffffff !important;
 }
 
 /* Tabs */
 [data-theme="dark"] .profile-tabs {
-    background: #0F172A;
-    border-color: #334155;
+    background: rgba(15, 15, 20, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .profile-tab {
-    color: #94A3B8;
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
-[data-theme="dark"] .profile-tab:hover {
-    background: #1E293B;
-    color: #F8FAFC;
+[data-theme="dark"] .profile-tab:hover,
+[data-theme="dark"] .profile-tab.active {
+    background: #ffffff !important;
+    color: #000000 !important;
 }
 
 /* Item Lists */
@@ -1160,49 +1162,80 @@
 [data-theme="dark"] .post-preview-item,
 [data-theme="dark"] .post-full-item,
 [data-theme="dark"] .job-full-item {
-    background: #0F172A;
-    border: 1px solid #334155;
+    background: rgba(15, 15, 20, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .job-preview-item:hover,
 [data-theme="dark"] .job-full-item:hover {
-    background: #1E293B;
-    border-color: #6366F1;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 [data-theme="dark"] .meta-tag {
-    background: #0F172A;
-    color: #94A3B8;
-    border: 1px solid #334155;
+    background: rgba(15, 15, 20, 0.95) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Buttons */
-[data-theme="dark"] .btn-secondary {
-    background: #0F172A;
-    border-color: #334155;
-    color: #F8FAFC;
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .follow-btn {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #000000 !important;
 }
 
-[data-theme="dark"] .btn-secondary:hover {
-    border-color: #818CF8;
-    color: #818CF8;
+[data-theme="dark"] .btn-secondary:hover,
+[data-theme="dark"] .follow-btn:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .follow-btn.following {
+    background: rgba(255,255,255,0.05) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+}
+
+[data-theme="dark"] .follow-btn.following:hover {
+    background: rgba(255,255,255,0.1) !important;
 }
 
 [data-theme="dark"] .link-btn {
-    color: #818CF8;
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .empty-text {
-    color: #64748B;
+    color: rgba(255, 255, 255, 0.5) !important;
 }
 
 /* ATP / Talent Score */
 [data-theme="dark"] .talent-card .talent-score {
-    color: #F8FAFC;
+    color: #ffffff !important;
+    background: none !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
 [data-theme="dark"] .talent-card .talent-max {
-    color: #64748B;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .info-icon,
+[data-theme="dark"] .job-icon,
+[data-theme="dark"] .post-author-avatar,
+[data-theme="dark"] .job-logo,
+[data-theme="dark"] .hiring-item,
+[data-theme="dark"] .talent-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .h-value {
+    background: none !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
 /* Edit Buttons */

@@ -326,32 +326,73 @@
    ═══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .recruiter-sidebar {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important;
 }
 
 [data-theme="dark"] .recruiter-sidebar::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent) !important;
 }
 
 [data-theme="dark"] .sidebar-header {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .sidebar-logo {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+
+[data-theme="dark"] .sidebar-header h2 {
+    background: none !important;
+    -webkit-text-fill-color: #ffffff !important;
+    color: #ffffff !important;
 }
 
 [data-theme="dark"] .nav-item {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 [data-theme="dark"] .nav-item:hover {
-    background: rgba(51, 65, 85, 0.5);
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Active Nav Item - Monochromatic White */
+[data-theme="dark"] .nav-item.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15) !important;
+    border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .nav-item.active::after,
+[data-theme="dark"] .nav-item.active::before {
+    display: none !important; /* Remove gradient glows */
+}
+
+[data-theme="dark"] .nav-item.active svg {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .nav-item.active span {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .sidebar-toggle {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
 }
 
 @media (max-width: 768px) {
     [data-theme="dark"] .recruiter-sidebar {
-        background: rgba(30, 41, 59, 0.95);
-        border-top-color: rgba(255, 255, 255, 0.1);
+        background: rgba(10, 10, 15, 0.98) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
     }
 }

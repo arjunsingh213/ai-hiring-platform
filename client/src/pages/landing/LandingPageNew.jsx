@@ -41,7 +41,7 @@ const LandingPageNew = () => {
             if (now - loginTime < sessionDuration) {
                 // Session still valid, redirect to dashboard
                 if (userRole === 'jobseeker') {
-                    navigate('/jobseeker/home', { replace: true });
+                    navigate('/jobseeker/jobs', { replace: true });
                 } else if (userRole === 'recruiter') {
                     navigate('/recruiter/home', { replace: true });
                 } else if (userRole === 'admin') {

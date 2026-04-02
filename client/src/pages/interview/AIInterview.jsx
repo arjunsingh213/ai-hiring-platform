@@ -1540,9 +1540,6 @@ const AIInterview = () => {
                     <div className="controls-section">
                         <div className="mini-video-container card">
                             <video ref={videoRef} autoPlay muted className="mini-video-feed"></video>
-                            <p className="camera-info text-muted">
-                                <Icons.camera /> Camera Active
-                            </p>
 
                             <InterviewProctor
                                 videoRef={videoRef}
