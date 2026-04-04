@@ -704,16 +704,30 @@ const AIInterview = () => {
 
     const startCamera = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                audio: true
+            });
             if (!isMountedRef.current) {
                 stream.getTracks().forEach(t => t.stop());
                 return;
             }
             streamRef.current = stream;
-            if (videoRef.current) videoRef.current.srcObject = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                // Explicitly play to handle browsers that block autoplay
+                try {
+                    await videoRef.current.play();
+                } catch (playErr) {
+                    console.warn('Video autoplay blocked, user interaction may be needed:', playErr);
+                }
+            }
             setCameraReady(true); // Trigger recording effect
+            console.log('📹 Camera started successfully, tracks:', stream.getTracks().map(t => `${t.kind}:${t.readyState}`));
         } catch (e) {
-            console.error('Camera access error:', e);
+            console.error('Camera access error:', e.name, e.message);
+            // Don't block interview if camera fails — voice mode doesn't strictly need it
+            setCameraReady(false);
             toast.error(`Camera Failed: ${e.name}: ${e.message}`);
         }
     };
@@ -1539,7 +1553,7 @@ const AIInterview = () => {
                     {/* Right Column: Controls & Camera */}
                     <div className="controls-section">
                         <div className="mini-video-container card">
-                            <video ref={videoRef} autoPlay muted className="mini-video-feed"></video>
+                            <video ref={videoRef} autoPlay playsInline muted className="mini-video-feed"></video>
 
                             <InterviewProctor
                                 videoRef={videoRef}
@@ -1630,7 +1644,7 @@ const AIInterview = () => {
                 {/* Video */}
                 <div className="video-section">
                     <div className="video-container">
-                        <video ref={videoRef} autoPlay muted className="video-feed"></video>
+                        <video ref={videoRef} autoPlay playsInline muted className="video-feed"></video>
                         {isRecording && <div className="recording-indicator"><span className="recording-dot"></span> Recording</div>}
 
                         {/* Proctoring Component - detects tab switch, face, etc */}

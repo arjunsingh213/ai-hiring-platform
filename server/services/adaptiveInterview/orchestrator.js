@@ -232,7 +232,7 @@ class Orchestrator {
                     questions: {
                         question: aiQuestion,
                         category: session.currentSkill,
-                        difficulty: analysis ? analysis.depth_level : 'medium',
+                        difficulty: analysis ? Orchestrator._mapDepthToDifficulty(analysis.depth_level) : 'medium',
                         generatedBy: 'adaptive',
                         assessingSkill: session.currentSkill,
                         roundIndex: currentRoundIndex

@@ -61,11 +61,6 @@ const setupAdaptiveNamespace = (io) => {
                 currentSkill: session.currentSkill
             });
 
-            socket.emit('session_initialized', {
-                status: 'ready',
-                currentSkill: session.currentSkill
-            });
-
             // Restore conversation state for this ROUND specifically
             const currentRoundQs = (interview?.questions || []).filter(q =>
                 q.roundIndex === currentRoundIndex || (currentRoundIndex === 0 && q.roundIndex === undefined)

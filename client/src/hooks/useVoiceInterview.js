@@ -335,6 +335,13 @@ const useVoiceInterview = (interviewId, isEnabled = true, resetTrigger = null) =
 
         newSocket.on('ai_question_audio_chunk', async (data) => {
             hasReceivedAudioRef.current = true;
+            // Cancel native TTS fallback since server audio is arriving
+            if (safetyTimerRef.current) {
+                clearTimeout(safetyTimerRef.current);
+                safetyTimerRef.current = null;
+            }
+            // Also cancel any native TTS that might have already started speaking
+            window.speechSynthesis.cancel();
             if (data.chunk) {
                 const byteCharacters = atob(data.chunk);
                 const byteNumbers = new Array(byteCharacters.length);

@@ -512,6 +512,18 @@ router.post('/:interviewId/complete', userAuth, async (req, res) => {
         interview.passed = overallEvaluation.overallScore >= 60;
         interview.recruiterReport = recruiterReport;
 
+        // Sanitize any invalid difficulty values before saving
+        const validDiffs = ['easy', 'medium', 'hard'];
+        for (const q of interview.questions) {
+            if (q.difficulty && !validDiffs.includes(q.difficulty)) {
+                const d = (q.difficulty || '').toLowerCase();
+                if (d.includes('none') || d.includes('basic')) q.difficulty = 'easy';
+                else if (d.includes('intermediate')) q.difficulty = 'medium';
+                else if (d.includes('advanced')) q.difficulty = 'hard';
+                else q.difficulty = 'medium';
+            }
+        }
+
         await interview.save();
 
         // Update user (with null checks)
@@ -794,6 +806,20 @@ Description: ${job?.description?.substring(0, 500) || 'Not provided'}`;
                 } catch (genError) {
                     console.error('[ROUND COMPLETE] Error generating question for next round:', genError);
                 }
+            }
+        }
+
+        // Sanitize any invalid difficulty values from adaptive interview data
+        // The orchestrator may have stored raw depth_level values ('basic', 'intermediate', 'advanced')
+        // instead of valid enum values ('easy', 'medium', 'hard')
+        const validDifficulties = ['easy', 'medium', 'hard'];
+        for (const q of interview.questions) {
+            if (q.difficulty && !validDifficulties.includes(q.difficulty)) {
+                const d = (q.difficulty || '').toLowerCase();
+                if (d.includes('none') || d.includes('basic')) q.difficulty = 'easy';
+                else if (d.includes('intermediate')) q.difficulty = 'medium';
+                else if (d.includes('advanced')) q.difficulty = 'hard';
+                else q.difficulty = 'medium';
             }
         }
 
