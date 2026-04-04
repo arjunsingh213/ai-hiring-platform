@@ -538,6 +538,18 @@ const AIInterview = () => {
         };
     }, []);
 
+    // Re-attach camera stream when the video element changes
+    // This happens when isVoiceActive switches from false→true after fetchInterview() resolves,
+    // causing React to swap from the regular layout's <video> to the voice-mode <video>.
+    // The new element gets videoRef but never received srcObject from startCamera().
+    useEffect(() => {
+        if (streamRef.current && videoRef.current && !videoRef.current.srcObject) {
+            console.log('📹 Re-attaching camera stream to new video element (voice mode swap)');
+            videoRef.current.srcObject = streamRef.current;
+            videoRef.current.play().catch(e => console.warn('Video re-play failed:', e));
+        }
+    }, [isVoiceActive, interview]);
+
     // Start recording when camera is ready
     useEffect(() => {
         if (streamRef.current && cameraReady && !isRecording && !completed) {
