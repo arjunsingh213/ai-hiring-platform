@@ -1,4 +1,7 @@
-/* TalkingAvatar.css */
+/* ═══════════════════════════════════════════════════════════════
+   AI VOICE ASSISTANT AVATAR — Logo + Audio-Reactive Visualizer
+   ═══════════════════════════════════════════════════════════════ */
+
 .ai-talking-avatar-container {
     display: flex;
     flex-direction: column;
@@ -8,212 +11,205 @@
     width: 100%;
     height: 100%;
     min-height: 300px;
+    user-select: none;
 }
 
-.avatar-core {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color, #4f46e5), var(--secondary-color, #8b5cf6));
-    box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
-    position: relative;
-    z-index: 10;
-    transition: all 0.3s ease;
-}
-
-/* Base states container */
-.avatar-idle,
-.avatar-speaking,
-.avatar-thinking,
-.avatar-listening {
+/* Wrapper for canvas + logo overlay */
+.avatar-visualizer-wrapper {
     position: relative;
     display: flex;
-    justify-content: center;
     align-items: center;
-    width: 250px;
-    height: 250px;
+    justify-content: center;
 }
 
-/* --- Idle Animation --- */
-.idle-animation {
-    animation: breathe 4s ease-in-out infinite;
+/* Canvas sits behind the logo */
+.avatar-spike-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
 }
 
-@keyframes breathe {
+/* ═══ LOGO CONTAINER ═══ */
+.avatar-logo-container {
+    position: relative;
+    z-index: 10;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    /* Subtle glass backdrop behind logo */
+    background: radial-gradient(circle, rgba(20, 10, 40, 0.6) 0%, rgba(10, 5, 20, 0.3) 70%, transparent 100%);
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
 
-    0%,
-    100% {
+.avatar-logo-img {
+    width: 120px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(200, 140, 255, 0.4));
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+/* ═══ STATE: IDLE — breathing ═══ */
+.avatar-logo-container.state-idle {
+    animation: logoBreathe 4s ease-in-out infinite;
+}
+
+.avatar-logo-container.state-idle .avatar-logo-img {
+    filter: drop-shadow(0 0 10px rgba(200, 140, 255, 0.3));
+}
+
+@keyframes logoBreathe {
+    0%, 100% {
         transform: scale(1);
-        box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
     }
-
     50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 35px rgba(79, 70, 229, 0.6);
+        transform: scale(1.06);
     }
 }
 
-/* --- Speaking Animation (Voice Waves) --- */
-.speaking-animation {
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    animation: speakPulse 1s ease-in-out infinite alternate;
+/* ═══ STATE: SPEAKING — vibrant pulse + glow ═══ */
+.avatar-logo-container.state-speaking {
+    animation: logoSpeakPulse 0.8s ease-in-out infinite alternate;
 }
 
-.wave {
-    position: absolute;
-    border-radius: 50%;
-    border: 2px solid rgba(59, 130, 246, 0.5);
-    opacity: 0;
-    z-index: 1;
+.avatar-logo-container.state-speaking .avatar-logo-img {
+    filter: 
+        drop-shadow(0 0 20px rgba(200, 120, 255, 0.7))
+        drop-shadow(0 0 40px rgba(139, 92, 246, 0.4))
+        brightness(1.15);
 }
 
-.wave1 {
-    width: 140px;
-    height: 140px;
-    animation: waveAnim 1.5s linear infinite;
-}
-
-.wave2 {
-    width: 140px;
-    height: 140px;
-    animation: waveAnim 1.5s linear infinite 0.5s;
-}
-
-.wave3 {
-    width: 140px;
-    height: 140px;
-    animation: waveAnim 1.5s linear infinite 1s;
-}
-
-@keyframes waveAnim {
-    0% {
-        transform: scale(1);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: scale(2);
-        opacity: 0;
-    }
-}
-
-@keyframes speakPulse {
+@keyframes logoSpeakPulse {
     0% {
         transform: scale(1);
     }
-
     100% {
-        transform: scale(1.1);
-        box-shadow: 0 0 40px rgba(59, 130, 246, 0.8);
+        transform: scale(1.08);
     }
 }
 
-/* --- Listening Animation (Subtle Ring) --- */
-.listening-animation {
-    background: linear-gradient(135deg, #10b981, #059669);
-    animation: listenGlow 2s infinite alternate;
+/* ═══ STATE: LISTENING — calm emerald glow ═══ */
+.avatar-logo-container.state-listening {
+    animation: logoListenBreathe 2.5s ease-in-out infinite;
 }
 
-.pulse-ring {
-    position: absolute;
-    width: 130px;
-    height: 130px;
-    border-radius: 50%;
-    background: rgba(16, 185, 129, 0.2);
-    animation: pulseRing 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-    z-index: 1;
+.avatar-logo-container.state-listening .avatar-logo-img {
+    filter: 
+        drop-shadow(0 0 15px rgba(52, 211, 153, 0.5))
+        drop-shadow(0 0 30px rgba(16, 185, 129, 0.3));
 }
 
-@keyframes pulseRing {
-    0% {
+@keyframes logoListenBreathe {
+    0%, 100% {
         transform: scale(1);
-        opacity: 1;
     }
-
-    100% {
-        transform: scale(1.8);
-        opacity: 0;
+    50% {
+        transform: scale(1.04);
     }
 }
 
-@keyframes listenGlow {
-    0% {
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+/* ═══ STATE: THINKING — gentle rotation ═══ */
+.avatar-logo-container.state-thinking {
+    animation: logoThink 3s ease-in-out infinite;
+}
+
+.avatar-logo-container.state-thinking .avatar-logo-img {
+    filter: 
+        drop-shadow(0 0 15px rgba(251, 191, 36, 0.5))
+        drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
+}
+
+@keyframes logoThink {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
     }
-
-    100% {
-        box-shadow: 0 0 30px rgba(16, 185, 129, 0.7);
+    25% {
+        transform: scale(1.03) rotate(2deg);
     }
-}
-
-/* --- Thinking Animation (Orbits) --- */
-.thinking-animation {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.orbit {
-    position: absolute;
-    border-radius: 50%;
-    border: 1px dashed rgba(245, 158, 11, 0.5);
-    z-index: 1;
-}
-
-.orbit1 {
-    width: 160px;
-    height: 160px;
-    animation: spin 4s linear infinite;
-}
-
-.orbit2 {
-    width: 200px;
-    height: 200px;
-    border-style: dotted;
-    animation: spin 6s linear infinite reverse;
-}
-
-@keyframes spin {
-    100% {
-        transform: rotate(360deg);
+    75% {
+        transform: scale(1.03) rotate(-2deg);
     }
 }
 
-/* Status Badge */
+/* ═══ STATUS BADGE ═══ */
 .avatar-status-badge {
     margin-top: 1.5rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: white;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-transform: uppercase;
 }
 
 .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    animation: statusPulse 2s infinite;
 }
 
 .status-dot.idle {
     background-color: #9ca3af;
+    box-shadow: 0 0 6px rgba(156, 163, 175, 0.5);
 }
 
 .status-dot.speaking {
-    background-color: #3b82f6;
-    box-shadow: 0 0 8px #3b82f6;
+    background-color: #a78bfa;
+    box-shadow: 0 0 10px #a78bfa;
+    animation: statusPulse 0.8s infinite;
 }
 
 .status-dot.listening {
-    background-color: #10b981;
-    box-shadow: 0 0 8px #10b981;
+    background-color: #34d399;
+    box-shadow: 0 0 10px #34d399;
+    animation: statusPulse 1.2s infinite;
 }
 
 .status-dot.thinking {
-    background-color: #f59e0b;
-    box-shadow: 0 0 8px #f59e0b;
+    background-color: #fbbf24;
+    box-shadow: 0 0 10px #fbbf24;
+    animation: statusPulse 1.5s infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ═══ SIZE VARIANTS ═══ */
+.ai-talking-avatar-container.size-large .avatar-logo-container {
+    width: 180px;
+    height: 180px;
+}
+
+.ai-talking-avatar-container.size-large .avatar-logo-img {
+    width: 145px;
+}
+
+.ai-talking-avatar-container.size-small .avatar-logo-container {
+    width: 100px;
+    height: 100px;
+}
+
+.ai-talking-avatar-container.size-small .avatar-logo-img {
+    width: 80px;
 }
