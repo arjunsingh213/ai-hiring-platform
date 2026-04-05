@@ -118,7 +118,8 @@
 
 /* --- [ADAPTIVE VOICE] IMMERSIVE UI STYLES --- */
 .ai-interview.adaptive-voice-mode {
-    /* Darker background for cinematic feel */
+    /* Dark Editorial Tech aesthetic — pure black, not purple */
+    background: #050507;
     color: #fff;
     height: 100vh;
     width: 100vw;
@@ -126,96 +127,127 @@
     top: 0;
     left: 0;
     z-index: 9999;
-    padding: 2rem;
+    padding: 1.5rem;
     overflow: hidden;
+    border-top: none;
+}
+
+/* Override header for voice mode */
+.ai-interview.adaptive-voice-mode .interview-header {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
 }
 
 .immersive-container {
     display: flex;
-    gap: 2rem;
-    padding: 1rem;
-    height: calc(100vh - 180px);
-    /* Fill space below header */
+    gap: 1.5rem;
+    padding: 0;
+    height: calc(100vh - 130px);
     width: 100%;
 }
 
+/* Avatar section — flexbox column: [subtitles] [avatar] [controls] */
 .avatar-section {
     flex: 2;
-    background: radial-gradient(circle at center, rgba(30, 30, 50, 0.9), rgba(10, 10, 15, 0.95)) !important;
-    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
+    justify-content: flex-start;
     position: relative;
     overflow: hidden;
-    /* box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); */
     height: 100%;
+    padding: 0;
 }
 
+/* Center area for avatar — takes remaining space */
+.avatar-center-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Subtitle bar — top of avatar section, full width, no overlap */
 .ai-subtitles {
-    position: absolute;
-    top: 20px;
-    /* Closer to top */
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
     text-align: center;
-    max-width: 90%;
-    z-index: 1000 !important;
+    z-index: 10;
     min-height: auto;
-    background: rgba(0, 0, 0, 0.75);
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: none;
     display: flex;
     flex-direction: column;
     justify-content: center;
     pointer-events: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: none;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    max-height: 140px;
+    overflow-y: auto;
 }
 
 .ai-subtitles h3 {
-    font-size: 1.2rem;
-    /* Much smaller */
+    font-size: 1rem;
     font-weight: 500;
-    line-height: 1.4;
-    color: #ffffff !important;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    letter-spacing: 0.3px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9) !important;
+    letter-spacing: 0.2px;
     margin: 0;
     display: block !important;
     visibility: visible !important;
 }
 
+/* VAD status — bottom of avatar section, not absolute */
 .vad-status {
-    position: absolute;
-    bottom: 30px;
-    /* Move to bottom */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-    transition: all 0.3s ease;
-    opacity: 0;
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    z-index: 10;
+    padding: 0.8rem;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
 }
 
-.vad-status.active {
-    opacity: 1;
+.vad-status:empty {
+    padding: 0;
+    border-top: none;
 }
 
 .listening-indicator,
 .thinking-indicator {
-    background: rgba(139, 92, 246, 0.25);
-    padding: 0.7rem 1.4rem;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 0.6rem 1.2rem;
     border-radius: 50px;
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    border: 1px solid rgba(139, 92, 246, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.3);
     backdrop-filter: blur(15px);
     transition: all 0.1s ease;
-    /* Fast transition for volume visualizer */
 }
 
 .volume-bar-container {
@@ -258,18 +290,18 @@
 }
 
 .speaking-indicator {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.7rem 1.4rem;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.6rem 1.2rem;
     border-radius: 50px;
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(15px);
 }
 
 .btn-skip-intro {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
     border: none;
     color: white;
     padding: 4px 10px;
@@ -283,12 +315,12 @@
 }
 
 .btn-skip-intro:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .listening-indicator span,
 .thinking-indicator span {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #fff;
     text-transform: uppercase;
@@ -303,7 +335,7 @@
 
 .automated-info {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     text-align: center;
     margin-bottom: 0.8rem;
     font-style: italic;
@@ -314,10 +346,10 @@
 }
 
 .realtime-transcript-display {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     padding: 1rem;
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     color: #cbd5e1;
     font-size: 0.9rem;
     line-height: 1.5;
@@ -326,9 +358,9 @@
 }
 
 .candidate-transcript {
-    margin-top: 1rem;
-    color: var(--accent);
-    font-size: 1.1rem;
+    margin-top: 0.5rem;
+    color: #a78bfa;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -344,12 +376,11 @@
 
 .mini-video-container {
     height: 350px;
-    background: #000 !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
     position: relative;
     overflow: hidden;
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
 }
@@ -367,15 +398,16 @@
 
 .voice-controls {
     height: 180px;
-    /* Fixed height for transcription */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
-    background: rgba(10, 10, 15, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: 16px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
 }
 
 .pulse-btn {

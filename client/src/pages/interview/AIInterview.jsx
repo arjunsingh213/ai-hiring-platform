@@ -1513,7 +1513,22 @@ const AIInterview = () => {
 
                     {/* Left Column: Avatar & AI text */}
                     <div className="avatar-section card-glass">
-                        {/* Status Indicator */}
+                        {/* Subtitle bar at top — full width, no overlap with logo */}
+                        <div className="ai-subtitles">
+                            <h3>{voiceMode.currentQuestionText || "Connecting..."}</h3>
+                            {voiceMode.partialTranscript && (
+                                <p className="candidate-transcript">
+                                    <Icons.mic /> <i>{voiceMode.partialTranscript}</i>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Avatar in center — takes remaining space */}
+                        <div className="avatar-center-area">
+                            <TalkingAvatar state={voiceMode.avatarState} size="large" />
+                        </div>
+
+                        {/* Status controls at bottom */}
                         <div className={`vad-status ${voiceMode.isSpeaking ? 'active' : ''}`}>
                             {voiceMode.avatarState === 'listening' ? (
                                 <div className="listening-indicator" style={{
@@ -1549,17 +1564,6 @@ const AIInterview = () => {
                                 </div>
                             ) : null}
                         </div>
-
-                        <div className="ai-subtitles">
-                            <h3>{voiceMode.currentQuestionText || "Connecting..."}</h3>
-                            {voiceMode.partialTranscript && (
-                                <p className="candidate-transcript">
-                                    <Icons.mic /> <i>{voiceMode.partialTranscript}</i>
-                                </p>
-                            )}
-                        </div>
-
-                        <TalkingAvatar state={voiceMode.avatarState} size="large" />
                     </div>
 
                     {/* Right Column: Controls & Camera */}
