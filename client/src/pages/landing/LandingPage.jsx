@@ -366,17 +366,19 @@ const LandingPage = () => {
                 See how it works <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="lg:w-1/2 w-full h-[400px] liquid-glass rounded-2xl overflow-hidden border border-white/5 relative flex items-center justify-center">
-              {/* Fake UI mockup */}
-              <div className="w-64 h-80 rounded-2xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md p-6 flex flex-col items-center gap-6">
-                <img
-                  src="/verification_badge_3d.png"
-                  alt="AI Talent Passport Badge"
-                  className="w-32 h-32 object-contain mix-blend-screen drop-shadow-[0_0_25px_rgba(100,50,255,0.4)]"
-                />
-
-                <div className="w-full h-8 rounded-full bg-success/20 border border-success/30 flex items-center justify-center text-[10px] text-success font-bold uppercase tracking-widest">Verified Badge</div>
-              </div>
+            <div className="lg:w-1/2 w-full h-[400px] liquid-glass rounded-2xl overflow-hidden border border-white/5 relative flex items-center justify-center bg-black">
+              {/* Added verified badge video covering the box */}
+              <video
+                src="/verified-badge-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ transform: "translateZ(0)" }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent mix-blend-overlay pointer-events-none"></div>
             </div>
           </div>
         </section>
