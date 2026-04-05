@@ -704,24 +704,23 @@ const OnboardingInterview = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    {/* AI Avatar & Status */}
+                    {/* AI Avatar — Froscel Logo */}
                     <div className="ai-interviewer-section">
-                        <div className={`ai-avatar ${voiceMode.avatarState}`}>
-                            <div className="avatar-ring">
-                                <div className="avatar-icon">
-                                    {voiceMode.avatarState === 'speaking' ? <Volume2 size={28} /> :
-                                        voiceMode.avatarState === 'listening' ? <Ear size={28} /> :
-                                            voiceMode.avatarState === 'thinking' ? <CircleDot size={28} className="pulse-icon" /> :
-                                                <Bot size={28} />}
-                                </div>
-                            </div>
-                            <span className="avatar-label">
-                                {voiceMode.avatarState === 'speaking' ? 'AI Speaking...' :
-                                    voiceMode.avatarState === 'listening' ? 'Listening to you...' :
-                                        voiceMode.avatarState === 'thinking' ? 'Processing...' :
-                                            voiceMode.status === 'connecting' ? 'Connecting...' : 'AI Interviewer'}
-                            </span>
+                        <div className={`ai-logo-avatar ${voiceMode.avatarState}`}>
+                            <div className="logo-glow-ring"></div>
+                            <img
+                                src="/ai-avatar-logo.png"
+                                alt="AI Interviewer"
+                                className="ai-logo-img"
+                                draggable={false}
+                            />
                         </div>
+                        <span className="avatar-label">
+                            {voiceMode.avatarState === 'speaking' ? 'AI Speaking...' :
+                                voiceMode.avatarState === 'listening' ? 'Listening to you...' :
+                                    voiceMode.avatarState === 'thinking' ? 'Processing...' :
+                                        voiceMode.status === 'connecting' ? 'Connecting...' : 'AI Interviewer'}
+                        </span>
 
                         {/* Volume indicator when user is speaking */}
                         {voiceMode.avatarState === 'listening' && (

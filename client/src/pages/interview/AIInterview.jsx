@@ -1499,7 +1499,7 @@ const AIInterview = () => {
                         {job && <p className="job-context">{job.title}</p>}
                     </div>
                     <div className="header-right">
-                        <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+                        <div className="timer"><Icons.clock /> {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
                         <button className="btn btn-secondary btn-sm" onClick={async () => {
                             if (window.confirm('Exit interview? Your progress was automatically saved.')) {
                                 stopCamera();
@@ -1638,7 +1638,7 @@ const AIInterview = () => {
                     </p>
                 </div>
                 <div className="header-right">
-                    <div className="timer">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+                    <div className="timer"><Icons.clock /> {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
                     <button className="btn btn-secondary btn-sm" onClick={async () => {
                         if (window.confirm('Are you sure you want to exit? Your progress will be saved, but this session will end.')) {
                             setSubmitting(true);

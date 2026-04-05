@@ -439,9 +439,8 @@
     gap: 8px;
 }
 
-.timer::before {
-    content: '⏱️';
-}
+
+
 
 .timer.warning {
     background: linear-gradient(135deg, #dc2626, #991b1b);
@@ -2330,121 +2329,122 @@
     padding: 20px 0;
 }
 
-.ai-avatar {
+/* AI Logo Avatar — Froscel logo replaces the circle+icon */
+.ai-logo-avatar {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
 }
 
-.avatar-ring {
+.ai-logo-img {
     width: 80px;
-    height: 80px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(200, 140, 255, 0.3));
+    transition: filter 0.3s ease, transform 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+/* Glow ring behind the logo */
+.logo-glow-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(30, 41, 59, 0.8);
-    border: 3px solid rgba(99, 102, 241, 0.3);
-    transition: all 0.4s ease;
+    border: 2px solid rgba(167, 139, 250, 0.2);
+    z-index: 1;
+    transition: all 0.3s ease;
 }
 
-.ai-avatar.speaking .avatar-ring {
-    border-color: #10b981;
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
-    animation: avatarSpeaking 1.5s ease-in-out infinite;
+/* Idle: gentle breathing */
+.ai-logo-avatar.idle .ai-logo-img,
+.ai-logo-avatar .ai-logo-img {
+    animation: logoBreatheDomain 4s ease-in-out infinite;
 }
 
-.ai-avatar.listening .avatar-ring {
-    border-color: #3b82f6;
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
-    animation: avatarListening 2s ease-in-out infinite;
+@keyframes logoBreatheDomain {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
 }
 
-@keyframes avatarSpeaking {
-
-    0%,
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-    }
-
-    50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
-    }
+.ai-logo-avatar.idle .logo-glow-ring,
+.ai-logo-avatar:not(.speaking):not(.listening):not(.thinking) .logo-glow-ring {
+    border-color: rgba(167, 139, 250, 0.15);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.1);
 }
 
-@keyframes avatarListening {
-
-    0%,
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-    }
-
-    50% {
-        transform: scale(1.03);
-        box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
-    }
+/* Speaking: vibrant pulse + neon glow */
+.ai-logo-avatar.speaking .ai-logo-img {
+    animation: logoSpeakDomain 0.6s ease-in-out infinite alternate;
+    filter: 
+        drop-shadow(0 0 20px rgba(200, 120, 255, 0.7))
+        drop-shadow(0 0 40px rgba(139, 92, 246, 0.4))
+        brightness(1.15);
 }
 
-.avatar-icon {
-    font-size: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #a5b4fc;
+.ai-logo-avatar.speaking .logo-glow-ring {
+    border-color: rgba(200, 120, 255, 0.5);
+    box-shadow: 0 0 30px rgba(200, 120, 255, 0.3), 0 0 60px rgba(139, 92, 246, 0.15);
+    animation: ringPulseSpeaking 0.8s ease-in-out infinite alternate;
 }
 
-.ai-avatar.speaking .avatar-icon {
-    color: #34d399;
+@keyframes logoSpeakDomain {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
 }
 
-.ai-avatar.listening .avatar-icon {
-    color: #60a5fa;
+@keyframes ringPulseSpeaking {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
 }
 
-.ai-avatar.thinking .avatar-ring {
-    border-color: #f59e0b;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
-    animation: avatarThinking 1.2s ease-in-out infinite;
+/* Listening: calm emerald glow */
+.ai-logo-avatar.listening .ai-logo-img {
+    animation: logoListenDomain 2.5s ease-in-out infinite;
+    filter: 
+        drop-shadow(0 0 15px rgba(52, 211, 153, 0.5))
+        drop-shadow(0 0 30px rgba(16, 185, 129, 0.3));
 }
 
-.ai-avatar.thinking .avatar-icon {
-    color: #fbbf24;
+.ai-logo-avatar.listening .logo-glow-ring {
+    border-color: rgba(52, 211, 153, 0.4);
+    box-shadow: 0 0 25px rgba(52, 211, 153, 0.2);
+    animation: ringPulseListening 2s ease-in-out infinite;
 }
 
-@keyframes avatarThinking {
-
-    0%,
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
-    }
-
-    50% {
-        transform: scale(1.02);
-        box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
-    }
+@keyframes logoListenDomain {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
 }
 
-.pulse-icon {
-    animation: pulseRotate 1.5s ease-in-out infinite;
+@keyframes ringPulseListening {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
 }
 
-@keyframes pulseRotate {
-    0% {
-        opacity: 0.6;
-    }
+/* Thinking: amber wobble */
+.ai-logo-avatar.thinking .ai-logo-img {
+    animation: logoThinkDomain 3s ease-in-out infinite;
+    filter: 
+        drop-shadow(0 0 15px rgba(251, 191, 36, 0.5))
+        drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
+}
 
-    50% {
-        opacity: 1;
-    }
+.ai-logo-avatar.thinking .logo-glow-ring {
+    border-color: rgba(251, 191, 36, 0.3);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.15);
+}
 
-    100% {
-        opacity: 0.6;
-    }
+@keyframes logoThinkDomain {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.03) rotate(2deg); }
+    75% { transform: scale(1.03) rotate(-2deg); }
 }
 
 .avatar-label {
@@ -2725,18 +2725,12 @@
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8) !important;
 }
 
-.onboarding-interview .avatar-ring {
-    border-color: rgba(255, 255, 255, 0.2) !important;
-}
-.onboarding-interview .avatar-ring::before,
-.onboarding-interview .avatar-ring::after {
+.onboarding-interview .ai-logo-avatar .logo-glow-ring {
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.onboarding-interview .avatar-icon {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1) !important;
+.onboarding-interview .ai-logo-avatar .ai-logo-img {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.15)) !important;
 }
 
 .onboarding-interview .user-transcript {
