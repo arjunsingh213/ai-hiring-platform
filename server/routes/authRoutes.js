@@ -184,6 +184,16 @@ router.post('/verify-email', async (req, res) => {
         user.verificationToken = undefined;
         await user.save();
 
+        // Send welcome email
+        const { sendWelcomeEmail } = require('../services/emailService');
+        const EmailLog = require('../models/EmailLog');
+        await sendWelcomeEmail(user);
+        await EmailLog.create({
+            userId: user._id,
+            emailType: 'welcome',
+            subject: 'Welcome to AI Hiring Platform - Froscel! 🎉'
+        }).catch(err => console.error('Failed to log welcome email:', err));
+
         // Generate JWT token
         const jwtToken = jwt.sign(
             { userId: user._id, role: user.role },

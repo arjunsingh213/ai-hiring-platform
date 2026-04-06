@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 
 const Admin = require('../models/Admin');
 const AuditLog = require('../models/AuditLog');
+const EmailLog = require('../models/EmailLog');
 const googleSheetService = require('../services/googleSheetService');
 const Interview = require('../models/Interview');
 const User = require('../models/User');
@@ -2679,6 +2680,67 @@ router.post('/users/bulk-email', adminAuth, requirePermission('view_users'), asy
     } catch (error) {
         console.error('Bulk email error:', error);
         res.status(500).json({ success: false, error: 'Failed to send bulk email.' });
+    }
+});
+
+/**
+ * GET /api/admin/campaign-logs
+ * Fetch engagement campaign email logs
+ */
+router.get('/campaign-logs', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const { page = 1, limit = 50, emailType } = req.query;
+        const query = {};
+        
+        if (emailType) {
+            query.emailType = emailType;
+        }
+
+        const logs = await EmailLog.find(query)
+            .sort({ sentAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .populate('userId', 'email profile.name')
+            .lean();
+            
+        const total = await EmailLog.countDocuments(query);
+        
+        res.json({
+            success: true,
+            data: {
+                logs,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Fetch campaign logs error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch campaign logs' });
+    }
+});
+
+/**
+ * GET /api/admin/campaign-stats
+ * Get counts by email type
+ */
+router.get('/campaign-stats', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const stats = await EmailLog.aggregate([
+            {
+                $group: {
+                    _id: '$emailType',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        res.json({ success: true, data: stats });
+    } catch (error) {
+        console.error('Fetch campaign stats error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch campaign stats' });
     }
 });
 

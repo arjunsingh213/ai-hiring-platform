@@ -291,9 +291,97 @@ The Froscel Team
     return sendEmail({ to: candidateEmail, subject, text, html });
 }
 
+/**
+ * Send Welcome Email
+ */
+async function sendWelcomeEmail(user) {
+    const subject = 'Welcome to AI Hiring Platform - Froscel! 🎉';
+    const loginLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/auth`;
+    const text = `Hi ${user.profile?.name || 'there'},\n\nWelcome to Froscel! We're excited to have you on board. You can now login and explore opportunities.\n\nLogin here: ${loginLink}\n\nBest,\nThe Froscel Team`;
+    
+    return sendEmail({
+        to: user.email,
+        subject,
+        text,
+        html: `<div style="font-family:Arial; padding: 20px;">
+                <h1 style="color:#6366f1;">Welcome to Froscel! 🎉</h1>
+                <p>Hi ${user.profile?.name || 'there'},</p>
+                <p>We're thrilled to have you join our AI Hiring Platform. Setup your profile to unleash the true power of AI in hiring!</p>
+                <a href="${loginLink}" style="display:inline-block; padding:10px 20px; background:#6366f1; color:white; text-decoration:none; border-radius:5px;">Get Started</a>
+               </div>`
+    });
+}
+
+/**
+ * Send Incomplete Profile Email
+ */
+async function sendIncompleteProfileEmail(user) {
+    const subject = 'Complete your profile to stand out! 🌟';
+    const profileLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/onboarding`;
+    const text = `Hi ${user.profile?.name || 'there'},\n\nDid you know candidates with complete profiles receive 3x more recruiters reachout? Complete your profile today to stand out.\n\nComplete Profile: ${profileLink}\n\nBest,\nThe Froscel Team`;
+    
+    return sendEmail({
+        to: user.email,
+        subject,
+        text,
+        html: `<div style="font-family:Arial; padding: 20px;">
+                <h1 style="color:#6366f1;">Stand out from the crowd 🌟</h1>
+                <p>Hi ${user.profile?.name || 'there'},</p>
+                <p>Did you know candidates with complete profiles receive 3x more recruiter interest? Take just 2 minutes to fill in your missing details and boost your visibility!</p>
+                <a href="${profileLink}" style="display:inline-block; padding:10px 20px; background:#6366f1; color:white; text-decoration:none; border-radius:5px;">Complete Profile</a>
+               </div>`
+    });
+}
+
+/**
+ * Send Half-Baked Interview Reminder
+ */
+async function sendHalfBakedInterviewEmail(user, roleName) {
+    const subject = `Incomplete Interview for ${roleName || 'your recent application'} ⚠️`;
+    const interviewLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/interviews`;
+    const text = `Hi ${user.profile?.name || 'there'},\n\nYou started an interview for ${roleName || 'a role'} but didn't complete it. Finish it before the deadline!\n\nResume Interview: ${interviewLink}\n\nBest,\nThe Froscel Team`;
+    
+    return sendEmail({
+        to: user.email,
+        subject,
+        text,
+        html: `<div style="font-family:Arial; padding: 20px;">
+                <h2 style="color:#eab308;">You left your interview half-way!</h2>
+                <p>Hi ${user.profile?.name || 'there'},</p>
+                <p>We noticed you haven't completed your interview for <strong>${roleName || 'your recent application'}</strong>. To be considered for the selection process, you must complete the interview!</p>
+                <a href="${interviewLink}" style="display:inline-block; padding:10px 20px; background:#eab308; color:white; text-decoration:none; border-radius:5px;">Resume Interview</a>
+               </div>`
+    });
+}
+
+/**
+ * Send Inactive User Email
+ */
+async function sendInactiveUserEmail(user) {
+    const subject = 'We miss you at Froscel 🚀';
+    const homeLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/dashboard`;
+    const text = `Hi ${user.profile?.name || 'there'},\n\nWe haven't seen you around lately! Explore new AI-matched jobs on your dashboard.\n\nExplore Jobs: ${homeLink}\n\nBest,\nThe Froscel Team`;
+    
+    return sendEmail({
+        to: user.email,
+        subject,
+        text,
+        html: `<div style="font-family:Arial; padding: 20px;">
+                <h1 style="color:#6366f1;">New Opportunities Await 🚀</h1>
+                <p>Hi ${user.profile?.name || 'there'},</p>
+                <p>We haven't seen you around recently! Your personalized AI-matched jobs are waiting for you.</p>
+                <a href="${homeLink}" style="display:inline-block; padding:10px 20px; background:#6366f1; color:white; text-decoration:none; border-radius:5px;">Explore Jobs</a>
+               </div>`
+    });
+}
+
 module.exports = {
     sendEmail,
     sendInterviewReminderEmail,
     sendRetryReminderEmail,
-    sendVideoInterviewInvitation
+    sendVideoInterviewInvitation,
+    sendWelcomeEmail,
+    sendIncompleteProfileEmail,
+    sendHalfBakedInterviewEmail,
+    sendInactiveUserEmail
 };

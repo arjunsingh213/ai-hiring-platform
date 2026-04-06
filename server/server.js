@@ -248,6 +248,8 @@ if (process.env.NODE_ENV !== 'production') {
         try {
             const { scheduleSkillDecay } = require('./jobs/skillDecay');
             scheduleSkillDecay();
+            const { scheduleEngagementCampaign } = require('./jobs/engagementCampaign');
+            scheduleEngagementCampaign();
         } catch (err) {
             console.log('⚠️ Skill decay cron not started:', err.message);
         }
