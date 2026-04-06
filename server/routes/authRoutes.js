@@ -170,7 +170,15 @@ router.post('/verify-email', async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ verificationToken: token });
+        // Atomically find and consume the token to prevent race conditions (double clicks, scanners, React StrictMode)
+        const user = await User.findOneAndUpdate(
+            { verificationToken: token },
+            { 
+                $set: { isVerified: true },
+                $unset: { verificationToken: 1 }
+            },
+            { new: false } // Returns the document AS IT WAS BEFORE the update
+        );
 
         if (!user) {
             return res.status(400).json({
@@ -178,11 +186,6 @@ router.post('/verify-email', async (req, res) => {
                 error: 'Invalid or expired verification link'
             });
         }
-
-        // Verify user
-        user.isVerified = true;
-        user.verificationToken = undefined;
-        await user.save();
 
         // Send welcome email
         const { sendWelcomeEmail } = require('../services/emailService');
