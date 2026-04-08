@@ -18,7 +18,8 @@ const userActivitySchema = new mongoose.Schema({
             'UPDATE_PROFILE',
             'LOGIN',
             'LOGOUT',
-            'HEARTBEAT' // For time tracking
+            'HEARTBEAT', // For time tracking
+            'EMAIL_CAMPAIGN_VISIT'
         ]
     },
     feature: {

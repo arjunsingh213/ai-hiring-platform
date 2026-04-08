@@ -108,6 +108,28 @@ export const useActivityTracker = () => {
     useEffect(() => {
         const feature = getFeatureFromPath(location.pathname);
         logActivity('PAGE_VIEW', feature);
+
+        // Handle URL-based tracking (like Email Campaigns)
+        const params = new URLSearchParams(location.search);
+        if (params.get('source') === 'email_campaign') {
+            const campType = params.get('type') || 'unknown';
+            sessionStorage.setItem('pending_email_tracking', campType);
+        }
+    }, [location.pathname, location.search]);
+
+    // Process pending tracking events when token becomes available (e.g. after login)
+    useEffect(() => {
+        const checkPendingTracking = async () => {
+            const token = localStorage.getItem('token');
+            const pendingTracking = sessionStorage.getItem('pending_email_tracking');
+            
+            if (token && pendingTracking) {
+                await logActivity('EMAIL_CAMPAIGN_VISIT', 'Email Campaign', { campaignType: pendingTracking });
+                sessionStorage.removeItem('pending_email_tracking');
+            }
+        };
+
+        checkPendingTracking();
     }, [location.pathname]);
 
     // Heartbeat for time spent tracking — reports which page user is currently on

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/jobseeker/Sidebar';
 import MobileNav from '../../components/MobileNav';
 import TopNav from '../../components/TopNav';
@@ -17,14 +17,35 @@ import JobDetailsPage from './JobDetailsPage';
 import './JobSeekerDashboard.css';
 
 const JobSeekerDashboard = () => {
-    const [isCollapsed, setIsCollapsed] = React.useState(localStorage.getItem('sidebar-collapsed') === 'true');
+    const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('sidebar-collapsed') === 'true');
+    const [showProfilePrompt, setShowProfilePrompt] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
 
-    React.useEffect(() => {
+    useEffect(() => {
         const handleToggle = (e) => setIsCollapsed(e.detail);
         window.addEventListener('sidebar-toggle', handleToggle);
         return () => window.removeEventListener('sidebar-toggle', handleToggle);
     }, []);
+
+    useEffect(() => {
+        try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (!user.isOnboardingComplete) {
+                    const hasPrompted = sessionStorage.getItem('profilePromptShown');
+                    if (!hasPrompted) {
+                        // Small delay for better UX
+                        setTimeout(() => setShowProfilePrompt(true), 1500);
+                        sessionStorage.setItem('profilePromptShown', 'true');
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error checking profile completion:', e);
+        }
+    }, [location.pathname]);
 
     return (
         <div className="dashboard" style={{ '--sidebar-width': isCollapsed ? '80px' : '240px' }}>
@@ -47,6 +68,27 @@ const JobSeekerDashboard = () => {
                 </Routes>
             </div>
             <MobileNav />
+
+            {/* Incomplete Profile Prompt Modal */}
+            {showProfilePrompt && (
+                <div className="profile-prompt-modal-overlay">
+                    <div className="profile-prompt-card card-glass">
+                        <div className="prompt-icon">🚀</div>
+                        <h3>Stand out from the crowd!</h3>
+                        <p>Did you know candidates with complete profiles receive 3x more recruiter interest? 
+                           Take just 2 minutes to fill in your missing details.</p>
+                        <div className="prompt-actions">
+                            <button className="btn btn-primary" onClick={() => {
+                                setShowProfilePrompt(false);
+                                navigate('/jobseeker/profile');
+                            }}>Complete Profile Now</button>
+                            <button className="btn btn-secondary" onClick={() => setShowProfilePrompt(false)}>
+                                Maybe Later
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

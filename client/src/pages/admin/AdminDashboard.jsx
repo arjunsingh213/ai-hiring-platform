@@ -7,6 +7,7 @@ import {
 import InterviewQueue from './InterviewQueue';
 import InterviewDetail from './InterviewDetail';
 import AuditLogs from './AuditLogs';
+import AppActivity from './AppActivity';
 import UserControl from './UserControl';
 import AdminAdmins from './ManageAdmins';
 import AdminFeedbacks from './AdminFeedbacks';
@@ -147,6 +148,12 @@ const AdminDashboard = () => {
                         </svg>
                         <span>Audit Logs</span>
                     </NavLink>
+                    <NavLink to="/admin/app-activity" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
+                        <span>App Activity</span>
+                    </NavLink>
                     <NavLink to="/admin/campaigns" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -223,6 +230,7 @@ const AdminDashboard = () => {
                     <Route path="flagged" element={<InterviewQueue flaggedOnly />} />
                     <Route path="users" element={<UserControl />} />
                     <Route path="audit-logs" element={<AuditLogs />} />
+                    <Route path="app-activity" element={<AppActivity />} />
                     <Route path="campaigns" element={<AdminCampaigns />} />
                     <Route path="admins" element={<AdminAdmins />} />
                     <Route path="feedbacks" element={<AdminFeedbacks />} />

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 
 const Admin = require('../models/Admin');
 const AuditLog = require('../models/AuditLog');
+const UserActivity = require('../models/UserActivity');
 const EmailLog = require('../models/EmailLog');
 const googleSheetService = require('../services/googleSheetService');
 const Interview = require('../models/Interview');
@@ -1611,6 +1612,50 @@ router.get('/audit-logs', adminAuth, requirePermission('view_audit_logs'), async
         res.status(500).json({
             success: false,
             error: 'Failed to fetch audit logs'
+        });
+    }
+});
+
+/**
+ * GET /api/admin/user-activities
+ * Get user activity logs
+ */
+router.get('/user-activities', adminAuth, requirePermission('view_audit_logs'), async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const skip = (page - 1) * limit;
+
+        let query = {};
+        if (req.query.action) query.action = req.query.action;
+        if (req.query.feature) query.feature = req.query.feature;
+        
+        const activitiesQuery = UserActivity.find(query)
+            .populate('userId', 'name email role')
+            .sort({ timestamp: -1 });
+
+        const [activities, total] = await Promise.all([
+            activitiesQuery.skip(skip).limit(limit),
+            UserActivity.countDocuments(query)
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                activities,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Failed to fetch user activities:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch user activities'
         });
     }
 });

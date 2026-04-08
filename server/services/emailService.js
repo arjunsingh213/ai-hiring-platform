@@ -296,7 +296,7 @@ The Froscel Team
  */
 async function sendWelcomeEmail(user) {
     const subject = 'Welcome to AI Hiring Platform - Froscel! 🎉';
-    const loginLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/auth`;
+    const loginLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?source=email_campaign&type=welcome`;
     const text = `Hi ${user.profile?.name || 'there'},\n\nWelcome to Froscel! We're excited to have you on board. You can now login and explore opportunities.\n\nLogin here: ${loginLink}\n\nBest,\nThe Froscel Team`;
     
     return sendEmail({
@@ -317,7 +317,7 @@ async function sendWelcomeEmail(user) {
  */
 async function sendIncompleteProfileEmail(user) {
     const subject = 'Complete your profile to stand out! 🌟';
-    const profileLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/onboarding`;
+    const profileLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?source=email_campaign&type=incomplete_profile`;
     const text = `Hi ${user.profile?.name || 'there'},\n\nDid you know candidates with complete profiles receive 3x more recruiters reachout? Complete your profile today to stand out.\n\nComplete Profile: ${profileLink}\n\nBest,\nThe Froscel Team`;
     
     return sendEmail({
@@ -338,7 +338,7 @@ async function sendIncompleteProfileEmail(user) {
  */
 async function sendHalfBakedInterviewEmail(user, roleName) {
     const subject = `Incomplete Interview for ${roleName || 'your recent application'} ⚠️`;
-    const interviewLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/interviews`;
+    const interviewLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?source=email_campaign&type=half_baked_interview`;
     const text = `Hi ${user.profile?.name || 'there'},\n\nYou started an interview for ${roleName || 'a role'} but didn't complete it. Finish it before the deadline!\n\nResume Interview: ${interviewLink}\n\nBest,\nThe Froscel Team`;
     
     return sendEmail({
@@ -359,7 +359,7 @@ async function sendHalfBakedInterviewEmail(user, roleName) {
  */
 async function sendInactiveUserEmail(user) {
     const subject = 'We miss you at Froscel 🚀';
-    const homeLink = `${process.env.FRONTEND_URL || 'https://www.froscel.com'}/dashboard`;
+    const homeLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?source=email_campaign&type=inactive_user`;
     const text = `Hi ${user.profile?.name || 'there'},\n\nWe haven't seen you around lately! Explore new AI-matched jobs on your dashboard.\n\nExplore Jobs: ${homeLink}\n\nBest,\nThe Froscel Team`;
     
     return sendEmail({
