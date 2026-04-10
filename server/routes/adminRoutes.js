@@ -21,7 +21,8 @@ const AIUsage = require('../models/AIUsage');
 const Job = require('../models/Job');
 const Notification = require('../models/Notification');
 const Resume = require('../models/Resume');
-const { sendJobInvitationEmail } = require('../utils/email');
+const emailUtils = require('../utils/email');
+const emailService = require('../services/emailService');
 const aiUsageService = require('../services/ai/aiUsageService');
 
 // ==================== AUTHENTICATION ====================
@@ -1629,6 +1630,7 @@ router.get('/user-activities', adminAuth, requirePermission('view_audit_logs'), 
         let query = {};
         if (req.query.action) query.action = req.query.action;
         if (req.query.feature) query.feature = req.query.feature;
+        if (req.query.userId) query.userId = req.query.userId;
         
         const activitiesQuery = UserActivity.find(query)
             .populate('userId', 'name email role')
@@ -1657,6 +1659,61 @@ router.get('/user-activities', adminAuth, requirePermission('view_audit_logs'), 
             success: false,
             error: 'Failed to fetch user activities'
         });
+    }
+});
+
+/**
+ * GET /api/admin/active-users
+ * Get summary of users with recent activity
+ */
+router.get('/active-users', adminAuth, requirePermission('view_audit_logs'), async (req, res) => {
+    try {
+        const { limit = 50 } = req.query;
+
+        const activeUsers = await UserActivity.aggregate([
+            { $sort: { timestamp: -1 } },
+            {
+                $group: {
+                    _id: '$userId',
+                    totalActions: { $sum: 1 },
+                    lastActive: { $first: '$timestamp' },
+                    lastAction: { $first: '$action' },
+                    lastFeature: { $first: '$feature' },
+                    lastPage: { $first: '$page' }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            { $unwind: '$user' },
+            {
+                $project: {
+                    totalActions: 1,
+                    lastActive: 1,
+                    lastAction: 1,
+                    lastFeature: 1,
+                    lastPage: 1,
+                    'user.profile.name': 1,
+                    'user.email': 1,
+                    'user.role': 1
+                }
+            },
+            { $sort: { lastActive: -1 } },
+            { $limit: parseInt(limit) }
+        ]);
+
+        res.json({
+            success: true,
+            data: activeUsers
+        });
+    } catch (error) {
+        console.error('Failed to fetch active users:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch active users' });
     }
 });
 
@@ -2786,6 +2843,100 @@ router.get('/campaign-stats', adminAuth, requirePermission('view_users'), async 
     } catch (error) {
         console.error('Fetch campaign stats error:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch campaign stats' });
+    }
+});
+
+/**
+ * POST /api/admin/campaigns/send-test-email
+ * Send a specific test email template to a provided email address
+ */
+router.post('/campaigns/send-test-email', adminAuth, requirePermission('view_users'), async (req, res) => {
+    try {
+        const { email, templateId } = req.body;
+
+        if (!email || !templateId) {
+            return res.status(400).json({ success: false, error: 'Email and Template ID are required' });
+        }
+
+        const mockUser = {
+            email,
+            profile: { name: 'Test User' },
+            platformInterview: { 
+                retryAfter: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                score: 65 
+            },
+            recruiterProfile: { companyName: 'Mock Company' }
+        };
+
+        const mockJob = {
+            _id: 'mock_job_123',
+            title: 'Senior Software Engineer',
+            company: { name: 'Tech Innovations' },
+            description: 'This is a mock job description for testing purposes.'
+        };
+
+        let result;
+
+        switch (templateId) {
+            case 'welcome':
+                result = await emailService.sendWelcomeEmail(mockUser);
+                break;
+            case 'incomplete_profile':
+                result = await emailService.sendIncompleteProfileEmail(mockUser);
+                break;
+            case 'half_baked_interview':
+                result = await emailService.sendHalfBakedInterviewEmail(mockUser, 'Full Stack Developer');
+                break;
+            case 'inactive_user':
+                result = await emailService.sendInactiveUserEmail(mockUser);
+                break;
+            case 'interview_reminder':
+                result = await emailService.sendInterviewReminderEmail(mockUser);
+                break;
+            case 'retry_reminder':
+                result = await emailService.sendRetryReminderEmail(mockUser);
+                break;
+            case 'video_invitation':
+                result = await emailService.sendVideoInterviewInvitation({
+                    candidateEmail: email,
+                    candidateName: 'Test Candidate',
+                    recruiterName: 'Admin Tester',
+                    jobTitle: 'Frontend Architect',
+                    scheduledAt: new Date(Date.now() + 86400000),
+                    duration: 45,
+                    roomCode: 'TEST-ROOM-101',
+                    roomLink: '/interview-room/TEST-ROOM-101'
+                });
+                break;
+            case 'verification':
+                await emailUtils.sendVerificationEmail(mockUser, 'mock_token_123');
+                result = { success: true };
+                break;
+            case 'password_reset':
+                await emailUtils.sendPasswordResetOTP(mockUser, '123456');
+                result = { success: true };
+                break;
+            case 'work_email_otp':
+                await emailUtils.sendWorkEmailOTP(mockUser, email, '654321');
+                result = { success: true };
+                break;
+            case 'job_invitation':
+                await emailUtils.sendJobInvitationEmail(mockUser, mockJob);
+                result = { success: true };
+                break;
+            default:
+                return res.status(400).json({ success: false, error: 'Invalid template ID' });
+        }
+
+        if (result && result.success === false) {
+            return res.status(500).json({ success: false, error: result.error || 'Failed to send email' });
+        }
+
+        res.json({ success: true, message: `Test email (${templateId}) sent to ${email}` });
+
+    } catch (error) {
+        console.error('Send test email error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error while sending test email' });
     }
 });
 

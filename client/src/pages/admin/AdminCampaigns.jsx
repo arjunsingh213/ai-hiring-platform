@@ -11,6 +11,10 @@ const AdminCampaigns = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [filterType, setFilterType] = useState('');
+    const [testEmail, setTestEmail] = useState('arjunsingh73308@gmail.com');
+    const [selectedTemplate, setSelectedTemplate] = useState('welcome');
+    const [sendingTest, setSendingTest] = useState(false);
+    const [testMessage, setTestMessage] = useState({ text: '', type: '' });
 
     useEffect(() => {
         fetchDashboardData();
@@ -46,6 +50,45 @@ const AdminCampaigns = () => {
         }
     };
 
+    const handleSendTestEmail = async () => {
+        if (!testEmail) {
+            setTestMessage({ text: 'Please enter an email address', type: 'error' });
+            return;
+        }
+
+        setSendingTest(true);
+        setTestMessage({ text: '', type: '' });
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch(`${API_URL}/admin/campaigns/send-test-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    email: testEmail,
+                    templateId: selectedTemplate
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setTestMessage({ text: `Success! ${selectedTemplate} email sent to ${testEmail}`, type: 'success' });
+            } else {
+                setTestMessage({ text: data.error || 'Failed to send test email', type: 'error' });
+            }
+        } catch (err) {
+            console.error('Test email error:', err);
+            setTestMessage({ text: 'Network error while sending test email', type: 'error' });
+        } finally {
+            setSendingTest(false);
+            // Clear message after 5 seconds
+            setTimeout(() => setTestMessage({ text: '', type: '' }), 5000);
+        }
+    };
+
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleString('en-US', {
             month: 'short', day: 'numeric', year: 'numeric',
@@ -70,8 +113,56 @@ const AdminCampaigns = () => {
     return (
         <div className="admin-campaigns-container">
             <div className="campaigns-header">
-                <h2>Engagement Campaigns</h2>
-                <p>Track automated emails sent to re-engage users.</p>
+                <div>
+                    <h2>Engagement Campaigns</h2>
+                    <p>Track automated emails sent to re-engage users.</p>
+                </div>
+                
+                <div className="test-email-card">
+                    <h4>Test Email System</h4>
+                    <div className="test-email-controls">
+                        <input 
+                            type="email" 
+                            className="test-email-input"
+                            value={testEmail}
+                            onChange={(e) => setTestEmail(e.target.value)}
+                            placeholder="Recipient Email"
+                        />
+                        <select 
+                            className="test-template-select"
+                            value={selectedTemplate}
+                            onChange={(e) => setSelectedTemplate(e.target.value)}
+                        >
+                            <optgroup label="Campaign Emails">
+                                <option value="welcome">Welcome Email</option>
+                                <option value="incomplete_profile">Incomplete Profile</option>
+                                <option value="half_baked_interview">Half-baked Interview</option>
+                                <option value="inactive_user">Inactive User</option>
+                                <option value="interview_reminder">Interview Reminder</option>
+                            </optgroup>
+                            <optgroup label="Transactional Emails">
+                                <option value="retry_reminder">Retry Reminder</option>
+                                <option value="video_invitation">Video Interview Invite</option>
+                                <option value="verification">Email Verification</option>
+                                <option value="password_reset">Password Reset OTP</option>
+                                <option value="work_email_otp">Work Email OTP</option>
+                                <option value="job_invitation">Job Invitation</option>
+                            </optgroup>
+                        </select>
+                        <button 
+                            className="send-test-btn"
+                            onClick={handleSendTestEmail}
+                            disabled={sendingTest}
+                        >
+                            {sendingTest ? 'Sending...' : 'Send Test'}
+                        </button>
+                    </div>
+                    {testMessage.text && (
+                        <div className={`test-status-msg ${testMessage.type}`}>
+                            {testMessage.text}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {error && <div className="admin-error-message">{error}</div>}
