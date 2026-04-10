@@ -317,7 +317,7 @@ async function sendWelcomeEmail(user) {
  */
 async function sendIncompleteProfileEmail(user) {
     const subject = 'Complete your profile to stand out! 🌟';
-    const profileLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?source=email_campaign&type=incomplete_profile`;
+    const profileLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?redirect=%2Fjobseeker%2Fprofile%3Fedit%3Dtrue`;
     const text = `Hi ${user.profile?.name || 'there'},\n\nDid you know candidates with complete profiles receive 3x more recruiters reachout? Complete your profile today to stand out.\n\nComplete Profile: ${profileLink}\n\nBest,\nThe Froscel Team`;
     
     return sendEmail({

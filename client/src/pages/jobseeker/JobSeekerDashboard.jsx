@@ -80,7 +80,7 @@ const JobSeekerDashboard = () => {
                         <div className="prompt-actions">
                             <button className="btn btn-primary" onClick={() => {
                                 setShowProfilePrompt(false);
-                                navigate('/jobseeker/profile');
+                                navigate('/jobseeker/profile?edit=true');
                             }}>Complete Profile Now</button>
                             <button className="btn btn-secondary" onClick={() => setShowProfilePrompt(false)}>
                                 Maybe Later

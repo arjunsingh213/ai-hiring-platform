@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../components/Toast';
 import ImageCropModal from '../../components/ImageCropModal';
@@ -84,6 +85,16 @@ const ProfilePage = () => {
             };
         }
     }, [userId]);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        if (searchParams.get('edit') === 'true') {
+            setIsEditing(true);
+            setActiveSection('about'); // Provide immediate focus editing if no section specifically provided
+        }
+    }, [location.search]);
 
     const fetchVerifiedProjects = async () => {
         try {
