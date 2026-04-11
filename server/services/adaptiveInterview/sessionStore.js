@@ -26,6 +26,8 @@ class SessionStore {
             consecutiveFailures: 0,
             isProcessing: false, // Lock to prevent concurrent triggers
             maxTurns: data.maxTurns || 8,
+            sessionStartTime: Date.now(), // Track when session started for duration calculation
+            turnStartTime: Date.now(),    // Track when current turn started
             // Platform interview context (from user's resume + onboarding)
             resumeContext: data.resumeContext || null // { desiredRole, experienceLevel, domains, projects, experience }
         };

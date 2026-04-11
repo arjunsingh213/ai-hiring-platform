@@ -680,6 +680,7 @@ const InterviewRoom = () => {
                     await fetch(`${baseUrl}/video-rooms/${roomCode}/upload-video`, {
                         method: 'POST',
                         body: formData,
+                        keepalive: true,
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }

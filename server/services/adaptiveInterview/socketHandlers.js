@@ -250,8 +250,56 @@ const setupAdaptiveNamespace = (io) => {
         /**
          * Cleanup on disconnect
          */
-        socket.on('disconnect', () => {
+        socket.on('disconnect', async () => {
             console.log('[Adaptive] ❌ Socket disconnected:', socket.id);
+            const session = SessionStore.getSession(socket.id);
+
+            // Finalize the interview document on early exit so it appears in Admin Queue
+            if (session && session.interviewId) {
+                try {
+                    const interview = await Interview.findById(session.interviewId);
+                    if (interview && interview.status === 'in_progress') {
+                        // Calculate a partial score from whatever turns happened
+                        const completedResponses = interview.responses || [];
+                        let partialScore = 0;
+                        if (completedResponses.length > 0) {
+                            const scores = completedResponses
+                                .map(r => r.evaluation?.score)
+                                .filter(s => typeof s === 'number');
+                            if (scores.length > 0) {
+                                partialScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10);
+                            }
+                        }
+
+                        interview.status = 'completed';
+                        interview.completedAt = new Date();
+                        interview.duration = session.turnStartTime
+                            ? Math.round((Date.now() - (session.sessionStartTime || Date.now())) / 1000)
+                            : 0;
+
+                        // Set scoring if not already set
+                        if (!interview.scoring?.overallScore) {
+                            interview.scoring = {
+                                ...interview.scoring,
+                                overallScore: partialScore || 0
+                            };
+                        }
+
+                        // Ensure adminReview is set so it shows up in the queue
+                        if (!interview.adminReview) {
+                            interview.adminReview = {};
+                        }
+                        interview.adminReview.status = 'pending_review';
+                        interview.adminReview.aiScore = interview.scoring?.overallScore || partialScore || 0;
+
+                        await interview.save();
+                        console.log(`[Adaptive] ✅ Interview ${session.interviewId} finalized on disconnect (turns: ${session.turnCount}, score: ${partialScore})`);
+                    }
+                } catch (err) {
+                    console.error('[Adaptive] Failed to finalize interview on disconnect:', err.message);
+                }
+            }
+
             SessionStore.deleteSession(socket.id);
         });
     });

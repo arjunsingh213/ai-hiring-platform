@@ -354,6 +354,7 @@ const AIInterview = () => {
             const response = await fetch(`${baseUrl}/interviews/upload-video`, {
                 method: 'POST',
                 body: formData,
+                keepalive: true, // Ensure upload survives page navigation
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
