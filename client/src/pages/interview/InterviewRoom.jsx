@@ -444,14 +444,26 @@ const InterviewRoom = () => {
         initRoom();
 
         return () => {
-            // Cleanup
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                mediaRecorderRef.current.stop();
-            }
+            // Immediate synchronous cleanup
             if (socketRef.current) socketRef.current.disconnect();
-            if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
             peerConnectionsRef.current.forEach(pc => pc.close());
             if (timerRef.current) clearInterval(timerRef.current);
+
+            // Execute media cleanup asynchronously to prevent stopping tracks before recording flushes
+            const cleanupMedia = async () => {
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                    await new Promise(resolve => {
+                        const originalOnStop = mediaRecorderRef.current.onstop;
+                        mediaRecorderRef.current.onstop = async (e) => {
+                            if (originalOnStop) await originalOnStop(e);
+                            resolve();
+                        };
+                        mediaRecorderRef.current.stop();
+                    });
+                }
+                if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
+            };
+            cleanupMedia();
         };
     }, [roomCode]);
 

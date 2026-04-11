@@ -534,11 +534,19 @@ const AIInterview = () => {
         return () => {
             isMountedRef.current = false;
             clearInterval(timer);
-            // Save video securely in the background on early exit
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                finalizeVideoRecording().catch(err => console.error('Background upload failed:', err));
-            }
-            stopCamera();
+            
+            // Execute media cleanup asynchronously to prevent stopping tracks before recording flushes
+            const cleanupMedia = async () => {
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                    try {
+                        await finalizeVideoRecording();
+                    } catch (err) {
+                        console.error('Background upload failed:', err);
+                    }
+                }
+                stopCamera();
+            };
+            cleanupMedia();
         };
     }, []);
 
