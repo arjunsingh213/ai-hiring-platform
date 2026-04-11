@@ -126,6 +126,24 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if user is already logged in and redirect to dashboard
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    const loginTimestamp = localStorage.getItem('loginTimestamp');
+
+    if (token && userRole && loginTimestamp) {
+        const sessionAge = Date.now() - parseInt(loginTimestamp);
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+        if (sessionAge <= maxAge) {
+            if (userRole === 'jobseeker') navigate('/jobseeker/jobs', { replace: true });
+            else if (userRole === 'recruiter') navigate('/recruiter/home', { replace: true });
+            else if (userRole === 'admin') navigate('/admin/dashboard', { replace: true });
+        }
+    }
+  }, [navigate]);
+
   const featuresData = [
     {
       id: "ai-interviews",

@@ -350,10 +350,13 @@ const AIInterview = () => {
             formData.append('cheatingMarkers', JSON.stringify(cheatingMarkers || []));
 
             const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const token = localStorage.getItem('token');
             const response = await fetch(`${baseUrl}/interviews/upload-video`, {
                 method: 'POST',
                 body: formData,
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             const result = await response.json();
@@ -531,12 +534,25 @@ const AIInterview = () => {
         return () => {
             isMountedRef.current = false;
             clearInterval(timer);
-            stopCamera();
+            // Save video securely in the background on early exit
             if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                mediaRecorderRef.current.stop();
+                finalizeVideoRecording().catch(err => console.error('Background upload failed:', err));
             }
+            stopCamera();
         };
     }, []);
+
+    // Warn against accidental tab closure during active interview
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isRecording && !completed) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isRecording, completed]);
 
     // Re-attach camera stream when the video element changes
     // This happens when isVoiceActive switches from false→true after fetchInterview() resolves,

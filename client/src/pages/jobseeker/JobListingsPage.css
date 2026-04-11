@@ -1777,14 +1777,20 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .domain-interview-banner {
-    background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%);
+    background: linear-gradient(135deg, rgba(238, 242, 255, 0.9) 0%, rgba(224, 231, 255, 0.9) 50%, rgba(199, 210, 254, 0.9) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: 14px;
     padding: 20px 24px;
     cursor: pointer;
     transition: all 0.25s ease;
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-shrink: 0;
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .domain-interview-banner::before {
@@ -1876,8 +1882,10 @@
 
 /* ── Dark Mode Override ── */
 [data-theme="dark"] .domain-interview-banner {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 27, 75, 0.85) 100%) !important;
+    backdrop-filter: blur(16px) !important;
+    border-color: rgba(99, 102, 241, 0.25) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .domain-interview-banner::before {

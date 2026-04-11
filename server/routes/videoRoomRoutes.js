@@ -8,6 +8,13 @@ const User = require('../models/User');
 const Interview = require('../models/Interview');
 const { userAuth, requireRole } = require('../middleware/userAuth');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
+
+const videoUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
 
 /* ═══════════════════════════════════════════════════════════════
    FROSCEL INTERVIEW ROOM™ — Video Room Routes
@@ -478,6 +485,79 @@ router.post('/:roomCode/recording', userAuth, async (req, res) => {
         res.json({ success: true, data: room.recording });
     } catch (error) {
         console.error('Error saving recording:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ─── Upload Video to Cloudinary ───
+router.post('/:roomCode/upload-video', userAuth, videoUpload.single('video'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No video file provided' });
+        }
+
+        const room = await VideoRoom.findOne({ roomCode: req.params.roomCode });
+        if (!room) {
+            return res.status(404).json({ success: false, error: 'Room not found' });
+        }
+
+        // Must be the recruiter to upload the recording? Wait, anyone returning from the interview might have recorded it.
+        // Let's ensure they are a participant
+        const isParticipant = room.participants.some(p => p.userId.toString() === req.userId.toString());
+        if (!isParticipant) {
+             // We'll allow recruiter or candidate
+             return res.status(403).json({ success: false, error: 'Unauthorized participant' });
+        }
+
+        room.recording.status = 'processing';
+        await room.save();
+
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                resource_type: 'video',
+                folder: 'froscel_video_rooms',
+                format: 'webm',
+                eager: [{ streaming_profile: "hd", format: "m3u8" }], // optimize
+                eager_async: true,
+            },
+            async (error, result) => {
+                if (error) {
+                    console.error('Cloudinary upload error:', error);
+                    room.recording.status = 'failed';
+                    await room.save();
+                    return res.status(500).json({ success: false, error: 'Failed to upload to Cloudinary' });
+                }
+
+                // Update room recording data
+                room.recording = {
+                    ...room.recording,
+                    status: 'ready',
+                    cloudinaryPublicId: result.public_id,
+                    cloudinaryUrl: result.url,
+                    cloudinarySecureUrl: result.secure_url,
+                    duration: result.duration,
+                    fileSize: req.file.size,
+                    format: result.format,
+                    uploadedAt: new Date()
+                };
+
+                room.addAuditEntry('recording_stopped', req.userId, 'recruiter', { duration: result.duration, fileSize: req.file.size });
+                await room.save();
+
+                res.json({
+                    success: true,
+                    data: {
+                        url: result.secure_url,
+                        duration: result.duration
+                    }
+                });
+            }
+        );
+
+        uploadStream.end(req.file.buffer);
+
+    } catch (error) {
+        console.error('Error on video upload route:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

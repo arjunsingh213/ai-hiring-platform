@@ -445,12 +445,27 @@ const InterviewRoom = () => {
 
         return () => {
             // Cleanup
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            }
             if (socketRef.current) socketRef.current.disconnect();
             if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
             peerConnectionsRef.current.forEach(pc => pc.close());
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [roomCode]);
+
+    // Warn against accidental tab closure during active interview recording
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isRecording) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isRecording]);
 
     // ── Timer ──
     useEffect(() => {
@@ -644,13 +659,18 @@ const InterviewRoom = () => {
             };
             recorder.onstop = async () => {
                 const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-                // Upload to server (Cloudinary via backend)
                 const formData = new FormData();
-                formData.append('recording', blob, `interview-${roomCode}.webm`);
+                formData.append('video', blob, `interview-${roomCode}.webm`);
+
                 try {
-                    await api.post(`/video-rooms/${roomCode}/recording`, {
-                        duration: elapsedTime,
-                        format: 'webm'
+                    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                    const token = localStorage.getItem('token');
+                    await fetch(`${baseUrl}/video-rooms/${roomCode}/upload-video`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
                     });
                 } catch (err) {
                     console.error('[Recording] Upload error:', err);

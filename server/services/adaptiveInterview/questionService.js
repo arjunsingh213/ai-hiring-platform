@@ -41,6 +41,35 @@ class QuestionService {
             }
         }
 
+        let strategyGuideline = '';
+        switch (strategy) {
+            case 'repeat_question':
+                strategyGuideline = `You MUST simply repeat Your Previous Question politely. (e.g., "Sure, I was asking...")`;
+                break;
+            case 'clarify_question':
+                strategyGuideline = `You MUST rephrase Your Previous Question to be simpler and easier to understand.`;
+                break;
+            case 'encouragement':
+                strategyGuideline = `The candidate is struggling. You MUST show empathy ("That's completely fine", "No worries at all") and then ask a slightly easier question within the current topic.`;
+                break;
+            case 'switch_skill':
+                strategyGuideline = `The candidate indicated they do not know the answer. You MUST dynamically acknowledge this with a completely unique, natural, and varied empathetic transition (e.g., "Got it", "Fair enough", "Makes sense", "Let's move to another topic"). NEVER, UNDER ANY CIRCUMSTANCES, use the exact phrases "Let's switch gears" or "No problem at all". Then, you MUST ask a completely new, basic question entirely about the new Current Topic (${currentSkill}). DO NOT ask about or reference Your Previous Question.`;
+                break;
+            case 'natural_conversation':
+                strategyGuideline = `The candidate made small talk or gave a short affirmative answer (like "Yes", "Sure"). Respond naturally to their comment briefly, then steer back or ask the next logical follow-up.`;
+                break;
+            case 'scenario_based':
+                strategyGuideline = `Propose a brief hypothetical scenario related to their previous answer to test their practical application of the concept.`;
+                break;
+            case 'escalate':
+                strategyGuideline = `The candidate gave a strong answer. Ask an advanced follow-up question that increases the abstract or technical difficulty based on their previous statement.`;
+                break;
+            case 'drill_concept':
+            default:
+                strategyGuideline = `Build directly on their previous statement to probe for specific details or decision-making logic. DO NOT simply repeat your previous question.`;
+                break;
+        }
+
         const systemPrompt = `You are an ${persona}.
 Generate ONE clear, human-sounding response or follow-up question.
 
@@ -52,12 +81,7 @@ Context:
 ${platformContext}
 
 Guidelines based on Strategic Objective:
-- IF "repeat_question": You MUST simply repeat Your Previous Question politely. (e.g., "Sure, I was asking...")
-- IF "clarify_question": You MUST rephrase Your Previous Question to be simpler and easier to understand.
-- IF "encouragement": The candidate is struggling. You MUST show empathy ("That's completely fine", "No worries at all") and then ask a slightly easier question within the current topic.
-- IF "switch_skill": The candidate indicated they do not know the answer. You MUST dynamically acknowledge this with a completely unique, natural, and varied empathetic transition (e.g., "Got it", "Fair enough", "Makes sense", "Let's move to another topic"). NEVER, UNDER ANY CIRCUMSTANCES, use the exact phrases "Let's switch gears" or "No problem at all". Then, you MUST ask a completely new, basic question entirely about the new Current Topic (${currentSkill}). DO NOT ask about or reference Your Previous Question (${previousQuestion}).
-- IF "natural_conversation": The candidate made small talk or gave a short affirmative answer (like "Yes", "Sure"). Respond naturally to their comment briefly, then steer back or ask the next logical follow-up.
-- OTHERWISE (technical drill): Build directly on their previous statement to probe for specific technical details or decision-making logic.
+- ${strategyGuideline}
 
 Tone Rules:
 - Maintain a highly empathetic, professional demeanor. You are talking to a human.

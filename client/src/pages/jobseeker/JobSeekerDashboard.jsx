@@ -34,11 +34,22 @@ const JobSeekerDashboard = () => {
             if (userStr) {
                 const user = JSON.parse(userStr);
                 if (!user.isOnboardingComplete) {
-                    const hasPrompted = sessionStorage.getItem('profilePromptShown');
-                    if (!hasPrompted) {
+                    const lastPromptedStr = localStorage.getItem('profilePromptLastShown');
+                    let shouldShow = true;
+
+                    if (lastPromptedStr) {
+                        const lastPrompted = parseInt(lastPromptedStr, 10);
+                        // Convert milliseconds to days (1000 ms * 60 s * 60 m * 24 h)
+                        const daysSinceLastPrompt = (Date.now() - lastPrompted) / (1000 * 60 * 60 * 24);
+                        if (daysSinceLastPrompt < 3) {
+                             shouldShow = false; // Only show once every 3 days
+                        }
+                    }
+
+                    if (shouldShow) {
                         // Small delay for better UX
                         setTimeout(() => setShowProfilePrompt(true), 1500);
-                        sessionStorage.setItem('profilePromptShown', 'true');
+                        localStorage.setItem('profilePromptLastShown', Date.now().toString());
                     }
                 }
             }
