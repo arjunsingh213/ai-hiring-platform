@@ -7,7 +7,7 @@ import styles from './GlossaryPage.module.css';
 
 const GLOSSARY_TERMS = [
     {
-        term: 'AI Talent Passport',
+        term: 'ATP (AI Talent Passport)',
         definition: 'A verified, portable credential issued by Froscel that captures a candidate\'s skills, coding proficiency, behavioral traits, and interview performance into a single tamper-proof digital passport.',
     },
     {
@@ -66,13 +66,13 @@ const GlossaryPage = () => {
     useEffect(() => {
         document.title = 'Hiring & AI Interview Glossary | Froscel';
         const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) metaDesc.setAttribute('content', 'Definitions for key terms in AI-powered hiring, technical interviews, and recruitment technology. Learn about AI Talent Passport, adaptive interviews, proctoring, and more.');
+        if (metaDesc) metaDesc.setAttribute('content', 'Definitions for key terms in AI-powered hiring, technical interviews, and recruitment technology. Learn about ATP, adaptive interviews, proctoring, and more.');
         const canonical = document.querySelector('link[rel="canonical"]');
         if (canonical) canonical.setAttribute('href', 'https://froscel.com/glossary');
         return () => {
             document.title = 'Froscel | AI-Powered Hiring Infrastructure & Video Interviews';
             const md = document.querySelector('meta[name="description"]');
-            if (md) md.setAttribute('content', 'Scale technical hiring with enterprise-grade AI video interviews, live code evaluation in 9+ languages, and the AI Talent Passport.');
+            if (md) md.setAttribute('content', 'Scale technical hiring with enterprise-grade AI video interviews, live code evaluation in 9+ languages, and ATP.');
             const c = document.querySelector('link[rel="canonical"]');
             if (c) c.setAttribute('href', 'https://froscel.com/');
         };

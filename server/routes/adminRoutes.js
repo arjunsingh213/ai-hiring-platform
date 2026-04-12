@@ -1983,53 +1983,77 @@ router.post('/users/:userId/invite-platform', adminAuth, requirePermission('view
         }
 
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.froscel.com';
-        const platformInterviewUrl = `${frontendUrl}/onboarding/jobseeker`;
 
-        // 1. Send an industry-standard email
         const html = `
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8" />
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 32px; text-align: center; border-radius: 12px 12px 0 0; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .content { background: #f9fafb; padding: 32px; }
-        .detail-card { background: white; border-radius: 10px; padding: 20px; margin: 16px 0; border: 1px solid #e5e7eb; }
-        .cta-button { display: inline-block; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; margin-top: 10px; margin-bottom: 20px;}
-        .footer { text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #e2e8f0; margin: 0; padding: 0; background: #0f172a; }
+        .container { max-width: 600px; margin: 0 auto; background: #1e293b; border-radius: 12px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; padding: 32px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+        .content { padding: 32px; color: #e2e8f0; }
+        .content p { margin: 0 0 16px; }
+        .info-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; margin: 16px 0; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white !important; padding: 14px 36px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; }
     </style>
 </head>
 <body>
+    <div style="padding: 20px; background: #0f172a;">
     <div class="container">
         <div class="header">
-            <h1>You're Invited to Establish Your AI Talent Passport</h1>
+            <h1>You're Invited to Establish Your ATP</h1>
         </div>
         <div class="content">
             <p>Hi <strong>${candidate.profile?.name || 'there'}</strong>,</p>
-            <p>Froscel invites you to complete our Platform Interview to build your AI Talent Passport. Stand out to top recruiters by showcasing your domain expertise, communication, and problem-solving skills.</p>
-            <div class="detail-card">
-                <p><strong>Next Step:</strong> Click the button below to start your adaptive, multi-round AI interview. The process evaluates your unique skills and establishes a verified score for our employer network.</p>
+            <p>Froscel invites you to complete our Platform Interview to build your ATP (AI Talent Passport). Stand out to top recruiters by showcasing your domain expertise, communication, and problem-solving skills.</p>
+            <div class="info-card">
+                <p style="margin: 0;"><strong>Next Step:</strong> Click the button below to start your adaptive, multi-round AI interview. The process evaluates your unique skills and establishes a verified score for our employer network.</p>
             </div>
             <center style="margin: 24px 0;">
-                <a href="${platformInterviewUrl}" class="cta-button">
+                <a href="${frontendUrl}/onboarding/jobseeker" class="cta-button">
                     Start Platform Interview →
                 </a>
             </center>
-            <p>Best of luck!<br/>The AI Hiring Platform Team</p>
+
+            <div style="margin-top: 32px; padding: 24px 0 0; border-top: 1px solid rgba(255,255,255,0.1);">
+                <p style="margin: 0 0 16px; color: #e2e8f0; font-weight: 600;">Best regards,<br/>Froscel Team</p>
+            </div>
+
+            <div style="text-align: center; padding: 24px 0 12px;">
+                <a href="https://www.froscel.com" style="display:inline-block; margin: 0 8px; text-decoration:none;">
+                    <img src="https://cdn-icons-png.flaticon.com/24/2111/2111463.png" alt="Website" width="24" height="24" style="opacity:0.7;" />
+                </a>
+                <a href="https://www.linkedin.com/company/froscel" style="display:inline-block; margin: 0 8px; text-decoration:none;">
+                    <img src="https://cdn-icons-png.flaticon.com/24/3536/3536505.png" alt="LinkedIn" width="24" height="24" style="opacity:0.7;" />
+                </a>
+                <a href="https://www.facebook.com/froscel" style="display:inline-block; margin: 0 8px; text-decoration:none;">
+                    <img src="https://cdn-icons-png.flaticon.com/24/733/733547.png" alt="Facebook" width="24" height="24" style="opacity:0.7;" />
+                </a>
+            </div>
+            <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
+            <div style="text-align: center; padding: 16px 0; color: #64748b; font-size: 12px;">
+                <p style="margin: 0 0 12px;">This is an automatically generated email, please do not reply.</p>
+                <table align="center" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                    <tr>
+                        <td style="padding: 0 16px; color: #64748b; font-size: 12px;">© Froscel</td>
+                        <td style="padding: 0 16px;"><a href="${frontendUrl}/privacy" style="color: #94a3b8; text-decoration: none; font-size: 12px;">Privacy Notice</a></td>
+                        <td style="padding: 0 16px;"><a href="${frontendUrl}/terms" style="color: #94a3b8; text-decoration: none; font-size: 12px;">User Agreement</a></td>
+                    </tr>
+                </table>
+            </div>
         </div>
-        <div class="footer">
-            <p>This email was sent by AI Hiring Platform.</p>
-        </div>
+    </div>
     </div>
 </body>
 </html>`.trim();
 
         await sendEmail({
             to: candidate.email,
-            subject: 'Invitation: Establish Your AI Talent Passport on Froscel',
-            text: 'You have been invited to complete a Platform Interview to build your AI Talent Passport. Log into your dashboard to start.',
+            subject: 'Invitation: Establish Your ATP on Froscel',
+            text: 'You have been invited to complete a Platform Interview to build your ATP. Log into your dashboard to start.',
             html
         });
 
@@ -2038,7 +2062,7 @@ router.post('/users/:userId/invite-platform', adminAuth, requirePermission('view
             userId: candidate._id,
             type: 'system',
             title: 'Platform Interview Invitation',
-            message: 'You have been invited to complete a Platform Interview to establish your AI Talent Passport!',
+            message: 'You have been invited to complete a Platform Interview to establish your ATP!',
             actionUrl: '/onboarding/jobseeker',
             actionText: 'Start Interview'
         });

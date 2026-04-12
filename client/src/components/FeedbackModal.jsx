@@ -31,7 +31,7 @@ const FEATURE_CONFIG = {
         insightQuestion: 'What can we improve?'
     },
     'atp': {
-        title: 'AI Talent Passport Feedback',
+        title: 'ATP Feedback',
         description: 'How do you like your verified credentials?',
         questions: [
             { id: 'accuracy', label: 'Does the skill profile represent you accurately?', type: 'rating' },

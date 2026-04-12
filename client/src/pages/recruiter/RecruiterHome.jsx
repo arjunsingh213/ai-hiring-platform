@@ -481,7 +481,7 @@ const RecruiterHome = () => {
                                     {Icons.star}
                                 </div>
                                 <div>
-                                    <h4>AI Talent Passport</h4>
+                                    <h4>ATP</h4>
                                     <p>Verified Skills & Credentials</p>
                                 </div>
                             </div>

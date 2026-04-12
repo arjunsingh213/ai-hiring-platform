@@ -24,7 +24,7 @@ const BLOG_POSTS = [
     },
     {
         slug: 'what-is-ai-talent-passport',
-        title: 'What Is an AI Talent Passport? The Future of Verified Credentials',
+        title: 'What Is ATP? The Future of Verified Credentials',
         excerpt: 'Resumes are outdated. Learn how AI-verified skill passports are replacing traditional CVs and what it means for candidates and recruiters.',
         date: '2026-02-10',
         category: 'Product',
