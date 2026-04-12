@@ -98,7 +98,11 @@ function wrapEmail(headerHtml, bodyHtml) {
  * @param {string} options.html - HTML content (optional)
  */
 async function sendEmail({ to, subject, text, html }) {
-    const fromAddress = process.env.RESEND_FROM || 'Froscel <onboarding@resend.dev>';
+    // Randomize sender persona for a personal inbox feel (e.g. "Sara from Froscel")
+    const senderNames = ['Sara from Froscel', 'Michael from Froscel'];
+    const senderName = senderNames[Math.floor(Math.random() * senderNames.length)];
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromAddress = process.env.RESEND_FROM || `${senderName} <${fromEmail}>`;
 
     try {
         const { data, error } = await resend.emails.send({
