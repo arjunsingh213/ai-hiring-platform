@@ -54,7 +54,6 @@ function getEmailFooter() {
  */
 function wrapEmail(headerHtml, bodyHtml) {
     return `
-<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -429,6 +428,8 @@ async function sendInactiveUserEmail(user) {
 }
 
 module.exports = {
+    wrapEmail,
+    getEmailFooter,
     sendEmail,
     sendInterviewReminderEmail,
     sendRetryReminderEmail,
